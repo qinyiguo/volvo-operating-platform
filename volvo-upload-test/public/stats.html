@@ -335,7 +335,15 @@
       <input type="text" id="cfgDesc" class="form-input" placeholder="（選填）簡短說明此設定的用途" maxlength="200">
     </div>
 
-    <div style="margin:16px 0 10px;font-size:13px;font-weight:700;color:#94a3b8">篩選條件（OR 邏輯，符合任一即納入）</div>
+    <div style="margin:16px 0 10px">
+      <div style="font-size:13px;font-weight:700;color:#94a3b8;margin-bottom:4px">篩選條件</div>
+      <div style="font-size:12px;color:#64748b;line-height:1.7;background:#0f172a;border:1px solid #2d3f56;border-radius:6px;padding:8px 12px">
+        📌 <strong style="color:#94a3b8">不同類型之間 AND（必須同時符合）</strong><br>
+        　 例：類別碼 93 <strong>且</strong> 功能碼 1832 → 必須兩個都符合<br>
+        📌 <strong style="color:#94a3b8">同類型多個值 OR（符合其中一個即可）</strong><br>
+        　 例：加入兩個零件編號 → 符合任一即納入
+      </div>
+    </div>
 
     <!-- 現有條件 -->
     <div class="filter-list" id="filterList" style="margin-bottom:12px"></div>
