@@ -140,8 +140,8 @@
 
 <nav class="nav">
   <span class="nav-brand">🚗 Volvo 營運統計</span>
-  <a href="/" class="nav-link">📤 上傳</a>
   <a href="/stats.html" class="nav-link active">📊 統計</a>
+  <a href="/settings.html" class="nav-link">⚙️ 設定</a>
 </nav>
 
 <div class="container">
@@ -235,17 +235,13 @@
   <!-- SA 零件銷售 -->
   <div id="tab-sa-sales" style="display:none">
 
-    <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px">
-      <h2 style="font-size:16px;font-weight:700">👤 SA 零件銷售統計</h2>
-      <button class="btn btn-primary btn-sm" onclick="openConfigModal(null)">＋ 新增設定</button>
-    </div>
-
-    <!-- 設定列表 -->
-    <div class="card">
-      <div class="card-title">⚙️ 銷售追蹤設定</div>
-      <div class="config-list" id="configList">
-        <div style="color:#64748b;font-size:13px;padding:12px 0"><span class="spinner"></span>載入設定...</div>
-      </div>
+    <!-- 設定選擇器 -->
+    <div class="filter-bar" style="margin-bottom:16px">
+      <label>追蹤設定</label>
+      <select id="selConfig" style="background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:6px 10px;border-radius:6px;font-size:13px;min-width:220px" onchange="onConfigChange()">
+        <option value="">— 請選擇設定 —</option>
+      </select>
+      <a href="/settings.html" style="font-size:12px;color:#64748b;text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border:1px solid #2d3f56;border-radius:6px;background:#1e293b">⚙️ 管理設定</a>
     </div>
 
     <!-- 統計結果 -->
@@ -316,63 +312,7 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════ -->
-<!-- 設定編輯 Modal -->
-<!-- ══════════════════════════════════════════════════════════ -->
-<div class="modal-overlay" id="configModal" style="display:none" onclick="closeModalIfBg(event)">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title" id="modalTitle">新增銷售設定</div>
-      <button class="modal-close" onclick="closeConfigModal()">×</button>
-    </div>
 
-    <div class="form-row">
-      <label>名稱</label>
-      <input type="text" id="cfgName" class="form-input" placeholder="例：鋼圈銷售、精品配件..." maxlength="100">
-    </div>
-    <div class="form-row">
-      <label>說明</label>
-      <input type="text" id="cfgDesc" class="form-input" placeholder="（選填）簡短說明此設定的用途" maxlength="200">
-    </div>
-
-    <div style="margin:16px 0 10px">
-      <div style="font-size:13px;font-weight:700;color:#94a3b8;margin-bottom:4px">篩選條件</div>
-      <div style="font-size:12px;color:#64748b;line-height:1.7;background:#0f172a;border:1px solid #2d3f56;border-radius:6px;padding:8px 12px">
-        📌 <strong style="color:#94a3b8">不同類型之間 AND（必須同時符合）</strong><br>
-        　 例：類別碼 93 <strong>且</strong> 功能碼 1832 → 必須兩個都符合<br>
-        📌 <strong style="color:#94a3b8">同類型多個值 OR（符合其中一個即可）</strong><br>
-        　 例：加入兩個零件編號 → 符合任一即納入
-      </div>
-    </div>
-
-    <!-- 現有條件 -->
-    <div class="filter-list" id="filterList" style="margin-bottom:12px"></div>
-
-    <!-- 新增條件 -->
-    <div style="background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:12px;margin-bottom:4px">
-      <div style="font-size:12px;color:#64748b;font-weight:600;margin-bottom:8px">新增條件</div>
-      <div class="add-filter-row">
-        <select id="addType" class="form-select" onchange="clearLookup()">
-          <option value="category_code">零件類別碼</option>
-          <option value="function_code">功能碼</option>
-          <option value="part_number">零件編號</option>
-        </select>
-        <div class="lookup-wrap">
-          <input type="text" id="addValue" class="lookup-input" placeholder="輸入代碼或名稱搜尋..."
-            oninput="debounceLookup()" autocomplete="off">
-          <div class="lookup-dropdown" id="lookupDropdown" style="display:none"></div>
-        </div>
-        <button class="btn btn-secondary btn-sm" onclick="addFilter()" style="white-space:nowrap">＋ 加入</button>
-      </div>
-      <div id="addHint" style="font-size:11px;color:#64748b;margin-top:6px"></div>
-    </div>
-
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeConfigModal()">取消</button>
-      <button class="btn btn-primary" id="btnSaveCfg" onclick="saveConfig()">儲存設定</button>
-    </div>
-  </div>
-</div>
 
 <script>
 // ══════════════════════════════════════════════════════════
@@ -381,9 +321,6 @@
 let currentTab = 'repair';
 let configs = [];
 let selectedConfigId = null;
-let editingConfigId = null;  // null = 新增
-let editingFilters = [];     // [{type, value, label}]
-let lookupTimer = null;
 
 // ══════════════════════════════════════════════════════════
 // 工具函式
@@ -619,64 +556,29 @@ async function loadParts(period, branch) {
 }
 
 // ══════════════════════════════════════════════════════════
-// SA 銷售設定管理
+// SA 銷售 — 載入設定到下拉選單
 // ══════════════════════════════════════════════════════════
 async function loadConfigs() {
   try {
     const res = await fetch('/api/sa-config');
     configs = await res.json();
-    renderConfigList();
-  } catch(e) {
-    document.getElementById('configList').innerHTML = `<div style="color:#ef4444">${e.message}</div>`;
-  }
+    const sel = document.getElementById('selConfig');
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">— 請選擇設定 —</option>';
+    configs.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.config_name;
+      sel.appendChild(opt);
+    });
+    if (prev && configs.find(c => String(c.id) === prev)) sel.value = prev;
+  } catch(e) {}
 }
 
-function renderConfigList() {
-  const el = document.getElementById('configList');
-  if (!configs.length) {
-    el.innerHTML = `<div style="color:#64748b;font-size:13px;padding:12px 0">尚無設定，點擊「新增設定」開始建立追蹤項目。</div>`;
-    return;
-  }
-  el.innerHTML = configs.map(c => {
-    const filters = c.filters || [];
-    const isSelected = c.id === selectedConfigId;
-    return `
-      <div class="config-item ${isSelected?'selected':''}" onclick="selectConfig(${c.id})">
-        <div style="font-size:22px">📋</div>
-        <div class="config-item-info">
-          <div class="config-item-name">${c.config_name}</div>
-          ${c.description ? `<div class="config-item-desc">${c.description}</div>` : ''}
-          <div class="config-item-tags">
-            ${filters.map(f => `
-              <span class="badge type-${f.type}" style="font-size:10px">
-                ${typeLabel[f.type]}: ${f.value}
-              </span>
-            `).join('')}
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
-          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openConfigModal(${c.id})">編輯</button>
-          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteConfig(${c.id},'${c.config_name.replace(/'/g,"\\'")}')">刪除</button>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-async function selectConfig(id) {
-  selectedConfigId = id;
-  renderConfigList();
-  await loadSASales();
-}
-
-async function deleteConfig(id, name) {
-  if (!confirm(`確定要刪除「${name}」設定嗎？`)) return;
-  await fetch(`/api/sa-config/${id}`, { method: 'DELETE' });
-  if (selectedConfigId === id) {
-    selectedConfigId = null;
-    document.getElementById('saSalesResult').style.display = 'none';
-  }
-  await loadConfigs();
+function onConfigChange() {
+  selectedConfigId = parseInt(document.getElementById('selConfig').value) || null;
+  if (selectedConfigId) loadSASales();
+  else document.getElementById('saSalesResult').style.display = 'none';
 }
 
 // ══════════════════════════════════════════════════════════
@@ -775,159 +677,6 @@ async function loadSASales() {
     document.getElementById('saKPI').innerHTML = `<div style="color:#ef4444;padding:12px">${e.message}</div>`;
   }
 }
-
-// ══════════════════════════════════════════════════════════
-// 設定 Modal
-// ══════════════════════════════════════════════════════════
-function openConfigModal(id) {
-  editingConfigId = id;
-  if (id) {
-    const cfg = configs.find(c => c.id === id);
-    document.getElementById('modalTitle').textContent = '編輯銷售設定';
-    document.getElementById('cfgName').value = cfg.config_name;
-    document.getElementById('cfgDesc').value = cfg.description || '';
-    editingFilters = (cfg.filters || []).map(f => ({...f, label: ''}));
-  } else {
-    document.getElementById('modalTitle').textContent = '新增銷售設定';
-    document.getElementById('cfgName').value = '';
-    document.getElementById('cfgDesc').value = '';
-    editingFilters = [];
-  }
-  renderFilterList();
-  clearLookup();
-  document.getElementById('configModal').style.display = 'flex';
-}
-
-function closeConfigModal() {
-  document.getElementById('configModal').style.display = 'none';
-  editingFilters = [];
-}
-
-function closeModalIfBg(e) {
-  if (e.target === document.getElementById('configModal')) closeConfigModal();
-}
-
-function renderFilterList() {
-  const el = document.getElementById('filterList');
-  if (!editingFilters.length) {
-    el.innerHTML = '<div style="color:#64748b;font-size:12px;padding:8px 0">尚未新增篩選條件</div>';
-    return;
-  }
-  el.innerHTML = editingFilters.map((f, i) => `
-    <div class="filter-tag-row">
-      <span class="type-badge type-${f.type}">${typeLabel[f.type]}</span>
-      <span class="filter-val">${f.value}</span>
-      ${f.label ? `<span class="filter-sub">${f.label}</span>` : ''}
-      <button class="remove-btn" onclick="removeFilter(${i})">×</button>
-    </div>
-  `).join('');
-}
-
-function removeFilter(i) {
-  editingFilters.splice(i, 1);
-  renderFilterList();
-}
-
-function addFilter() {
-  const type  = document.getElementById('addType').value;
-  const value = document.getElementById('addValue').value.trim();
-  if (!value) { document.getElementById('addHint').textContent = '請輸入值'; return; }
-  if (editingFilters.some(f => f.type === type && f.value === value)) {
-    document.getElementById('addHint').textContent = '此條件已存在';
-    return;
-  }
-  editingFilters.push({ type, value, label: '' });
-  renderFilterList();
-  document.getElementById('addValue').value = '';
-  document.getElementById('addHint').textContent = '';
-  clearLookup();
-}
-
-async function saveConfig() {
-  const config_name = document.getElementById('cfgName').value.trim();
-  const description = document.getElementById('cfgDesc').value.trim();
-  if (!config_name) { alert('請輸入設定名稱'); return; }
-  if (!editingFilters.length) { alert('請至少新增一個篩選條件'); return; }
-
-  const filters = editingFilters.map(({type, value}) => ({type, value}));
-  const btn = document.getElementById('btnSaveCfg');
-  btn.disabled = true;
-
-  try {
-    const url = editingConfigId ? `/api/sa-config/${editingConfigId}` : '/api/sa-config';
-    const method = editingConfigId ? 'PUT' : 'POST';
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ config_name, description, filters }),
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    closeConfigModal();
-    await loadConfigs();
-    if (data.id) selectConfig(data.id);
-  } catch(e) {
-    alert('儲存失敗：' + e.message);
-  } finally {
-    btn.disabled = false;
-  }
-}
-
-// ══════════════════════════════════════════════════════════
-// Parts Lookup 自動完成
-// ══════════════════════════════════════════════════════════
-function clearLookup() {
-  document.getElementById('addValue').value = '';
-  document.getElementById('lookupDropdown').style.display = 'none';
-  document.getElementById('addHint').textContent = '';
-}
-
-function debounceLookup() {
-  clearTimeout(lookupTimer);
-  lookupTimer = setTimeout(doLookup, 280);
-}
-
-async function doLookup() {
-  const type = document.getElementById('addType').value;
-  const q    = document.getElementById('addValue').value.trim();
-  const dd   = document.getElementById('lookupDropdown');
-  if (!q) { dd.style.display = 'none'; return; }
-
-  try {
-    const res = await fetch(`/api/sa-config/parts-lookup?type=${type}&q=${encodeURIComponent(q)}`);
-    const data = await res.json();
-    if (!data.length) { dd.style.display = 'none'; return; }
-
-    dd.innerHTML = data.map(item => {
-      if (type === 'part_number') {
-        return `<div class="lookup-item" onclick="pickLookup('${item.value.replace(/'/g,"\\'")}','${(item.label||'').replace(/'/g,"\\'")}')">
-          <div class="lookup-item-val">${item.value}</div>
-          <div class="lookup-item-sub">${item.label||''} | 類別:${item.category_code||'-'} 功能:${item.function_code||'-'}</div>
-        </div>`;
-      } else {
-        return `<div class="lookup-item" onclick="pickLookup('${item.value.replace(/'/g,"\\'")}','')">
-          <div class="lookup-item-val">${item.value}</div>
-          <div class="lookup-item-sub">涵蓋 ${item.part_count} 種零件 — ${(item.sample_names||'').slice(0,60)}</div>
-        </div>`;
-      }
-    }).join('');
-    dd.style.display = 'block';
-  } catch(e) { dd.style.display = 'none'; }
-}
-
-function pickLookup(value, label) {
-  document.getElementById('addValue').value = value;
-  document.getElementById('lookupDropdown').style.display = 'none';
-  document.getElementById('addHint').textContent = label ? `→ ${label}` : '';
-}
-
-// 點擊其他地方關閉下拉
-document.addEventListener('click', e => {
-  const wrap = document.getElementById('addValue')?.closest('.lookup-wrap');
-  if (wrap && !wrap.contains(e.target)) {
-    document.getElementById('lookupDropdown').style.display = 'none';
-  }
-});
 
 // ══════════════════════════════════════════════════════════
 // 月份趨勢
