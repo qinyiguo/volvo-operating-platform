@@ -773,43 +773,70 @@ app.get('/api/stats/trend', async (req, res) => {
 app.get('/api/stats/daily', async (req, res) => {
   try {
     const { period, branch } = req.query;
-    const conditions = [`repair_type NOT ILIKE '%PDI%'`, `open_time IS NOT NULL`];
+
+    // 動態偵測欄位名稱（支援中英文欄位）
+    const colRows = await pool.query(`
+      SELECT column_name FROM information_schema.columns WHERE table_name = 'business_query'
+    `);
+    const cols = colRows.rows.map(r => r.column_name);
+
+    const dateCol  = cols.find(c => ['open_time','進廠時間','開單時間','開立時間','接車時間'].includes(c)) || 'open_time';
+    const typeCol  = cols.find(c => ['repair_type','維修類型'].includes(c));
+    const branchCol= cols.find(c => ['branch','據點','分店'].includes(c)) || 'branch';
+    const periodCol= cols.find(c => ['period','期間'].includes(c)) || 'period';
+
+    const conditions = [`"${dateCol}" IS NOT NULL`];
+    if (typeCol) conditions.push(`"${typeCol}" NOT ILIKE '%PDI%'`);
+
     const params = [];
     let idx = 1;
-    if (period) { conditions.push(`period = $${idx++}`); params.push(period); }
-    if (branch) { conditions.push(`branch = $${idx++}`); params.push(branch); }
+    if (period) { conditions.push(`"${periodCol}" = $${idx++}`); params.push(period); }
+    if (branch) { conditions.push(`"${branchCol}" = $${idx++}`); params.push(branch); }
     const where = 'WHERE ' + conditions.join(' AND ');
 
     const daily = await pool.query(`
       SELECT
-        open_time::date AS arrive_date,
-        branch,
-        COUNT(DISTINCT plate_no) AS car_count
+        "${dateCol}"::date AS arrive_date,
+        "${branchCol}" AS branch,
+        COUNT(*) AS car_count
       FROM business_query ${where}
-      GROUP BY open_time::date, branch
-      ORDER BY arrive_date, branch
+      GROUP BY "${dateCol}"::date, "${branchCol}"
+      ORDER BY arrive_date, "${branchCol}"
     `, params);
 
     const summary = await pool.query(`
       SELECT
-        branch,
-        COUNT(DISTINCT plate_no)                                      AS total_cars,
-        COUNT(DISTINCT open_time::date)                               AS working_days,
-        ROUND(COUNT(DISTINCT plate_no)::numeric /
-              NULLIF(COUNT(DISTINCT open_time::date), 0), 1)          AS daily_avg,
+        "${branchCol}" AS branch,
+        COUNT(*)                                                      AS total_cars,
+        COUNT(DISTINCT "${dateCol}"::date)                            AS working_days,
+        ROUND(COUNT(*)::numeric /
+              NULLIF(COUNT(DISTINCT "${dateCol}"::date), 0), 1)       AS daily_avg,
         MAX(daily_cnt)                                                AS max_day,
         MIN(daily_cnt)                                                AS min_day
       FROM (
-        SELECT branch, open_time::date,
-               COUNT(DISTINCT plate_no) AS daily_cnt
+        SELECT "${branchCol}", "${dateCol}"::date,
+               COUNT(*) AS daily_cnt
         FROM business_query ${where}
-        GROUP BY branch, open_time::date
+        GROUP BY "${branchCol}", "${dateCol}"::date
       ) sub
-      GROUP BY branch
-      ORDER BY branch
+      GROUP BY "${branchCol}"
+      ORDER BY "${branchCol}"
     `, params);
 
     res.json({ daily: daily.rows, summary: summary.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// 偵錯：查看 business_query 實際欄位
+app.get('/api/debug/columns', async (req, res) => {
+  try {
+    const r = await pool.query(`
+      SELECT column_name, data_type
+      FROM information_schema.columns
+      WHERE table_name = 'business_query'
+      ORDER BY ordinal_position
+    `);
+    res.json(r.rows);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
