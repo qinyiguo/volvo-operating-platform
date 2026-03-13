@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Volvo 設定</title>
+<title>Volvo 營運統計</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
@@ -14,609 +14,815 @@
   .nav-link:hover { color: #e2e8f0; }
   .nav-link.active { color: #3b82f6; border-bottom-color: #3b82f6; }
 
-  .layout { display: flex; min-height: calc(100vh - 53px); }
+  .container { padding: 24px; max-width: 1400px; margin: 0 auto; }
 
-  /* 左側選單 */
-  .sidebar {
-    width: 220px; flex-shrink: 0;
-    background: #1e293b; border-right: 1px solid #2d3f56;
-    padding: 20px 12px;
-  }
-  .sidebar-section { margin-bottom: 24px; }
-  .sidebar-label { font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .06em; padding: 0 8px; margin-bottom: 6px; }
-  .sidebar-item {
-    display: flex; align-items: center; gap: 8px;
-    padding: 9px 10px; border-radius: 7px; cursor: pointer;
-    font-size: 13px; font-weight: 600; color: #64748b;
-    transition: all .15s;
-  }
-  .sidebar-item:hover { background: #253347; color: #e2e8f0; }
-  .sidebar-item.active { background: rgba(59,130,246,.15); color: #3b82f6; }
-  .sidebar-item .icon { font-size: 16px; width: 20px; text-align: center; }
-  .sidebar-badge { margin-left: auto; background: #2d3f56; color: #94a3b8; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; }
+  .filter-bar { display: flex; gap: 10px; align-items: center; background: #1e293b; border: 1px solid #2d3f56; border-radius: 10px; padding: 12px 16px; margin-bottom: 20px; flex-wrap: wrap; }
+  .filter-bar label { font-size: 12px; color: #64748b; font-weight: 600; }
+  .filter-bar select { background: #0f172a; border: 1px solid #2d3f56; color: #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 13px; }
 
-  /* 主內容 */
-  .main { flex: 1; padding: 28px; overflow-y: auto; max-width: 960px; }
-  .page-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
-  .page-sub { font-size: 13px; color: #64748b; margin-bottom: 24px; }
-
-  .card { background: #1e293b; border: 1px solid #2d3f56; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
-  .card-title { font-size: 14px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-  .card-title-note { font-size: 12px; font-weight: 400; color: #64748b; margin-left: auto; }
-
-  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; }
+  .btn { padding: 7px 16px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; }
   .btn-primary { background: #3b82f6; color: #fff; }
   .btn-primary:hover { background: #2563eb; }
   .btn-secondary { background: #253347; color: #cbd5e1; border: 1px solid #2d3f56; }
   .btn-secondary:hover { background: #2d3f56; }
-  .btn-danger { background: rgba(239,68,68,.12); color: #ef4444; border: 1px solid rgba(239,68,68,.25); }
+  .btn-danger { background: rgba(239,68,68,.12); color: #ef4444; border: 1px solid rgba(239,68,68,.3); }
   .btn-danger:hover { background: rgba(239,68,68,.2); }
-  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
   .btn:disabled { opacity: .5; cursor: not-allowed; }
 
-  /* 上傳 */
-  .upload-zone { border: 2px dashed #2d3f56; border-radius: 8px; padding: 36px; text-align: center; cursor: pointer; transition: all .2s; }
-  .upload-zone:hover, .upload-zone.drag { border-color: #3b82f6; background: rgba(59,130,246,.05); }
-  .upload-zone .icon { font-size: 36px; margin-bottom: 8px; }
-  .upload-zone p { color: #64748b; font-size: 12px; margin-top: 4px; }
-  input[type=file] { display: none; }
-  .file-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #2d3f56; font-size: 13px; }
-  .result-item { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #2d3f56; font-size: 13px; }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
-  .badge-green { background: rgba(16,185,129,.15); color: #10b981; }
-  .badge-red { background: rgba(239,68,68,.15); color: #ef4444; }
-  .badge-blue { background: rgba(59,130,246,.15); color: #3b82f6; }
-  .badge-purple { background: rgba(139,92,246,.15); color: #8b5cf6; }
-  .badge-yellow { background: rgba(245,158,11,.15); color: #f59e0b; }
+  .tabs { display: flex; gap: 2px; background: #1e293b; border-radius: 8px; padding: 3px; margin-bottom: 20px; flex-wrap: wrap; }
+  .tab { padding: 8px 16px; border: none; background: transparent; color: #64748b; font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 6px; white-space: nowrap; }
+  .tab:hover { color: #e2e8f0; background: #253347; }
+  .tab.active { background: #3b82f6; color: #fff; }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .kpi-card { background: #1e293b; border: 1px solid #2d3f56; border-radius: 10px; padding: 18px; }
+  .kpi-label { font-size: 12px; color: #64748b; margin-bottom: 6px; }
+  .kpi-value { font-size: 26px; font-weight: 800; color: #fff; }
+  .kpi-sub { font-size: 12px; color: #64748b; margin-top: 4px; }
+  .kpi-green { color: #10b981; }
+  .kpi-blue { color: #3b82f6; }
+  .kpi-yellow { color: #f59e0b; }
+  .kpi-purple { color: #8b5cf6; }
+
+  .card { background: #1a2332; border: 1px solid #2d3f56; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 14px; }
 
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { background: #0f172a; color: #64748b; font-size: 11px; font-weight: 700; text-align: left; padding: 9px 12px; border-bottom: 1px solid #2d3f56; white-space: nowrap; }
+  th { background: #0f172a; color: #64748b; font-size: 12px; font-weight: 600; text-align: left; padding: 10px 12px; border-bottom: 1px solid #2d3f56; white-space: nowrap; }
   td { padding: 9px 12px; border-bottom: 1px solid rgba(45,63,86,.4); vertical-align: middle; }
-  tr:hover td { background: rgba(37,51,71,.4); }
-  .num { text-align: right; }
+  tr:hover td { background: rgba(37,51,71,.5); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #2d3f56; }
 
-  .hint { background: rgba(59,130,246,.07); border: 1px solid rgba(59,130,246,.2); border-radius: 8px; padding: 11px 14px; font-size: 12px; color: #94a3b8; line-height: 1.8; margin-bottom: 14px; }
-  .hint code { background: #0f172a; padding: 1px 5px; border-radius: 3px; color: #60a5fa; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .badge-blue { background: rgba(59,130,246,.15); color: #3b82f6; }
+  .badge-green { background: rgba(16,185,129,.15); color: #10b981; }
+  .badge-yellow { background: rgba(245,158,11,.15); color: #f59e0b; }
+  .badge-purple { background: rgba(139,92,246,.15); color: #8b5cf6; }
+  .badge-red { background: rgba(239,68,68,.15); color: #ef4444; }
 
-  .counts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap: 8px; }
-  .count-card { background: #0f172a; border: 1px solid #2d3f56; border-radius: 8px; padding: 12px; text-align: center; }
-  .count-val { font-size: 24px; font-weight: 800; }
-  .count-label { font-size: 11px; color: #64748b; margin-top: 2px; }
+  .empty { text-align: center; padding: 48px; color: #64748b; font-size: 14px; }
+  .loading { text-align: center; padding: 48px; color: #64748b; }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #2d3f56; border-top-color: #3b82f6; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 8px; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* SA 設定 */
+  .rank-no { font-weight: 800; color: #64748b; width: 30px; }
+  .rank-1 { color: #f59e0b; }
+  .rank-2 { color: #94a3b8; }
+  .rank-3 { color: #b45309; }
+
+  .bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .bar-bg { flex: 1; background: #0f172a; border-radius: 4px; height: 6px; min-width: 60px; }
+  .bar-fill { height: 6px; border-radius: 4px; background: #3b82f6; }
+  .bar-fill.green { background: #10b981; }
+  .bar-fill.yellow { background: #f59e0b; }
+  .up { color: #10b981; }
+  .down { color: #ef4444; }
+
+  /* ── SA 銷售設定 ── */
+  .config-list { display: grid; gap: 10px; margin-bottom: 20px; }
   .config-item {
     background: #0f172a; border: 1px solid #2d3f56; border-radius: 10px;
-    padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px;
-    transition: border-color .15s;
+    padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+    cursor: pointer; transition: border-color .15s;
   }
   .config-item:hover { border-color: #3b82f6; }
-  .config-item-info { flex: 1; min-width: 0; }
+  .config-item.selected { border-color: #3b82f6; background: rgba(59,130,246,.07); }
+  .config-item-info { flex: 1; }
   .config-item-name { font-weight: 700; font-size: 14px; }
   .config-item-desc { font-size: 12px; color: #64748b; margin-top: 2px; }
-  .config-item-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
-  .config-list { display: flex; flex-direction: column; gap: 8px; }
+  .config-item-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
 
-  /* 設定編輯 inline 面板 */
-  .editor-panel { background: #0f172a; border: 1px solid #3b82f6; border-radius: 10px; padding: 20px; margin-top: 8px; }
+  /* 設定編輯面板 */
+  .editor-panel { background: #0f172a; border: 1px solid #2d3f56; border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  .editor-panel h3 { font-size: 14px; font-weight: 700; margin-bottom: 16px; }
   .form-row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; }
-  .form-row label { font-size: 12px; color: #64748b; font-weight: 600; white-space: nowrap; padding-top: 9px; min-width: 40px; }
+  .form-row label { font-size: 12px; color: #64748b; font-weight: 600; white-space: nowrap; padding-top: 8px; min-width: 60px; }
   .form-input { background: #1e293b; border: 1px solid #2d3f56; color: #e2e8f0; padding: 8px 12px; border-radius: 6px; font-size: 13px; flex: 1; min-width: 0; }
   .form-input:focus { outline: none; border-color: #3b82f6; }
   .form-select { background: #1e293b; border: 1px solid #2d3f56; color: #e2e8f0; padding: 8px 10px; border-radius: 6px; font-size: 13px; }
 
-  .filter-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
-  .filter-tag-row { display: flex; align-items: center; gap: 8px; background: #1e293b; border: 1px solid #2d3f56; border-radius: 7px; padding: 7px 12px; }
-  .type-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 5px; white-space: nowrap; }
+  /* 篩選條件列表 */
+  .filter-list { display: flex; flex-direction: column; gap: 6px; }
+  .filter-tag-row { display: flex; align-items: center; gap: 8px; background: #1e293b; border: 1px solid #2d3f56; border-radius: 8px; padding: 8px 12px; }
+  .filter-tag-row .type-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
   .type-category_code { background: rgba(59,130,246,.2); color: #60a5fa; }
   .type-function_code  { background: rgba(139,92,246,.2); color: #a78bfa; }
   .type-part_number    { background: rgba(16,185,129,.2); color: #34d399; }
-  .filter-val { font-size: 13px; font-weight: 600; flex: 1; }
-  .filter-sub { font-size: 11px; color: #64748b; }
-  .remove-btn { background: none; border: none; color: #475569; cursor: pointer; font-size: 18px; line-height: 1; padding: 0 2px; }
-  .remove-btn:hover { color: #ef4444; }
+  .filter-tag-row .filter-val { font-size: 13px; font-weight: 600; flex: 1; }
+  .filter-tag-row .filter-sub { font-size: 11px; color: #64748b; }
+  .filter-tag-row .remove-btn { background: none; border: none; color: #64748b; cursor: pointer; font-size: 16px; padding: 0 4px; line-height: 1; }
+  .filter-tag-row .remove-btn:hover { color: #ef4444; }
 
+  /* 新增條件輸入 */
   .add-filter-row { display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap; }
-  .lookup-wrap { position: relative; flex: 1; min-width: 180px; }
+  .lookup-wrap { position: relative; flex: 1; min-width: 200px; }
   .lookup-input { width: 100%; background: #1e293b; border: 1px solid #2d3f56; color: #e2e8f0; padding: 8px 12px; border-radius: 6px; font-size: 13px; }
   .lookup-input:focus { outline: none; border-color: #3b82f6; }
-  .lookup-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #1e293b; border: 1px solid #2d3f56; border-radius: 8px; z-index: 100; max-height: 240px; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
+  .lookup-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #1e293b; border: 1px solid #2d3f56; border-radius: 8px; z-index: 100; max-height: 260px; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
   .lookup-item { padding: 9px 12px; cursor: pointer; border-bottom: 1px solid rgba(45,63,86,.4); }
   .lookup-item:last-child { border-bottom: none; }
   .lookup-item:hover { background: rgba(59,130,246,.1); }
   .lookup-item-val { font-size: 13px; font-weight: 600; }
   .lookup-item-sub { font-size: 11px; color: #64748b; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-  .logic-hint { font-size: 12px; color: #64748b; background: #0f172a; border: 1px solid #2d3f56; border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; line-height: 1.7; }
-  .logic-hint strong { color: #94a3b8; }
-
-  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #2d3f56; border-top-color: #3b82f6; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 6px; vertical-align: middle; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .empty-state { text-align: center; padding: 40px 20px; color: #64748b; }
-  .empty-state .big { font-size: 36px; margin-bottom: 10px; }
-
-  .section-page { display: none; }
-  .section-page.active { display: block; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .modal { background: #1e293b; border: 1px solid #2d3f56; border-radius: 14px; width: 100%; max-width: 580px; max-height: 90vh; overflow-y: auto; padding: 24px; }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .modal-title { font-size: 16px; font-weight: 700; }
+  .modal-close { background: none; border: none; color: #64748b; font-size: 22px; cursor: pointer; line-height: 1; }
+  .modal-close:hover { color: #e2e8f0; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
 </style>
 </head>
 <body>
 
 <nav class="nav">
-  <span class="nav-brand">🚗 Volvo DMS</span>
-  <a href="/stats.html" class="nav-link">📊 統計</a>
-  <a href="/settings.html" class="nav-link active">⚙️ 設定</a>
+  <span class="nav-brand">🚗 Volvo 營運統計</span>
+  <a href="/stats.html" class="nav-link active">📊 統計</a>
+  <a href="/settings.html" class="nav-link">⚙️ 設定</a>
 </nav>
 
-<div class="layout">
-  <!-- 左側選單 -->
-  <div class="sidebar">
-    <div class="sidebar-section">
-      <div class="sidebar-label">資料管理</div>
-      <div class="sidebar-item active" onclick="showSection('upload')" id="menu-upload">
-        <span class="icon">📤</span> 上傳 Excel
-      </div>
-      <div class="sidebar-item" onclick="showSection('dbstatus')" id="menu-dbstatus">
-        <span class="icon">🗄️</span> 資料庫狀態
+<div class="container">
+  <!-- 篩選器 -->
+  <div class="filter-bar">
+    <label>期間</label>
+    <select id="selPeriod"><option value="">全部期間</option></select>
+    <label>據點</label>
+    <select id="selBranch">
+      <option value="">全部</option>
+      <option value="AMA">AMA</option>
+      <option value="AMC">AMC</option>
+      <option value="AMD">AMD</option>
+    </select>
+    <button class="btn btn-primary" onclick="loadAll()">查詢</button>
+    <span id="lastUpdate" style="margin-left:auto;font-size:12px;color:#64748b"></span>
+  </div>
+
+  <!-- 分頁 -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('repair')">🔧 維修收入</button>
+    <button class="tab" onclick="switchTab('tech')">👨‍🔧 技師工資</button>
+    <button class="tab" onclick="switchTab('parts')">🔩 零件銷售</button>
+    <button class="tab" onclick="switchTab('sa-sales')">👤 SA 零件銷售</button>
+    <button class="tab" onclick="switchTab('trend')">📈 月份趨勢</button>
+    <button class="tab" onclick="switchTab('daily')">📅 每日台數</button>
+  </div>
+
+  <!-- ────────────────────────────────────────────────────── -->
+  <!-- 維修收入 -->
+  <div id="tab-repair">
+    <div id="repairKPI" class="kpi-grid"></div>
+    <div class="card">
+      <div class="card-title">📋 SA 業績排名</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>據點</th><th>服務顧問</th><th class="num">出廠台數</th><th class="num">總營收(未稅)</th><th class="num">引擎工資</th><th class="num">零件收入</th><th class="num">佔比</th></tr></thead>
+          <tbody id="tbSA"><tr><td colspan="8" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
+        </table>
       </div>
     </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">統計設定</div>
-      <div class="sidebar-item" onclick="showSection('sa-config')" id="menu-sa-config">
-        <span class="icon">👤</span> SA 零件銷售
+    <div class="card">
+      <div class="card-title">📂 帳類分析</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>據點</th><th>帳類</th><th class="num">工單數</th><th class="num">總營收</th><th class="num">零件</th><th class="num">引擎工資</th><th class="num">鈑烤</th><th class="num">零件成本</th></tr></thead>
+          <tbody id="tbAccount"><tr><td colspan="8" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
+        </table>
       </div>
-      <!-- 未來可新增其他設定項目 -->
     </div>
   </div>
 
-  <!-- 主內容 -->
-  <div class="main">
-
-    <!-- ── 上傳 Excel ───────────────────────────────────── -->
-    <div class="section-page active" id="section-upload">
-      <div class="page-title">📤 上傳 Excel</div>
-      <p class="page-sub">將 DMS 匯出的四種報表上傳至資料庫</p>
-
-      <div class="hint">
-        ⚠️ <strong>檔名需包含據點和期間</strong>，系統才能自動辨識，例如：<br>
-        <code>維修收入分類明細_AMA_202501.xlsx</code>　
-        <code>技師績效報表_AMC_202501.xlsx</code>　
-        <code>零件銷售明細_AMD_202501.xlsx</code>　
-        <code>業務查詢_AMA_202501.xlsx</code>
+  <!-- 技師工資 -->
+  <div id="tab-tech" style="display:none">
+    <div id="techKPI" class="kpi-grid"></div>
+    <div class="card">
+      <div class="card-title">🏆 技師工資排名</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>據點</th><th>技師</th><th class="num">台數</th><th class="num">標準工時</th><th class="num">總工資</th><th class="num">美容工資</th><th class="num">淨工資</th><th>工資佔比</th></tr></thead>
+          <tbody id="tbTech"><tr><td colspan="9" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
+        </table>
       </div>
+    </div>
+  </div>
 
-      <div class="card">
-        <div class="card-title">選擇檔案</div>
-        <div class="upload-zone" id="zone" onclick="document.getElementById('fileInput').click()">
-          <div class="icon">📊</div>
-          <strong>拖拉檔案到這裡，或點擊選擇</strong>
-          <p>支援 .xlsx / .xls，最多 8 個</p>
-        </div>
-        <input type="file" id="fileInput" multiple accept=".xlsx,.xls">
-        <div id="fileList" style="margin-top:10px"></div>
-        <div style="margin-top:14px;display:flex;gap:8px;align-items:center">
-          <button class="btn btn-primary" id="btnUpload" disabled onclick="doUpload()">上傳</button>
-          <span id="uploadStatus" style="font-size:13px;color:#64748b"></span>
-        </div>
+  <!-- 零件銷售 -->
+  <div id="tab-parts" style="display:none">
+    <div id="partsKPI" class="kpi-grid"></div>
+    <div class="card">
+      <div class="card-title">📦 零件種類彙總</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>據點</th><th>種類</th><th class="num">筆數</th><th class="num">總數量</th><th class="num">銷售金額</th><th class="num">成本</th><th class="num">毛利</th><th class="num">毛利率</th></tr></thead>
+          <tbody id="tbPartsType"><tr><td colspan="8" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
+        </table>
       </div>
-
-      <div class="card" id="resultsCard" style="display:none">
-        <div class="card-title">上傳結果</div>
-        <div id="results"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🥇 銷售金額 Top 20 零件</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>零件編號</th><th>零件名稱</th><th>種類</th><th class="num">總數量</th><th class="num">銷售金額</th></tr></thead>
+          <tbody id="tbTopParts"><tr><td colspan="6" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
+        </table>
       </div>
+    </div>
+  </div>
 
-      <div class="card">
-        <div class="card-title">📜 最近上傳紀錄 <span class="card-title-note"><button class="btn btn-secondary btn-sm" onclick="loadHistory()">重新整理</button></span></div>
-        <div style="overflow-x:auto">
-          <table>
-            <thead><tr><th>時間</th><th>檔案</th><th>類型</th><th>據點</th><th>期間</th><th class="num">筆數</th><th>狀態</th></tr></thead>
-            <tbody id="historyBody"><tr><td colspan="7" style="color:#64748b;padding:16px"><span class="spinner"></span>載入中</td></tr></tbody>
-          </table>
-        </div>
+  <!-- ────────────────────────────────────────────────────── -->
+  <!-- SA 零件銷售 -->
+  <div id="tab-sa-sales" style="display:none">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <div id="saMatrixMeta" style="font-size:13px;color:#64748b"></div>
+      <a href="/settings.html" style="font-size:12px;color:#64748b;text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border:1px solid #2d3f56;border-radius:6px;background:#1e293b">⚙️ 管理設定</a>
+    </div>
+
+    <!-- 矩陣表格 -->
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="overflow-x:auto">
+        <div id="saMatrix"><div style="padding:48px;text-align:center;color:#64748b"><span class="spinner"></span>載入中...</div></div>
       </div>
     </div>
 
-    <!-- ── 資料庫狀態 ────────────────────────────────────── -->
-    <div class="section-page" id="section-dbstatus">
-      <div class="page-title">🗄️ 資料庫狀態</div>
-      <p class="page-sub">各資料表目前的筆數</p>
-      <div class="card">
-        <div class="card-title">各表格筆數 <span class="card-title-note"><button class="btn btn-secondary btn-sm" onclick="loadCounts()">重新整理</button></span></div>
-        <div class="counts-grid" id="counts"><div style="color:#64748b;font-size:13px"><span class="spinner"></span>載入中</div></div>
+  </div>
+
+  <!-- 月份趨勢 -->
+  <div id="tab-trend" style="display:none">
+    <div class="card">
+      <div class="card-title">📈 各月份維修收入趨勢</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>期間</th><th>據點</th><th class="num">出廠台數</th><th class="num">總營收</th><th class="num">引擎工資</th><th class="num">零件收入</th><th class="num">環比</th></tr></thead>
+          <tbody id="tbTrend"><tr><td colspan="7" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
+        </table>
       </div>
     </div>
+  </div>
 
-    <!-- ── SA 零件銷售設定 ──────────────────────────────── -->
-    <div class="section-page" id="section-sa-config">
-      <div class="page-title">👤 SA 零件銷售設定</div>
-      <p class="page-sub">設定追蹤哪些零件的銷售量，統計頁可依設定查看各 SA 業績</p>
-
-      <div class="card">
-        <div class="card-title">
-          設定清單
-          <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="startNewConfig()">＋ 新增設定</button>
-        </div>
-
-        <!-- 新增/編輯面板（預設隱藏） -->
-        <div id="editorPanel" style="display:none" class="editor-panel">
-          <div style="font-size:14px;font-weight:700;margin-bottom:16px" id="editorTitle">新增設定</div>
-
-          <div class="form-row">
-            <label>名稱</label>
-            <input type="text" id="cfgName" class="form-input" placeholder="例：機油銷售、鋼圈銷售..." maxlength="100">
-          </div>
-          <div class="form-row">
-            <label>說明</label>
-            <input type="text" id="cfgDesc" class="form-input" placeholder="（選填）" maxlength="200">
-          </div>
-
-          <div style="font-size:13px;font-weight:700;color:#94a3b8;margin:14px 0 8px">篩選條件</div>
-          <div class="logic-hint">
-            <strong>不同類型之間 AND（且）</strong> — 例：類別碼 93 且 功能碼 1832，必須兩個同時符合<br>
-            <strong>同類型多個值 OR（或）</strong> — 例：加入多個零件編號，符合任一即納入
-          </div>
-
-          <div class="filter-list" id="filterList"></div>
-
-          <!-- 新增條件列 -->
-          <div style="background:#1e293b;border:1px solid #2d3f56;border-radius:8px;padding:12px;margin-bottom:14px">
-            <div style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:8px">新增條件</div>
-            <div class="add-filter-row">
-              <select id="addType" class="form-select" onchange="clearLookup()">
-                <option value="category_code">零件類別碼</option>
-                <option value="function_code">功能碼</option>
-                <option value="part_number">零件編號</option>
-              </select>
-              <div class="lookup-wrap">
-                <input type="text" id="addValue" class="lookup-input" placeholder="輸入代碼或名稱搜尋..."
-                  oninput="debounceLookup()" autocomplete="off">
-                <div class="lookup-dropdown" id="lookupDropdown" style="display:none"></div>
-              </div>
-              <button class="btn btn-secondary btn-sm" onclick="addFilter()">＋ 加入</button>
-            </div>
-            <div id="addHint" style="font-size:11px;color:#64748b;margin-top:6px;min-height:16px"></div>
-          </div>
-
-          <div style="display:flex;gap:8px;justify-content:flex-end">
-            <button class="btn btn-secondary" onclick="cancelEdit()">取消</button>
-            <button class="btn btn-primary" id="btnSaveCfg" onclick="saveConfig()">儲存設定</button>
-          </div>
-        </div>
-
-        <!-- 設定列表 -->
-        <div class="config-list" id="configList" style="margin-top:4px">
-          <div style="color:#64748b;font-size:13px;padding:8px 0"><span class="spinner"></span>載入中</div>
-        </div>
+  <!-- 每日台數 -->
+  <div id="tab-daily" style="display:none">
+    <div id="dailyKPI" class="kpi-grid"></div>
+    <div class="card">
+      <div class="card-title">📅 每日進廠台數（已排除 PDI）</div>
+      <div style="overflow-x:auto"><div id="dailyChart" style="min-width:700px;padding:8px 0"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 每日明細</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>日期</th><th>據點</th><th class="num">進廠台數</th><th>vs 日均</th></tr></thead>
+          <tbody id="tbDaily"><tr><td colspan="4" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
+        </table>
       </div>
     </div>
+  </div>
+</div>
 
-  </div><!-- /main -->
-</div><!-- /layout -->
+
 
 <script>
 // ══════════════════════════════════════════════════════════
-// 側欄切換
+// 全域狀態
 // ══════════════════════════════════════════════════════════
-const sections = ['upload','dbstatus','sa-config'];
+let currentTab = 'repair';
+let configs = [];
 
-function showSection(id) {
-  sections.forEach(s => {
-    document.getElementById(`section-${s}`).classList.toggle('active', s === id);
-    document.getElementById(`menu-${s}`)?.classList.toggle('active', s === id);
+// ══════════════════════════════════════════════════════════
+// 工具函式
+// ══════════════════════════════════════════════════════════
+const fmt = (v, k=0) => {
+  const n = parseFloat(v || 0);
+  if (k) return Math.round(n/1000).toLocaleString() + 'K';
+  return Math.round(n).toLocaleString();
+};
+const fmtPct = v => (parseFloat(v||0)*100).toFixed(1) + '%';
+const badgeType = (t) => {
+  const map = {'零件':'badge-blue','配件':'badge-green','精品':'badge-yellow'};
+  return map[t] || 'badge-purple';
+};
+const typeLabel = {
+  category_code: '類別碼',
+  function_code: '功能碼',
+  part_number: '零件編號',
+};
+
+// ══════════════════════════════════════════════════════════
+// 分頁切換
+// ══════════════════════════════════════════════════════════
+function switchTab(tab) {
+  currentTab = tab;
+  const tabs = ['repair','tech','parts','sa-sales','trend','daily'];
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', tabs[i] === tab);
   });
-  if (id === 'dbstatus') loadCounts();
-  if (id === 'sa-config') loadConfigs();
+  tabs.forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = t === tab ? '' : 'none';
+  });
 }
 
 // ══════════════════════════════════════════════════════════
-// 上傳
+// 初始化 & 全域載入
 // ══════════════════════════════════════════════════════════
-let selectedFiles = [];
-
-const zone = document.getElementById('zone');
-zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
-zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
-zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag'); handleFiles(e.dataTransfer.files); });
-document.getElementById('fileInput').addEventListener('change', e => handleFiles(e.target.files));
-
-function handleFiles(files) {
-  selectedFiles = Array.from(files).filter(f => f.name.match(/\.xlsx?$/i));
-  const list = document.getElementById('fileList');
-  if (!selectedFiles.length) { list.innerHTML = ''; return; }
-  list.innerHTML = selectedFiles.map(f => `
-    <div class="file-item">
-      <span>📄 ${f.name}</span>
-      <span style="color:#64748b">${(f.size/1024).toFixed(0)} KB</span>
-    </div>
-  `).join('');
-  document.getElementById('btnUpload').disabled = false;
-}
-
-async function doUpload() {
-  if (!selectedFiles.length) return;
-  const btn = document.getElementById('btnUpload');
-  const status = document.getElementById('uploadStatus');
-  btn.disabled = true;
-  status.textContent = '上傳中...';
-
-  const formData = new FormData();
-  selectedFiles.forEach(f => formData.append('files', f));
+async function loadPeriods() {
   try {
-    const res = await fetch('/api/upload', { method: 'POST', body: formData });
-    const data = await res.json();
-    showResults(data.results);
-    selectedFiles = [];
-    document.getElementById('fileList').innerHTML = '';
-    loadHistory();
-  } catch (err) {
-    status.textContent = '上傳失敗: ' + err.message;
-  } finally {
-    btn.disabled = false;
-    status.textContent = '';
-  }
+    const res = await fetch('/api/periods');
+    const periods = await res.json();
+    const sel = document.getElementById('selPeriod');
+    periods.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p; opt.textContent = `${p.slice(0,4)}年${p.slice(4)}月`;
+      sel.appendChild(opt);
+    });
+    if (periods.length) sel.value = periods[0];
+  } catch(e) {}
 }
 
-function showResults(results) {
-  document.getElementById('resultsCard').style.display = '';
-  document.getElementById('results').innerHTML = results.map(r => `
-    <div class="result-item">
-      <span style="font-weight:600">${r.filename}</span>
-      <div style="display:flex;gap:8px;align-items:center">
-        ${r.status === 'success'
-          ? `<span class="badge badge-green">成功</span>
-             <span style="color:#64748b;font-size:12px">${r.fileType} / ${r.branch||'-'} / ${r.period||'-'} / ${r.rowCount}筆</span>`
-          : `<span class="badge badge-red">失敗</span>
-             <span style="color:#ef4444;font-size:12px">${r.error}</span>`}
-      </div>
-    </div>
-  `).join('');
+async function loadAll() {
+  const period = document.getElementById('selPeriod').value;
+  const branch = document.getElementById('selBranch').value;
+  document.getElementById('lastUpdate').textContent = '更新中...';
+  await Promise.all([
+    loadRepair(period, branch),
+    loadTech(period, branch),
+    loadParts(period, branch),
+    loadTrend(branch),
+    loadDaily(period, branch),
+    loadSASales(),
+  ]);
+  document.getElementById('lastUpdate').textContent = `更新於 ${new Date().toLocaleTimeString('zh-TW')}`;
 }
 
-async function loadHistory() {
+// ══════════════════════════════════════════════════════════
+// 維修收入
+// ══════════════════════════════════════════════════════════
+async function loadRepair(period, branch) {
   try {
-    const res = await fetch('/api/history');
-    const data = await res.json();
-    const tbody = document.getElementById('historyBody');
-    if (!data.length) { tbody.innerHTML = '<tr><td colspan="7" style="color:#64748b;padding:16px">尚無紀錄</td></tr>'; return; }
-    tbody.innerHTML = data.map(h => `
-      <tr>
-        <td style="font-size:12px;color:#64748b;white-space:nowrap">${new Date(h.created_at).toLocaleString('zh-TW')}</td>
-        <td style="font-size:12px">${h.file_name}</td>
-        <td><span class="badge badge-blue">${h.file_type||'-'}</span></td>
-        <td>${h.branch||'-'}</td>
-        <td>${h.period||'-'}</td>
-        <td class="num">${h.row_count?.toLocaleString()||0}</td>
-        <td><span class="badge ${h.status==='success'?'badge-green':'badge-red'}">${h.status==='success'?'成功':'失敗'}</span></td>
-      </tr>
-    `).join('');
-  } catch(e) {
-    document.getElementById('historyBody').innerHTML = `<tr><td colspan="7" style="color:#ef4444">${e.message}</td></tr>`;
-  }
-}
-
-async function loadCounts() {
-  try {
-    const res = await fetch('/api/counts');
+    const params = new URLSearchParams();
+    if (period) params.set('period', period);
+    if (branch) params.set('branch', branch);
+    const res = await fetch(`/api/stats/repair?${params}`);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-    document.getElementById('counts').innerHTML = data.map(r => `
-      <div class="count-card">
-        <div class="count-val">${parseInt(r['筆數']).toLocaleString()}</div>
-        <div class="count-label">${r['表格']}</div>
-      </div>
-    `).join('');
+
+    const totals = data.totals;
+    const totalRevenue = totals.reduce((s, r) => s + parseFloat(r.total_untaxed||0), 0);
+    const totalCars    = totals.reduce((s, r) => s + parseInt(r.car_count||0), 0);
+    const totalEngine  = totals.reduce((s, r) => s + parseFloat(r.engine_wage||0), 0);
+    const totalParts   = totals.reduce((s, r) => s + parseFloat(r.parts_income||0), 0);
+    const totalCost    = totals.reduce((s, r) => s + parseFloat(r.parts_cost||0), 0);
+
+    document.getElementById('repairKPI').innerHTML = `
+      <div class="kpi-card"><div class="kpi-label">總營收（未稅）</div><div class="kpi-value kpi-green">${fmt(totalRevenue,1)}</div><div class="kpi-sub">元（千）</div></div>
+      <div class="kpi-card"><div class="kpi-label">出廠台數</div><div class="kpi-value kpi-blue">${totalCars.toLocaleString()}</div><div class="kpi-sub">台</div></div>
+      <div class="kpi-card"><div class="kpi-label">引擎工資</div><div class="kpi-value">${fmt(totalEngine,1)}</div><div class="kpi-sub">K</div></div>
+      <div class="kpi-card"><div class="kpi-label">零件收入</div><div class="kpi-value">${fmt(totalParts,1)}</div><div class="kpi-sub">K</div></div>
+      <div class="kpi-card"><div class="kpi-label">零件成本</div><div class="kpi-value kpi-yellow">${fmt(totalCost,1)}</div><div class="kpi-sub">K</div></div>
+      ${totals.map(t=>`
+        <div class="kpi-card">
+          <div class="kpi-label">${t.branch} 營收</div>
+          <div class="kpi-value">${fmt(t.total_untaxed,1)}</div>
+          <div class="kpi-sub">${parseInt(t.car_count||0)}台 | 引擎${fmt(t.engine_wage,1)}K</div>
+        </div>
+      `).join('')}
+    `;
+
+    const saRows = data.bySA;
+    const maxRev = Math.max(...saRows.map(r => parseFloat(r.total_untaxed||0)), 1);
+    document.getElementById('tbSA').innerHTML = saRows.length ? saRows.map((r,i)=>`
+      <tr>
+        <td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td>
+        <td><span class="badge badge-blue">${r.branch}</span></td>
+        <td style="font-weight:600">${r.service_advisor}</td>
+        <td class="num">${parseInt(r.car_count||0)}</td>
+        <td class="num" style="font-weight:700;color:#10b981">${fmt(r.total_untaxed)}</td>
+        <td class="num">${fmt(r.engine_wage)}</td>
+        <td class="num">${fmt(r.parts_income)}</td>
+        <td style="min-width:120px">
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill" style="width:${(parseFloat(r.total_untaxed)/maxRev*100).toFixed(0)}%"></div></div>
+            <span style="font-size:11px;color:#64748b">${(parseFloat(r.total_untaxed)/maxRev*100).toFixed(0)}%</span>
+          </div>
+        </td>
+      </tr>
+    `).join('') : '<tr><td colspan="8" class="empty">無資料</td></tr>';
+
+    document.getElementById('tbAccount').innerHTML = data.summary.length ? data.summary.map(r=>`
+      <tr>
+        <td><span class="badge badge-blue">${r.branch}</span></td>
+        <td><span class="badge ${badgeType(r.account_type)}">${r.account_type||'-'}</span></td>
+        <td class="num">${parseInt(r.work_order_count||0).toLocaleString()}</td>
+        <td class="num" style="font-weight:700">${fmt(r.total_untaxed)}</td>
+        <td class="num">${fmt(r.parts_income)}</td>
+        <td class="num">${fmt(r.engine_wage)}</td>
+        <td class="num">${fmt(r.bodywork_income)}</td>
+        <td class="num" style="color:#f59e0b">${fmt(r.parts_cost)}</td>
+      </tr>
+    `).join('') : '<tr><td colspan="8" class="empty">無資料</td></tr>';
   } catch(e) {
-    document.getElementById('counts').innerHTML = `<span style="color:#ef4444;font-size:13px">❌ ${e.message}</span>`;
+    document.getElementById('tbSA').innerHTML = `<tr><td colspan="8" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;
   }
 }
 
 // ══════════════════════════════════════════════════════════
-// SA 銷售設定 CRUD
+// 技師工資
 // ══════════════════════════════════════════════════════════
-let configs = [];
-let editingConfigId = null;
-let editingFilters  = [];
-let lookupTimer     = null;
+async function loadTech(period, branch) {
+  try {
+    const params = new URLSearchParams();
+    if (period) params.set('period', period);
+    if (branch) params.set('branch', branch);
+    const res = await fetch(`/api/stats/tech?${params}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
 
-const typeLabel = { category_code:'零件類別碼', function_code:'功能碼', part_number:'零件編號' };
+    const rows = data.ranking;
+    const totalWage = rows.reduce((s,r) => s+parseFloat(r.total_wage||0), 0);
+    const maxWage   = Math.max(...rows.map(r => parseFloat(r.total_wage||0)), 1);
 
+    document.getElementById('techKPI').innerHTML = `
+      <div class="kpi-card"><div class="kpi-label">技師人數</div><div class="kpi-value kpi-blue">${rows.length}</div><div class="kpi-sub">人</div></div>
+      <div class="kpi-card"><div class="kpi-label">工資總額</div><div class="kpi-value kpi-green">${fmt(totalWage,1)}</div><div class="kpi-sub">K</div></div>
+      <div class="kpi-card"><div class="kpi-label">平均工資</div><div class="kpi-value">${rows.length?fmt(totalWage/rows.length):0}</div><div class="kpi-sub">元/人</div></div>
+    `;
+
+    document.getElementById('tbTech').innerHTML = rows.length ? rows.map((r,i)=>`
+      <tr>
+        <td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td>
+        <td><span class="badge badge-blue">${r.branch}</span></td>
+        <td style="font-weight:600">${r.tech_name_clean}</td>
+        <td class="num">${parseInt(r.car_count||0)}</td>
+        <td class="num">${parseFloat(r.total_hours||0).toFixed(1)}</td>
+        <td class="num" style="font-weight:700;color:#10b981">${fmt(r.total_wage)}</td>
+        <td class="num" style="color:#f59e0b">${fmt(r.beauty_wage)}</td>
+        <td class="num" style="color:#3b82f6">${fmt(r.net_wage)}</td>
+        <td style="min-width:120px">
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill green" style="width:${(parseFloat(r.total_wage)/maxWage*100).toFixed(0)}%"></div></div>
+            <span style="font-size:11px;color:#64748b">${totalWage>0?(parseFloat(r.total_wage)/totalWage*100).toFixed(1):0}%</span>
+          </div>
+        </td>
+      </tr>
+    `).join('') : '<tr><td colspan="9" class="empty">無資料</td></tr>';
+  } catch(e) {
+    document.getElementById('tbTech').innerHTML = `<tr><td colspan="9" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// 零件銷售
+// ══════════════════════════════════════════════════════════
+async function loadParts(period, branch) {
+  try {
+    const params = new URLSearchParams();
+    if (period) params.set('period', period);
+    if (branch) params.set('branch', branch);
+    const res = await fetch(`/api/stats/parts?${params}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    const byType = data.byType;
+    const totalSales = byType.reduce((s,r) => s+parseFloat(r.total_sales||0), 0);
+    const totalCost  = byType.reduce((s,r) => s+parseFloat(r.total_cost ||0), 0);
+
+    document.getElementById('partsKPI').innerHTML = `
+      <div class="kpi-card"><div class="kpi-label">銷售總額</div><div class="kpi-value kpi-green">${fmt(totalSales,1)}</div><div class="kpi-sub">K</div></div>
+      <div class="kpi-card"><div class="kpi-label">成本總額</div><div class="kpi-value kpi-yellow">${fmt(totalCost,1)}</div><div class="kpi-sub">K</div></div>
+      <div class="kpi-card"><div class="kpi-label">毛利</div><div class="kpi-value kpi-blue">${fmt(totalSales-totalCost,1)}</div><div class="kpi-sub">K</div></div>
+      <div class="kpi-card"><div class="kpi-label">毛利率</div><div class="kpi-value">${totalSales>0?((totalSales-totalCost)/totalSales*100).toFixed(1):0}%</div></div>
+    `;
+
+    document.getElementById('tbPartsType').innerHTML = byType.length ? byType.map(r=>{
+      const s=parseFloat(r.total_sales||0), c=parseFloat(r.total_cost||0);
+      const m=s>0?((s-c)/s*100):0;
+      return `<tr>
+        <td><span class="badge badge-blue">${r.branch}</span></td>
+        <td><span class="badge ${badgeType(r.part_type)}">${r.part_type||'-'}</span></td>
+        <td class="num">${parseInt(r.count||0).toLocaleString()}</td>
+        <td class="num">${parseFloat(r.total_qty||0).toLocaleString()}</td>
+        <td class="num" style="font-weight:700">${fmt(s)}</td>
+        <td class="num">${fmt(c)}</td>
+        <td class="num" style="color:#10b981">${fmt(s-c)}</td>
+        <td class="num" style="color:${m>20?'#10b981':m>10?'#f59e0b':'#ef4444'}">${m.toFixed(1)}%</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="8" class="empty">無資料</td></tr>';
+
+    document.getElementById('tbTopParts').innerHTML = data.topParts.length ? data.topParts.map((r,i)=>`
+      <tr>
+        <td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td>
+        <td style="font-family:monospace;font-size:12px">${r.part_number}</td>
+        <td>${r.part_name||'-'}</td>
+        <td><span class="badge ${badgeType(r.part_type)}">${r.part_type||'-'}</span></td>
+        <td class="num">${parseFloat(r.total_qty||0).toLocaleString()}</td>
+        <td class="num" style="font-weight:700;color:#10b981">${fmt(r.total_sales)}</td>
+      </tr>
+    `).join('') : '<tr><td colspan="6" class="empty">無資料</td></tr>';
+  } catch(e) {
+    document.getElementById('tbPartsType').innerHTML = `<tr><td colspan="8" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// SA 銷售 — 載入設定到下拉選單
+// ══════════════════════════════════════════════════════════
 async function loadConfigs() {
   try {
     const res = await fetch('/api/sa-config');
     configs = await res.json();
-    renderConfigList();
-  } catch(e) {
-    document.getElementById('configList').innerHTML = `<div style="color:#ef4444">${e.message}</div>`;
-  }
+  } catch(e) {}
 }
 
-function renderConfigList() {
-  const el = document.getElementById('configList');
-  if (!configs.length) {
-    el.innerHTML = `
-      <div class="empty-state">
-        <div class="big">📋</div>
-        <div>尚無設定，點擊「新增設定」開始建立追蹤項目</div>
-      </div>`;
-    return;
-  }
-  el.innerHTML = configs.map(c => `
-    <div class="config-item">
-      <div class="config-item-info">
-        <div class="config-item-name">${c.config_name}</div>
-        ${c.description ? `<div class="config-item-desc">${c.description}</div>` : ''}
-        <div class="config-item-tags">
-          ${(c.filters||[]).map(f => `
-            <span class="badge type-${f.type}" style="font-size:11px">
-              ${typeLabel[f.type]}: ${f.value}
-            </span>
-          `).join('')}
-        </div>
-      </div>
-      <div style="display:flex;gap:6px;flex-shrink:0">
-        <button class="btn btn-secondary btn-sm" onclick="startEditConfig(${c.id})">編輯</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteConfig(${c.id},'${c.config_name.replace(/'/g,"\\'")}')">刪除</button>
-      </div>
-    </div>
-  `).join('');
-}
+// ══════════════════════════════════════════════════════════
+// SA 銷售統計
+// ══════════════════════════════════════════════════════════
+async function loadSASales() {
+  const period = document.getElementById('selPeriod').value;
+  const branch = document.getElementById('selBranch').value;
+  const matrixEl = document.getElementById('saMatrix');
+  const metaEl   = document.getElementById('saMatrixMeta');
+  matrixEl.innerHTML = '<div style="padding:40px;text-align:center;color:#64748b"><span class="spinner"></span>載入中...</div>';
 
-function startNewConfig() {
-  editingConfigId = null;
-  editingFilters  = [];
-  document.getElementById('editorTitle').textContent = '新增設定';
-  document.getElementById('cfgName').value = '';
-  document.getElementById('cfgDesc').value = '';
-  renderFilterList();
-  clearLookup();
-  document.getElementById('editorPanel').style.display = '';
-  document.getElementById('cfgName').focus();
-}
+  const params = new URLSearchParams();
+  if (period) params.set('period', period);
+  if (branch) params.set('branch', branch);
 
-function startEditConfig(id) {
-  const cfg = configs.find(c => c.id === id);
-  editingConfigId = id;
-  editingFilters  = (cfg.filters||[]).map(f => ({...f}));
-  document.getElementById('editorTitle').textContent = `編輯設定 — ${cfg.config_name}`;
-  document.getElementById('cfgName').value = cfg.config_name;
-  document.getElementById('cfgDesc').value = cfg.description || '';
-  renderFilterList();
-  clearLookup();
-  document.getElementById('editorPanel').style.display = '';
-  document.getElementById('editorPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-function cancelEdit() {
-  document.getElementById('editorPanel').style.display = 'none';
-  editingFilters = [];
-}
-
-async function deleteConfig(id, name) {
-  if (!confirm(`確定要刪除「${name}」嗎？`)) return;
-  await fetch(`/api/sa-config/${id}`, { method: 'DELETE' });
-  await loadConfigs();
-}
-
-async function saveConfig() {
-  const config_name = document.getElementById('cfgName').value.trim();
-  const description = document.getElementById('cfgDesc').value.trim();
-  if (!config_name) { alert('請輸入設定名稱'); return; }
-  if (!editingFilters.length) { alert('請至少新增一個篩選條件'); return; }
-
-  const filters = editingFilters.map(({type, value}) => ({type, value}));
-  const btn = document.getElementById('btnSaveCfg');
-  btn.disabled = true;
   try {
-    const url    = editingConfigId ? `/api/sa-config/${editingConfigId}` : '/api/sa-config';
-    const method = editingConfigId ? 'PUT' : 'POST';
-    const res    = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ config_name, description, filters }),
-    });
+    const res  = await fetch(`/api/stats/sa-sales-matrix?${params}`);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-    cancelEdit();
-    await loadConfigs();
+
+    const { configs, rows, colTotals } = data;
+
+    if (!configs.length) {
+      matrixEl.innerHTML = `<div style="padding:48px;text-align:center;color:#64748b">
+        尚未建立任何設定，請先至 <a href="/settings.html" style="color:#3b82f6">⚙️ 設定</a> 新增 SA 銷售追蹤項目
+      </div>`;
+      metaEl.textContent = '';
+      return;
+    }
+    if (!rows.length) {
+      matrixEl.innerHTML = `<div style="padding:48px;text-align:center;color:#64748b">此期間／據點無銷售資料</div>`;
+      return;
+    }
+
+    metaEl.textContent = `${configs.length} 個追蹤項目 · ${rows.length} 位銷售人員`;
+
+    // 按據點分組
+    const branches = [...new Set(rows.map(r => r.branch))].sort();
+    const branchColors = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b' };
+
+    // 每個 config 欄的顏色
+    const cfgColors = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#f97316','#84cc16'];
+
+    // 表頭樣式
+    const thBase = 'padding:10px 14px;text-align:left;font-size:12px;font-weight:700;color:#64748b;background:#0f172a;border-bottom:1px solid #2d3f56;white-space:nowrap;';
+    const thNum  = thBase + 'text-align:right;';
+    const tdBase = 'padding:9px 14px;border-bottom:1px solid rgba(45,63,86,.4);font-size:13px;vertical-align:middle;';
+    const tdNum  = tdBase + 'text-align:right;font-variant-numeric:tabular-nums;';
+    // sticky 固定欄樣式
+    const stickyTh = (left, extra='') => `position:sticky;left:${left}px;z-index:3;background:#0f172a;${extra}`;
+    const stickyTd = (left, bg='#111827', extra='') => `position:sticky;left:${left}px;z-index:2;background:${bg};${extra}`;
+
+    // 欄位總數：固定欄(#, 據點, SA) + 每個config 2個子欄(數量, 金額)
+    const fixedCols = 3;
+    const totalCols = fixedCols + configs.length * 2;
+
+    // 建表
+    let html = `<table style="width:100%;border-collapse:collapse;font-size:13px">`;
+
+    // ── 第一行表頭：config 名稱（跨2欄）
+    html += `<thead>`;
+    html += `<tr>`;
+    html += `<th style="${thBase}${stickyTh(0,'border-right:1px solid #2d3f56;width:40px')}" rowspan="2">#</th>`;
+    html += `<th style="${thBase}${stickyTh(40,'border-right:1px solid #2d3f56;width:70px')}" rowspan="2">據點</th>`;
+    html += `<th style="${thBase}${stickyTh(110,'border-right:2px solid #374151;min-width:130px')}" rowspan="2">銷售人員</th>`;
+    configs.forEach((cfg, ci) => {
+      const col = cfgColors[ci % cfgColors.length];
+      const borderR = ci < configs.length - 1 ? '2px solid #2d3f56' : '1px solid #2d3f56';
+      html += `<th colspan="2" style="${thBase}text-align:center;color:${col};border-right:${borderR};border-bottom:1px solid #1e293b">${cfg.config_name}</th>`;
+    });
+    html += `</tr>`;
+
+    // ── 第二行表頭：數量 / 金額
+    html += `<tr>`;
+    configs.forEach((cfg, ci) => {
+      const borderR = ci < configs.length - 1 ? '2px solid #2d3f56' : '1px solid #2d3f56';
+      html += `<th style="${thNum}font-size:11px">數量</th>`;
+      html += `<th style="${thNum}border-right:${borderR};font-size:11px">金額</th>`;
+    });
+    html += `</tr></thead>`;
+
+    // ── 資料列（依據點分組）
+    html += `<tbody>`;
+    let rowIdx = 0;
+
+    for (const br of branches) {
+      const brRows = rows.filter(r => r.branch === br);
+      const brColor = branchColors[br] || '#64748b';
+
+      brRows.forEach((row, ri) => {
+        rowIdx++;
+        html += `<tr>`;
+        const rowBgColor = rowIdx % 2 === 0 ? '#0e1a29' : '#111827';
+        html += `<td style="${tdBase}${stickyTd(0, rowBgColor, 'color:#64748b;font-weight:700;border-right:1px solid #2d3f56;width:40px')}">${rowIdx}</td>`;
+        html += `<td style="${tdBase}${stickyTd(40, rowBgColor, 'border-right:1px solid #2d3f56;width:70px')}">
+          <span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;background:${brColor}22;color:${brColor}">${br}</span>
+        </td>`;
+        html += `<td style="${tdBase}${stickyTd(110, rowBgColor, 'font-weight:600;border-right:2px solid #374151;min-width:130px')}">${row.sa_name}</td>`;
+
+        configs.forEach((cfg, ci) => {
+          const c = row.configs[cfg.id];
+          const qty   = c ? c.qty   : 0;
+          const sales = c ? c.sales : 0;
+          const hasData = qty > 0 || sales > 0;
+          const borderR = ci < configs.length - 1 ? '2px solid #2d3f56' : '';
+          const qtyStyle = hasData ? 'color:#e2e8f0;font-weight:600' : 'color:#334155';
+          const salesStyle = hasData ? 'color:#10b981;font-weight:700' : 'color:#334155';
+          html += `<td style="${tdNum}${qtyStyle}">`;
+          html += hasData ? qty.toLocaleString(undefined,{maximumFractionDigits:1}) : '—';
+          html += `</td>`;
+          html += `<td style="${tdNum}${salesStyle};border-right:${borderR}">`;
+          html += hasData ? fmt(sales) : '—';
+          html += `</td>`;
+        });
+        html += `</tr>`;
+      });
+
+      // 據點小計列
+      const brTotals = configs.map(cfg => {
+        const qty   = brRows.reduce((s,r) => s + (r.configs[cfg.id]?.qty   || 0), 0);
+        const sales = brRows.reduce((s,r) => s + (r.configs[cfg.id]?.sales || 0), 0);
+        return { qty, sales };
+      });
+      const subBg = brColor === '#3b82f6' ? 'rgba(59,130,246,.1)' : brColor==='#10b981' ? 'rgba(16,185,129,.1)' : 'rgba(245,158,11,.1)';
+      html += `<tr style="background:${subBg};border-top:1px solid ${brColor}44">`;
+      html += `<td style="${tdBase}${stickyTd(0, 'transparent', 'border-right:1px solid #2d3f56')}"></td>`;
+      html += `<td style="${tdBase}${stickyTd(40, 'transparent', 'border-right:1px solid #2d3f56')}">
+        <span style="font-size:11px;font-weight:800;color:${brColor}">${br} 小計</span>
+      </td>`;
+      html += `<td style="${tdBase}${stickyTd(110, 'transparent', 'font-size:12px;color:#64748b;border-right:2px solid #374151')}">${brRows.length} 人</td>`;
+      brTotals.forEach((t, ci) => {
+        const borderR = ci < configs.length - 1 ? '2px solid #2d3f56' : '';
+        html += `<td style="${tdNum}color:#94a3b8;font-weight:700;font-size:12px">${t.qty>0?t.qty.toLocaleString(undefined,{maximumFractionDigits:1}):'—'}</td>`;
+        html += `<td style="${tdNum}color:${brColor};font-weight:800;font-size:12px;border-right:${borderR}">${t.sales>0?fmt(t.sales):'—'}</td>`;
+      });
+      html += `</tr>`;
+    }
+
+    // 全廠合計列
+    html += `<tr style="background:#1e293b;border-top:2px solid #3b82f6">`;
+    html += `<td style="${tdBase}${stickyTd(0,'#1e293b','border-right:1px solid #2d3f56')}"></td>`;
+    html += `<td style="${tdBase}${stickyTd(40,'#1e293b','border-right:1px solid #2d3f56')}"></td>`;
+    html += `<td style="${tdBase}${stickyTd(110,'#1e293b','font-size:13px;font-weight:800;color:#fff;border-right:2px solid #374151')}">全廠合計</td>`;
+    configs.forEach((cfg, ci) => {
+      const t = colTotals[cfg.id] || { qty:0, sales:0 };
+      const borderR = ci < configs.length - 1 ? '2px solid #2d3f56' : '';
+      html += `<td style="${tdNum}color:#e2e8f0;font-weight:800;font-size:13px">${t.qty>0?t.qty.toLocaleString(undefined,{maximumFractionDigits:1}):'—'}</td>`;
+      html += `<td style="${tdNum}color:#10b981;font-weight:800;font-size:13px;border-right:${borderR}">${t.sales>0?fmt(t.sales):'—'}</td>`;
+    });
+    html += `</tr>`;
+
+    html += `</tbody></table>`;
+    matrixEl.innerHTML = html;
+
   } catch(e) {
-    alert('儲存失敗：' + e.message);
-  } finally {
-    btn.disabled = false;
+    matrixEl.innerHTML = `<div style="padding:24px;color:#ef4444">${e.message}</div>`;
   }
 }
 
-// ── 篩選條件增刪 ──
-function renderFilterList() {
-  const el = document.getElementById('filterList');
-  if (!editingFilters.length) {
-    el.innerHTML = '<div style="color:#64748b;font-size:12px;padding:4px 0 8px">尚未新增篩選條件</div>';
-    return;
-  }
-  el.innerHTML = editingFilters.map((f, i) => `
-    <div class="filter-tag-row">
-      <span class="type-badge type-${f.type}">${typeLabel[f.type]}</span>
-      <span class="filter-val">${f.value}</span>
-      <button class="remove-btn" onclick="removeFilter(${i})" title="移除">×</button>
-    </div>
-  `).join('');
-}
-
-function removeFilter(i) {
-  editingFilters.splice(i, 1);
-  renderFilterList();
-}
-
-function addFilter() {
-  const type  = document.getElementById('addType').value;
-  const value = document.getElementById('addValue').value.trim();
-  const hint  = document.getElementById('addHint');
-  if (!value) { hint.textContent = '請輸入值'; return; }
-  if (editingFilters.some(f => f.type === type && f.value === value)) {
-    hint.textContent = '此條件已存在';
-    return;
-  }
-  editingFilters.push({ type, value });
-  renderFilterList();
-  document.getElementById('addValue').value = '';
-  hint.textContent = '';
-  clearLookup();
-}
-
-// ── 自動完成 ──
-function clearLookup() {
-  document.getElementById('addValue').value = '';
-  document.getElementById('lookupDropdown').style.display = 'none';
-  document.getElementById('addHint').textContent = '';
-}
-
-function debounceLookup() {
-  clearTimeout(lookupTimer);
-  lookupTimer = setTimeout(doLookup, 280);
-}
-
-async function doLookup() {
-  const type = document.getElementById('addType').value;
-  const q    = document.getElementById('addValue').value.trim();
-  const dd   = document.getElementById('lookupDropdown');
-  if (!q) { dd.style.display = 'none'; return; }
+// ══════════════════════════════════════════════════════════
+// 月份趨勢
+// ══════════════════════════════════════════════════════════
+async function loadTrend(branch) {
   try {
-    const res  = await fetch(`/api/sa-config/parts-lookup?type=${type}&q=${encodeURIComponent(q)}`);
+    const params = new URLSearchParams();
+    if (branch) params.set('branch', branch);
+    const res = await fetch(`/api/stats/trend?${params}`);
     const data = await res.json();
-    if (!data.length) { dd.style.display = 'none'; return; }
+    if (data.error) throw new Error(data.error);
 
-    dd.innerHTML = data.map(item => {
-      if (type === 'part_number') {
-        return `<div class="lookup-item" onclick="pickLookup('${esc(item.value)}')">
-          <div class="lookup-item-val">${item.value}</div>
-          <div class="lookup-item-sub">${item.label||''} 類別:${item.category_code||'-'} 功能:${item.function_code||'-'}</div>
-        </div>`;
-      } else {
-        return `<div class="lookup-item" onclick="pickLookup('${esc(item.value)}')">
-          <div class="lookup-item-val">${item.value}</div>
-          <div class="lookup-item-sub">涵蓋 ${item.part_count} 種零件 — ${(item.sample_names||'').slice(0,60)}</div>
-        </div>`;
-      }
-    }).join('');
-    dd.style.display = 'block';
-  } catch(e) { dd.style.display = 'none'; }
+    const rows = data.trend;
+    const prevMap = {};
+    document.getElementById('tbTrend').innerHTML = rows.length ? rows.map(r => {
+      const key = r.branch;
+      const cur = parseFloat(r.total_untaxed||0);
+      const prev = prevMap[key];
+      const pct = prev ? ((cur-prev)/prev*100) : null;
+      prevMap[key] = cur;
+      return `<tr>
+        <td>${r.period.slice(0,4)}年${r.period.slice(4)}月</td>
+        <td><span class="badge badge-blue">${r.branch}</span></td>
+        <td class="num">${parseInt(r.car_count||0)}</td>
+        <td class="num" style="font-weight:700">${fmt(r.total_untaxed)}</td>
+        <td class="num">${fmt(r.engine_wage)}</td>
+        <td class="num">${fmt(r.parts_income)}</td>
+        <td class="num ${pct===null?'':pct>=0?'up':'down'}">${pct===null?'-':(pct>=0?'▲':'▼')+Math.abs(pct).toFixed(1)+'%'}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="7" class="empty">無資料</td></tr>';
+  } catch(e) {
+    document.getElementById('tbTrend').innerHTML = `<tr><td colspan="7" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;
+  }
 }
 
-function pickLookup(value) {
-  document.getElementById('addValue').value = value;
-  document.getElementById('lookupDropdown').style.display = 'none';
+// ══════════════════════════════════════════════════════════
+// 每日台數
+// ══════════════════════════════════════════════════════════
+async function loadDaily(period, branch) {
+  try {
+    const params = new URLSearchParams();
+    if (period) params.set('period', period);
+    if (branch) params.set('branch', branch);
+    const res = await fetch(`/api/stats/daily?${params}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    const summary = data.summary;
+    const daily   = data.daily;
+
+    document.getElementById('dailyKPI').innerHTML = `
+      ${summary.map(r=>`
+        <div class="kpi-card"><div class="kpi-label">${r.branch} 總台數</div><div class="kpi-value kpi-blue">${parseInt(r.total_cars||0).toLocaleString()}</div><div class="kpi-sub">台</div></div>
+        <div class="kpi-card"><div class="kpi-label">${r.branch} 工作天數</div><div class="kpi-value kpi-yellow">${parseInt(r.working_days||0)}</div><div class="kpi-sub">天</div></div>
+        <div class="kpi-card"><div class="kpi-label">${r.branch} 日均台數</div><div class="kpi-value kpi-green">${parseFloat(r.daily_avg||0).toFixed(1)}</div><div class="kpi-sub">最高${r.max_day}/最低${r.min_day}</div></div>
+      `).join('')}
+    `;
+
+    const branchList = [...new Set(daily.map(r=>r.branch))].sort();
+    const dateList   = [...new Set(daily.map(r=>r.arrive_date?.slice(0,10)))].sort();
+    const colors = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b' };
+    const maxCount = Math.max(...daily.map(r=>parseInt(r.car_count||0)), 1);
+    const barW = Math.max(8, Math.min(24, Math.floor(560/(dateList.length*branchList.length+dateList.length))));
+    const chartW = Math.max(700, dateList.length*(branchList.length*(barW+2)+10)+60);
+    const chartH = 200;
+
+    const dayMap = {};
+    daily.forEach(r => {
+      const d = r.arrive_date?.slice(0,10);
+      if (!dayMap[d]) dayMap[d]={};
+      dayMap[d][r.branch]=parseInt(r.car_count||0);
+    });
+
+    let bars='', xLabels='';
+    dateList.forEach((d,di)=>{
+      const groupW = branchList.length*(barW+2);
+      const gx = 50+di*(groupW+10);
+      branchList.forEach((b,bi)=>{
+        const val=dayMap[d]?.[b]||0;
+        const barH=val/maxCount*(chartH-40);
+        const x=gx+bi*(barW+2), y=chartH-20-barH;
+        bars+=`<rect x="${x}" y="${y.toFixed(1)}" width="${barW}" height="${barH.toFixed(1)}" fill="${colors[b]||'#64748b'}" rx="2" opacity="0.85"><title>${b} ${d}: ${val}台</title></rect>`;
+        if(val>0) bars+=`<text x="${(x+barW/2).toFixed(0)}" y="${(y-3).toFixed(0)}" text-anchor="middle" font-size="9" fill="#94a3b8">${val}</text>`;
+      });
+      const labelX=gx+(branchList.length*(barW+2))/2;
+      xLabels+=`<text x="${labelX.toFixed(0)}" y="${chartH-4}" text-anchor="middle" font-size="9" fill="#64748b">${d.slice(8)}</text>`;
+    });
+
+    let yAxis='';
+    for(let i=0;i<=4;i++){
+      const val=Math.round(maxCount*i/4), y=chartH-20-(i/4)*(chartH-40);
+      yAxis+=`<line x1="45" y1="${y.toFixed(0)}" x2="${chartW}" y2="${y.toFixed(0)}" stroke="#2d3f56" stroke-width="1"/>
+        <text x="40" y="${(y+4).toFixed(0)}" text-anchor="end" font-size="9" fill="#64748b">${val}</text>`;
+    }
+
+    const legend=branchList.map((b,i)=>
+      `<rect x="${50+i*70}" y="8" width="10" height="10" fill="${colors[b]||'#64748b'}" rx="2"/>
+       <text x="${63+i*70}" y="17" font-size="11" fill="#94a3b8">${b}</text>`
+    ).join('');
+
+    document.getElementById('dailyChart').innerHTML=`
+      <svg viewBox="0 0 ${chartW} ${chartH+10}" style="width:100%;height:auto;display:block">
+        ${yAxis}${bars}${xLabels}${legend}
+      </svg>`;
+
+    const avgMap={};
+    summary.forEach(r=>avgMap[r.branch]=parseFloat(r.daily_avg||0));
+    document.getElementById('tbDaily').innerHTML=daily.length?daily.map(r=>{
+      const cnt=parseInt(r.car_count||0), avg=avgMap[r.branch]||0;
+      const diff=cnt-avg, pct=avg>0?(diff/avg*100):0;
+      return `<tr>
+        <td>${r.arrive_date?.slice(0,10)}</td>
+        <td><span class="badge badge-blue">${r.branch}</span></td>
+        <td class="num" style="font-weight:700">${cnt}</td>
+        <td class="num ${diff>=0?'up':'down'}">
+          ${diff>=0?'▲':'▼'}${Math.abs(diff).toFixed(1)}
+          <span style="font-size:11px;color:#64748b">(${pct>=0?'+':''}${pct.toFixed(0)}%)</span>
+        </td>
+      </tr>`;
+    }).join(''):'<tr><td colspan="4" class="empty">無資料</td></tr>';
+  } catch(e) {
+    document.getElementById('dailyKPI').innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;
+  }
 }
-
-const esc = s => s.replace(/'/g,"\\'");
-
-document.addEventListener('click', e => {
-  const wrap = document.getElementById('addValue')?.closest('.lookup-wrap');
-  if (wrap && !wrap.contains(e.target))
-    document.getElementById('lookupDropdown').style.display = 'none';
-});
 
 // ══════════════════════════════════════════════════════════
 // 初始化
 // ══════════════════════════════════════════════════════════
-loadHistory();
+(async () => {
+  await loadPeriods();
+  await Promise.all([loadAll(), loadConfigs()]);
+})();
 </script>
 </body>
 </html>
