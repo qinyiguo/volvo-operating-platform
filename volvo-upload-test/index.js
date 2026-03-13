@@ -702,12 +702,12 @@ app.get('/api/stats/sa-sales', async (req, res) => {
     if (period)  { conds.push(`ps.period = $${idx++}`); params.push(period); }
     if (branch)  { conds.push(`ps.branch = $${idx++}`); params.push(branch); }
 
-    // 零件篩選（OR 邏輯）
-    const partConds = [];
-    if (catCodes.length)  { partConds.push(`ps.category_code = ANY($${idx++})`); params.push(catCodes); }
-    if (funcCodes.length) { partConds.push(`ps.function_code  = ANY($${idx++})`); params.push(funcCodes); }
-    if (partNums.length)  { partConds.push(`ps.part_number    = ANY($${idx++})`); params.push(partNums); }
-    if (partConds.length) conds.push(`(${partConds.join(' OR ')})`);
+    // 零件篩選：同類型取 OR，不同類型之間取 AND
+    // 例：category_code=93 AND function_code=1832
+    //     或只用 part_number IN (...)
+    if (catCodes.length)  { conds.push(`ps.category_code = ANY($${idx++})`); params.push(catCodes); }
+    if (funcCodes.length) { conds.push(`ps.function_code  = ANY($${idx++})`); params.push(funcCodes); }
+    if (partNums.length)  { conds.push(`ps.part_number    = ANY($${idx++})`); params.push(partNums); }
 
     const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
 
@@ -753,14 +753,10 @@ app.get('/api/stats/sa-sales', async (req, res) => {
     const trendParams = [];
     let tidx = 1;
     if (branch) { trendConds.push(`ps.branch = $${tidx++}`); trendParams.push(branch); }
-    if (partConds.length) {
-      // 重新組一次，因為 params idx 不同
-      const tPartConds = [];
-      if (catCodes.length)  { tPartConds.push(`ps.category_code = ANY($${tidx++})`); trendParams.push(catCodes); }
-      if (funcCodes.length) { tPartConds.push(`ps.function_code  = ANY($${tidx++})`); trendParams.push(funcCodes); }
-      if (partNums.length)  { tPartConds.push(`ps.part_number    = ANY($${tidx++})`); trendParams.push(partNums); }
-      trendConds.push(`(${tPartConds.join(' OR ')})`);
-    }
+    // 趨勢也用 AND 邏輯（同主查詢）
+    if (catCodes.length)  { trendConds.push(`ps.category_code = ANY($${tidx++})`); trendParams.push(catCodes); }
+    if (funcCodes.length) { trendConds.push(`ps.function_code  = ANY($${tidx++})`); trendParams.push(funcCodes); }
+    if (partNums.length)  { trendConds.push(`ps.part_number    = ANY($${tidx++})`); trendParams.push(partNums); }
     const trendWhere = trendConds.length ? 'WHERE ' + trendConds.join(' AND ') : '';
 
     const trend = await pool.query(`
