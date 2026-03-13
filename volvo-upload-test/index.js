@@ -200,6 +200,23 @@ const parseDate = (val) => {
   return null;
 };
 
+// 解析日期時間，支援 "2026-03-12 09:24" 或 "2026/03/12 09:24:00" 等格式
+const parseDateTime = (val) => {
+  if (!val) return null;
+  if (val instanceof Date) return isNaN(val) ? null : val.toISOString();
+  const s = String(val).trim();
+  // 匹配 YYYY-MM-DD HH:MM 或 YYYY/MM/DD HH:MM:SS
+  const m = s.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})[\s T](\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if (m) {
+    const [, y, mo, d, h, mi, sec] = m;
+    return `${y}-${mo.padStart(2,'0')}-${d.padStart(2,'0')}T${h.padStart(2,'0')}:${mi}:${(sec||'00')}+08:00`;
+  }
+  // 只有日期沒有時間
+  const dm = s.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if (dm) return `${dm[1]}-${dm[2].padStart(2,'0')}-${dm[3].padStart(2,'0')}T00:00:00+08:00`;
+  return null;
+};
+
 const detectFileType = (filename, sheetNames) => {
   const fn = filename.toLowerCase();
   if (fn.includes('技師績效') || fn.includes('工資明細')) return 'tech_performance';
@@ -317,6 +334,7 @@ const parseBusinessQuery = (rows, branch, period) => rows.map(r => {
   return {
     period, branch: rowBranch,
     work_order: String(pick(r, '工單號', '工作單號')).trim(),
+    open_time: parseDateTime(pick(r, '開單時間', '開工時間', '進廠時間', '開立時間', '開單日期', '接車時間')),
     settle_date: parseDate(pick(r, '結算日期')),
     plate_no: String(pick(r, '車牌號碼', '車牌')).trim(),
     vin: String(pick(r, '車身號碼', 'VIN')).trim(),
@@ -480,7 +498,7 @@ app.post('/api/upload', upload.array('files', 8), async (req, res) => {
           }
           const rows = parseBusinessQuery(rawRows, branch, period);
           rowCount = await batchInsert(client, 'business_query', [
-            'period','branch','work_order','settle_date','plate_no','vin',
+            'period','branch','work_order','open_time','settle_date','plate_no','vin',
             'status','repair_item','service_advisor','assigned_tech','repair_tech',
             'repair_type','car_series','car_model','model_year','owner','is_ev',
             'mileage_in','mileage_out'
