@@ -728,6 +728,52 @@ app.get('/api/stats/trend', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// 每日進廠台數（排除 PDI）
+app.get('/api/stats/daily', async (req, res) => {
+  try {
+    const { period, branch } = req.query;
+    const conditions = [`repair_type NOT ILIKE 'PDI'`, `open_time IS NOT NULL`];
+    const params = [];
+    let idx = 1;
+    if (period) { conditions.push(`period = $${idx++}`); params.push(period); }
+    if (branch) { conditions.push(`branch = $${idx++}`); params.push(branch); }
+    const where = 'WHERE ' + conditions.join(' AND ');
+
+    // 每日各據點台數（用開單時間 = 進廠時間）
+    const daily = await pool.query(`
+      SELECT
+        open_time::date AS arrive_date,
+        branch,
+        COUNT(DISTINCT work_order) AS car_count
+      FROM business_query ${where}
+      GROUP BY open_time::date, branch
+      ORDER BY arrive_date, branch
+    `, params);
+
+    // 各據點彙總：總台數、有效工作天、日均
+    const summary = await pool.query(`
+      SELECT
+        branch,
+        COUNT(DISTINCT work_order)                                    AS total_cars,
+        COUNT(DISTINCT open_time::date)                               AS working_days,
+        ROUND(COUNT(DISTINCT work_order)::numeric /
+              NULLIF(COUNT(DISTINCT open_time::date), 0), 1)          AS daily_avg,
+        MAX(daily_cnt)                                                AS max_day,
+        MIN(daily_cnt)                                                AS min_day
+      FROM (
+        SELECT branch, open_time::date,
+               COUNT(DISTINCT work_order) AS daily_cnt
+        FROM business_query ${where}
+        GROUP BY branch, open_time::date
+      ) sub
+      GROUP BY branch
+      ORDER BY branch
+    `, params);
+
+    res.json({ daily: daily.rows, summary: summary.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // 可用期間清單
 app.get('/api/periods', async (req, res) => {
   try {
