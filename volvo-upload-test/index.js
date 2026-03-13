@@ -993,6 +993,77 @@ app.get('/api/periods', async (req, res) => {
 });
 
 // ============================================================
+// SA 銷售矩陣 API
+// GET /api/stats/sa-sales-matrix?period=202501&branch=AMA
+// ============================================================
+app.get('/api/stats/sa-sales-matrix', async (req, res) => {
+  const { period, branch } = req.query;
+  try {
+    const cfgRows = await pool.query(
+      `SELECT id, config_name, filters FROM sa_sales_config ORDER BY id`
+    );
+    const configs = cfgRows.rows;
+    if (!configs.length) return res.json({ configs: [], rows: [], colTotals: {} });
+
+    const saMap = {};
+
+    for (const cfg of configs) {
+      const filters = cfg.filters || [];
+      const catCodes  = filters.filter(f => f.type === 'category_code').map(f => f.value);
+      const funcCodes = filters.filter(f => f.type === 'function_code').map(f => f.value);
+      const partNums  = filters.filter(f => f.type === 'part_number').map(f => f.value);
+      if (!catCodes.length && !funcCodes.length && !partNums.length) continue;
+
+      const conds = [];
+      const params = [];
+      let idx = 1;
+      if (period) { conds.push(`period = $${idx++}`); params.push(period); }
+      if (branch) { conds.push(`branch = $${idx++}`); params.push(branch); }
+      if (catCodes.length)  { conds.push(`category_code = ANY($${idx++})`); params.push(catCodes); }
+      if (funcCodes.length) { conds.push(`function_code  = ANY($${idx++})`); params.push(funcCodes); }
+      if (partNums.length)  { conds.push(`part_number    = ANY($${idx++})`); params.push(partNums); }
+
+      const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
+      const r = await pool.query(`
+        SELECT
+          branch,
+          COALESCE(NULLIF(sales_person,''), '（未知）') AS sa_name,
+          SUM(sale_qty)           AS qty,
+          SUM(sale_price_untaxed) AS sales
+        FROM parts_sales ${where}
+        GROUP BY branch, sa_name
+      `, params);
+
+      for (const row of r.rows) {
+        const key = `${row.branch}|||${row.sa_name}`;
+        if (!saMap[key]) saMap[key] = { branch: row.branch, sa_name: row.sa_name, configs: {} };
+        saMap[key].configs[cfg.id] = {
+          qty:   parseFloat(row.qty   || 0),
+          sales: parseFloat(row.sales || 0),
+        };
+      }
+    }
+
+    const rows = Object.values(saMap).sort((a, b) => {
+      if (a.branch !== b.branch) return a.branch < b.branch ? -1 : 1;
+      const sumA = Object.values(a.configs).reduce((s, c) => s + c.sales, 0);
+      const sumB = Object.values(b.configs).reduce((s, c) => s + c.sales, 0);
+      return sumB - sumA;
+    });
+
+    const colTotals = {};
+    for (const cfg of configs) {
+      colTotals[cfg.id] = rows.reduce((s, row) => {
+        const c = row.configs[cfg.id] || { qty: 0, sales: 0 };
+        return { qty: s.qty + c.qty, sales: s.sales + c.sales };
+      }, { qty: 0, sales: 0 });
+    }
+
+    res.json({ configs, rows, colTotals });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ============================================================
 // 啟動
 // ============================================================
 initDatabase()
