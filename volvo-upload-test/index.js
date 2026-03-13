@@ -209,6 +209,20 @@ const initDatabase = async () => {
       )
     `);
 
+    // ── 系統設定表 ──────────────────────────────────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS app_settings (
+        key   VARCHAR(100) PRIMARY KEY,
+        value TEXT NOT NULL
+      )
+    `);
+    // 預設管理員密碼（只在第一次建立時插入）
+    await client.query(`
+      INSERT INTO app_settings (key, value)
+      VALUES ('settings_password', 'admin1234')
+      ON CONFLICT (key) DO NOTHING
+    `);
+
     console.log('[initDB] ✅ 所有表格建立完成');
   } catch (err) {
     console.error('[initDB] ❌ 失敗:', err.message);
@@ -1061,6 +1075,55 @@ app.get('/api/stats/sa-sales-matrix', async (req, res) => {
 
     res.json({ configs, rows, colTotals });
   } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ============================================================
+// 密碼驗證 API
+// ============================================================
+const crypto = require('crypto');
+const SESSION_TOKENS = new Set();
+
+// helper — 從 DB 取目前密碼
+async function getSettingsPassword() {
+  const r = await pool.query("SELECT value FROM app_settings WHERE key='settings_password'");
+  return r.rows[0]?.value || 'admin1234';
+}
+
+// POST /api/auth/settings  { password }  → { token }
+app.post('/api/auth/settings', async (req, res) => {
+  const { password } = req.body;
+  if (!password) return res.status(400).json({ error: '請輸入密碼' });
+  const correct = await getSettingsPassword();
+  if (password !== correct) return res.status(401).json({ error: '密碼錯誤' });
+  const token = crypto.randomBytes(24).toString('hex');
+  SESSION_TOKENS.add(token);
+  setTimeout(() => SESSION_TOKENS.delete(token), 8 * 60 * 60 * 1000); // 8h
+  res.json({ token });
+});
+
+// GET /api/auth/settings/check?token=...
+app.get('/api/auth/settings/check', (req, res) => {
+  const token = req.query.token;
+  res.json({ valid: !!(token && SESSION_TOKENS.has(token)) });
+});
+
+// PUT /api/auth/settings/password  { token, currentPassword, newPassword }
+app.put('/api/auth/settings/password', async (req, res) => {
+  const { token, currentPassword, newPassword } = req.body;
+  if (!token || !SESSION_TOKENS.has(token))
+    return res.status(401).json({ error: '未驗證，請重新登入' });
+  if (!newPassword || newPassword.length < 4)
+    return res.status(400).json({ error: '新密碼至少需要 4 個字元' });
+  const correct = await getSettingsPassword();
+  if (currentPassword !== correct)
+    return res.status(401).json({ error: '目前密碼不正確' });
+  await pool.query(
+    "UPDATE app_settings SET value=$1 WHERE key='settings_password'",
+    [newPassword]
+  );
+  // 清除所有現有 session，強迫重新登入
+  SESSION_TOKENS.clear();
+  res.json({ ok: true });
 });
 
 // ============================================================
