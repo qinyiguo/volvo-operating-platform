@@ -487,15 +487,15 @@ app.post('/api/upload', upload.array('files', 8), async (req, res) => {
           ], rows);
         }
 
-        await client.query(`
-          INSERT INTO upload_history (file_name, file_type, branch, period, row_count, status)
-          VALUES ($1,$2,$3,$4,$5,'success')
-        `, [filename, fileType, branch, period, rowCount]);
-
         else if (fileType === 'parts_catalog') {
           const rows = parsePartsCatalog(rawRows);
           rowCount = await upsertPartsCatalog(client, rows);
         }
+
+        await client.query(`
+          INSERT INTO upload_history (file_name, file_type, branch, period, row_count, status)
+          VALUES ($1,$2,$3,$4,$5,'success')
+        `, [filename, fileType, branch, period, rowCount]);
 
         await client.query('COMMIT');
         results.push({ filename, status: 'success', fileType, branch, period, rowCount });
