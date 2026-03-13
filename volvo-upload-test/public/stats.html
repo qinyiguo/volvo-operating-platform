@@ -28,7 +28,7 @@
   .tab:hover { color: #e2e8f0; background: #253347; }
   .tab.active { background: #3b82f6; color: #fff; }
 
-  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
   .kpi-card { background: #1e293b; border: 1px solid #2d3f56; border-radius: 10px; padding: 18px; }
   .kpi-label { font-size: 12px; color: #64748b; margin-bottom: 6px; }
   .kpi-value { font-size: 26px; font-weight: 800; color: #fff; }
@@ -237,7 +237,7 @@ async function loadPeriods() {
       opt.value = p; opt.textContent = `${p.slice(0,4)}年${p.slice(4)}月`;
       sel.appendChild(opt);
     });
-    if (periods.length) sel.value = periods[0]; // 預設最新期間
+    if (periods.length) sel.value = periods[0];
   } catch(e) {}
 }
 
@@ -420,7 +420,6 @@ async function loadTrend(branch) {
     if (data.error) throw new Error(data.error);
 
     const rows = data.trend;
-    // 計算環比
     const prevMap = {};
     document.getElementById('tbTrend').innerHTML = rows.length ? rows.map((r, i) => {
       const key = r.branch;
@@ -455,8 +454,11 @@ async function loadDaily(period, branch) {
     const summary = data.summary;
     const daily = data.daily;
 
-    // KPI 卡片
+    // KPI 卡片：每個據點 總台數 / 工作天數 / 日均台數 各一張
     const totalCars = summary.reduce((s, r) => s + parseInt(r.total_cars||0), 0);
+    const totalDays = summary.length
+      ? Math.round(summary.reduce((s, r) => s + parseInt(r.working_days||0), 0) / summary.length)
+      : 0;
     const avgDaily = summary.length
       ? (summary.reduce((s, r) => s + parseFloat(r.daily_avg||0), 0) / summary.length).toFixed(1)
       : 0;
@@ -466,7 +468,12 @@ async function loadDaily(period, branch) {
         <div class="kpi-card">
           <div class="kpi-label">${r.branch} 總台數</div>
           <div class="kpi-value kpi-blue">${parseInt(r.total_cars||0).toLocaleString()}</div>
-          <div class="kpi-sub">工作 ${r.working_days} 天</div>
+          <div class="kpi-sub">台</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">${r.branch} 工作天數</div>
+          <div class="kpi-value kpi-yellow">${parseInt(r.working_days||0)}</div>
+          <div class="kpi-sub">天</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">${r.branch} 日均台數</div>
@@ -481,7 +488,7 @@ async function loadDaily(period, branch) {
       </div>
     `;
 
-    // 簡易 SVG 長條圖（依日期）
+    // SVG 長條圖
     const branchList = [...new Set(daily.map(r => r.branch))].sort();
     const dateList = [...new Set(daily.map(r => r.arrive_date?.slice(0,10)))].sort();
     const colors = { AMA: '#3b82f6', AMC: '#10b981', AMD: '#f59e0b' };
@@ -512,12 +519,10 @@ async function loadDaily(period, branch) {
           <title>${b} ${d}: ${val}台</title></rect>`;
         if (val > 0) bars += `<text x="${(x+barW/2).toFixed(0)}" y="${(y-3).toFixed(0)}" text-anchor="middle" font-size="9" fill="#94a3b8">${val}</text>`;
       });
-      // X 軸標籤（只顯示日）
       const labelX = gx + (branchList.length * (barW + 2)) / 2;
       xLabels += `<text x="${labelX.toFixed(0)}" y="${chartH - 4}" text-anchor="middle" font-size="9" fill="#64748b">${d.slice(8)}</text>`;
     });
 
-    // Y 軸
     let yAxis = '';
     for (let i = 0; i <= 4; i++) {
       const val = Math.round(maxCount * i / 4);
@@ -526,7 +531,6 @@ async function loadDaily(period, branch) {
         <text x="40" y="${(y+4).toFixed(0)}" text-anchor="end" font-size="9" fill="#64748b">${val}</text>`;
     }
 
-    // 圖例
     const legend = branchList.map((b, i) =>
       `<rect x="${50 + i*70}" y="8" width="10" height="10" fill="${colors[b]||'#64748b'}" rx="2"/>
        <text x="${63 + i*70}" y="17" font-size="11" fill="#94a3b8">${b}</text>`
