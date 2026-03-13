@@ -649,11 +649,11 @@ app.get('/api/stats/tech', async (req, res) => {
       SELECT
         branch,
         tech_name_clean,
-        SUM(car_count_flag) AS car_count,
+        COUNT(DISTINCT work_order) AS car_count,
         SUM(standard_hours) AS total_hours,
         SUM(wage) AS total_wage,
-        SUM(CASE WHEN is_beauty THEN wage ELSE 0 END) AS beauty_wage,
-        SUM(CASE WHEN NOT is_beauty THEN wage ELSE 0 END) AS net_wage
+        SUM(CASE WHEN wage_category ILIKE '%美容%' THEN wage ELSE 0 END) AS beauty_wage,
+        SUM(CASE WHEN wage_category NOT ILIKE '%美容%' THEN wage ELSE 0 END) AS net_wage
       FROM tech_performance ${where}
       GROUP BY branch, tech_name_clean
       ORDER BY total_wage DESC
