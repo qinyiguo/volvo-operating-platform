@@ -152,116 +152,44 @@ const initDatabase = async () => {
       )
     `);
 
-    // ── Migration Step 1：將 business_query 的中文欄位名稱改為英文 ──
-    // 用 DO $$ 區塊，欄位不存在時靜默跳過
-    await client.query(`
-      DO $$
-      BEGIN
-        -- 工單號碼 → work_order
-        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='business_query' AND column_name='工單號碼') THEN
-          ALTER TABLE business_query RENAME COLUMN "工單號碼" TO work_order;
-        END IF;
-        -- 工單號 → work_order
-        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='business_query' AND column_name='工單號') THEN
-          ALTER TABLE business_query RENAME COLUMN "工單號" TO work_order;
-        END IF;
-        -- 開單時間 → open_time
-        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='business_query' AND column_name='開單時間') THEN
-          ALTER TABLE business_query RENAME COLUMN "開單時間" TO open_time;
-        END IF;
-        -- 進廠時間 → open_time
-        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='business_query' AND column_name='進廠時間') THEN
-          ALTER TABLE business_query RENAME COLUMN "進廠時間" TO open_time;
-        END IF;
-        -- 結算日期 → settle_date
-        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='business_query' AND column_name='結算日期') THEN
-          ALTER TABLE business_query RENAME COLUMN "結算日期" TO settle_date;
-        END IF;
-        -- 車牌號碼 → plate_no
-        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='business_query' AND column_name='車牌號碼') THEN
-          ALTER TABLE business_query RENAME COLUMN "車牌號碼" TO plate_no;
-        END IF;
-        -- 車身號碼 → vin
-        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='business_query' AND column_name='車身號碼') THEN
-          ALTER TABLE business_query RENAME COLUMN "車身號碼" TO vin;
-        END IF;
-        -- 工單狀態 → status
-        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='business_query' AND column_name='工單狀態') THEN
-          ALTER TABLE business_query RENAME COLUMN "工單狀態" TO status;
-        END IF;
-        -- 交修項目 → repair_item
-        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='business_query' AND column_name='交修項目') THEN
-          ALTER TABLE business_query RENAME COLUMN "交修項目" TO repair_item;
-        END IF;
-        -- 服務顧問 → service_advisor
-        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='business_query' AND column_name='服務顧問') THEN
-          ALTER TABLE business_query RENAME COLUMN "服務顧問" TO service_advisor;
-        END IF;
-        -- 指定技師 → assigned_tech
-        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='business_query' AND column_name='指定技師') THEN
-          ALTER TABLE business_query RENAME COLUMN "指定技師" TO assigned_tech;
-        END IF;
-        -- 維修技師 → repair_tech
-        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='business_query' AND column_name='維修技師') THEN
-          ALTER TABLE business_query RENAME COLUMN "維修技師" TO repair_tech;
-        END IF;
-        -- 維修類型 → repair_type
-        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='business_query' AND column_name='維修類型') THEN
-          ALTER TABLE business_query RENAME COLUMN "維修類型" TO repair_type;
-        END IF;
-        -- 車系 → car_series
-        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='business_query' AND column_name='車系') THEN
-          ALTER TABLE business_query RENAME COLUMN "車系" TO car_series;
-        END IF;
-        -- 車型 → car_model
-        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='business_query' AND column_name='車型') THEN
-          ALTER TABLE business_query RENAME COLUMN "車型" TO car_model;
-        END IF;
-        -- 年式 → model_year
-        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='business_query' AND column_name='年式') THEN
-          ALTER TABLE business_query RENAME COLUMN "年式" TO model_year;
-        END IF;
-        -- 車主 → owner
-        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='business_query' AND column_name='車主') THEN
-          ALTER TABLE business_query RENAME COLUMN "車主" TO owner;
-        END IF;
-        -- 進廠里程 → mileage_in
-        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='business_query' AND column_name='進廠里程') THEN
-          ALTER TABLE business_query RENAME COLUMN "進廠里程" TO mileage_in;
-        END IF;
-        -- 出廠里程 → mileage_out
-        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='business_query' AND column_name='出廠里程') THEN
-          ALTER TABLE business_query RENAME COLUMN "出廠里程" TO mileage_out;
-        END IF;
-      END $$;
+    // ── Migration：偵測 business_query 是否有 work_order 欄位，沒有就 DROP 重建 ──
+    const bqCheck = await client.query(`
+      SELECT column_name FROM information_schema.columns
+      WHERE table_name = 'business_query' AND column_name = 'work_order'
     `);
-    console.log('[initDB] ✅ business_query 中文欄位改名完成');
-
-    // ── Migration Step 2：補齊仍缺少的英文欄位（新增欄位不覆蓋現有）──
-    const bqCols = [
-      `ALTER TABLE business_query ADD COLUMN IF NOT EXISTS work_order      VARCHAR(30)`,
-      `ALTER TABLE business_query ADD COLUMN IF NOT EXISTS open_time       TIMESTAMPTZ`,
-      `ALTER TABLE business_query ADD COLUMN IF NOT EXISTS settle_date     DATE`,
-      `ALTER TABLE business_query ADD COLUMN IF NOT EXISTS plate_no        VARCHAR(20)`,
-      `ALTER TABLE business_query ADD COLUMN IF NOT EXISTS vin             VARCHAR(30)`,
-      `ALTER TABLE business_query ADD COLUMN IF NOT EXISTS status          VARCHAR(20)`,
-      `ALTER TABLE business_query ADD COLUMN IF NOT EXISTS repair_item     VARCHAR(200)`,
-      `ALTER TABLE business_query ADD COLUMN IF NOT EXISTS service_advisor VARCHAR(50)`,
-      `ALTER TABLE business_query ADD COLUMN IF NOT EXISTS assigned_tech   VARCHAR(50)`,
-      `ALTER TABLE business_query ADD COLUMN IF NOT EXISTS repair_tech     VARCHAR(50)`,
-      `ALTER TABLE business_query ADD COLUMN IF NOT EXISTS repair_type     VARCHAR(50)`,
-      `ALTER TABLE business_query ADD COLUMN IF NOT EXISTS car_series      VARCHAR(50)`,
-      `ALTER TABLE business_query ADD COLUMN IF NOT EXISTS car_model       VARCHAR(50)`,
-      `ALTER TABLE business_query ADD COLUMN IF NOT EXISTS model_year      VARCHAR(10)`,
-      `ALTER TABLE business_query ADD COLUMN IF NOT EXISTS owner           VARCHAR(100)`,
-      `ALTER TABLE business_query ADD COLUMN IF NOT EXISTS is_ev           VARCHAR(10)`,
-      `ALTER TABLE business_query ADD COLUMN IF NOT EXISTS mileage_in      INTEGER`,
-      `ALTER TABLE business_query ADD COLUMN IF NOT EXISTS mileage_out     INTEGER`,
-    ];
-    for (const sql of bqCols) {
-      await client.query(sql);
+    if (bqCheck.rows.length === 0) {
+      console.log('[initDB] business_query 缺少 work_order，DROP 重建...');
+      await client.query(`DROP TABLE IF EXISTS business_query`);
+      await client.query(`
+        CREATE TABLE business_query (
+          id              SERIAL PRIMARY KEY,
+          period          VARCHAR(6),
+          branch          VARCHAR(10),
+          work_order      VARCHAR(30),
+          open_time       TIMESTAMPTZ,
+          settle_date     DATE,
+          plate_no        VARCHAR(20),
+          vin             VARCHAR(30),
+          status          VARCHAR(20),
+          repair_item     VARCHAR(200),
+          service_advisor VARCHAR(50),
+          assigned_tech   VARCHAR(50),
+          repair_tech     VARCHAR(50),
+          repair_type     VARCHAR(50),
+          car_series      VARCHAR(50),
+          car_model       VARCHAR(50),
+          model_year      VARCHAR(10),
+          owner           VARCHAR(100),
+          is_ev           VARCHAR(10),
+          mileage_in      INTEGER,
+          mileage_out     INTEGER,
+          created_at      TIMESTAMPTZ DEFAULT NOW()
+        )
+      `);
+      console.log('[initDB] ✅ business_query 重建完成，請重新上傳業務查詢 Excel');
+    } else {
+      console.log('[initDB] ✅ business_query 欄位正常');
     }
-    console.log('[initDB] ✅ business_query 欄位補齊完成');
 
     // parts_catalog（零配件比對 — 以零件編號為主鍵，upsert）
     await client.query(`
@@ -856,7 +784,7 @@ app.get('/api/stats/daily', async (req, res) => {
       SELECT
         open_time::date AS arrive_date,
         branch,
-        COUNT(DISTINCT work_order) AS car_count
+        COUNT(DISTINCT plate_no) AS car_count
       FROM business_query ${where}
       GROUP BY open_time::date, branch
       ORDER BY arrive_date, branch
@@ -865,15 +793,15 @@ app.get('/api/stats/daily', async (req, res) => {
     const summary = await pool.query(`
       SELECT
         branch,
-        COUNT(DISTINCT work_order)                                    AS total_cars,
+        COUNT(DISTINCT plate_no)                                      AS total_cars,
         COUNT(DISTINCT open_time::date)                               AS working_days,
-        ROUND(COUNT(DISTINCT work_order)::numeric /
+        ROUND(COUNT(DISTINCT plate_no)::numeric /
               NULLIF(COUNT(DISTINCT open_time::date), 0), 1)          AS daily_avg,
         MAX(daily_cnt)                                                AS max_day,
         MIN(daily_cnt)                                                AS min_day
       FROM (
         SELECT branch, open_time::date,
-               COUNT(DISTINCT work_order) AS daily_cnt
+               COUNT(DISTINCT plate_no) AS daily_cnt
         FROM business_query ${where}
         GROUP BY branch, open_time::date
       ) sub
