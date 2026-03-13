@@ -152,6 +152,20 @@ const initDatabase = async () => {
       )
     `);
 
+    // parts_catalog（零配件比對 — 以零件編號為主鍵，upsert）
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS parts_catalog (
+        part_number   VARCHAR(50) PRIMARY KEY,
+        part_name     VARCHAR(200),
+        part_category VARCHAR(50),
+        part_type     VARCHAR(20),
+        category_code VARCHAR(20),
+        function_code VARCHAR(20),
+        branch        VARCHAR(10),
+        updated_at    TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
     console.log('[initDB] ✅ 所有表格建立完成');
   } catch (err) {
     console.error('[initDB] ❌ 失敗:', err.message);
@@ -192,6 +206,7 @@ const detectFileType = (filename, sheetNames) => {
   if (fn.includes('維修收入') || fn.includes('收入分類')) return 'repair_income';
   if (fn.includes('零件銷售') || fn.includes('零件明細')) return 'parts_sales';
   if (fn.includes('業務查詢')) return 'business_query';
+  if (fn.includes('零配件比對') || fn.includes('零配件對照') || fn.includes('parts_catalog')) return 'parts_catalog';
   const names = (sheetNames || []).join(',');
   if (names.includes('工資明細') || names.includes('技師績效')) return 'tech_performance';
   if (names.includes('維修收入') || names.includes('收入分類')) return 'repair_income';
@@ -321,6 +336,22 @@ const parseBusinessQuery = (rows, branch, period) => rows.map(r => {
   };
 });
 
+// parsePartsCatalog
+const parsePartsCatalog = (rows) => rows
+  .filter(r => {
+    const pn = String(pick(r, '零件編號', '料號') || '').trim();
+    return pn && pn !== 'undefined';
+  })
+  .map(r => ({
+    part_number:   String(pick(r, '零件編號', '料號')).trim(),
+    part_name:     String(pick(r, '零件名稱', '品名')).trim(),
+    part_category: String(pick(r, '零件類別')).trim(),
+    part_type:     String(pick(r, '零件種類', '種類')).trim(),
+    category_code: String(pick(r, '零件類別')).trim(),
+    function_code: String(pick(r, '功能碼')).trim(),
+    branch:        String(pick(r, '據點')).trim() || null,
+  }));
+
 // ============================================================
 // 批次 INSERT
 // ============================================================
@@ -344,6 +375,27 @@ const batchInsert = async (client, table, cols, rows) => {
     total += batch.length;
   }
   return total;
+};
+
+// upsertPartsCatalog
+const upsertPartsCatalog = async (client, rows) => {
+  let count = 0;
+  const BATCH = 200;
+  for (let i = 0; i < rows.length; i += BATCH) {
+    const batch = rows.slice(i, i + BATCH);
+    for (const r of batch) {
+      await client.query(`
+        INSERT INTO parts_catalog (part_number, part_name, part_category, part_type, category_code, function_code, branch, updated_at)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,NOW())
+        ON CONFLICT (part_number) DO UPDATE SET
+          part_name=EXCLUDED.part_name, part_category=EXCLUDED.part_category,
+          part_type=EXCLUDED.part_type, category_code=EXCLUDED.category_code,
+          function_code=EXCLUDED.function_code, branch=EXCLUDED.branch, updated_at=NOW()
+      `, [r.part_number, r.part_name, r.part_category, r.part_type, r.category_code, r.function_code, r.branch]);
+      count++;
+    }
+  }
+  return count;
 };
 
 // ============================================================
@@ -440,6 +492,11 @@ app.post('/api/upload', upload.array('files', 8), async (req, res) => {
           VALUES ($1,$2,$3,$4,$5,'success')
         `, [filename, fileType, branch, period, rowCount]);
 
+        else if (fileType === 'parts_catalog') {
+          const rows = parsePartsCatalog(rawRows);
+          rowCount = await upsertPartsCatalog(client, rows);
+        }
+
         await client.query('COMMIT');
         results.push({ filename, status: 'success', fileType, branch, period, rowCount });
         console.log(`✅ ${filename} → ${fileType} / ${branch} / ${period} / ${rowCount}筆`);
@@ -476,6 +533,7 @@ app.get('/api/counts', async (req, res) => {
       SELECT 'tech_performance',        COUNT(*)          FROM tech_performance UNION ALL
       SELECT 'parts_sales',             COUNT(*)          FROM parts_sales      UNION ALL
       SELECT 'business_query',          COUNT(*)          FROM business_query   UNION ALL
+      SELECT 'parts_catalog',           COUNT(*)          FROM parts_catalog   UNION ALL
       SELECT 'upload_history',          COUNT(*)          FROM upload_history
     `);
     res.json(r.rows);
