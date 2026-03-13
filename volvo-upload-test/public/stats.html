@@ -8,7 +8,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
 
-  .nav { background: #1e293b; border-bottom: 1px solid #2d3f56; padding: 0 24px; display: flex; align-items: center; gap: 0; }
+  .nav { background: #1e293b; border-bottom: 1px solid #2d3f56; padding: 0 24px; display: flex; align-items: center; }
   .nav-brand { font-size: 15px; font-weight: 700; color: #fff; padding: 16px 0; margin-right: 24px; }
   .nav-link { padding: 16px 16px; color: #64748b; font-size: 13px; font-weight: 600; text-decoration: none; border-bottom: 2px solid transparent; }
   .nav-link:hover { color: #e2e8f0; }
@@ -19,12 +19,19 @@
   .filter-bar { display: flex; gap: 10px; align-items: center; background: #1e293b; border: 1px solid #2d3f56; border-radius: 10px; padding: 12px 16px; margin-bottom: 20px; flex-wrap: wrap; }
   .filter-bar label { font-size: 12px; color: #64748b; font-weight: 600; }
   .filter-bar select { background: #0f172a; border: 1px solid #2d3f56; color: #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 13px; }
-  .btn { padding: 7px 16px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+  .btn { padding: 7px 16px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; }
   .btn-primary { background: #3b82f6; color: #fff; }
   .btn-primary:hover { background: #2563eb; }
+  .btn-secondary { background: #253347; color: #cbd5e1; border: 1px solid #2d3f56; }
+  .btn-secondary:hover { background: #2d3f56; }
+  .btn-danger { background: rgba(239,68,68,.12); color: #ef4444; border: 1px solid rgba(239,68,68,.3); }
+  .btn-danger:hover { background: rgba(239,68,68,.2); }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
 
-  .tabs { display: flex; gap: 2px; background: #1e293b; border-radius: 8px; padding: 3px; margin-bottom: 20px; }
-  .tab { padding: 8px 18px; border: none; background: transparent; color: #64748b; font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 6px; }
+  .tabs { display: flex; gap: 2px; background: #1e293b; border-radius: 8px; padding: 3px; margin-bottom: 20px; flex-wrap: wrap; }
+  .tab { padding: 8px 16px; border: none; background: transparent; color: #64748b; font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 6px; white-space: nowrap; }
   .tab:hover { color: #e2e8f0; background: #253347; }
   .tab.active { background: #3b82f6; color: #fff; }
 
@@ -36,13 +43,14 @@
   .kpi-green { color: #10b981; }
   .kpi-blue { color: #3b82f6; }
   .kpi-yellow { color: #f59e0b; }
+  .kpi-purple { color: #8b5cf6; }
 
   .card { background: #1a2332; border: 1px solid #2d3f56; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
   .card-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 14px; }
 
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   th { background: #0f172a; color: #64748b; font-size: 12px; font-weight: 600; text-align: left; padding: 10px 12px; border-bottom: 1px solid #2d3f56; white-space: nowrap; }
-  td { padding: 9px 12px; border-bottom: 1px solid rgba(45,63,86,.4); }
+  td { padding: 9px 12px; border-bottom: 1px solid rgba(45,63,86,.4); vertical-align: middle; }
   tr:hover td { background: rgba(37,51,71,.5); }
   .num { text-align: right; font-variant-numeric: tabular-nums; }
   .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #2d3f56; }
@@ -52,10 +60,11 @@
   .badge-green { background: rgba(16,185,129,.15); color: #10b981; }
   .badge-yellow { background: rgba(245,158,11,.15); color: #f59e0b; }
   .badge-purple { background: rgba(139,92,246,.15); color: #8b5cf6; }
+  .badge-red { background: rgba(239,68,68,.15); color: #ef4444; }
 
   .empty { text-align: center; padding: 48px; color: #64748b; font-size: 14px; }
   .loading { text-align: center; padding: 48px; color: #64748b; }
-  .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid #2d3f56; border-top-color: #3b82f6; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 8px; vertical-align: middle; }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #2d3f56; border-top-color: #3b82f6; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 8px; vertical-align: middle; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
   .rank-no { font-weight: 800; color: #64748b; width: 30px; }
@@ -68,10 +77,63 @@
   .bar-fill { height: 6px; border-radius: 4px; background: #3b82f6; }
   .bar-fill.green { background: #10b981; }
   .bar-fill.yellow { background: #f59e0b; }
-
-  .trend-row td { font-size: 12px; }
   .up { color: #10b981; }
   .down { color: #ef4444; }
+
+  /* ── SA 銷售設定 ── */
+  .config-list { display: grid; gap: 10px; margin-bottom: 20px; }
+  .config-item {
+    background: #0f172a; border: 1px solid #2d3f56; border-radius: 10px;
+    padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+    cursor: pointer; transition: border-color .15s;
+  }
+  .config-item:hover { border-color: #3b82f6; }
+  .config-item.selected { border-color: #3b82f6; background: rgba(59,130,246,.07); }
+  .config-item-info { flex: 1; }
+  .config-item-name { font-weight: 700; font-size: 14px; }
+  .config-item-desc { font-size: 12px; color: #64748b; margin-top: 2px; }
+  .config-item-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+
+  /* 設定編輯面板 */
+  .editor-panel { background: #0f172a; border: 1px solid #2d3f56; border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  .editor-panel h3 { font-size: 14px; font-weight: 700; margin-bottom: 16px; }
+  .form-row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; }
+  .form-row label { font-size: 12px; color: #64748b; font-weight: 600; white-space: nowrap; padding-top: 8px; min-width: 60px; }
+  .form-input { background: #1e293b; border: 1px solid #2d3f56; color: #e2e8f0; padding: 8px 12px; border-radius: 6px; font-size: 13px; flex: 1; min-width: 0; }
+  .form-input:focus { outline: none; border-color: #3b82f6; }
+  .form-select { background: #1e293b; border: 1px solid #2d3f56; color: #e2e8f0; padding: 8px 10px; border-radius: 6px; font-size: 13px; }
+
+  /* 篩選條件列表 */
+  .filter-list { display: flex; flex-direction: column; gap: 6px; }
+  .filter-tag-row { display: flex; align-items: center; gap: 8px; background: #1e293b; border: 1px solid #2d3f56; border-radius: 8px; padding: 8px 12px; }
+  .filter-tag-row .type-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
+  .type-category_code { background: rgba(59,130,246,.2); color: #60a5fa; }
+  .type-function_code  { background: rgba(139,92,246,.2); color: #a78bfa; }
+  .type-part_number    { background: rgba(16,185,129,.2); color: #34d399; }
+  .filter-tag-row .filter-val { font-size: 13px; font-weight: 600; flex: 1; }
+  .filter-tag-row .filter-sub { font-size: 11px; color: #64748b; }
+  .filter-tag-row .remove-btn { background: none; border: none; color: #64748b; cursor: pointer; font-size: 16px; padding: 0 4px; line-height: 1; }
+  .filter-tag-row .remove-btn:hover { color: #ef4444; }
+
+  /* 新增條件輸入 */
+  .add-filter-row { display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap; }
+  .lookup-wrap { position: relative; flex: 1; min-width: 200px; }
+  .lookup-input { width: 100%; background: #1e293b; border: 1px solid #2d3f56; color: #e2e8f0; padding: 8px 12px; border-radius: 6px; font-size: 13px; }
+  .lookup-input:focus { outline: none; border-color: #3b82f6; }
+  .lookup-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #1e293b; border: 1px solid #2d3f56; border-radius: 8px; z-index: 100; max-height: 260px; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+  .lookup-item { padding: 9px 12px; cursor: pointer; border-bottom: 1px solid rgba(45,63,86,.4); }
+  .lookup-item:last-child { border-bottom: none; }
+  .lookup-item:hover { background: rgba(59,130,246,.1); }
+  .lookup-item-val { font-size: 13px; font-weight: 600; }
+  .lookup-item-sub { font-size: 11px; color: #64748b; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .modal { background: #1e293b; border: 1px solid #2d3f56; border-radius: 14px; width: 100%; max-width: 580px; max-height: 90vh; overflow-y: auto; padding: 24px; }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .modal-title { font-size: 16px; font-weight: 700; }
+  .modal-close { background: none; border: none; color: #64748b; font-size: 22px; cursor: pointer; line-height: 1; }
+  .modal-close:hover { color: #e2e8f0; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
 </style>
 </head>
 <body>
@@ -86,9 +148,7 @@
   <!-- 篩選器 -->
   <div class="filter-bar">
     <label>期間</label>
-    <select id="selPeriod">
-      <option value="">全部期間</option>
-    </select>
+    <select id="selPeriod"><option value="">全部期間</option></select>
     <label>據點</label>
     <select id="selBranch">
       <option value="">全部</option>
@@ -105,10 +165,12 @@
     <button class="tab active" onclick="switchTab('repair')">🔧 維修收入</button>
     <button class="tab" onclick="switchTab('tech')">👨‍🔧 技師工資</button>
     <button class="tab" onclick="switchTab('parts')">🔩 零件銷售</button>
+    <button class="tab" onclick="switchTab('sa-sales')">👤 SA 零件銷售</button>
     <button class="tab" onclick="switchTab('trend')">📈 月份趨勢</button>
     <button class="tab" onclick="switchTab('daily')">📅 每日台數</button>
   </div>
 
+  <!-- ────────────────────────────────────────────────────── -->
   <!-- 維修收入 -->
   <div id="tab-repair">
     <div id="repairKPI" class="kpi-grid"></div>
@@ -169,6 +231,59 @@
     </div>
   </div>
 
+  <!-- ────────────────────────────────────────────────────── -->
+  <!-- SA 零件銷售 -->
+  <div id="tab-sa-sales" style="display:none">
+
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px">
+      <h2 style="font-size:16px;font-weight:700">👤 SA 零件銷售統計</h2>
+      <button class="btn btn-primary btn-sm" onclick="openConfigModal(null)">＋ 新增設定</button>
+    </div>
+
+    <!-- 設定列表 -->
+    <div class="card">
+      <div class="card-title">⚙️ 銷售追蹤設定</div>
+      <div class="config-list" id="configList">
+        <div style="color:#64748b;font-size:13px;padding:12px 0"><span class="spinner"></span>載入設定...</div>
+      </div>
+    </div>
+
+    <!-- 統計結果 -->
+    <div id="saSalesResult" style="display:none">
+      <div id="saKPI" class="kpi-grid"></div>
+
+      <div class="card">
+        <div class="card-title" id="saSATitle">SA 銷售排名</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>據點</th><th>銷售人員</th><th class="num">單據數</th><th class="num">總數量</th><th class="num">銷售金額</th><th class="num">成本</th><th class="num">毛利</th><th class="num">毛利率</th><th>佔比</th></tr></thead>
+            <tbody id="tbSASales"><tr><td colspan="10" class="empty">請先選擇設定</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" id="saPartTitle">零件明細（Top 50）</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>零件編號</th><th>零件名稱</th><th>類別碼</th><th>功能碼</th><th class="num">單據數</th><th class="num">總數量</th><th class="num">銷售金額</th></tr></thead>
+            <tbody id="tbSAParts"><tr><td colspan="8" class="empty">請先選擇設定</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📈 月份趨勢（此設定條件）</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>期間</th><th>據點</th><th class="num">總數量</th><th class="num">銷售金額</th><th class="num">環比</th></tr></thead>
+            <tbody id="tbSATrend"><tr><td colspan="5" class="empty">請先選擇設定</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- 月份趨勢 -->
   <div id="tab-trend" style="display:none">
     <div class="card">
@@ -187,9 +302,7 @@
     <div id="dailyKPI" class="kpi-grid"></div>
     <div class="card">
       <div class="card-title">📅 每日進廠台數（已排除 PDI）</div>
-      <div style="overflow-x:auto">
-        <div id="dailyChart" style="min-width:700px;padding:8px 0"></div>
-      </div>
+      <div style="overflow-x:auto"><div id="dailyChart" style="min-width:700px;padding:8px 0"></div></div>
     </div>
     <div class="card">
       <div class="card-title">📋 每日明細</div>
@@ -203,19 +316,70 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- 設定編輯 Modal -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="configModal" style="display:none" onclick="closeModalIfBg(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">新增銷售設定</div>
+      <button class="modal-close" onclick="closeConfigModal()">×</button>
+    </div>
+
+    <div class="form-row">
+      <label>名稱</label>
+      <input type="text" id="cfgName" class="form-input" placeholder="例：鋼圈銷售、精品配件..." maxlength="100">
+    </div>
+    <div class="form-row">
+      <label>說明</label>
+      <input type="text" id="cfgDesc" class="form-input" placeholder="（選填）簡短說明此設定的用途" maxlength="200">
+    </div>
+
+    <div style="margin:16px 0 10px;font-size:13px;font-weight:700;color:#94a3b8">篩選條件（OR 邏輯，符合任一即納入）</div>
+
+    <!-- 現有條件 -->
+    <div class="filter-list" id="filterList" style="margin-bottom:12px"></div>
+
+    <!-- 新增條件 -->
+    <div style="background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:12px;margin-bottom:4px">
+      <div style="font-size:12px;color:#64748b;font-weight:600;margin-bottom:8px">新增條件</div>
+      <div class="add-filter-row">
+        <select id="addType" class="form-select" onchange="clearLookup()">
+          <option value="category_code">零件類別碼</option>
+          <option value="function_code">功能碼</option>
+          <option value="part_number">零件編號</option>
+        </select>
+        <div class="lookup-wrap">
+          <input type="text" id="addValue" class="lookup-input" placeholder="輸入代碼或名稱搜尋..."
+            oninput="debounceLookup()" autocomplete="off">
+          <div class="lookup-dropdown" id="lookupDropdown" style="display:none"></div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="addFilter()" style="white-space:nowrap">＋ 加入</button>
+      </div>
+      <div id="addHint" style="font-size:11px;color:#64748b;margin-top:6px"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeConfigModal()">取消</button>
+      <button class="btn btn-primary" id="btnSaveCfg" onclick="saveConfig()">儲存設定</button>
+    </div>
+  </div>
+</div>
+
 <script>
+// ══════════════════════════════════════════════════════════
+// 全域狀態
+// ══════════════════════════════════════════════════════════
 let currentTab = 'repair';
+let configs = [];
+let selectedConfigId = null;
+let editingConfigId = null;  // null = 新增
+let editingFilters = [];     // [{type, value, label}]
+let lookupTimer = null;
 
-function switchTab(tab) {
-  currentTab = tab;
-  document.querySelectorAll('.tab').forEach((t, i) => {
-    t.classList.toggle('active', ['repair','tech','parts','trend','daily'][i] === tab);
-  });
-  ['repair','tech','parts','trend','daily'].forEach(t => {
-    document.getElementById(`tab-${t}`).style.display = t === tab ? '' : 'none';
-  });
-}
-
+// ══════════════════════════════════════════════════════════
+// 工具函式
+// ══════════════════════════════════════════════════════════
 const fmt = (v, k=0) => {
   const n = parseFloat(v || 0);
   if (k) return Math.round(n/1000).toLocaleString() + 'K';
@@ -223,10 +387,32 @@ const fmt = (v, k=0) => {
 };
 const fmtPct = v => (parseFloat(v||0)*100).toFixed(1) + '%';
 const badgeType = (t) => {
-  const map = {'零件':'badge-blue','配件':'badge-green','精品':'badge-yellow','一般':'badge-blue'};
+  const map = {'零件':'badge-blue','配件':'badge-green','精品':'badge-yellow'};
   return map[t] || 'badge-purple';
 };
+const typeLabel = {
+  category_code: '類別碼',
+  function_code: '功能碼',
+  part_number: '零件編號',
+};
 
+// ══════════════════════════════════════════════════════════
+// 分頁切換
+// ══════════════════════════════════════════════════════════
+function switchTab(tab) {
+  currentTab = tab;
+  const tabs = ['repair','tech','parts','sa-sales','trend','daily'];
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', tabs[i] === tab);
+  });
+  tabs.forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = t === tab ? '' : 'none';
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// 初始化 & 全域載入
+// ══════════════════════════════════════════════════════════
 async function loadPeriods() {
   try {
     const res = await fetch('/api/periods');
@@ -245,10 +431,19 @@ async function loadAll() {
   const period = document.getElementById('selPeriod').value;
   const branch = document.getElementById('selBranch').value;
   document.getElementById('lastUpdate').textContent = '更新中...';
-  await Promise.all([loadRepair(period, branch), loadTech(period, branch), loadParts(period, branch), loadTrend(branch), loadDaily(period, branch)]);
+  await Promise.all([
+    loadRepair(period, branch),
+    loadTech(period, branch),
+    loadParts(period, branch),
+    loadTrend(branch),
+    loadDaily(period, branch),
+  ]);
   document.getElementById('lastUpdate').textContent = `更新於 ${new Date().toLocaleTimeString('zh-TW')}`;
 }
 
+// ══════════════════════════════════════════════════════════
+// 維修收入
+// ══════════════════════════════════════════════════════════
 async function loadRepair(period, branch) {
   try {
     const params = new URLSearchParams();
@@ -260,29 +455,29 @@ async function loadRepair(period, branch) {
 
     const totals = data.totals;
     const totalRevenue = totals.reduce((s, r) => s + parseFloat(r.total_untaxed||0), 0);
-    const totalCars = totals.reduce((s, r) => s + parseInt(r.car_count||0), 0);
-    const totalEngine = totals.reduce((s, r) => s + parseFloat(r.engine_wage||0), 0);
-    const totalParts = totals.reduce((s, r) => s + parseFloat(r.parts_income||0), 0);
-    const totalCost = totals.reduce((s, r) => s + parseFloat(r.parts_cost||0), 0);
+    const totalCars    = totals.reduce((s, r) => s + parseInt(r.car_count||0), 0);
+    const totalEngine  = totals.reduce((s, r) => s + parseFloat(r.engine_wage||0), 0);
+    const totalParts   = totals.reduce((s, r) => s + parseFloat(r.parts_income||0), 0);
+    const totalCost    = totals.reduce((s, r) => s + parseFloat(r.parts_cost||0), 0);
 
     document.getElementById('repairKPI').innerHTML = `
-      <div class="kpi-card"><div class="kpi-label">總營收（未稅）</div><div class="kpi-value kpi-green">${fmt(totalRevenue, 1)}</div><div class="kpi-sub">元（千）</div></div>
+      <div class="kpi-card"><div class="kpi-label">總營收（未稅）</div><div class="kpi-value kpi-green">${fmt(totalRevenue,1)}</div><div class="kpi-sub">元（千）</div></div>
       <div class="kpi-card"><div class="kpi-label">出廠台數</div><div class="kpi-value kpi-blue">${totalCars.toLocaleString()}</div><div class="kpi-sub">台</div></div>
-      <div class="kpi-card"><div class="kpi-label">引擎工資</div><div class="kpi-value">${fmt(totalEngine, 1)}</div><div class="kpi-sub">K</div></div>
-      <div class="kpi-card"><div class="kpi-label">零件收入</div><div class="kpi-value">${fmt(totalParts, 1)}</div><div class="kpi-sub">K</div></div>
-      <div class="kpi-card"><div class="kpi-label">零件成本</div><div class="kpi-value kpi-yellow">${fmt(totalCost, 1)}</div><div class="kpi-sub">K</div></div>
-      ${totals.map(t => `
+      <div class="kpi-card"><div class="kpi-label">引擎工資</div><div class="kpi-value">${fmt(totalEngine,1)}</div><div class="kpi-sub">K</div></div>
+      <div class="kpi-card"><div class="kpi-label">零件收入</div><div class="kpi-value">${fmt(totalParts,1)}</div><div class="kpi-sub">K</div></div>
+      <div class="kpi-card"><div class="kpi-label">零件成本</div><div class="kpi-value kpi-yellow">${fmt(totalCost,1)}</div><div class="kpi-sub">K</div></div>
+      ${totals.map(t=>`
         <div class="kpi-card">
           <div class="kpi-label">${t.branch} 營收</div>
-          <div class="kpi-value">${fmt(t.total_untaxed, 1)}</div>
+          <div class="kpi-value">${fmt(t.total_untaxed,1)}</div>
           <div class="kpi-sub">${parseInt(t.car_count||0)}台 | 引擎${fmt(t.engine_wage,1)}K</div>
         </div>
       `).join('')}
     `;
 
     const saRows = data.bySA;
-    const maxRev = Math.max(...saRows.map(r => parseFloat(r.total_untaxed||0)));
-    document.getElementById('tbSA').innerHTML = saRows.length ? saRows.map((r, i) => `
+    const maxRev = Math.max(...saRows.map(r => parseFloat(r.total_untaxed||0)), 1);
+    document.getElementById('tbSA').innerHTML = saRows.length ? saRows.map((r,i)=>`
       <tr>
         <td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td>
         <td><span class="badge badge-blue">${r.branch}</span></td>
@@ -293,14 +488,14 @@ async function loadRepair(period, branch) {
         <td class="num">${fmt(r.parts_income)}</td>
         <td style="min-width:120px">
           <div class="bar-wrap">
-            <div class="bar-bg"><div class="bar-fill" style="width:${maxRev>0?(parseFloat(r.total_untaxed)/maxRev*100).toFixed(0):0}%"></div></div>
-            <span style="font-size:11px;color:#64748b">${maxRev>0?(parseFloat(r.total_untaxed)/maxRev*100).toFixed(0):0}%</span>
+            <div class="bar-bg"><div class="bar-fill" style="width:${(parseFloat(r.total_untaxed)/maxRev*100).toFixed(0)}%"></div></div>
+            <span style="font-size:11px;color:#64748b">${(parseFloat(r.total_untaxed)/maxRev*100).toFixed(0)}%</span>
           </div>
         </td>
       </tr>
     `).join('') : '<tr><td colspan="8" class="empty">無資料</td></tr>';
 
-    document.getElementById('tbAccount').innerHTML = data.summary.length ? data.summary.map(r => `
+    document.getElementById('tbAccount').innerHTML = data.summary.length ? data.summary.map(r=>`
       <tr>
         <td><span class="badge badge-blue">${r.branch}</span></td>
         <td><span class="badge ${badgeType(r.account_type)}">${r.account_type||'-'}</span></td>
@@ -312,12 +507,14 @@ async function loadRepair(period, branch) {
         <td class="num" style="color:#f59e0b">${fmt(r.parts_cost)}</td>
       </tr>
     `).join('') : '<tr><td colspan="8" class="empty">無資料</td></tr>';
-
   } catch(e) {
     document.getElementById('tbSA').innerHTML = `<tr><td colspan="8" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;
   }
 }
 
+// ══════════════════════════════════════════════════════════
+// 技師工資
+// ══════════════════════════════════════════════════════════
 async function loadTech(period, branch) {
   try {
     const params = new URLSearchParams();
@@ -328,8 +525,8 @@ async function loadTech(period, branch) {
     if (data.error) throw new Error(data.error);
 
     const rows = data.ranking;
-    const totalWage = rows.reduce((s, r) => s + parseFloat(r.total_wage||0), 0);
-    const maxWage = Math.max(...rows.map(r => parseFloat(r.total_wage||0)));
+    const totalWage = rows.reduce((s,r) => s+parseFloat(r.total_wage||0), 0);
+    const maxWage   = Math.max(...rows.map(r => parseFloat(r.total_wage||0)), 1);
 
     document.getElementById('techKPI').innerHTML = `
       <div class="kpi-card"><div class="kpi-label">技師人數</div><div class="kpi-value kpi-blue">${rows.length}</div><div class="kpi-sub">人</div></div>
@@ -337,7 +534,7 @@ async function loadTech(period, branch) {
       <div class="kpi-card"><div class="kpi-label">平均工資</div><div class="kpi-value">${rows.length?fmt(totalWage/rows.length):0}</div><div class="kpi-sub">元/人</div></div>
     `;
 
-    document.getElementById('tbTech').innerHTML = rows.length ? rows.map((r, i) => `
+    document.getElementById('tbTech').innerHTML = rows.length ? rows.map((r,i)=>`
       <tr>
         <td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td>
         <td><span class="badge badge-blue">${r.branch}</span></td>
@@ -349,7 +546,7 @@ async function loadTech(period, branch) {
         <td class="num" style="color:#3b82f6">${fmt(r.net_wage)}</td>
         <td style="min-width:120px">
           <div class="bar-wrap">
-            <div class="bar-bg"><div class="bar-fill green" style="width:${maxWage>0?(parseFloat(r.total_wage)/maxWage*100).toFixed(0):0}%"></div></div>
+            <div class="bar-bg"><div class="bar-fill green" style="width:${(parseFloat(r.total_wage)/maxWage*100).toFixed(0)}%"></div></div>
             <span style="font-size:11px;color:#64748b">${totalWage>0?(parseFloat(r.total_wage)/totalWage*100).toFixed(1):0}%</span>
           </div>
         </td>
@@ -360,6 +557,9 @@ async function loadTech(period, branch) {
   }
 }
 
+// ══════════════════════════════════════════════════════════
+// 零件銷售
+// ══════════════════════════════════════════════════════════
 async function loadParts(period, branch) {
   try {
     const params = new URLSearchParams();
@@ -370,33 +570,32 @@ async function loadParts(period, branch) {
     if (data.error) throw new Error(data.error);
 
     const byType = data.byType;
-    const totalSales = byType.reduce((s, r) => s + parseFloat(r.total_sales||0), 0);
-    const totalCost = byType.reduce((s, r) => s + parseFloat(r.total_cost||0), 0);
+    const totalSales = byType.reduce((s,r) => s+parseFloat(r.total_sales||0), 0);
+    const totalCost  = byType.reduce((s,r) => s+parseFloat(r.total_cost ||0), 0);
 
     document.getElementById('partsKPI').innerHTML = `
       <div class="kpi-card"><div class="kpi-label">銷售總額</div><div class="kpi-value kpi-green">${fmt(totalSales,1)}</div><div class="kpi-sub">K</div></div>
       <div class="kpi-card"><div class="kpi-label">成本總額</div><div class="kpi-value kpi-yellow">${fmt(totalCost,1)}</div><div class="kpi-sub">K</div></div>
       <div class="kpi-card"><div class="kpi-label">毛利</div><div class="kpi-value kpi-blue">${fmt(totalSales-totalCost,1)}</div><div class="kpi-sub">K</div></div>
-      <div class="kpi-card"><div class="kpi-label">毛利率</div><div class="kpi-value">${totalSales>0?((totalSales-totalCost)/totalSales*100).toFixed(1):0}%</div><div class="kpi-sub"></div></div>
+      <div class="kpi-card"><div class="kpi-label">毛利率</div><div class="kpi-value">${totalSales>0?((totalSales-totalCost)/totalSales*100).toFixed(1):0}%</div></div>
     `;
 
-    document.getElementById('tbPartsType').innerHTML = byType.length ? byType.map(r => {
-      const sales = parseFloat(r.total_sales||0);
-      const cost = parseFloat(r.total_cost||0);
-      const margin = sales > 0 ? ((sales-cost)/sales*100) : 0;
+    document.getElementById('tbPartsType').innerHTML = byType.length ? byType.map(r=>{
+      const s=parseFloat(r.total_sales||0), c=parseFloat(r.total_cost||0);
+      const m=s>0?((s-c)/s*100):0;
       return `<tr>
         <td><span class="badge badge-blue">${r.branch}</span></td>
         <td><span class="badge ${badgeType(r.part_type)}">${r.part_type||'-'}</span></td>
         <td class="num">${parseInt(r.count||0).toLocaleString()}</td>
         <td class="num">${parseFloat(r.total_qty||0).toLocaleString()}</td>
-        <td class="num" style="font-weight:700">${fmt(sales)}</td>
-        <td class="num">${fmt(cost)}</td>
-        <td class="num" style="color:#10b981">${fmt(sales-cost)}</td>
-        <td class="num" style="color:${margin>20?'#10b981':margin>10?'#f59e0b':'#ef4444'}">${margin.toFixed(1)}%</td>
+        <td class="num" style="font-weight:700">${fmt(s)}</td>
+        <td class="num">${fmt(c)}</td>
+        <td class="num" style="color:#10b981">${fmt(s-c)}</td>
+        <td class="num" style="color:${m>20?'#10b981':m>10?'#f59e0b':'#ef4444'}">${m.toFixed(1)}%</td>
       </tr>`;
     }).join('') : '<tr><td colspan="8" class="empty">無資料</td></tr>';
 
-    document.getElementById('tbTopParts').innerHTML = data.topParts.length ? data.topParts.map((r, i) => `
+    document.getElementById('tbTopParts').innerHTML = data.topParts.length ? data.topParts.map((r,i)=>`
       <tr>
         <td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td>
         <td style="font-family:monospace;font-size:12px">${r.part_number}</td>
@@ -411,6 +610,320 @@ async function loadParts(period, branch) {
   }
 }
 
+// ══════════════════════════════════════════════════════════
+// SA 銷售設定管理
+// ══════════════════════════════════════════════════════════
+async function loadConfigs() {
+  try {
+    const res = await fetch('/api/sa-config');
+    configs = await res.json();
+    renderConfigList();
+  } catch(e) {
+    document.getElementById('configList').innerHTML = `<div style="color:#ef4444">${e.message}</div>`;
+  }
+}
+
+function renderConfigList() {
+  const el = document.getElementById('configList');
+  if (!configs.length) {
+    el.innerHTML = `<div style="color:#64748b;font-size:13px;padding:12px 0">尚無設定，點擊「新增設定」開始建立追蹤項目。</div>`;
+    return;
+  }
+  el.innerHTML = configs.map(c => {
+    const filters = c.filters || [];
+    const isSelected = c.id === selectedConfigId;
+    return `
+      <div class="config-item ${isSelected?'selected':''}" onclick="selectConfig(${c.id})">
+        <div style="font-size:22px">📋</div>
+        <div class="config-item-info">
+          <div class="config-item-name">${c.config_name}</div>
+          ${c.description ? `<div class="config-item-desc">${c.description}</div>` : ''}
+          <div class="config-item-tags">
+            ${filters.map(f => `
+              <span class="badge type-${f.type}" style="font-size:10px">
+                ${typeLabel[f.type]}: ${f.value}
+              </span>
+            `).join('')}
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openConfigModal(${c.id})">編輯</button>
+          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteConfig(${c.id},'${c.config_name.replace(/'/g,"\\'")}')">刪除</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function selectConfig(id) {
+  selectedConfigId = id;
+  renderConfigList();
+  await loadSASales();
+}
+
+async function deleteConfig(id, name) {
+  if (!confirm(`確定要刪除「${name}」設定嗎？`)) return;
+  await fetch(`/api/sa-config/${id}`, { method: 'DELETE' });
+  if (selectedConfigId === id) {
+    selectedConfigId = null;
+    document.getElementById('saSalesResult').style.display = 'none';
+  }
+  await loadConfigs();
+}
+
+// ══════════════════════════════════════════════════════════
+// SA 銷售統計
+// ══════════════════════════════════════════════════════════
+async function loadSASales() {
+  if (!selectedConfigId) return;
+  const period = document.getElementById('selPeriod').value;
+  const branch = document.getElementById('selBranch').value;
+  document.getElementById('saSalesResult').style.display = '';
+
+  const params = new URLSearchParams({ config_id: selectedConfigId });
+  if (period) params.set('period', period);
+  if (branch) params.set('branch', branch);
+
+  try {
+    const res = await fetch(`/api/stats/sa-sales?${params}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    const { config, bySA, byPart, trend, totals } = data;
+
+    // KPI
+    const margin = totals.total_sales > 0
+      ? ((totals.gross_profit / totals.total_sales) * 100).toFixed(1)
+      : '0.0';
+    document.getElementById('saKPI').innerHTML = `
+      <div class="kpi-card"><div class="kpi-label">銷售總額</div><div class="kpi-value kpi-green">${fmt(totals.total_sales,1)}</div><div class="kpi-sub">K</div></div>
+      <div class="kpi-card"><div class="kpi-label">總數量</div><div class="kpi-value kpi-blue">${parseFloat(totals.total_qty||0).toLocaleString()}</div><div class="kpi-sub">件</div></div>
+      <div class="kpi-card"><div class="kpi-label">毛利</div><div class="kpi-value kpi-purple">${fmt(totals.gross_profit,1)}</div><div class="kpi-sub">K</div></div>
+      <div class="kpi-card"><div class="kpi-label">毛利率</div><div class="kpi-value">${margin}%</div><div class="kpi-sub"></div></div>
+      <div class="kpi-card"><div class="kpi-label">銷售人員數</div><div class="kpi-value">${totals.sa_count}</div><div class="kpi-sub">人</div></div>
+    `;
+
+    // SA 排名
+    document.getElementById('saSATitle').textContent = `👤 SA 銷售排名 — ${config.config_name}`;
+    const maxSales = Math.max(...bySA.map(r => parseFloat(r.total_sales||0)), 1);
+    document.getElementById('tbSASales').innerHTML = bySA.length ? bySA.map((r,i) => {
+      const s = parseFloat(r.total_sales||0);
+      const gp= parseFloat(r.gross_profit||0);
+      const gpRate = s > 0 ? (gp/s*100).toFixed(1) : '0.0';
+      return `<tr>
+        <td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td>
+        <td><span class="badge badge-blue">${r.branch||'-'}</span></td>
+        <td style="font-weight:600">${r.sa_name}</td>
+        <td class="num">${parseInt(r.order_count||0)}</td>
+        <td class="num">${parseFloat(r.total_qty||0).toLocaleString()}</td>
+        <td class="num" style="font-weight:700;color:#10b981">${fmt(s)}</td>
+        <td class="num" style="color:#f59e0b">${fmt(r.total_cost)}</td>
+        <td class="num" style="color:#8b5cf6">${fmt(gp)}</td>
+        <td class="num" style="color:${parseFloat(gpRate)>20?'#10b981':parseFloat(gpRate)>10?'#f59e0b':'#ef4444'}">${gpRate}%</td>
+        <td style="min-width:100px">
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill" style="width:${(s/maxSales*100).toFixed(0)}%"></div></div>
+            <span style="font-size:11px;color:#64748b">${(s/maxSales*100).toFixed(0)}%</span>
+          </div>
+        </td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="10" class="empty">無資料，請確認零件銷售資料已上傳</td></tr>';
+
+    // 零件明細
+    document.getElementById('saPartTitle').textContent = `🔩 零件明細 — ${config.config_name}`;
+    document.getElementById('tbSAParts').innerHTML = byPart.length ? byPart.map((r,i) => `
+      <tr>
+        <td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td>
+        <td style="font-family:monospace;font-size:12px">${r.part_number||'-'}</td>
+        <td>${r.part_name||'-'}</td>
+        <td><span class="badge badge-blue" style="font-size:10px">${r.category_code||'-'}</span></td>
+        <td><span class="badge badge-purple" style="font-size:10px">${r.function_code||'-'}</span></td>
+        <td class="num">${parseInt(r.order_count||0)}</td>
+        <td class="num">${parseFloat(r.total_qty||0).toLocaleString()}</td>
+        <td class="num" style="font-weight:700;color:#10b981">${fmt(r.total_sales)}</td>
+      </tr>
+    `).join('') : '<tr><td colspan="8" class="empty">無資料</td></tr>';
+
+    // 月份趨勢
+    const prevMap = {};
+    document.getElementById('tbSATrend').innerHTML = trend.length ? trend.map(r => {
+      const key = r.branch;
+      const cur = parseFloat(r.total_sales||0);
+      const prev = prevMap[key];
+      const pct = prev ? ((cur-prev)/prev*100) : null;
+      prevMap[key] = cur;
+      return `<tr>
+        <td>${r.period.slice(0,4)}年${r.period.slice(4)}月</td>
+        <td><span class="badge badge-blue">${r.branch}</span></td>
+        <td class="num">${parseFloat(r.total_qty||0).toLocaleString()}</td>
+        <td class="num" style="font-weight:700">${fmt(cur)}</td>
+        <td class="num ${pct===null?'':pct>=0?'up':'down'}">
+          ${pct===null?'-':(pct>=0?'▲':'▼')+Math.abs(pct).toFixed(1)+'%'}
+        </td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="5" class="empty">無趨勢資料</td></tr>';
+
+  } catch(e) {
+    document.getElementById('saKPI').innerHTML = `<div style="color:#ef4444;padding:12px">${e.message}</div>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// 設定 Modal
+// ══════════════════════════════════════════════════════════
+function openConfigModal(id) {
+  editingConfigId = id;
+  if (id) {
+    const cfg = configs.find(c => c.id === id);
+    document.getElementById('modalTitle').textContent = '編輯銷售設定';
+    document.getElementById('cfgName').value = cfg.config_name;
+    document.getElementById('cfgDesc').value = cfg.description || '';
+    editingFilters = (cfg.filters || []).map(f => ({...f, label: ''}));
+  } else {
+    document.getElementById('modalTitle').textContent = '新增銷售設定';
+    document.getElementById('cfgName').value = '';
+    document.getElementById('cfgDesc').value = '';
+    editingFilters = [];
+  }
+  renderFilterList();
+  clearLookup();
+  document.getElementById('configModal').style.display = 'flex';
+}
+
+function closeConfigModal() {
+  document.getElementById('configModal').style.display = 'none';
+  editingFilters = [];
+}
+
+function closeModalIfBg(e) {
+  if (e.target === document.getElementById('configModal')) closeConfigModal();
+}
+
+function renderFilterList() {
+  const el = document.getElementById('filterList');
+  if (!editingFilters.length) {
+    el.innerHTML = '<div style="color:#64748b;font-size:12px;padding:8px 0">尚未新增篩選條件</div>';
+    return;
+  }
+  el.innerHTML = editingFilters.map((f, i) => `
+    <div class="filter-tag-row">
+      <span class="type-badge type-${f.type}">${typeLabel[f.type]}</span>
+      <span class="filter-val">${f.value}</span>
+      ${f.label ? `<span class="filter-sub">${f.label}</span>` : ''}
+      <button class="remove-btn" onclick="removeFilter(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+function removeFilter(i) {
+  editingFilters.splice(i, 1);
+  renderFilterList();
+}
+
+function addFilter() {
+  const type  = document.getElementById('addType').value;
+  const value = document.getElementById('addValue').value.trim();
+  if (!value) { document.getElementById('addHint').textContent = '請輸入值'; return; }
+  if (editingFilters.some(f => f.type === type && f.value === value)) {
+    document.getElementById('addHint').textContent = '此條件已存在';
+    return;
+  }
+  editingFilters.push({ type, value, label: '' });
+  renderFilterList();
+  document.getElementById('addValue').value = '';
+  document.getElementById('addHint').textContent = '';
+  clearLookup();
+}
+
+async function saveConfig() {
+  const config_name = document.getElementById('cfgName').value.trim();
+  const description = document.getElementById('cfgDesc').value.trim();
+  if (!config_name) { alert('請輸入設定名稱'); return; }
+  if (!editingFilters.length) { alert('請至少新增一個篩選條件'); return; }
+
+  const filters = editingFilters.map(({type, value}) => ({type, value}));
+  const btn = document.getElementById('btnSaveCfg');
+  btn.disabled = true;
+
+  try {
+    const url = editingConfigId ? `/api/sa-config/${editingConfigId}` : '/api/sa-config';
+    const method = editingConfigId ? 'PUT' : 'POST';
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ config_name, description, filters }),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    closeConfigModal();
+    await loadConfigs();
+    if (data.id) selectConfig(data.id);
+  } catch(e) {
+    alert('儲存失敗：' + e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// Parts Lookup 自動完成
+// ══════════════════════════════════════════════════════════
+function clearLookup() {
+  document.getElementById('addValue').value = '';
+  document.getElementById('lookupDropdown').style.display = 'none';
+  document.getElementById('addHint').textContent = '';
+}
+
+function debounceLookup() {
+  clearTimeout(lookupTimer);
+  lookupTimer = setTimeout(doLookup, 280);
+}
+
+async function doLookup() {
+  const type = document.getElementById('addType').value;
+  const q    = document.getElementById('addValue').value.trim();
+  const dd   = document.getElementById('lookupDropdown');
+  if (!q) { dd.style.display = 'none'; return; }
+
+  try {
+    const res = await fetch(`/api/sa-config/parts-lookup?type=${type}&q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    if (!data.length) { dd.style.display = 'none'; return; }
+
+    dd.innerHTML = data.map(item => {
+      if (type === 'part_number') {
+        return `<div class="lookup-item" onclick="pickLookup('${item.value.replace(/'/g,"\\'")}','${(item.label||'').replace(/'/g,"\\'")}')">
+          <div class="lookup-item-val">${item.value}</div>
+          <div class="lookup-item-sub">${item.label||''} | 類別:${item.category_code||'-'} 功能:${item.function_code||'-'}</div>
+        </div>`;
+      } else {
+        return `<div class="lookup-item" onclick="pickLookup('${item.value.replace(/'/g,"\\'")}','')">
+          <div class="lookup-item-val">${item.value}</div>
+          <div class="lookup-item-sub">涵蓋 ${item.part_count} 種零件 — ${(item.sample_names||'').slice(0,60)}</div>
+        </div>`;
+      }
+    }).join('');
+    dd.style.display = 'block';
+  } catch(e) { dd.style.display = 'none'; }
+}
+
+function pickLookup(value, label) {
+  document.getElementById('addValue').value = value;
+  document.getElementById('lookupDropdown').style.display = 'none';
+  document.getElementById('addHint').textContent = label ? `→ ${label}` : '';
+}
+
+// 點擊其他地方關閉下拉
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('addValue')?.closest('.lookup-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('lookupDropdown').style.display = 'none';
+  }
+});
+
+// ══════════════════════════════════════════════════════════
+// 月份趨勢
+// ══════════════════════════════════════════════════════════
 async function loadTrend(branch) {
   try {
     const params = new URLSearchParams();
@@ -421,13 +934,13 @@ async function loadTrend(branch) {
 
     const rows = data.trend;
     const prevMap = {};
-    document.getElementById('tbTrend').innerHTML = rows.length ? rows.map((r, i) => {
+    document.getElementById('tbTrend').innerHTML = rows.length ? rows.map(r => {
       const key = r.branch;
-      const prev = prevMap[key];
       const cur = parseFloat(r.total_untaxed||0);
-      const pct = prev ? ((cur - prev) / prev * 100) : null;
+      const prev = prevMap[key];
+      const pct = prev ? ((cur-prev)/prev*100) : null;
       prevMap[key] = cur;
-      return `<tr class="trend-row">
+      return `<tr>
         <td>${r.period.slice(0,4)}年${r.period.slice(4)}月</td>
         <td><span class="badge badge-blue">${r.branch}</span></td>
         <td class="num">${parseInt(r.car_count||0)}</td>
@@ -442,6 +955,9 @@ async function loadTrend(branch) {
   }
 }
 
+// ══════════════════════════════════════════════════════════
+// 每日台數
+// ══════════════════════════════════════════════════════════
 async function loadDaily(period, branch) {
   try {
     const params = new URLSearchParams();
@@ -452,125 +968,89 @@ async function loadDaily(period, branch) {
     if (data.error) throw new Error(data.error);
 
     const summary = data.summary;
-    const daily = data.daily;
-
-    // KPI 卡片：每個據點 總台數 / 工作天數 / 日均台數 各一張
-    const totalCars = summary.reduce((s, r) => s + parseInt(r.total_cars||0), 0);
-    const totalDays = summary.length
-      ? Math.round(summary.reduce((s, r) => s + parseInt(r.working_days||0), 0) / summary.length)
-      : 0;
-    const avgDaily = summary.length
-      ? (summary.reduce((s, r) => s + parseFloat(r.daily_avg||0), 0) / summary.length).toFixed(1)
-      : 0;
+    const daily   = data.daily;
 
     document.getElementById('dailyKPI').innerHTML = `
-      ${summary.map(r => `
-        <div class="kpi-card">
-          <div class="kpi-label">${r.branch} 總台數</div>
-          <div class="kpi-value kpi-blue">${parseInt(r.total_cars||0).toLocaleString()}</div>
-          <div class="kpi-sub">台</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">${r.branch} 工作天數</div>
-          <div class="kpi-value kpi-yellow">${parseInt(r.working_days||0)}</div>
-          <div class="kpi-sub">天</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">${r.branch} 日均台數</div>
-          <div class="kpi-value kpi-green">${parseFloat(r.daily_avg||0).toFixed(1)}</div>
-          <div class="kpi-sub">最高 ${r.max_day} 台 / 最低 ${r.min_day} 台</div>
-        </div>
+      ${summary.map(r=>`
+        <div class="kpi-card"><div class="kpi-label">${r.branch} 總台數</div><div class="kpi-value kpi-blue">${parseInt(r.total_cars||0).toLocaleString()}</div><div class="kpi-sub">台</div></div>
+        <div class="kpi-card"><div class="kpi-label">${r.branch} 工作天數</div><div class="kpi-value kpi-yellow">${parseInt(r.working_days||0)}</div><div class="kpi-sub">天</div></div>
+        <div class="kpi-card"><div class="kpi-label">${r.branch} 日均台數</div><div class="kpi-value kpi-green">${parseFloat(r.daily_avg||0).toFixed(1)}</div><div class="kpi-sub">最高${r.max_day}/最低${r.min_day}</div></div>
       `).join('')}
-      <div class="kpi-card">
-        <div class="kpi-label">全廠合計台數</div>
-        <div class="kpi-value">${totalCars.toLocaleString()}</div>
-        <div class="kpi-sub">各廠日均 ${avgDaily} 台</div>
-      </div>
     `;
 
-    // SVG 長條圖
-    const branchList = [...new Set(daily.map(r => r.branch))].sort();
-    const dateList = [...new Set(daily.map(r => r.arrive_date?.slice(0,10)))].sort();
-    const colors = { AMA: '#3b82f6', AMC: '#10b981', AMD: '#f59e0b' };
-    const maxCount = Math.max(...daily.map(r => parseInt(r.car_count||0)), 1);
-    const barW = Math.max(8, Math.min(24, Math.floor(560 / (dateList.length * branchList.length + dateList.length))));
-    const chartW = Math.max(700, dateList.length * (branchList.length * (barW + 2) + 10) + 60);
+    const branchList = [...new Set(daily.map(r=>r.branch))].sort();
+    const dateList   = [...new Set(daily.map(r=>r.arrive_date?.slice(0,10)))].sort();
+    const colors = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b' };
+    const maxCount = Math.max(...daily.map(r=>parseInt(r.car_count||0)), 1);
+    const barW = Math.max(8, Math.min(24, Math.floor(560/(dateList.length*branchList.length+dateList.length))));
+    const chartW = Math.max(700, dateList.length*(branchList.length*(barW+2)+10)+60);
     const chartH = 200;
 
     const dayMap = {};
     daily.forEach(r => {
       const d = r.arrive_date?.slice(0,10);
-      if (!dayMap[d]) dayMap[d] = {};
-      dayMap[d][r.branch] = parseInt(r.car_count||0);
+      if (!dayMap[d]) dayMap[d]={};
+      dayMap[d][r.branch]=parseInt(r.car_count||0);
     });
 
-    let bars = '';
-    let xLabels = '';
-    dateList.forEach((d, di) => {
-      const groupW = branchList.length * (barW + 2);
-      const gx = 50 + di * (groupW + 10);
-      branchList.forEach((b, bi) => {
-        const val = dayMap[d]?.[b] || 0;
-        const barH = val / maxCount * (chartH - 40);
-        const x = gx + bi * (barW + 2);
-        const y = chartH - 20 - barH;
-        bars += `<rect x="${x}" y="${y.toFixed(1)}" width="${barW}" height="${barH.toFixed(1)}"
-          fill="${colors[b]||'#64748b'}" rx="2" opacity="0.85">
-          <title>${b} ${d}: ${val}台</title></rect>`;
-        if (val > 0) bars += `<text x="${(x+barW/2).toFixed(0)}" y="${(y-3).toFixed(0)}" text-anchor="middle" font-size="9" fill="#94a3b8">${val}</text>`;
+    let bars='', xLabels='';
+    dateList.forEach((d,di)=>{
+      const groupW = branchList.length*(barW+2);
+      const gx = 50+di*(groupW+10);
+      branchList.forEach((b,bi)=>{
+        const val=dayMap[d]?.[b]||0;
+        const barH=val/maxCount*(chartH-40);
+        const x=gx+bi*(barW+2), y=chartH-20-barH;
+        bars+=`<rect x="${x}" y="${y.toFixed(1)}" width="${barW}" height="${barH.toFixed(1)}" fill="${colors[b]||'#64748b'}" rx="2" opacity="0.85"><title>${b} ${d}: ${val}台</title></rect>`;
+        if(val>0) bars+=`<text x="${(x+barW/2).toFixed(0)}" y="${(y-3).toFixed(0)}" text-anchor="middle" font-size="9" fill="#94a3b8">${val}</text>`;
       });
-      const labelX = gx + (branchList.length * (barW + 2)) / 2;
-      xLabels += `<text x="${labelX.toFixed(0)}" y="${chartH - 4}" text-anchor="middle" font-size="9" fill="#64748b">${d.slice(8)}</text>`;
+      const labelX=gx+(branchList.length*(barW+2))/2;
+      xLabels+=`<text x="${labelX.toFixed(0)}" y="${chartH-4}" text-anchor="middle" font-size="9" fill="#64748b">${d.slice(8)}</text>`;
     });
 
-    let yAxis = '';
-    for (let i = 0; i <= 4; i++) {
-      const val = Math.round(maxCount * i / 4);
-      const y = chartH - 20 - (i / 4) * (chartH - 40);
-      yAxis += `<line x1="45" y1="${y.toFixed(0)}" x2="${chartW}" y2="${y.toFixed(0)}" stroke="#2d3f56" stroke-width="1"/>
+    let yAxis='';
+    for(let i=0;i<=4;i++){
+      const val=Math.round(maxCount*i/4), y=chartH-20-(i/4)*(chartH-40);
+      yAxis+=`<line x1="45" y1="${y.toFixed(0)}" x2="${chartW}" y2="${y.toFixed(0)}" stroke="#2d3f56" stroke-width="1"/>
         <text x="40" y="${(y+4).toFixed(0)}" text-anchor="end" font-size="9" fill="#64748b">${val}</text>`;
     }
 
-    const legend = branchList.map((b, i) =>
-      `<rect x="${50 + i*70}" y="8" width="10" height="10" fill="${colors[b]||'#64748b'}" rx="2"/>
-       <text x="${63 + i*70}" y="17" font-size="11" fill="#94a3b8">${b}</text>`
+    const legend=branchList.map((b,i)=>
+      `<rect x="${50+i*70}" y="8" width="10" height="10" fill="${colors[b]||'#64748b'}" rx="2"/>
+       <text x="${63+i*70}" y="17" font-size="11" fill="#94a3b8">${b}</text>`
     ).join('');
 
-    document.getElementById('dailyChart').innerHTML = `
-      <svg viewBox="0 0 ${chartW} ${chartH + 10}" style="width:100%;height:auto;display:block">
+    document.getElementById('dailyChart').innerHTML=`
+      <svg viewBox="0 0 ${chartW} ${chartH+10}" style="width:100%;height:auto;display:block">
         ${yAxis}${bars}${xLabels}${legend}
       </svg>`;
 
-    // 每日明細表
-    const avgMap = {};
-    summary.forEach(r => avgMap[r.branch] = parseFloat(r.daily_avg||0));
-
-    document.getElementById('tbDaily').innerHTML = daily.length ? daily.map(r => {
-      const cnt = parseInt(r.car_count||0);
-      const avg = avgMap[r.branch] || 0;
-      const diff = cnt - avg;
-      const pct = avg > 0 ? (diff / avg * 100) : 0;
+    const avgMap={};
+    summary.forEach(r=>avgMap[r.branch]=parseFloat(r.daily_avg||0));
+    document.getElementById('tbDaily').innerHTML=daily.length?daily.map(r=>{
+      const cnt=parseInt(r.car_count||0), avg=avgMap[r.branch]||0;
+      const diff=cnt-avg, pct=avg>0?(diff/avg*100):0;
       return `<tr>
         <td>${r.arrive_date?.slice(0,10)}</td>
         <td><span class="badge badge-blue">${r.branch}</span></td>
         <td class="num" style="font-weight:700">${cnt}</td>
-        <td class="num ${diff >= 0 ? 'up' : 'down'}">
-          ${diff >= 0 ? '▲' : '▼'}${Math.abs(diff).toFixed(1)}
-          <span style="font-size:11px;color:#64748b">(${pct >= 0 ? '+' : ''}${pct.toFixed(0)}%)</span>
+        <td class="num ${diff>=0?'up':'down'}">
+          ${diff>=0?'▲':'▼'}${Math.abs(diff).toFixed(1)}
+          <span style="font-size:11px;color:#64748b">(${pct>=0?'+':''}${pct.toFixed(0)}%)</span>
         </td>
       </tr>`;
-    }).join('') : '<tr><td colspan="4" class="empty">無資料</td></tr>';
-
+    }).join(''):'<tr><td colspan="4" class="empty">無資料</td></tr>';
   } catch(e) {
-    document.getElementById('dailyKPI').innerHTML = `<div style="color:#ef4444;padding:16px">${e.message}</div>`;
-    document.getElementById('tbDaily').innerHTML = `<tr><td colspan="4" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;
+    document.getElementById('dailyKPI').innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;
   }
 }
 
+// ══════════════════════════════════════════════════════════
 // 初始化
+// ══════════════════════════════════════════════════════════
 (async () => {
   await loadPeriods();
-  await loadAll();
+  await Promise.all([loadAll(), loadConfigs()]);
 })();
 </script>
 </body>
