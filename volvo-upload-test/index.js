@@ -300,7 +300,7 @@ const parseTechPerformance = (rows, branch, period) => rows
 
 const parsePartsSales = (rows, branch, period) => rows.map(r => {
   const rowBranch = branch || (() => {
-    const b = String(r['據點'] || '').toUpperCase().trim();
+    const b = String(r['據點'] || r['點'] || r['分店'] || '').toUpperCase().trim();
     return ['AMA','AMC','AMD'].includes(b) ? b : null;
   })();
   return {
@@ -328,7 +328,7 @@ const parsePartsSales = (rows, branch, period) => rows.map(r => {
 
 const parseBusinessQuery = (rows, branch, period) => rows.map(r => {
   const rowBranch = branch || (() => {
-    const b = String(r['據點'] || '').toUpperCase().trim();
+    const b = String(r['據點'] || r['點'] || r['分店'] || '').toUpperCase().trim();
     return ['AMA','AMC','AMD'].includes(b) ? b : null;
   })();
   return {
