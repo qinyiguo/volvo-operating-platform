@@ -290,12 +290,12 @@
       若無型錄資料，則以零件銷售明細中的 Paycode 欄位判斷。「帳類」欄位對應零件銷售的「付款部門」（department）欄位。
     </div>
     <div id="boutiqueKPI" class="kpi-grid"></div>
-    <div class="card" style="padding:0;overflow:hidden">
+    <div class="card" style="padding:0">
       <div style="padding:16px 20px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
         <div style="font-size:14px;font-weight:700">💎 精品 &amp; 配件銷售矩陣（各據點 × 銷售人員 × 帳類）</div>
         <div style="font-size:12px;color:#64748b">金額單位：元（未稅）</div>
       </div>
-      <div style="overflow-x:auto;padding:0 0 4px">
+      <div style="overflow-x:auto;overflow-y:auto;max-height:70vh;padding:0 0 4px">
         <div id="boutiqueMatrix" style="min-width:700px">
           <div style="padding:48px;text-align:center;color:#64748b"><span class="spinner"></span>載入中...</div>
         </div>
@@ -309,8 +309,8 @@
       <div id="saMatrixMeta" style="font-size:13px;color:#64748b"></div>
       <a href="/settings.html" style="font-size:12px;color:#64748b;text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border:1px solid #2d3f56;border-radius:6px;background:#1e293b">⚙️ 管理設定</a>
     </div>
-    <div class="card" style="padding:0;overflow:hidden">
-      <div style="overflow-x:auto">
+    <div class="card" style="padding:0">
+      <div style="overflow-x:auto;overflow-y:auto;max-height:70vh">
         <div id="saMatrix"><div style="padding:48px;text-align:center;color:#64748b"><span class="spinner"></span>載入中...</div></div>
       </div>
     </div>
