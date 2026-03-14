@@ -206,6 +206,7 @@
         <table>
           <thead>
             <tr>
+              <th>據點</th>
               <th>帳類</th>
               <th class="num">台數</th>
               <th class="num">引擎工資</th>
@@ -221,7 +222,7 @@
             </tr>
           </thead>
           <tbody id="tbIncomeRevenue">
-            <tr><td colspan="12" class="loading"><span class="spinner"></span>載入中</td></tr>
+            <tr><td colspan="13" class="loading"><span class="spinner"></span>載入中</td></tr>
           </tbody>
         </table>
       </div>
@@ -720,6 +721,7 @@ async function loadIncomeSummary(period, branch) {
 
       revRows += `
         <tr>
+          <td><span class="badge badge-blue">${r.branch}</span></td>
           <td><span class="badge ${meta.badge}">${r.account_type}</span></td>
           <td class="num">${parseInt(r.car_count||0)}</td>
           <td class="num">${fmt(r.engine_wage_nt)}</td>
@@ -739,6 +741,7 @@ async function loadIncomeSummary(period, branch) {
     if (extTotal > 0) {
       revRows += `
         <tr>
+          <td><span class="badge badge-teal">外賣</span></td>
           <td><span class="badge badge-teal">外賣(零件銷售)</span></td>
           <td class="num">${extOrders} 筆</td>
           <td class="num">—</td>
@@ -758,6 +761,7 @@ async function loadIncomeSummary(period, branch) {
     // 小計列
     revRows += `
       <tr class="subtotal-row">
+        <td></td>
         <td style="color:#f97316">有費小計</td>
         <td class="num">${parseInt(revSub.cars)}</td>
         <td class="num">${fmt(revSub.engine)}</td>
@@ -772,7 +776,7 @@ async function loadIncomeSummary(period, branch) {
         <td class="num" style="color:#f97316;font-size:14px">${fmt(paidTotal)}</td>
       </tr>`;
 
-    revenueEl.innerHTML = revRows || '<tr><td colspan="12" class="empty">無資料</td></tr>';
+    revenueEl.innerHTML = revRows || '<tr><td colspan="13" class="empty">無資料</td></tr>';
 
     // ── 無費工單成本表 ─────────────────────────────────────
     // tech_performance 工資視為未稅（tech_performance.wage 為含稅，÷1.05）
@@ -832,7 +836,7 @@ async function loadIncomeSummary(period, branch) {
 
   } catch(e) {
     cardsEl.innerHTML   = `<div style="color:#ef4444;grid-column:1/-1">${e.message}</div>`;
-    revenueEl.innerHTML = `<tr><td colspan="12" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;
+    revenueEl.innerHTML = `<tr><td colspan="13" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;
     costEl.innerHTML    = `<tr><td colspan="6" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;
   }
 }
@@ -1167,7 +1171,7 @@ async function loadDaily(period, branch) {
       <div class="kpi-card">
         <div class="kpi-label">${r.branch} 工作天數</div>
         <div class="kpi-value kpi-yellow">${parseInt(r.working_days||0)}</div>
-        <div class="kpi-sub">天</div>
+        <div class="kpi-sub">${r.configured_working_days !== null ? '✅ 手動設定' : '⚠️ 自動偵測'}</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">${r.branch} 日均台數</div>
