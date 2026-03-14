@@ -195,10 +195,6 @@ const initDatabase = async () => {
       )
     `);
 
-    // ── SA 銷售設定表 ──────────────────────────────────────────────
-    // filters 欄位為 JSONB 陣列，每個元素：
-    //   { type: 'category_code' | 'function_code' | 'part_number' | 'part_type', value: '...' }
-    // stat_method: 'amount' | 'quantity' | 'count'
     await client.query(`
       CREATE TABLE IF NOT EXISTS sa_sales_config (
         id           SERIAL PRIMARY KEY,
@@ -210,24 +206,40 @@ const initDatabase = async () => {
         updated_at   TIMESTAMPTZ DEFAULT NOW()
       )
     `);
-    // 補 migration，舊資料表自動加欄位
     await client.query(`
       ALTER TABLE sa_sales_config
       ADD COLUMN IF NOT EXISTS stat_method VARCHAR(20) NOT NULL DEFAULT 'amount'
     `);
 
-    // ── 系統設定表 ──────────────────────────────────────────────
     await client.query(`
       CREATE TABLE IF NOT EXISTS app_settings (
         key   VARCHAR(100) PRIMARY KEY,
         value TEXT NOT NULL
       )
     `);
-    // 預設管理員密碼（只在第一次建立時插入）
     await client.query(`
       INSERT INTO app_settings (key, value)
       VALUES ('settings_password', 'admin1234')
       ON CONFLICT (key) DO NOTHING
+    `);
+
+    // ── 收入設定表 ────────────────────────────────────────
+    // 用來定義要追蹤哪些 account_type 對應哪個收入類別
+    // 以及外賣收入從 parts_sales 的哪個 category 撈取
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS income_config (
+        id            SERIAL PRIMARY KEY,
+        config_key    VARCHAR(50) NOT NULL UNIQUE,
+        config_value  TEXT NOT NULL,
+        description   TEXT,
+        updated_at    TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    // 預設外賣 category 設定
+    await client.query(`
+      INSERT INTO income_config (config_key, config_value, description)
+      VALUES ('external_sales_category', '外賣', '外賣收入對應 parts_sales.category 值')
+      ON CONFLICT (config_key) DO NOTHING
     `);
 
     console.log('[initDB] ✅ 所有表格建立完成');
@@ -599,8 +611,6 @@ app.post('/api/upload', upload.array('files', 8), async (req, res) => {
 // ============================================================
 // SA 銷售設定 API
 // ============================================================
-
-// 列出所有設定
 app.get('/api/sa-config', async (req, res) => {
   try {
     const r = await pool.query(
@@ -611,7 +621,6 @@ app.get('/api/sa-config', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 新增設定
 app.post('/api/sa-config', async (req, res) => {
   const { config_name, description, filters, stat_method } = req.body;
   if (!config_name) return res.status(400).json({ error: '名稱為必填' });
@@ -629,7 +638,6 @@ app.post('/api/sa-config', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 更新設定
 app.put('/api/sa-config/:id', async (req, res) => {
   const { config_name, description, filters, stat_method } = req.body;
   if (!config_name) return res.status(400).json({ error: '名稱為必填' });
@@ -649,7 +657,6 @@ app.put('/api/sa-config/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 刪除設定
 app.delete('/api/sa-config/:id', async (req, res) => {
   try {
     await pool.query(`DELETE FROM sa_sales_config WHERE id=$1`, [req.params.id]);
@@ -657,24 +664,19 @@ app.delete('/api/sa-config/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// parts_catalog 查詢（供前端自動完成）
-// GET /api/sa-config/parts-lookup?type=category_code&q=AB
 app.get('/api/sa-config/parts-lookup', async (req, res) => {
   const { type, q } = req.query;
   const allowed = ['category_code', 'function_code', 'part_number'];
   if (!allowed.includes(type)) return res.status(400).json({ error: '無效的 type' });
-
   try {
     const search = `%${(q || '').trim()}%`;
     let sql, params;
-
     if (type === 'part_number') {
       sql = `
         SELECT part_number AS value, part_name AS label, category_code, function_code
         FROM parts_catalog
         WHERE part_number ILIKE $1 OR part_name ILIKE $1
-        ORDER BY part_number
-        LIMIT 30
+        ORDER BY part_number LIMIT 30
       `;
       params = [search];
     } else {
@@ -685,31 +687,51 @@ app.get('/api/sa-config/parts-lookup', async (req, res) => {
         FROM parts_catalog
         WHERE ${type} ILIKE $1 AND ${type} != ''
         GROUP BY ${type}
-        ORDER BY part_count DESC
-        LIMIT 30
+        ORDER BY part_count DESC LIMIT 30
       `;
       params = [search];
     }
-
     const r = await pool.query(sql, params);
     res.json(r.rows);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ============================================================
+// 收入設定 API (income_config)
+// ============================================================
+app.get('/api/income-config', async (req, res) => {
+  try {
+    const r = await pool.query(`SELECT config_key, config_value, description FROM income_config ORDER BY id`);
+    // 轉成 key:value map
+    const map = {};
+    r.rows.forEach(row => { map[row.config_key] = row.config_value; });
+    res.json({ rows: r.rows, map });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.put('/api/income-config/:key', async (req, res) => {
+  const { value } = req.body;
+  if (!value) return res.status(400).json({ error: '值為必填' });
+  try {
+    await pool.query(
+      `UPDATE income_config SET config_value=$1, updated_at=NOW() WHERE config_key=$2`,
+      [value.trim(), req.params.key]
+    );
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ============================================================
 // SA 銷售統計 API
-// GET /api/stats/sa-sales?config_id=1&period=202501&branch=AMA
 // ============================================================
 app.get('/api/stats/sa-sales', async (req, res) => {
   const { config_id, period, branch } = req.query;
   if (!config_id) return res.status(400).json({ error: '請指定 config_id' });
-
   try {
     const cfgRow = await pool.query(`SELECT * FROM sa_sales_config WHERE id=$1`, [config_id]);
     if (!cfgRow.rows.length) return res.status(404).json({ error: '找不到設定' });
     const cfg = cfgRow.rows[0];
     const filters = cfg.filters;
-
     if (!filters.length) return res.json({ config: cfg, bySA: [], byPart: [], totals: {} });
 
     const catCodes  = filters.filter(f => f.type === 'category_code').map(f => f.value);
@@ -717,74 +739,37 @@ app.get('/api/stats/sa-sales', async (req, res) => {
     const partNums  = filters.filter(f => f.type === 'part_number').map(f => f.value);
     const partTypes = filters.filter(f => f.type === 'part_type').map(f => f.value);
 
-    const conds = [];
-    const params = [];
-    let idx = 1;
-
+    const conds = []; const params = []; let idx = 1;
     if (period)  { conds.push(`ps.period = $${idx++}`); params.push(period); }
     if (branch)  { conds.push(`ps.branch = $${idx++}`); params.push(branch); }
     if (catCodes.length)  { conds.push(`ps.category_code = ANY($${idx++})`); params.push(catCodes); }
     if (funcCodes.length) { conds.push(`ps.function_code  = ANY($${idx++})`); params.push(funcCodes); }
     if (partNums.length)  { conds.push(`ps.part_number    = ANY($${idx++})`); params.push(partNums); }
     if (partTypes.length) { conds.push(`ps.part_type      = ANY($${idx++})`); params.push(partTypes); }
-
     const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
 
     const bySA = await pool.query(`
-      SELECT
-        ps.branch,
+      SELECT ps.branch,
         COALESCE(NULLIF(ps.sales_person,''), '（未知）') AS sa_name,
-        COUNT(DISTINCT ps.order_no)       AS order_count,
-        SUM(ps.sale_qty)                  AS total_qty,
-        SUM(ps.sale_price_untaxed)        AS total_sales,
-        SUM(ps.cost_untaxed)              AS total_cost,
-        SUM(ps.sale_price_untaxed)
-          - SUM(ps.cost_untaxed)          AS gross_profit
-      FROM parts_sales ps
-      ${where}
-      GROUP BY ps.branch, sa_name
-      ORDER BY total_sales DESC
+        COUNT(DISTINCT ps.order_no) AS order_count,
+        SUM(ps.sale_qty) AS total_qty,
+        SUM(ps.sale_price_untaxed) AS total_sales,
+        SUM(ps.cost_untaxed) AS total_cost,
+        SUM(ps.sale_price_untaxed) - SUM(ps.cost_untaxed) AS gross_profit
+      FROM parts_sales ps ${where}
+      GROUP BY ps.branch, sa_name ORDER BY total_sales DESC
     `, params);
 
     const byPart = await pool.query(`
-      SELECT
-        ps.part_number,
-        ps.part_name,
-        ps.category_code,
-        ps.function_code,
-        ps.part_type,
-        COUNT(DISTINCT ps.order_no)  AS order_count,
-        SUM(ps.sale_qty)             AS total_qty,
-        SUM(ps.sale_price_untaxed)   AS total_sales,
-        SUM(ps.cost_untaxed)         AS total_cost
-      FROM parts_sales ps
-      ${where}
+      SELECT ps.part_number, ps.part_name, ps.category_code, ps.function_code, ps.part_type,
+        COUNT(DISTINCT ps.order_no) AS order_count,
+        SUM(ps.sale_qty) AS total_qty,
+        SUM(ps.sale_price_untaxed) AS total_sales,
+        SUM(ps.cost_untaxed) AS total_cost
+      FROM parts_sales ps ${where}
       GROUP BY ps.part_number, ps.part_name, ps.category_code, ps.function_code, ps.part_type
-      ORDER BY total_sales DESC
-      LIMIT 50
+      ORDER BY total_sales DESC LIMIT 50
     `, params);
-
-    const trendConds = [];
-    const trendParams = [];
-    let tidx = 1;
-    if (branch) { trendConds.push(`ps.branch = $${tidx++}`); trendParams.push(branch); }
-    if (catCodes.length)  { trendConds.push(`ps.category_code = ANY($${tidx++})`); trendParams.push(catCodes); }
-    if (funcCodes.length) { trendConds.push(`ps.function_code  = ANY($${tidx++})`); trendParams.push(funcCodes); }
-    if (partNums.length)  { trendConds.push(`ps.part_number    = ANY($${tidx++})`); trendParams.push(partNums); }
-    if (partTypes.length) { trendConds.push(`ps.part_type      = ANY($${tidx++})`); trendParams.push(partTypes); }
-    const trendWhere = trendConds.length ? 'WHERE ' + trendConds.join(' AND ') : '';
-
-    const trend = await pool.query(`
-      SELECT
-        ps.period,
-        ps.branch,
-        SUM(ps.sale_qty)           AS total_qty,
-        SUM(ps.sale_price_untaxed) AS total_sales
-      FROM parts_sales ps
-      ${trendWhere}
-      GROUP BY ps.period, ps.branch
-      ORDER BY ps.period, ps.branch
-    `, trendParams);
 
     const totals = {
       total_qty:    bySA.rows.reduce((s, r) => s + parseFloat(r.total_qty   || 0), 0),
@@ -794,7 +779,7 @@ app.get('/api/stats/sa-sales', async (req, res) => {
       sa_count:     bySA.rows.length,
     };
 
-    res.json({ config: cfg, bySA: bySA.rows, byPart: byPart.rows, trend: trend.rows, totals });
+    res.json({ config: cfg, bySA: bySA.rows, byPart: byPart.rows, totals });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -830,7 +815,7 @@ app.get('/api/health', async (req, res) => {
 });
 
 // ============================================================
-// 統計 API（原有）
+// 統計 API — 維修收入
 // ============================================================
 app.get('/api/stats/repair', async (req, res) => {
   try {
@@ -875,6 +860,118 @@ app.get('/api/stats/repair', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ============================================================
+// 統計 API — 收入分類明細（新增）
+// ============================================================
+// 說明：
+//   repair_income 的零件/工資/配件等欄位為「含稅」，÷1.05 取得未稅
+//   parts_cost 欄位已為「未稅」(零件成本（未稅）)，不需除以1.05
+//   外賣收入從 parts_sales.category 撈取（預設 category='外賣'，可由 income_config 設定）
+//   有費收入 = 一般 + 保險 + 延保 + 外賣（票券不計入有費）
+//   無費工單（內結/保固/VSA/善意維修）顯示成本+工資
+// ============================================================
+app.get('/api/stats/income-summary', async (req, res) => {
+  try {
+    const { period, branch } = req.query;
+    const conds = []; const params = []; let idx = 1;
+    if (period) { conds.push(`period = $${idx++}`); params.push(period); }
+    if (branch) { conds.push(`branch = $${idx++}`); params.push(branch); }
+    const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
+
+    // 取得外賣 category 設定
+    const cfgRow = await pool.query(
+      `SELECT config_value FROM income_config WHERE config_key = 'external_sales_category'`
+    );
+    const externalCategory = cfgRow.rows[0]?.config_value || '外賣';
+
+    // ── 收入分類（依帳類分組，計算未稅各項目）
+    // 注意：
+    //   revenue 欄位（含稅）：engine_wage, parts_income, accessories_income,
+    //                         boutique_income, bodywork_income, paint_income,
+    //                         carwash_income, outsource_income, addon_income → ÷1.05
+    //   cost 欄位（已未稅）：parts_cost → 不除
+    //   total_untaxed 欄位：已為未稅 → 不除（DMS 直接輸出）
+    const byType = await pool.query(`
+      SELECT
+        branch,
+        account_type,
+        COUNT(DISTINCT work_order)                          AS car_count,
+        SUM(total_untaxed)                                  AS total_untaxed,
+        ROUND(SUM(engine_wage)        / 1.05)               AS engine_wage_nt,
+        ROUND(SUM(parts_income)       / 1.05)               AS parts_income_nt,
+        ROUND(SUM(accessories_income) / 1.05)               AS accessories_income_nt,
+        ROUND(SUM(boutique_income)    / 1.05)               AS boutique_income_nt,
+        ROUND(SUM(bodywork_income)    / 1.05)               AS bodywork_income_nt,
+        ROUND(SUM(paint_income)       / 1.05)               AS paint_income_nt,
+        ROUND(SUM(carwash_income)     / 1.05)               AS carwash_income_nt,
+        ROUND(SUM(outsource_income)   / 1.05)               AS outsource_income_nt,
+        ROUND(SUM(addon_income)       / 1.05)               AS addon_income_nt,
+        SUM(parts_cost)                                     AS parts_cost_nt
+      FROM repair_income ${where}
+      GROUP BY branch, account_type
+      ORDER BY branch,
+        CASE
+          WHEN account_type ILIKE '%一般%' THEN 1
+          WHEN account_type ILIKE '%保險%' THEN 2
+          WHEN account_type ILIKE '%延保%' THEN 3
+          WHEN account_type ILIKE '%票%'   THEN 4
+          WHEN account_type ILIKE '%內結%' THEN 5
+          WHEN account_type ILIKE '%保固%' THEN 6
+          WHEN account_type ILIKE '%VSA%' OR account_type ILIKE '%vsa%' THEN 7
+          WHEN account_type ILIKE '%善意%' THEN 8
+          ELSE 9
+        END,
+        total_untaxed DESC
+    `, params);
+
+    // ── 外賣收入（來自 parts_sales.category）
+    const extConds = []; const extParams = []; let eidx = 1;
+    if (period) { extConds.push(`period = $${eidx++}`); extParams.push(period); }
+    if (branch) { extConds.push(`branch = $${eidx++}`); extParams.push(branch); }
+    extConds.push(`category = $${eidx++}`); extParams.push(externalCategory);
+    const extWhere = 'WHERE ' + extConds.join(' AND ');
+
+    const externalSales = await pool.query(`
+      SELECT
+        branch,
+        COUNT(DISTINCT order_no)   AS order_count,
+        SUM(sale_qty)              AS total_qty,
+        SUM(sale_price_untaxed)    AS total_sales,
+        SUM(cost_untaxed)          AS total_cost
+      FROM parts_sales ${extWhere}
+      GROUP BY branch
+      ORDER BY branch
+    `, extParams);
+
+    // ── 各據點各帳類的技師工資彙總（從 tech_performance，用於無費工單成本核算）
+    const techConds = []; const techParams = []; let tidx = 1;
+    if (period) { techConds.push(`period = $${tidx++}`); techParams.push(period); }
+    if (branch) { techConds.push(`branch = $${tidx++}`); techParams.push(branch); }
+    const techWhere = techConds.length ? 'WHERE ' + techConds.join(' AND ') : '';
+
+    const techByType = await pool.query(`
+      SELECT
+        branch,
+        account_type,
+        COUNT(DISTINCT work_order) AS car_count,
+        SUM(wage)                  AS total_wage,
+        SUM(standard_hours)        AS total_hours
+      FROM tech_performance ${techWhere}
+      GROUP BY branch, account_type
+    `, techParams);
+
+    res.json({
+      byType: byType.rows,
+      externalSales: externalSales.rows,
+      techByType: techByType.rows,
+      externalCategory,
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ============================================================
+// 統計 API — 技師工資
+// ============================================================
 app.get('/api/stats/tech', async (req, res) => {
   try {
     const { period, branch } = req.query;
@@ -896,6 +993,9 @@ app.get('/api/stats/tech', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ============================================================
+// 統計 API — 零件銷售
+// ============================================================
 app.get('/api/stats/parts', async (req, res) => {
   try {
     const { period, branch } = req.query;
@@ -924,6 +1024,9 @@ app.get('/api/stats/parts', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ============================================================
+// 統計 API — 月份趨勢
+// ============================================================
 app.get('/api/stats/trend', async (req, res) => {
   try {
     const { branch } = req.query;
@@ -942,6 +1045,9 @@ app.get('/api/stats/trend', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ============================================================
+// 統計 API — 每日進廠台數
+// ============================================================
 app.get('/api/stats/daily', async (req, res) => {
   try {
     const { period, branch } = req.query;
@@ -1008,7 +1114,6 @@ app.get('/api/periods', async (req, res) => {
 
 // ============================================================
 // SA 銷售矩陣 API
-// GET /api/stats/sa-sales-matrix?period=202501&branch=AMA
 // ============================================================
 app.get('/api/stats/sa-sales-matrix', async (req, res) => {
   const { period, branch } = req.query;
@@ -1029,9 +1134,7 @@ app.get('/api/stats/sa-sales-matrix', async (req, res) => {
       const partTypes = filters.filter(f => f.type === 'part_type').map(f => f.value);
       if (!catCodes.length && !funcCodes.length && !partNums.length && !partTypes.length) continue;
 
-      const conds = [];
-      const params = [];
-      let idx = 1;
+      const conds = []; const params = []; let idx = 1;
       if (period) { conds.push(`period = $${idx++}`); params.push(period); }
       if (branch) { conds.push(`branch = $${idx++}`); params.push(branch); }
       if (catCodes.length)  { conds.push(`category_code = ANY($${idx++})`); params.push(catCodes); }
@@ -1041,8 +1144,7 @@ app.get('/api/stats/sa-sales-matrix', async (req, res) => {
 
       const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
       const r = await pool.query(`
-        SELECT
-          branch,
+        SELECT branch,
           COALESCE(NULLIF(sales_person,''), '（未知）') AS sa_name,
           SUM(sale_qty)           AS qty,
           SUM(sale_price_untaxed) AS sales,
