@@ -26,7 +26,6 @@
   .btn-secondary { background: #253347; color: #cbd5e1; border: 1px solid #2d3f56; }
   .btn-secondary:hover { background: #2d3f56; }
   .btn-sm { padding: 4px 10px; font-size: 12px; }
-  .btn:disabled { opacity: .5; cursor: not-allowed; }
 
   .tabs { display: flex; gap: 2px; background: #1e293b; border-radius: 8px; padding: 3px; margin-bottom: 20px; flex-wrap: wrap; }
   .tab { padding: 8px 16px; border: none; background: transparent; color: #64748b; font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 6px; white-space: nowrap; }
@@ -42,9 +41,13 @@
   .kpi-blue { color: #3b82f6; }
   .kpi-yellow { color: #f59e0b; }
   .kpi-purple { color: #8b5cf6; }
+  .kpi-red { color: #ef4444; }
+  .kpi-teal { color: #14b8a6; }
+  .kpi-orange { color: #f97316; }
 
   .card { background: #1a2332; border: 1px solid #2d3f56; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
-  .card-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 14px; }
+  .card-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card-title-note { font-size: 11px; font-weight: 400; color: #64748b; margin-left: auto; }
 
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   th { background: #0f172a; color: #64748b; font-size: 12px; font-weight: 600; text-align: left; padding: 10px 12px; border-bottom: 1px solid #2d3f56; white-space: nowrap; }
@@ -54,11 +57,14 @@
   .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #2d3f56; }
 
   .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
-  .badge-blue { background: rgba(59,130,246,.15); color: #3b82f6; }
-  .badge-green { background: rgba(16,185,129,.15); color: #10b981; }
+  .badge-blue   { background: rgba(59,130,246,.15); color: #3b82f6; }
+  .badge-green  { background: rgba(16,185,129,.15); color: #10b981; }
   .badge-yellow { background: rgba(245,158,11,.15); color: #f59e0b; }
   .badge-purple { background: rgba(139,92,246,.15); color: #8b5cf6; }
-  .badge-red { background: rgba(239,68,68,.15); color: #ef4444; }
+  .badge-red    { background: rgba(239,68,68,.15); color: #ef4444; }
+  .badge-teal   { background: rgba(20,184,166,.15); color: #14b8a6; }
+  .badge-orange { background: rgba(249,115,22,.15); color: #f97316; }
+  .badge-gray   { background: rgba(100,116,139,.15); color: #94a3b8; }
 
   .empty { text-align: center; padding: 48px; color: #64748b; font-size: 14px; }
   .loading { text-align: center; padding: 48px; color: #64748b; }
@@ -73,10 +79,70 @@
   .bar-wrap { display: flex; align-items: center; gap: 8px; }
   .bar-bg { flex: 1; background: #0f172a; border-radius: 4px; height: 6px; min-width: 60px; }
   .bar-fill { height: 6px; border-radius: 4px; background: #3b82f6; }
-  .bar-fill.green { background: #10b981; }
+  .bar-fill.green  { background: #10b981; }
   .bar-fill.yellow { background: #f59e0b; }
-  .up { color: #10b981; }
+  .up   { color: #10b981; }
   .down { color: #ef4444; }
+
+  /* ── 收入分類專用樣式 ── */
+  .income-section-title {
+    font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase;
+    letter-spacing: .06em; padding: 0 0 10px; margin-bottom: 12px;
+    border-bottom: 1px solid #2d3f56; display: flex; align-items: center; gap: 8px;
+  }
+  .income-category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .income-cat-card {
+    background: #0f172a; border: 1px solid #2d3f56; border-radius: 10px;
+    padding: 14px 16px; position: relative; overflow: hidden;
+  }
+  .income-cat-card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px; border-radius: 3px 0 0 3px;
+  }
+  .income-cat-card.type-general::before   { background: #3b82f6; }
+  .income-cat-card.type-insurance::before { background: #10b981; }
+  .income-cat-card.type-extended::before  { background: #8b5cf6; }
+  .income-cat-card.type-voucher::before   { background: #f59e0b; }
+  .income-cat-card.type-external::before  { background: #14b8a6; }
+  .income-cat-card.type-paid::before      { background: #f97316; }
+  .income-cat-card.type-internal::before  { background: #64748b; }
+  .income-cat-card.type-warranty::before  { background: #6366f1; }
+  .income-cat-card.type-vsa::before       { background: #ec4899; }
+  .income-cat-card.type-goodwill::before  { background: #06b6d4; }
+  .income-cat-label { font-size: 11px; color: #64748b; margin-bottom: 5px; font-weight: 600; }
+  .income-cat-value { font-size: 22px; font-weight: 800; }
+  .income-cat-sub   { font-size: 11px; color: #64748b; margin-top: 3px; }
+  .income-cat-card.type-general .income-cat-value   { color: #3b82f6; }
+  .income-cat-card.type-insurance .income-cat-value { color: #10b981; }
+  .income-cat-card.type-extended .income-cat-value  { color: #8b5cf6; }
+  .income-cat-card.type-voucher .income-cat-value   { color: #f59e0b; }
+  .income-cat-card.type-external .income-cat-value  { color: #14b8a6; }
+  .income-cat-card.type-paid .income-cat-value      { color: #f97316; font-size: 26px; }
+  .income-cat-card.type-internal .income-cat-value  { color: #94a3b8; }
+  .income-cat-card.type-warranty .income-cat-value  { color: #818cf8; }
+  .income-cat-card.type-vsa .income-cat-value       { color: #f472b6; }
+  .income-cat-card.type-goodwill .income-cat-value  { color: #22d3ee; }
+
+  .divider-label {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 11px; font-weight: 700; color: #475569;
+    text-transform: uppercase; letter-spacing: .06em;
+    margin: 20px 0 12px;
+  }
+  .divider-label::after { content: ''; flex: 1; height: 1px; background: #2d3f56; }
+
+  /* 成本帳類列背景 */
+  tr.cost-row td { background: rgba(100,116,139,.04); }
+  tr.cost-row:hover td { background: rgba(100,116,139,.1); }
+  tr.subtotal-row td { background: rgba(249,115,22,.06); font-weight: 700; }
+  tr.subtotal-row:hover td { background: rgba(249,115,22,.1); }
+  tr.total-row td { background: rgba(59,130,246,.08); font-weight: 800; }
+  tr.total-row:hover td { background: rgba(59,130,246,.12); }
 </style>
 </head>
 <body>
@@ -113,51 +179,150 @@
     <button class="tab" onclick="switchTab('daily')">📅 每日進廠台數</button>
   </div>
 
-  <!-- 維修收入 -->
+  <!-- ══════ 維修收入 ══════ -->
   <div id="tab-repair">
+
+    <!-- 整體 KPI -->
     <div id="repairKPI" class="kpi-grid"></div>
+
+    <!-- ── 收入分類分析 ── -->
+    <div class="card">
+      <div class="card-title">
+        💰 收入分類分析（未稅）
+        <span class="card-title-note">
+          各收入欄位÷1.05換算未稅｜零件成本已為未稅｜外賣來自零件銷售
+        </span>
+      </div>
+
+      <!-- 有費收入摘要卡片 -->
+      <div class="income-section-title">📊 有費收入摘要</div>
+      <div id="incomeCategoryCards" class="income-category-grid">
+        <div style="color:#64748b;font-size:13px;grid-column:1/-1"><span class="spinner"></span>載入中</div>
+      </div>
+
+      <!-- 有費收入明細表 -->
+      <div class="divider-label">有費收入明細（未稅）</div>
+      <div class="table-wrap" style="margin-bottom:16px">
+        <table>
+          <thead>
+            <tr>
+              <th>帳類</th>
+              <th class="num">台數</th>
+              <th class="num">引擎工資</th>
+              <th class="num">零件</th>
+              <th class="num">配件</th>
+              <th class="num">精品</th>
+              <th class="num">鈑金</th>
+              <th class="num">烤漆</th>
+              <th class="num">洗車美容</th>
+              <th class="num">外包</th>
+              <th class="num">附加服務</th>
+              <th class="num" style="color:#10b981">合計(未稅)</th>
+            </tr>
+          </thead>
+          <tbody id="tbIncomeRevenue">
+            <tr><td colspan="12" class="loading"><span class="spinner"></span>載入中</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 無費工單成本表 -->
+      <div class="divider-label">無費工單成本（內結 / 保固 / VSA / 善意維修）</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>帳類</th>
+              <th class="num">台數</th>
+              <th class="num">零件成本(未稅)</th>
+              <th class="num">工資(含稅→未稅)</th>
+              <th class="num" style="color:#f59e0b">合計成本</th>
+              <th class="num">附註</th>
+            </tr>
+          </thead>
+          <tbody id="tbIncomeCost">
+            <tr><td colspan="6" class="loading"><span class="spinner"></span>載入中</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SA 業績排名 -->
     <div class="card">
       <div class="card-title">📋 SA 業績排名</div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>#</th><th>據點</th><th>服務顧問</th><th class="num">出廠台數</th><th class="num">總營收(未稅)</th><th class="num">引擎工資</th><th class="num">零件收入</th><th class="num">佔比</th></tr></thead>
+          <thead><tr>
+            <th>#</th><th>據點</th><th>服務顧問</th>
+            <th class="num">出廠台數</th>
+            <th class="num">總營收(未稅)</th>
+            <th class="num">引擎工資</th>
+            <th class="num">零件收入</th>
+            <th class="num">佔比</th>
+          </tr></thead>
           <tbody id="tbSA"><tr><td colspan="8" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
         </table>
       </div>
     </div>
+
+    <!-- 帳類分析 -->
     <div class="card">
       <div class="card-title">📂 帳類分析</div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>據點</th><th>帳類</th><th class="num">工單數</th><th class="num">總營收</th><th class="num">零件</th><th class="num">引擎工資</th><th class="num">鈑烤</th><th class="num">零件成本</th></tr></thead>
+          <thead><tr>
+            <th>據點</th><th>帳類</th>
+            <th class="num">工單數</th>
+            <th class="num">總營收</th>
+            <th class="num">零件</th>
+            <th class="num">引擎工資</th>
+            <th class="num">鈑烤</th>
+            <th class="num">零件成本</th>
+          </tr></thead>
           <tbody id="tbAccount"><tr><td colspan="8" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <!-- 技師工資 -->
+  <!-- ══════ 技師工資 ══════ -->
   <div id="tab-tech" style="display:none">
     <div id="techKPI" class="kpi-grid"></div>
     <div class="card">
       <div class="card-title">🏆 技師工資排名</div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>#</th><th>據點</th><th>技師</th><th class="num">台數</th><th class="num">標準工時</th><th class="num">總工資</th><th class="num">美容工資</th><th class="num">淨工資</th><th>工資佔比</th></tr></thead>
+          <thead><tr>
+            <th>#</th><th>據點</th><th>技師</th>
+            <th class="num">台數</th>
+            <th class="num">標準工時</th>
+            <th class="num">總工資</th>
+            <th class="num">美容工資</th>
+            <th class="num">淨工資</th>
+            <th>工資佔比</th>
+          </tr></thead>
           <tbody id="tbTech"><tr><td colspan="9" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <!-- 零件銷售 -->
+  <!-- ══════ 零件銷售 ══════ -->
   <div id="tab-parts" style="display:none">
     <div id="partsKPI" class="kpi-grid"></div>
     <div class="card">
       <div class="card-title">📦 零件種類彙總</div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>據點</th><th>種類</th><th class="num">筆數</th><th class="num">總數量</th><th class="num">銷售金額</th><th class="num">成本</th><th class="num">毛利</th><th class="num">毛利率</th></tr></thead>
+          <thead><tr>
+            <th>據點</th><th>種類</th>
+            <th class="num">筆數</th>
+            <th class="num">總數量</th>
+            <th class="num">銷售金額</th>
+            <th class="num">成本</th>
+            <th class="num">毛利</th>
+            <th class="num">毛利率</th>
+          </tr></thead>
           <tbody id="tbPartsType"><tr><td colspan="8" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
         </table>
       </div>
@@ -166,14 +331,17 @@
       <div class="card-title">🥇 銷售金額 Top 20 零件</div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>#</th><th>零件編號</th><th>零件名稱</th><th>種類</th><th class="num">總數量</th><th class="num">銷售金額</th></tr></thead>
+          <thead><tr>
+            <th>#</th><th>零件編號</th><th>零件名稱</th><th>種類</th>
+            <th class="num">總數量</th><th class="num">銷售金額</th>
+          </tr></thead>
           <tbody id="tbTopParts"><tr><td colspan="6" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <!-- SA 零件銷售 -->
+  <!-- ══════ SA 零件銷售 ══════ -->
   <div id="tab-sa-sales" style="display:none">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <div id="saMatrixMeta" style="font-size:13px;color:#64748b"></div>
@@ -186,20 +354,27 @@
     </div>
   </div>
 
-  <!-- 月份趨勢 -->
+  <!-- ══════ 月份趨勢 ══════ -->
   <div id="tab-trend" style="display:none">
     <div class="card">
       <div class="card-title">📈 各月份維修收入趨勢</div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>期間</th><th>據點</th><th class="num">出廠台數</th><th class="num">總營收</th><th class="num">引擎工資</th><th class="num">零件收入</th><th class="num">環比</th></tr></thead>
+          <thead><tr>
+            <th>期間</th><th>據點</th>
+            <th class="num">出廠台數</th>
+            <th class="num">總營收</th>
+            <th class="num">引擎工資</th>
+            <th class="num">零件收入</th>
+            <th class="num">環比</th>
+          </tr></thead>
           <tbody id="tbTrend"><tr><td colspan="7" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <!-- 每日進廠台數 -->
+  <!-- ══════ 每日進廠台數 ══════ -->
   <div id="tab-daily" style="display:none">
     <div id="dailyKPI" class="kpi-grid"></div>
     <div class="card">
@@ -223,20 +398,59 @@
 // 全域狀態
 // ══════════════════════════════════════════════════════════
 let currentTab = 'repair';
-let configs = [];
+let saConfigs  = [];
 
 // ══════════════════════════════════════════════════════════
 // 工具函式
 // ══════════════════════════════════════════════════════════
+const n   = (v) => parseFloat(v || 0);
 const fmt = (v, k=0) => {
-  const n = parseFloat(v || 0);
-  if (k) return Math.round(n/1000).toLocaleString() + 'K';
-  return Math.round(n).toLocaleString();
+  const val = n(v);
+  if (k) return Math.round(val / 1000).toLocaleString() + 'K';
+  return Math.round(val).toLocaleString();
 };
-const fmtPct = v => (parseFloat(v||0)*100).toFixed(1) + '%';
+const fmtK = (v) => {
+  const val = Math.round(n(v) / 1000);
+  return val.toLocaleString() + 'K';
+};
 const badgeType = (t) => {
-  const map = {'零件':'badge-blue','配件':'badge-green','精品':'badge-yellow'};
+  const map = { '零件':'badge-blue', '配件':'badge-green', '精品':'badge-yellow' };
   return map[t] || 'badge-purple';
+};
+
+// 帳類 → 分組鍵
+const ACCOUNT_GROUP = (s) => {
+  if (!s) return 'other';
+  const t = s.toLowerCase();
+  if (s.includes('一般'))               return 'general';
+  if (s.includes('保險'))               return 'insurance';
+  if (s.includes('延保'))               return 'extended';
+  if (s.includes('票'))                 return 'voucher';
+  if (s.includes('內結'))               return 'internal';
+  if (s.includes('保固'))               return 'warranty';
+  if (t.includes('vsa'))                return 'vsa';
+  if (s.includes('善意'))               return 'goodwill';
+  return 'other';
+};
+
+// 有費收入的帳類群組（不含票券）
+const PAID_GROUPS = new Set(['general','insurance','extended']);
+
+// 無費工單的帳類群組（看成本+工資）
+const COST_GROUPS = new Set(['internal','warranty','vsa','goodwill']);
+
+const GROUP_META = {
+  general:   { label:'一般收入',   cls:'type-general',   badge:'badge-blue',   icon:'🔵' },
+  insurance: { label:'保險收入',   cls:'type-insurance', badge:'badge-green',  icon:'🟢' },
+  extended:  { label:'延保收入',   cls:'type-extended',  badge:'badge-purple', icon:'🟣' },
+  voucher:   { label:'票券收入',   cls:'type-voucher',   badge:'badge-yellow', icon:'🟡' },
+  external:  { label:'外賣收入',   cls:'type-external',  badge:'badge-teal',   icon:'🩵' },
+  paid:      { label:'有費收入',   cls:'type-paid',      badge:'badge-orange', icon:'🔶' },
+  internal:  { label:'內結',       cls:'type-internal',  badge:'badge-gray',   icon:'⚙️' },
+  warranty:  { label:'保固',       cls:'type-warranty',  badge:'badge-purple', icon:'🛡️' },
+  vsa:       { label:'VSA',        cls:'type-vsa',       badge:'badge-red',    icon:'📋' },
+  goodwill:  { label:'善意維修',   cls:'type-goodwill',  badge:'badge-teal',   icon:'🤝' },
+  other:     { label:'其他',       cls:'type-internal',  badge:'badge-gray',   icon:'❓' },
 };
 
 // ══════════════════════════════════════════════════════════
@@ -263,7 +477,8 @@ async function loadPeriods() {
     const sel = document.getElementById('selPeriod');
     periods.forEach(p => {
       const opt = document.createElement('option');
-      opt.value = p; opt.textContent = `${p.slice(0,4)}年${p.slice(4)}月`;
+      opt.value = p;
+      opt.textContent = `${p.slice(0,4)}年${p.slice(4)}月`;
       sel.appendChild(opt);
     });
     if (periods.length) sel.value = periods[0];
@@ -276,6 +491,7 @@ async function loadAll() {
   document.getElementById('lastUpdate').textContent = '更新中...';
   await Promise.all([
     loadRepair(period, branch),
+    loadIncomeSummary(period, branch),
     loadTech(period, branch),
     loadParts(period, branch),
     loadTrend(branch),
@@ -286,73 +502,338 @@ async function loadAll() {
 }
 
 // ══════════════════════════════════════════════════════════
-// 維修收入
+// 維修收入 — 整體 KPI + SA 排名 + 帳類
 // ══════════════════════════════════════════════════════════
 async function loadRepair(period, branch) {
   try {
     const params = new URLSearchParams();
     if (period) params.set('period', period);
     if (branch) params.set('branch', branch);
-    const res = await fetch(`/api/stats/repair?${params}`);
+    const res  = await fetch(`/api/stats/repair?${params}`);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
 
-    const totals = data.totals;
-    const totalRevenue = totals.reduce((s, r) => s + parseFloat(r.total_untaxed||0), 0);
-    const totalCars    = totals.reduce((s, r) => s + parseInt(r.car_count||0), 0);
-    const totalEngine  = totals.reduce((s, r) => s + parseFloat(r.engine_wage||0), 0);
-    const totalParts   = totals.reduce((s, r) => s + parseFloat(r.parts_income||0), 0);
-    const totalCost    = totals.reduce((s, r) => s + parseFloat(r.parts_cost||0), 0);
+    const totals       = data.totals;
+    const totalRevenue = totals.reduce((s,r) => s + n(r.total_untaxed), 0);
+    const totalCars    = totals.reduce((s,r) => s + parseInt(r.car_count||0), 0);
+    const totalEngine  = totals.reduce((s,r) => s + n(r.engine_wage), 0);
+    const totalParts   = totals.reduce((s,r) => s + n(r.parts_income), 0);
+    const totalCost    = totals.reduce((s,r) => s + n(r.parts_cost), 0);
 
     document.getElementById('repairKPI').innerHTML = `
-      <div class="kpi-card"><div class="kpi-label">總營收（未稅）</div><div class="kpi-value kpi-green">${fmt(totalRevenue,1)}</div><div class="kpi-sub">元（千）</div></div>
-      <div class="kpi-card"><div class="kpi-label">出廠台數</div><div class="kpi-value kpi-blue">${totalCars.toLocaleString()}</div><div class="kpi-sub">台</div></div>
-      <div class="kpi-card"><div class="kpi-label">引擎工資</div><div class="kpi-value">${fmt(totalEngine,1)}</div><div class="kpi-sub">K</div></div>
-      <div class="kpi-card"><div class="kpi-label">零件收入</div><div class="kpi-value">${fmt(totalParts,1)}</div><div class="kpi-sub">K</div></div>
-      <div class="kpi-card"><div class="kpi-label">零件成本</div><div class="kpi-value kpi-yellow">${fmt(totalCost,1)}</div><div class="kpi-sub">K</div></div>
-      ${totals.map(t=>`
+      <div class="kpi-card">
+        <div class="kpi-label">總營收（未稅）</div>
+        <div class="kpi-value kpi-green">${fmtK(totalRevenue)}</div>
+        <div class="kpi-sub">元（千）</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">出廠台數</div>
+        <div class="kpi-value kpi-blue">${totalCars.toLocaleString()}</div>
+        <div class="kpi-sub">台</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">引擎工資</div>
+        <div class="kpi-value">${fmtK(totalEngine)}</div>
+        <div class="kpi-sub">K</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">零件收入</div>
+        <div class="kpi-value">${fmtK(totalParts)}</div>
+        <div class="kpi-sub">K</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">零件成本</div>
+        <div class="kpi-value kpi-yellow">${fmtK(totalCost)}</div>
+        <div class="kpi-sub">K</div>
+      </div>
+      ${totals.map(t => `
         <div class="kpi-card">
           <div class="kpi-label">${t.branch} 營收</div>
-          <div class="kpi-value">${fmt(t.total_untaxed,1)}</div>
-          <div class="kpi-sub">${parseInt(t.car_count||0)}台 | 引擎${fmt(t.engine_wage,1)}K</div>
+          <div class="kpi-value">${fmtK(t.total_untaxed)}</div>
+          <div class="kpi-sub">${parseInt(t.car_count||0)}台 | 引擎${fmtK(t.engine_wage)}</div>
         </div>
       `).join('')}
     `;
 
     const saRows = data.bySA;
-    const maxRev = Math.max(...saRows.map(r => parseFloat(r.total_untaxed||0)), 1);
-    document.getElementById('tbSA').innerHTML = saRows.length ? saRows.map((r,i)=>`
-      <tr>
-        <td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td>
-        <td><span class="badge badge-blue">${r.branch}</span></td>
-        <td style="font-weight:600">${r.service_advisor}</td>
-        <td class="num">${parseInt(r.car_count||0)}</td>
-        <td class="num" style="font-weight:700;color:#10b981">${fmt(r.total_untaxed)}</td>
-        <td class="num">${fmt(r.engine_wage)}</td>
-        <td class="num">${fmt(r.parts_income)}</td>
-        <td style="min-width:120px">
-          <div class="bar-wrap">
-            <div class="bar-bg"><div class="bar-fill" style="width:${(parseFloat(r.total_untaxed)/maxRev*100).toFixed(0)}%"></div></div>
-            <span style="font-size:11px;color:#64748b">${(parseFloat(r.total_untaxed)/maxRev*100).toFixed(0)}%</span>
-          </div>
-        </td>
-      </tr>
-    `).join('') : '<tr><td colspan="8" class="empty">無資料</td></tr>';
+    const maxRev = Math.max(...saRows.map(r => n(r.total_untaxed)), 1);
+    document.getElementById('tbSA').innerHTML = saRows.length
+      ? saRows.map((r, i) => `
+          <tr>
+            <td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td>
+            <td><span class="badge badge-blue">${r.branch}</span></td>
+            <td style="font-weight:600">${r.service_advisor}</td>
+            <td class="num">${parseInt(r.car_count||0)}</td>
+            <td class="num" style="font-weight:700;color:#10b981">${fmt(r.total_untaxed)}</td>
+            <td class="num">${fmt(r.engine_wage)}</td>
+            <td class="num">${fmt(r.parts_income)}</td>
+            <td style="min-width:120px">
+              <div class="bar-wrap">
+                <div class="bar-bg">
+                  <div class="bar-fill" style="width:${(n(r.total_untaxed)/maxRev*100).toFixed(0)}%"></div>
+                </div>
+                <span style="font-size:11px;color:#64748b">${(n(r.total_untaxed)/maxRev*100).toFixed(0)}%</span>
+              </div>
+            </td>
+          </tr>
+        `).join('')
+      : '<tr><td colspan="8" class="empty">無資料</td></tr>';
 
-    document.getElementById('tbAccount').innerHTML = data.summary.length ? data.summary.map(r=>`
-      <tr>
-        <td><span class="badge badge-blue">${r.branch}</span></td>
-        <td><span class="badge ${badgeType(r.account_type)}">${r.account_type||'-'}</span></td>
-        <td class="num">${parseInt(r.work_order_count||0).toLocaleString()}</td>
-        <td class="num" style="font-weight:700">${fmt(r.total_untaxed)}</td>
-        <td class="num">${fmt(r.parts_income)}</td>
-        <td class="num">${fmt(r.engine_wage)}</td>
-        <td class="num">${fmt(r.bodywork_income)}</td>
-        <td class="num" style="color:#f59e0b">${fmt(r.parts_cost)}</td>
-      </tr>
-    `).join('') : '<tr><td colspan="8" class="empty">無資料</td></tr>';
+    document.getElementById('tbAccount').innerHTML = data.summary.length
+      ? data.summary.map(r => `
+          <tr>
+            <td><span class="badge badge-blue">${r.branch}</span></td>
+            <td><span class="badge ${badgeType(r.account_type)}">${r.account_type||'-'}</span></td>
+            <td class="num">${parseInt(r.work_order_count||0).toLocaleString()}</td>
+            <td class="num" style="font-weight:700">${fmt(r.total_untaxed)}</td>
+            <td class="num">${fmt(r.parts_income)}</td>
+            <td class="num">${fmt(r.engine_wage)}</td>
+            <td class="num">${fmt(r.bodywork_income)}</td>
+            <td class="num" style="color:#f59e0b">${fmt(r.parts_cost)}</td>
+          </tr>
+        `).join('')
+      : '<tr><td colspan="8" class="empty">無資料</td></tr>';
+
   } catch(e) {
-    document.getElementById('tbSA').innerHTML = `<tr><td colspan="8" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;
+    document.getElementById('tbSA').innerHTML =
+      `<tr><td colspan="8" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// 收入分類分析（新）
+// ══════════════════════════════════════════════════════════
+async function loadIncomeSummary(period, branch) {
+  const cardsEl   = document.getElementById('incomeCategoryCards');
+  const revenueEl = document.getElementById('tbIncomeRevenue');
+  const costEl    = document.getElementById('tbIncomeCost');
+
+  try {
+    const params = new URLSearchParams();
+    if (period) params.set('period', period);
+    if (branch) params.set('branch', branch);
+
+    const res  = await fetch(`/api/stats/income-summary?${params}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    const { byType, externalSales, techByType, externalCategory } = data;
+
+    // ── 依帳類群組加總 ──────────────────────────────────────
+    const grouped = {};   // group_key → { label, total_untaxed, cars, ... }
+    byType.forEach(r => {
+      const gk = ACCOUNT_GROUP(r.account_type);
+      if (!grouped[gk]) grouped[gk] = {
+        total_untaxed: 0, car_count: 0,
+        engine_wage: 0, parts_income: 0, accessories_income: 0,
+        boutique_income: 0, bodywork_income: 0, paint_income: 0,
+        carwash_income: 0, outsource_income: 0, addon_income: 0,
+        parts_cost: 0,
+      };
+      const g = grouped[gk];
+      g.total_untaxed    += n(r.total_untaxed);
+      g.car_count        += n(r.car_count);
+      g.engine_wage      += n(r.engine_wage_nt);
+      g.parts_income     += n(r.parts_income_nt);
+      g.accessories_income += n(r.accessories_income_nt);
+      g.boutique_income  += n(r.boutique_income_nt);
+      g.bodywork_income  += n(r.bodywork_income_nt);
+      g.paint_income     += n(r.paint_income_nt);
+      g.carwash_income   += n(r.carwash_income_nt);
+      g.outsource_income += n(r.outsource_income_nt);
+      g.addon_income     += n(r.addon_income_nt);
+      g.parts_cost       += n(r.parts_cost_nt);
+    });
+
+    // 外賣合計
+    const extTotal    = externalSales.reduce((s, r) => s + n(r.total_sales), 0);
+    const extOrders   = externalSales.reduce((s, r) => s + parseInt(r.order_count||0), 0);
+    const extCostTotal = externalSales.reduce((s, r) => s + n(r.total_cost), 0);
+
+    // 有費收入 = 一般 + 保險 + 延保 + 外賣
+    const paidTotal =
+      (grouped['general']   ? grouped['general'].total_untaxed   : 0) +
+      (grouped['insurance'] ? grouped['insurance'].total_untaxed : 0) +
+      (grouped['extended']  ? grouped['extended'].total_untaxed  : 0) +
+      extTotal;
+
+    // ── 摘要卡片 ────────────────────────────────────────────
+    const catOrder = ['general','insurance','extended','voucher','external','paid'];
+    let cardsHtml = '';
+
+    catOrder.forEach(gk => {
+      const meta = GROUP_META[gk] || GROUP_META.other;
+      if (gk === 'external') {
+        cardsHtml += `
+          <div class="income-cat-card ${meta.cls}">
+            <div class="income-cat-label">${meta.icon} ${meta.label}</div>
+            <div class="income-cat-value">${fmtK(extTotal)}</div>
+            <div class="income-cat-sub">${extOrders} 筆 · 來源: ${externalCategory}</div>
+          </div>`;
+      } else if (gk === 'paid') {
+        cardsHtml += `
+          <div class="income-cat-card ${meta.cls}">
+            <div class="income-cat-label">${meta.icon} ${meta.label}</div>
+            <div class="income-cat-value">${fmtK(paidTotal)}</div>
+            <div class="income-cat-sub">一般+保險+延保+外賣</div>
+          </div>`;
+      } else {
+        const g = grouped[gk];
+        if (!g && gk !== 'voucher') return;
+        const total = g ? g.total_untaxed : 0;
+        const cars  = g ? g.car_count : 0;
+        cardsHtml += `
+          <div class="income-cat-card ${meta.cls}">
+            <div class="income-cat-label">${meta.icon} ${meta.label}</div>
+            <div class="income-cat-value">${fmtK(total)}</div>
+            <div class="income-cat-sub">${cars} 台</div>
+          </div>`;
+      }
+    });
+
+    cardsEl.innerHTML = cardsHtml || '<div style="color:#64748b;font-size:13px;grid-column:1/-1">無資料</div>';
+
+    // ── 有費收入明細表 ─────────────────────────────────────
+    // 按帳類逐列顯示（有費 + 票券），最後一行加「外賣」
+    const REVENUE_GROUPS = ['general','insurance','extended','voucher'];
+    let revRows   = '';
+    let revSub    = { cars:0, engine:0, parts:0, acc:0, boutique:0,
+                      bodywork:0, paint:0, carwash:0, out:0, addon:0, total:0 };
+
+    byType.forEach(r => {
+      const gk   = ACCOUNT_GROUP(r.account_type);
+      if (!REVENUE_GROUPS.includes(gk)) return;
+      const meta = GROUP_META[gk] || GROUP_META.other;
+      const total = n(r.total_untaxed);
+
+      revSub.cars     += n(r.car_count);
+      revSub.engine   += n(r.engine_wage_nt);
+      revSub.parts    += n(r.parts_income_nt);
+      revSub.acc      += n(r.accessories_income_nt);
+      revSub.boutique += n(r.boutique_income_nt);
+      revSub.bodywork += n(r.bodywork_income_nt);
+      revSub.paint    += n(r.paint_income_nt);
+      revSub.carwash  += n(r.carwash_income_nt);
+      revSub.out      += n(r.outsource_income_nt);
+      revSub.addon    += n(r.addon_income_nt);
+      revSub.total    += total;
+
+      revRows += `
+        <tr>
+          <td><span class="badge ${meta.badge}">${r.account_type}</span></td>
+          <td class="num">${parseInt(r.car_count||0)}</td>
+          <td class="num">${fmt(r.engine_wage_nt)}</td>
+          <td class="num">${fmt(r.parts_income_nt)}</td>
+          <td class="num">${fmt(r.accessories_income_nt)}</td>
+          <td class="num">${fmt(r.boutique_income_nt)}</td>
+          <td class="num">${fmt(r.bodywork_income_nt)}</td>
+          <td class="num">${fmt(r.paint_income_nt)}</td>
+          <td class="num">${fmt(r.carwash_income_nt)}</td>
+          <td class="num">${fmt(r.outsource_income_nt)}</td>
+          <td class="num">${fmt(r.addon_income_nt)}</td>
+          <td class="num" style="color:#10b981;font-weight:700">${fmt(total)}</td>
+        </tr>`;
+    });
+
+    // 外賣列（來自 parts_sales，沒有細項明細，只有總額）
+    if (extTotal > 0) {
+      revRows += `
+        <tr>
+          <td><span class="badge badge-teal">外賣(零件銷售)</span></td>
+          <td class="num">${extOrders} 筆</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num" style="color:#14b8a6;font-weight:700">${fmt(extTotal)}</td>
+        </tr>`;
+      revSub.total += extTotal;
+    }
+
+    // 小計列
+    revRows += `
+      <tr class="subtotal-row">
+        <td style="color:#f97316">有費小計</td>
+        <td class="num">${parseInt(revSub.cars)}</td>
+        <td class="num">${fmt(revSub.engine)}</td>
+        <td class="num">${fmt(revSub.parts)}</td>
+        <td class="num">${fmt(revSub.acc)}</td>
+        <td class="num">${fmt(revSub.boutique)}</td>
+        <td class="num">${fmt(revSub.bodywork)}</td>
+        <td class="num">${fmt(revSub.paint)}</td>
+        <td class="num">${fmt(revSub.carwash)}</td>
+        <td class="num">${fmt(revSub.out)}</td>
+        <td class="num">${fmt(revSub.addon)}</td>
+        <td class="num" style="color:#f97316;font-size:14px">${fmt(paidTotal)}</td>
+      </tr>`;
+
+    revenueEl.innerHTML = revRows || '<tr><td colspan="12" class="empty">無資料</td></tr>';
+
+    // ── 無費工單成本表 ─────────────────────────────────────
+    // tech_performance 工資視為未稅（tech_performance.wage 為含稅，÷1.05）
+    const techMap = {};
+    techByType.forEach(r => {
+      const gk = ACCOUNT_GROUP(r.account_type);
+      if (!techMap[gk]) techMap[gk] = { wage: 0, cars: 0, hours: 0 };
+      techMap[gk].wage  += n(r.total_wage);
+      techMap[gk].cars  += n(r.car_count);
+      techMap[gk].hours += n(r.total_hours);
+    });
+
+    const COST_GROUP_ORDER = ['internal','warranty','vsa','goodwill'];
+    let costRows = '';
+    let costTotal = { cars:0, partsCost:0, wage:0, total:0 };
+
+    byType.forEach(r => {
+      const gk = ACCOUNT_GROUP(r.account_type);
+      if (!COST_GROUPS.has(gk)) return;
+      const meta      = GROUP_META[gk] || GROUP_META.other;
+      const partsCost = n(r.parts_cost_nt);                  // 已未稅
+      const wageNt    = n(r.engine_wage_nt);                 // 含稅÷1.05
+      const rowTotal  = partsCost + wageNt;
+
+      costTotal.cars      += n(r.car_count);
+      costTotal.partsCost += partsCost;
+      costTotal.wage      += wageNt;
+      costTotal.total     += rowTotal;
+
+      // 也從 tech_performance 取工資數據做比對
+      const techWageNt = techMap[gk] ? techMap[gk].wage / 1.05 : 0;
+
+      costRows += `
+        <tr class="cost-row">
+          <td><span class="badge ${meta.badge}">${r.account_type}</span></td>
+          <td class="num">${parseInt(r.car_count||0)}</td>
+          <td class="num" style="color:#f59e0b">${fmt(partsCost)}</td>
+          <td class="num" style="color:#94a3b8">${fmt(wageNt)}</td>
+          <td class="num" style="color:#f59e0b;font-weight:700">${fmt(rowTotal)}</td>
+          <td style="font-size:11px;color:#475569">成本+工資（無收入認列）</td>
+        </tr>`;
+    });
+
+    if (costRows) {
+      costRows += `
+        <tr class="total-row">
+          <td style="color:#3b82f6">無費合計</td>
+          <td class="num">${parseInt(costTotal.cars)}</td>
+          <td class="num" style="color:#f59e0b">${fmt(costTotal.partsCost)}</td>
+          <td class="num">${fmt(costTotal.wage)}</td>
+          <td class="num" style="color:#f59e0b;font-size:14px">${fmt(costTotal.total)}</td>
+          <td></td>
+        </tr>`;
+    }
+
+    costEl.innerHTML = costRows || '<tr><td colspan="6" class="empty">無無費工單資料</td></tr>';
+
+  } catch(e) {
+    cardsEl.innerHTML   = `<div style="color:#ef4444;grid-column:1/-1">${e.message}</div>`;
+    revenueEl.innerHTML = `<tr><td colspan="12" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;
+    costEl.innerHTML    = `<tr><td colspan="6" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;
   }
 }
 
@@ -364,40 +845,48 @@ async function loadTech(period, branch) {
     const params = new URLSearchParams();
     if (period) params.set('period', period);
     if (branch) params.set('branch', branch);
-    const res = await fetch(`/api/stats/tech?${params}`);
+    const res  = await fetch(`/api/stats/tech?${params}`);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
 
-    const rows = data.ranking;
-    const totalWage = rows.reduce((s,r) => s+parseFloat(r.total_wage||0), 0);
-    const maxWage   = Math.max(...rows.map(r => parseFloat(r.total_wage||0)), 1);
+    const rows      = data.ranking;
+    const totalWage = rows.reduce((s,r) => s + n(r.total_wage), 0);
+    const maxWage   = Math.max(...rows.map(r => n(r.total_wage)), 1);
 
     document.getElementById('techKPI').innerHTML = `
       <div class="kpi-card"><div class="kpi-label">技師人數</div><div class="kpi-value kpi-blue">${rows.length}</div><div class="kpi-sub">人</div></div>
-      <div class="kpi-card"><div class="kpi-label">工資總額</div><div class="kpi-value kpi-green">${fmt(totalWage,1)}</div><div class="kpi-sub">K</div></div>
-      <div class="kpi-card"><div class="kpi-label">平均工資</div><div class="kpi-value">${rows.length?fmt(totalWage/rows.length):0}</div><div class="kpi-sub">元/人</div></div>
+      <div class="kpi-card"><div class="kpi-label">工資總額</div><div class="kpi-value kpi-green">${fmtK(totalWage)}</div><div class="kpi-sub">K</div></div>
+      <div class="kpi-card"><div class="kpi-label">平均工資</div><div class="kpi-value">${rows.length ? fmt(totalWage/rows.length) : 0}</div><div class="kpi-sub">元/人</div></div>
     `;
 
-    document.getElementById('tbTech').innerHTML = rows.length ? rows.map((r,i)=>`
-      <tr>
-        <td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td>
-        <td><span class="badge badge-blue">${r.branch}</span></td>
-        <td style="font-weight:600">${r.tech_name_clean}</td>
-        <td class="num">${parseInt(r.car_count||0)}</td>
-        <td class="num">${parseFloat(r.total_hours||0).toFixed(1)}</td>
-        <td class="num" style="font-weight:700;color:#10b981">${fmt(r.total_wage)}</td>
-        <td class="num" style="color:#f59e0b">${fmt(r.beauty_wage)}</td>
-        <td class="num" style="color:#3b82f6">${fmt(r.net_wage)}</td>
-        <td style="min-width:120px">
-          <div class="bar-wrap">
-            <div class="bar-bg"><div class="bar-fill green" style="width:${(parseFloat(r.total_wage)/maxWage*100).toFixed(0)}%"></div></div>
-            <span style="font-size:11px;color:#64748b">${totalWage>0?(parseFloat(r.total_wage)/totalWage*100).toFixed(1):0}%</span>
-          </div>
-        </td>
-      </tr>
-    `).join('') : '<tr><td colspan="9" class="empty">無資料</td></tr>';
+    document.getElementById('tbTech').innerHTML = rows.length
+      ? rows.map((r, i) => `
+          <tr>
+            <td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td>
+            <td><span class="badge badge-blue">${r.branch}</span></td>
+            <td style="font-weight:600">${r.tech_name_clean}</td>
+            <td class="num">${parseInt(r.car_count||0)}</td>
+            <td class="num">${n(r.total_hours).toFixed(1)}</td>
+            <td class="num" style="font-weight:700;color:#10b981">${fmt(r.total_wage)}</td>
+            <td class="num" style="color:#f59e0b">${fmt(r.beauty_wage)}</td>
+            <td class="num" style="color:#3b82f6">${fmt(r.net_wage)}</td>
+            <td style="min-width:120px">
+              <div class="bar-wrap">
+                <div class="bar-bg">
+                  <div class="bar-fill green" style="width:${(n(r.total_wage)/maxWage*100).toFixed(0)}%"></div>
+                </div>
+                <span style="font-size:11px;color:#64748b">
+                  ${totalWage > 0 ? (n(r.total_wage)/totalWage*100).toFixed(1) : 0}%
+                </span>
+              </div>
+            </td>
+          </tr>
+        `).join('')
+      : '<tr><td colspan="9" class="empty">無資料</td></tr>';
+
   } catch(e) {
-    document.getElementById('tbTech').innerHTML = `<tr><td colspan="9" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;
+    document.getElementById('tbTech').innerHTML =
+      `<tr><td colspan="9" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;
   }
 }
 
@@ -409,48 +898,56 @@ async function loadParts(period, branch) {
     const params = new URLSearchParams();
     if (period) params.set('period', period);
     if (branch) params.set('branch', branch);
-    const res = await fetch(`/api/stats/parts?${params}`);
+    const res  = await fetch(`/api/stats/parts?${params}`);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
 
-    const byType = data.byType;
-    const totalSales = byType.reduce((s,r) => s+parseFloat(r.total_sales||0), 0);
-    const totalCost  = byType.reduce((s,r) => s+parseFloat(r.total_cost ||0), 0);
+    const byType     = data.byType;
+    const totalSales = byType.reduce((s,r) => s + n(r.total_sales), 0);
+    const totalCost  = byType.reduce((s,r) => s + n(r.total_cost), 0);
 
     document.getElementById('partsKPI').innerHTML = `
-      <div class="kpi-card"><div class="kpi-label">銷售總額</div><div class="kpi-value kpi-green">${fmt(totalSales,1)}</div><div class="kpi-sub">K</div></div>
-      <div class="kpi-card"><div class="kpi-label">成本總額</div><div class="kpi-value kpi-yellow">${fmt(totalCost,1)}</div><div class="kpi-sub">K</div></div>
-      <div class="kpi-card"><div class="kpi-label">毛利</div><div class="kpi-value kpi-blue">${fmt(totalSales-totalCost,1)}</div><div class="kpi-sub">K</div></div>
-      <div class="kpi-card"><div class="kpi-label">毛利率</div><div class="kpi-value">${totalSales>0?((totalSales-totalCost)/totalSales*100).toFixed(1):0}%</div></div>
+      <div class="kpi-card"><div class="kpi-label">銷售總額</div><div class="kpi-value kpi-green">${fmtK(totalSales)}</div><div class="kpi-sub">K</div></div>
+      <div class="kpi-card"><div class="kpi-label">成本總額</div><div class="kpi-value kpi-yellow">${fmtK(totalCost)}</div><div class="kpi-sub">K</div></div>
+      <div class="kpi-card"><div class="kpi-label">毛利</div><div class="kpi-value kpi-blue">${fmtK(totalSales-totalCost)}</div><div class="kpi-sub">K</div></div>
+      <div class="kpi-card">
+        <div class="kpi-label">毛利率</div>
+        <div class="kpi-value">${totalSales > 0 ? ((totalSales-totalCost)/totalSales*100).toFixed(1) : 0}%</div>
+      </div>
     `;
 
-    document.getElementById('tbPartsType').innerHTML = byType.length ? byType.map(r=>{
-      const s=parseFloat(r.total_sales||0), c=parseFloat(r.total_cost||0);
-      const m=s>0?((s-c)/s*100):0;
-      return `<tr>
-        <td><span class="badge badge-blue">${r.branch}</span></td>
-        <td><span class="badge ${badgeType(r.part_type)}">${r.part_type||'-'}</span></td>
-        <td class="num">${parseInt(r.count||0).toLocaleString()}</td>
-        <td class="num">${parseFloat(r.total_qty||0).toLocaleString()}</td>
-        <td class="num" style="font-weight:700">${fmt(s)}</td>
-        <td class="num">${fmt(c)}</td>
-        <td class="num" style="color:#10b981">${fmt(s-c)}</td>
-        <td class="num" style="color:${m>20?'#10b981':m>10?'#f59e0b':'#ef4444'}">${m.toFixed(1)}%</td>
-      </tr>`;
-    }).join('') : '<tr><td colspan="8" class="empty">無資料</td></tr>';
+    document.getElementById('tbPartsType').innerHTML = byType.length
+      ? byType.map(r => {
+          const s = n(r.total_sales), c = n(r.total_cost), m = s > 0 ? ((s-c)/s*100) : 0;
+          return `<tr>
+            <td><span class="badge badge-blue">${r.branch}</span></td>
+            <td><span class="badge ${badgeType(r.part_type)}">${r.part_type||'-'}</span></td>
+            <td class="num">${parseInt(r.count||0).toLocaleString()}</td>
+            <td class="num">${n(r.total_qty).toLocaleString()}</td>
+            <td class="num" style="font-weight:700">${fmt(s)}</td>
+            <td class="num">${fmt(c)}</td>
+            <td class="num" style="color:#10b981">${fmt(s-c)}</td>
+            <td class="num" style="color:${m>20?'#10b981':m>10?'#f59e0b':'#ef4444'}">${m.toFixed(1)}%</td>
+          </tr>`;
+        }).join('')
+      : '<tr><td colspan="8" class="empty">無資料</td></tr>';
 
-    document.getElementById('tbTopParts').innerHTML = data.topParts.length ? data.topParts.map((r,i)=>`
-      <tr>
-        <td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td>
-        <td style="font-family:monospace;font-size:12px">${r.part_number}</td>
-        <td>${r.part_name||'-'}</td>
-        <td><span class="badge ${badgeType(r.part_type)}">${r.part_type||'-'}</span></td>
-        <td class="num">${parseFloat(r.total_qty||0).toLocaleString()}</td>
-        <td class="num" style="font-weight:700;color:#10b981">${fmt(r.total_sales)}</td>
-      </tr>
-    `).join('') : '<tr><td colspan="6" class="empty">無資料</td></tr>';
+    document.getElementById('tbTopParts').innerHTML = data.topParts.length
+      ? data.topParts.map((r, i) => `
+          <tr>
+            <td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td>
+            <td style="font-family:monospace;font-size:12px">${r.part_number}</td>
+            <td>${r.part_name||'-'}</td>
+            <td><span class="badge ${badgeType(r.part_type)}">${r.part_type||'-'}</span></td>
+            <td class="num">${n(r.total_qty).toLocaleString()}</td>
+            <td class="num" style="font-weight:700;color:#10b981">${fmt(r.total_sales)}</td>
+          </tr>
+        `).join('')
+      : '<tr><td colspan="6" class="empty">無資料</td></tr>';
+
   } catch(e) {
-    document.getElementById('tbPartsType').innerHTML = `<tr><td colspan="8" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;
+    document.getElementById('tbPartsType').innerHTML =
+      `<tr><td colspan="8" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;
   }
 }
 
@@ -460,13 +957,13 @@ async function loadParts(period, branch) {
 async function loadConfigs() {
   try {
     const res = await fetch('/api/sa-config');
-    configs = await res.json();
+    saConfigs = await res.json();
   } catch(e) {}
 }
 
 async function loadSASales() {
-  const period = document.getElementById('selPeriod').value;
-  const branch = document.getElementById('selBranch').value;
+  const period   = document.getElementById('selPeriod').value;
+  const branch   = document.getElementById('selBranch').value;
   const matrixEl = document.getElementById('saMatrix');
   const metaEl   = document.getElementById('saMatrixMeta');
   matrixEl.innerHTML = '<div style="padding:40px;text-align:center;color:#64748b"><span class="spinner"></span>載入中...</div>';
@@ -484,10 +981,9 @@ async function loadSASales() {
 
     if (!configs.length) {
       matrixEl.innerHTML = `<div style="padding:48px;text-align:center;color:#64748b">
-        尚未建立任何設定，請先至 <a href="/settings.html" style="color:#3b82f6">⚙️ 設定</a> 新增 SA 銷售追蹤項目
+        尚未建立任何設定，請先至 <a href="/settings.html" style="color:#3b82f6">⚙️ 設定</a> 新增追蹤項目
       </div>`;
-      metaEl.textContent = '';
-      return;
+      metaEl.textContent = ''; return;
     }
     if (!rows.length) {
       matrixEl.innerHTML = `<div style="padding:48px;text-align:center;color:#64748b">此期間／據點無銷售資料</div>`;
@@ -496,150 +992,110 @@ async function loadSASales() {
 
     metaEl.textContent = `${configs.length} 個追蹤項目 · ${rows.length} 位銷售人員`;
 
-    // 統計方式單位 map
-    const methodUnitMap = {
-      amount:   '金額(元)',
-      quantity: '數量(件)',
-      count:    '筆數(單)',
-    };
+    const methodUnitMap = { amount:'金額(元)', quantity:'數量(件)', count:'筆數(單)' };
+    const branches      = [...new Set(rows.map(r => r.branch))].sort();
+    const branchColors  = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b' };
+    const cfgColors     = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#f97316','#84cc16'];
 
-    // 按據點分組
-    const branches = [...new Set(rows.map(r => r.branch))].sort();
-    const branchColors = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b' };
-    const cfgColors = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#f97316','#84cc16'];
-
-    // 表頭樣式
     const thBase = 'padding:10px 14px;text-align:left;font-size:12px;font-weight:700;color:#64748b;background:#0f172a;border-bottom:1px solid #2d3f56;white-space:nowrap;';
     const thNum  = thBase + 'text-align:right;';
     const tdBase = 'padding:9px 14px;border-bottom:1px solid rgba(45,63,86,.4);font-size:13px;vertical-align:middle;';
     const tdNum  = tdBase + 'text-align:right;font-variant-numeric:tabular-nums;';
-    const stickyTh = (left, extra='') => `position:sticky;left:${left}px;z-index:3;background:#0f172a;${extra}`;
-    const stickyTd = (left, bg='#111827', extra='') => `position:sticky;left:${left}px;z-index:2;background:${bg};${extra}`;
+    const stTh   = (l, e='') => `position:sticky;left:${l}px;z-index:3;background:#0f172a;${e}`;
+    const stTd   = (l, bg='#111827', e='') => `position:sticky;left:${l}px;z-index:2;background:${bg};${e}`;
 
-    let html = `<table style="width:100%;border-collapse:collapse;font-size:13px">`;
-
-    // ── 第一行表頭：config 名稱（每個 config 佔 1 欄）
-    html += `<thead>`;
+    let html = `<table style="width:100%;border-collapse:collapse;font-size:13px"><thead>`;
     html += `<tr>`;
-    html += `<th style="${thBase}${stickyTh(0,'border-right:1px solid #2d3f56;width:40px')}" rowspan="2">#</th>`;
-    html += `<th style="${thBase}${stickyTh(40,'border-right:1px solid #2d3f56;width:70px')}" rowspan="2">據點</th>`;
-    html += `<th style="${thBase}${stickyTh(110,'border-right:2px solid #374151;min-width:130px')}" rowspan="2">銷售人員</th>`;
+    html += `<th style="${thBase}${stTh(0,'border-right:1px solid #2d3f56;width:40px')}" rowspan="2">#</th>`;
+    html += `<th style="${thBase}${stTh(40,'border-right:1px solid #2d3f56;width:70px')}" rowspan="2">據點</th>`;
+    html += `<th style="${thBase}${stTh(110,'border-right:2px solid #374151;min-width:130px')}" rowspan="2">銷售人員</th>`;
     configs.forEach((cfg, ci) => {
       const col = cfgColors[ci % cfgColors.length];
-      const borderR = ci < configs.length - 1 ? '2px solid #2d3f56' : '1px solid #2d3f56';
-      html += `<th colspan="1" style="${thBase}text-align:center;color:${col};border-right:${borderR};border-bottom:1px solid #1e293b">${cfg.config_name}</th>`;
+      const br  = ci < configs.length - 1 ? '2px solid #2d3f56' : '1px solid #2d3f56';
+      html += `<th colspan="1" style="${thBase}text-align:center;color:${col};border-right:${br};border-bottom:1px solid #1e293b">${cfg.config_name}</th>`;
     });
-    html += `</tr>`;
-
-    // ── 第二行表頭：依 stat_method 顯示單位
-    html += `<tr>`;
+    html += `</tr><tr>`;
     configs.forEach((cfg, ci) => {
-      const borderR = ci < configs.length - 1 ? '2px solid #2d3f56' : '1px solid #2d3f56';
+      const br   = ci < configs.length - 1 ? '2px solid #2d3f56' : '1px solid #2d3f56';
       const unit = methodUnitMap[cfg.stat_method] || '金額(元)';
-      html += `<th style="${thNum}border-right:${borderR};font-size:11px">${unit}</th>`;
+      html += `<th style="${thNum}border-right:${br};font-size:11px">${unit}</th>`;
     });
-    html += `</tr></thead>`;
+    html += `</tr></thead><tbody>`;
 
-    // ── 資料列（依據點分組）
-    html += `<tbody>`;
     let rowIdx = 0;
-
     for (const br of branches) {
-      const brRows = rows.filter(r => r.branch === br);
+      const brRows  = rows.filter(r => r.branch === br);
       const brColor = branchColors[br] || '#64748b';
 
-      brRows.forEach((row, ri) => {
+      brRows.forEach(row => {
         rowIdx++;
+        const bg = rowIdx % 2 === 0 ? '#0e1a29' : '#111827';
         html += `<tr>`;
-        const rowBgColor = rowIdx % 2 === 0 ? '#0e1a29' : '#111827';
-        html += `<td style="${tdBase}${stickyTd(0, rowBgColor, 'color:#64748b;font-weight:700;border-right:1px solid #2d3f56;width:40px')}">${rowIdx}</td>`;
-        html += `<td style="${tdBase}${stickyTd(40, rowBgColor, 'border-right:1px solid #2d3f56;width:70px')}">
+        html += `<td style="${tdBase}${stTd(0,bg,'color:#64748b;font-weight:700;border-right:1px solid #2d3f56;width:40px')}">${rowIdx}</td>`;
+        html += `<td style="${tdBase}${stTd(40,bg,'border-right:1px solid #2d3f56;width:70px')}">
           <span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;background:${brColor}22;color:${brColor}">${br}</span>
         </td>`;
-        html += `<td style="${tdBase}${stickyTd(110, rowBgColor, 'font-weight:600;border-right:2px solid #374151;min-width:130px')}">${row.sa_name}</td>`;
-
+        html += `<td style="${tdBase}${stTd(110,bg,'font-weight:600;border-right:2px solid #374151;min-width:130px')}">${row.sa_name}</td>`;
         configs.forEach((cfg, ci) => {
-          const c = row.configs[cfg.id];
-          const qty   = c ? c.qty   : 0;
-          const sales = c ? c.sales : 0;
-          const cnt   = c ? c.cnt   : 0;
-          const hasData = qty > 0 || sales > 0 || cnt > 0;
-          const borderR = ci < configs.length - 1 ? '2px solid #2d3f56' : '';
-
-          // 依 stat_method 決定顯示值與顏色
-          let displayVal, valStyle;
+          const c   = row.configs[cfg.id];
+          const qty = c ? c.qty : 0, sales = c ? c.sales : 0, cnt = c ? c.cnt : 0;
+          const has = qty > 0 || sales > 0 || cnt > 0;
+          const border = ci < configs.length - 1 ? '2px solid #2d3f56' : '';
+          let disp, style;
           if (cfg.stat_method === 'quantity') {
-            displayVal = hasData ? qty.toLocaleString(undefined, {maximumFractionDigits:1}) : '—';
-            valStyle = hasData ? 'color:#e2e8f0;font-weight:600' : 'color:#334155';
+            disp = has ? qty.toLocaleString(undefined,{maximumFractionDigits:1}) : '—';
+            style = has ? 'color:#e2e8f0;font-weight:600' : 'color:#334155';
           } else if (cfg.stat_method === 'count') {
-            displayVal = hasData ? cnt.toLocaleString() : '—';
-            valStyle = hasData ? 'color:#e2e8f0;font-weight:600' : 'color:#334155';
+            disp = has ? cnt.toLocaleString() : '—';
+            style = has ? 'color:#e2e8f0;font-weight:600' : 'color:#334155';
           } else {
-            // amount (default)
-            displayVal = hasData ? fmt(sales) : '—';
-            valStyle = hasData ? 'color:#10b981;font-weight:700' : 'color:#334155';
+            disp  = has ? fmt(sales) : '—';
+            style = has ? 'color:#10b981;font-weight:700' : 'color:#334155';
           }
-
-          html += `<td style="${tdNum}${valStyle};border-right:${borderR}">${displayVal}</td>`;
+          html += `<td style="${tdNum}${style};border-right:${border}">${disp}</td>`;
         });
         html += `</tr>`;
       });
 
-      // 據點小計列
-      const brColor2 = branchColors[br] || '#64748b';
+      // 據點小計
       const subBg = br === 'AMA' ? 'rgba(59,130,246,.1)' : br === 'AMC' ? 'rgba(16,185,129,.1)' : 'rgba(245,158,11,.1)';
-      html += `<tr style="background:${subBg};border-top:1px solid ${brColor2}44">`;
-      html += `<td style="${tdBase}${stickyTd(0, 'transparent', 'border-right:1px solid #2d3f56')}"></td>`;
-      html += `<td style="${tdBase}${stickyTd(40, 'transparent', 'border-right:1px solid #2d3f56')}">
-        <span style="font-size:11px;font-weight:800;color:${brColor2}">${br} 小計</span>
+      html += `<tr style="background:${subBg};border-top:1px solid ${brColor}44">`;
+      html += `<td style="${tdBase}${stTd(0,'transparent','border-right:1px solid #2d3f56')}"></td>`;
+      html += `<td style="${tdBase}${stTd(40,'transparent','border-right:1px solid #2d3f56')}">
+        <span style="font-size:11px;font-weight:800;color:${brColor}">${br} 小計</span>
       </td>`;
-      html += `<td style="${tdBase}${stickyTd(110, 'transparent', 'font-size:12px;color:#64748b;border-right:2px solid #374151')}">${brRows.length} 人</td>`;
-
+      html += `<td style="${tdBase}${stTd(110,'transparent','font-size:12px;color:#64748b;border-right:2px solid #374151')}">${brRows.length} 人</td>`;
       configs.forEach((cfg, ci) => {
-        const borderR = ci < configs.length - 1 ? '2px solid #2d3f56' : '';
-        const brQty   = brRows.reduce((s,r) => s + (r.configs[cfg.id]?.qty   || 0), 0);
-        const brSales = brRows.reduce((s,r) => s + (r.configs[cfg.id]?.sales || 0), 0);
-        const brCnt   = brRows.reduce((s,r) => s + (r.configs[cfg.id]?.cnt   || 0), 0);
-        const hasData = brQty > 0 || brSales > 0 || brCnt > 0;
-
-        let subVal;
-        if (cfg.stat_method === 'quantity') {
-          subVal = hasData ? brQty.toLocaleString(undefined, {maximumFractionDigits:1}) : '—';
-        } else if (cfg.stat_method === 'count') {
-          subVal = hasData ? brCnt.toLocaleString() : '—';
-        } else {
-          subVal = hasData ? fmt(brSales) : '—';
-        }
-
-        html += `<td style="${tdNum}color:${brColor2};font-weight:800;font-size:12px;border-right:${borderR}">${subVal}</td>`;
+        const border = ci < configs.length - 1 ? '2px solid #2d3f56' : '';
+        const brQ = brRows.reduce((s,r) => s+(r.configs[cfg.id]?.qty||0),0);
+        const brS = brRows.reduce((s,r) => s+(r.configs[cfg.id]?.sales||0),0);
+        const brC = brRows.reduce((s,r) => s+(r.configs[cfg.id]?.cnt||0),0);
+        const has = brQ > 0 || brS > 0 || brC > 0;
+        let sv;
+        if (cfg.stat_method === 'quantity') sv = has ? brQ.toLocaleString(undefined,{maximumFractionDigits:1}) : '—';
+        else if (cfg.stat_method === 'count') sv = has ? brC.toLocaleString() : '—';
+        else sv = has ? fmt(brS) : '—';
+        html += `<td style="${tdNum}color:${brColor};font-weight:800;font-size:12px;border-right:${border}">${sv}</td>`;
       });
       html += `</tr>`;
     }
 
-    // 全廠合計列
+    // 全廠合計
     html += `<tr style="background:#1e293b;border-top:2px solid #3b82f6">`;
-    html += `<td style="${tdBase}${stickyTd(0,'#1e293b','border-right:1px solid #2d3f56')}"></td>`;
-    html += `<td style="${tdBase}${stickyTd(40,'#1e293b','border-right:1px solid #2d3f56')}"></td>`;
-    html += `<td style="${tdBase}${stickyTd(110,'#1e293b','font-size:13px;font-weight:800;color:#fff;border-right:2px solid #374151')}">全廠合計</td>`;
+    html += `<td style="${tdBase}${stTd(0,'#1e293b','border-right:1px solid #2d3f56')}"></td>`;
+    html += `<td style="${tdBase}${stTd(40,'#1e293b','border-right:1px solid #2d3f56')}"></td>`;
+    html += `<td style="${tdBase}${stTd(110,'#1e293b','font-size:13px;font-weight:800;color:#fff;border-right:2px solid #374151')}">全廠合計</td>`;
     configs.forEach((cfg, ci) => {
       const t = colTotals[cfg.id] || { qty:0, sales:0, cnt:0 };
-      const borderR = ci < configs.length - 1 ? '2px solid #2d3f56' : '';
-      const hasData = t.qty > 0 || t.sales > 0 || t.cnt > 0;
-
-      let totVal;
-      if (cfg.stat_method === 'quantity') {
-        totVal = hasData ? t.qty.toLocaleString(undefined, {maximumFractionDigits:1}) : '—';
-      } else if (cfg.stat_method === 'count') {
-        totVal = hasData ? t.cnt.toLocaleString() : '—';
-      } else {
-        totVal = hasData ? fmt(t.sales) : '—';
-      }
-
-      html += `<td style="${tdNum}color:#10b981;font-weight:800;font-size:13px;border-right:${borderR}">${totVal}</td>`;
+      const border = ci < configs.length - 1 ? '2px solid #2d3f56' : '';
+      const has = t.qty > 0 || t.sales > 0 || t.cnt > 0;
+      let tv;
+      if (cfg.stat_method === 'quantity') tv = has ? t.qty.toLocaleString(undefined,{maximumFractionDigits:1}) : '—';
+      else if (cfg.stat_method === 'count') tv = has ? t.cnt.toLocaleString() : '—';
+      else tv = has ? fmt(t.sales) : '—';
+      html += `<td style="${tdNum}color:#10b981;font-weight:800;font-size:13px;border-right:${border}">${tv}</td>`;
     });
-    html += `</tr>`;
-
-    html += `</tbody></table>`;
+    html += `</tr></tbody></table>`;
     matrixEl.innerHTML = html;
 
   } catch(e) {
@@ -654,120 +1110,146 @@ async function loadTrend(branch) {
   try {
     const params = new URLSearchParams();
     if (branch) params.set('branch', branch);
-    const res = await fetch(`/api/stats/trend?${params}`);
+    const res  = await fetch(`/api/stats/trend?${params}`);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
 
-    const rows = data.trend;
+    const rows    = data.trend;
     const prevMap = {};
-    document.getElementById('tbTrend').innerHTML = rows.length ? rows.map(r => {
-      const key = r.branch;
-      const cur = parseFloat(r.total_untaxed||0);
-      const prev = prevMap[key];
-      const pct = prev ? ((cur-prev)/prev*100) : null;
-      prevMap[key] = cur;
-      return `<tr>
-        <td>${r.period.slice(0,4)}年${r.period.slice(4)}月</td>
-        <td><span class="badge badge-blue">${r.branch}</span></td>
-        <td class="num">${parseInt(r.car_count||0)}</td>
-        <td class="num" style="font-weight:700">${fmt(r.total_untaxed)}</td>
-        <td class="num">${fmt(r.engine_wage)}</td>
-        <td class="num">${fmt(r.parts_income)}</td>
-        <td class="num ${pct===null?'':pct>=0?'up':'down'}">${pct===null?'-':(pct>=0?'▲':'▼')+Math.abs(pct).toFixed(1)+'%'}</td>
-      </tr>`;
-    }).join('') : '<tr><td colspan="7" class="empty">無資料</td></tr>';
+    document.getElementById('tbTrend').innerHTML = rows.length
+      ? rows.map(r => {
+          const key  = r.branch;
+          const cur  = n(r.total_untaxed);
+          const prev = prevMap[key];
+          const pct  = prev ? ((cur - prev) / prev * 100) : null;
+          prevMap[key] = cur;
+          return `<tr>
+            <td>${r.period.slice(0,4)}年${r.period.slice(4)}月</td>
+            <td><span class="badge badge-blue">${r.branch}</span></td>
+            <td class="num">${parseInt(r.car_count||0)}</td>
+            <td class="num" style="font-weight:700">${fmt(r.total_untaxed)}</td>
+            <td class="num">${fmt(r.engine_wage)}</td>
+            <td class="num">${fmt(r.parts_income)}</td>
+            <td class="num ${pct===null?'':pct>=0?'up':'down'}">
+              ${pct===null ? '-' : (pct>=0?'▲':'▼') + Math.abs(pct).toFixed(1) + '%'}
+            </td>
+          </tr>`;
+        }).join('')
+      : '<tr><td colspan="7" class="empty">無資料</td></tr>';
+
   } catch(e) {
-    document.getElementById('tbTrend').innerHTML = `<tr><td colspan="7" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;
+    document.getElementById('tbTrend').innerHTML =
+      `<tr><td colspan="7" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;
   }
 }
 
 // ══════════════════════════════════════════════════════════
-// 每日台數
+// 每日進廠台數
 // ══════════════════════════════════════════════════════════
 async function loadDaily(period, branch) {
   try {
     const params = new URLSearchParams();
     if (period) params.set('period', period);
     if (branch) params.set('branch', branch);
-    const res = await fetch(`/api/stats/daily?${params}`);
+    const res  = await fetch(`/api/stats/daily?${params}`);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
 
     const summary = data.summary;
     const daily   = data.daily;
 
-    document.getElementById('dailyKPI').innerHTML = `
-      ${summary.map(r=>`
-        <div class="kpi-card"><div class="kpi-label">${r.branch} 總台數</div><div class="kpi-value kpi-blue">${parseInt(r.total_cars||0).toLocaleString()}</div><div class="kpi-sub">台</div></div>
-        <div class="kpi-card"><div class="kpi-label">${r.branch} 工作天數</div><div class="kpi-value kpi-yellow">${parseInt(r.working_days||0)}</div><div class="kpi-sub">天</div></div>
-        <div class="kpi-card"><div class="kpi-label">${r.branch} 日均台數</div><div class="kpi-value kpi-green">${parseFloat(r.daily_avg||0).toFixed(1)}</div><div class="kpi-sub">最高${r.max_day}/最低${r.min_day}</div></div>
-      `).join('')}
-    `;
+    document.getElementById('dailyKPI').innerHTML = summary.map(r => `
+      <div class="kpi-card">
+        <div class="kpi-label">${r.branch} 總台數</div>
+        <div class="kpi-value kpi-blue">${parseInt(r.total_cars||0).toLocaleString()}</div>
+        <div class="kpi-sub">台</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">${r.branch} 工作天數</div>
+        <div class="kpi-value kpi-yellow">${parseInt(r.working_days||0)}</div>
+        <div class="kpi-sub">天</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">${r.branch} 日均台數</div>
+        <div class="kpi-value kpi-green">${n(r.daily_avg).toFixed(1)}</div>
+        <div class="kpi-sub">最高${r.max_day}/最低${r.min_day}</div>
+      </div>
+    `).join('');
 
-    const branchList = [...new Set(daily.map(r=>r.branch))].sort();
-    const dateList   = [...new Set(daily.map(r=>r.arrive_date?.slice(0,10)))].sort();
-    const colors = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b' };
-    const maxCount = Math.max(...daily.map(r=>parseInt(r.car_count||0)), 1);
-    const barW = Math.max(8, Math.min(24, Math.floor(560/(dateList.length*branchList.length+dateList.length))));
+    const branchList = [...new Set(daily.map(r => r.branch))].sort();
+    const dateList   = [...new Set(daily.map(r => r.arrive_date?.slice(0,10)))].sort();
+    const colors     = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b' };
+    const maxCount   = Math.max(...daily.map(r => parseInt(r.car_count||0)), 1);
+    const barW  = Math.max(8, Math.min(24, Math.floor(560/(dateList.length*branchList.length+dateList.length))));
     const chartW = Math.max(700, dateList.length*(branchList.length*(barW+2)+10)+60);
     const chartH = 200;
 
     const dayMap = {};
     daily.forEach(r => {
       const d = r.arrive_date?.slice(0,10);
-      if (!dayMap[d]) dayMap[d]={};
-      dayMap[d][r.branch]=parseInt(r.car_count||0);
+      if (!dayMap[d]) dayMap[d] = {};
+      dayMap[d][r.branch] = parseInt(r.car_count||0);
     });
 
-    let bars='', xLabels='';
-    dateList.forEach((d,di)=>{
+    let bars = '', xLabels = '';
+    dateList.forEach((d, di) => {
       const groupW = branchList.length*(barW+2);
-      const gx = 50+di*(groupW+10);
-      branchList.forEach((b,bi)=>{
-        const val=dayMap[d]?.[b]||0;
-        const barH=val/maxCount*(chartH-40);
-        const x=gx+bi*(barW+2), y=chartH-20-barH;
-        bars+=`<rect x="${x}" y="${y.toFixed(1)}" width="${barW}" height="${barH.toFixed(1)}" fill="${colors[b]||'#64748b'}" rx="2" opacity="0.85"><title>${b} ${d}: ${val}台</title></rect>`;
-        if(val>0) bars+=`<text x="${(x+barW/2).toFixed(0)}" y="${(y-3).toFixed(0)}" text-anchor="middle" font-size="9" fill="#94a3b8">${val}</text>`;
+      const gx     = 50 + di*(groupW+10);
+      branchList.forEach((b, bi) => {
+        const val  = dayMap[d]?.[b] || 0;
+        const barH = val / maxCount * (chartH-40);
+        const x    = gx + bi*(barW+2), y = chartH-20-barH;
+        bars += `<rect x="${x}" y="${y.toFixed(1)}" width="${barW}" height="${barH.toFixed(1)}" fill="${colors[b]||'#64748b'}" rx="2" opacity="0.85">
+          <title>${b} ${d}: ${val}台</title></rect>`;
+        if (val > 0)
+          bars += `<text x="${(x+barW/2).toFixed(0)}" y="${(y-3).toFixed(0)}" text-anchor="middle" font-size="9" fill="#94a3b8">${val}</text>`;
       });
-      const labelX=gx+(branchList.length*(barW+2))/2;
-      xLabels+=`<text x="${labelX.toFixed(0)}" y="${chartH-4}" text-anchor="middle" font-size="9" fill="#64748b">${d.slice(8)}</text>`;
+      const lx = gx + (branchList.length*(barW+2))/2;
+      xLabels += `<text x="${lx.toFixed(0)}" y="${chartH-4}" text-anchor="middle" font-size="9" fill="#64748b">${d.slice(8)}</text>`;
     });
 
-    let yAxis='';
-    for(let i=0;i<=4;i++){
-      const val=Math.round(maxCount*i/4), y=chartH-20-(i/4)*(chartH-40);
-      yAxis+=`<line x1="45" y1="${y.toFixed(0)}" x2="${chartW}" y2="${y.toFixed(0)}" stroke="#2d3f56" stroke-width="1"/>
+    let yAxis = '';
+    for (let i=0; i<=4; i++) {
+      const val = Math.round(maxCount*i/4);
+      const y   = chartH - 20 - (i/4)*(chartH-40);
+      yAxis += `<line x1="45" y1="${y.toFixed(0)}" x2="${chartW}" y2="${y.toFixed(0)}" stroke="#2d3f56" stroke-width="1"/>
         <text x="40" y="${(y+4).toFixed(0)}" text-anchor="end" font-size="9" fill="#64748b">${val}</text>`;
     }
 
-    const legend=branchList.map((b,i)=>
+    const legend = branchList.map((b, i) =>
       `<rect x="${50+i*70}" y="8" width="10" height="10" fill="${colors[b]||'#64748b'}" rx="2"/>
        <text x="${63+i*70}" y="17" font-size="11" fill="#94a3b8">${b}</text>`
     ).join('');
 
-    document.getElementById('dailyChart').innerHTML=`
+    document.getElementById('dailyChart').innerHTML = `
       <svg viewBox="0 0 ${chartW} ${chartH+10}" style="width:100%;height:auto;display:block">
         ${yAxis}${bars}${xLabels}${legend}
       </svg>`;
 
-    const avgMap={};
-    summary.forEach(r=>avgMap[r.branch]=parseFloat(r.daily_avg||0));
-    document.getElementById('tbDaily').innerHTML=daily.length?daily.map(r=>{
-      const cnt=parseInt(r.car_count||0), avg=avgMap[r.branch]||0;
-      const diff=cnt-avg, pct=avg>0?(diff/avg*100):0;
-      return `<tr>
-        <td>${r.arrive_date?.slice(0,10)}</td>
-        <td><span class="badge badge-blue">${r.branch}</span></td>
-        <td class="num" style="font-weight:700">${cnt}</td>
-        <td class="num ${diff>=0?'up':'down'}">
-          ${diff>=0?'▲':'▼'}${Math.abs(diff).toFixed(1)}
-          <span style="font-size:11px;color:#64748b">(${pct>=0?'+':''}${pct.toFixed(0)}%)</span>
-        </td>
-      </tr>`;
-    }).join(''):'<tr><td colspan="4" class="empty">無資料</td></tr>';
+    const avgMap = {};
+    summary.forEach(r => avgMap[r.branch] = n(r.daily_avg));
+
+    document.getElementById('tbDaily').innerHTML = daily.length
+      ? daily.map(r => {
+          const cnt  = parseInt(r.car_count||0);
+          const avg  = avgMap[r.branch] || 0;
+          const diff = cnt - avg;
+          const pct  = avg > 0 ? (diff/avg*100) : 0;
+          return `<tr>
+            <td>${r.arrive_date?.slice(0,10)}</td>
+            <td><span class="badge badge-blue">${r.branch}</span></td>
+            <td class="num" style="font-weight:700">${cnt}</td>
+            <td class="num ${diff>=0?'up':'down'}">
+              ${diff>=0?'▲':'▼'}${Math.abs(diff).toFixed(1)}
+              <span style="font-size:11px;color:#64748b">(${pct>=0?'+':''}${pct.toFixed(0)}%)</span>
+            </td>
+          </tr>`;
+        }).join('')
+      : '<tr><td colspan="4" class="empty">無資料</td></tr>';
+
   } catch(e) {
-    document.getElementById('dailyKPI').innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;
+    document.getElementById('dailyKPI').innerHTML =
+      `<div style="color:#ef4444;padding:16px">${e.message}</div>`;
   }
 }
 
