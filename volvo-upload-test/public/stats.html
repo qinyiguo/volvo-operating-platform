@@ -179,6 +179,7 @@
     <button class="tab" onclick="switchTab('sa-sales')">👤 SA 零件銷售</button>
     <button class="tab" onclick="switchTab('trend')">📈 月份趨勢</button>
     <button class="tab" onclick="switchTab('daily')">📅 每日進廠台數</button>
+    <button class="tab" onclick="switchTab('performance')">🎯 業績進度</button>
   </div>
 
   <!-- ══════ 維修收入 ══════ -->
@@ -380,6 +381,25 @@
   </div>
 </div>
 
+  <!-- ══════ 業績進度 ══════ -->
+  <div id="tab-performance" style="display:none">
+    <div id="perfKPI" class="kpi-grid"></div>
+    <div class="card">
+      <div class="card-title">
+        🎯 各指標業績進度
+        <span id="perfPeriodLabel" class="card-title-note"></span>
+        <a href="/settings.html" style="font-size:12px;color:#64748b;text-decoration:none;margin-left:8px;padding:4px 8px;border:1px solid #2d3f56;border-radius:5px;background:#1e293b">⚙️ 設定指標</a>
+      </div>
+      <div id="perfNoConfig" style="display:none;padding:48px;text-align:center;color:#64748b">
+        尚未建立業績指標，請前往
+        <a href="/settings.html" style="color:#3b82f6">⚙️ 設定 → 業績目標</a>
+        新增追蹤項目
+      </div>
+      <div id="perfDetail"></div>
+    </div>
+  </div>
+ 
+
 <script>
 let currentTab = 'repair';
 let saConfigs  = [];
@@ -424,7 +444,7 @@ const GROUP_META = {
 
 function switchTab(tab) {
   currentTab = tab;
-  const tabs = ['repair','tech','parts','boutique','sa-sales','trend','daily'];
+  const tabs = ['repair','tech','parts','boutique','sa-sales','trend','daily','performance'];
   document.querySelectorAll('.tab').forEach((t, i) => {
     t.classList.toggle('active', tabs[i] === tab);
   });
@@ -460,7 +480,8 @@ async function loadAll() {
     loadTrend(branch),
     loadDaily(period, branch),
     loadSASales(),
-  ]);
+    loadPerformance(period, branch),
+      ]);
   document.getElementById('lastUpdate').textContent = `更新於 ${new Date().toLocaleTimeString('zh-TW')}`;
 }
 
@@ -1190,6 +1211,133 @@ async function loadDaily(period, branch) {
       ?daily.map(r=>{const cnt=parseInt(r.car_count||0),avg=avgMap[r.branch]||0,diff=cnt-avg,pct=avg>0?(diff/avg*100):0;return`<tr><td>${r.arrive_date?.slice(0,10)}</td><td><span class="badge badge-blue">${r.branch}</span></td><td class="num" style="font-weight:700">${cnt}</td><td class="num ${diff>=0?'up':'down'}">${diff>=0?'▲':'▼'}${Math.abs(diff).toFixed(1)}<span style="font-size:11px;color:#64748b">(${pct>=0?'+':''}${pct.toFixed(0)}%)</span></td></tr>`;}).join('')
       :'<tr><td colspan="4" class="empty">無資料</td></tr>';
   } catch(e) { document.getElementById('dailyKPI').innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`; }
+}
+
+ // ══════ 業績進度 ══════
+async function loadPerformance(period, branch) {
+  const kpiEl    = document.getElementById('perfKPI');
+  const detailEl = document.getElementById('perfDetail');
+  const noConfEl = document.getElementById('perfNoConfig');
+  if (!kpiEl) return;
+ 
+  if (!period) {
+    kpiEl.innerHTML = '<div style="color:#64748b;padding:12px;font-size:13px">請先選擇期間</div>';
+    if (detailEl) detailEl.innerHTML = '';
+    return;
+  }
+ 
+  kpiEl.innerHTML = '';
+  if (detailEl) detailEl.innerHTML = '<div class="loading"><span class="spinner"></span>載入中</div>';
+ 
+  try {
+    const params = new URLSearchParams({ period });
+    if (branch) params.set('branch', branch);
+    const data = await (await fetch(`/api/stats/performance?${params}`)).json();
+    if (data.error) throw new Error(data.error);
+ 
+    const { metrics, results } = data;
+ 
+    if (!metrics.length) {
+      if (noConfEl) noConfEl.style.display = '';
+      if (detailEl) detailEl.innerHTML = '';
+      kpiEl.innerHTML = '';
+      return;
+    }
+    if (noConfEl) noConfEl.style.display = 'none';
+ 
+    const BRANCHES    = branch ? [branch] : ['AMA','AMC','AMD'];
+    const brColors    = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b' };
+    const TYPE_LABEL  = { repair_income:'🔧 維修收入', parts:'🔩 零件銷售', boutique:'💎 精品配件' };
+    const FIELD_UNIT  = { amount:'元', qty:'件', count:'筆' };
+ 
+    // ── KPI summary cards per branch ──
+    let kpiHtml = '';
+    BRANCHES.forEach(br => {
+      const col        = brColors[br] || '#64748b';
+      const withTarget = results.filter(r => r.branches[br]?.target !== null).length;
+      const achieved   = results.filter(r => (r.branches[br]?.achieve_rate || 0) >= 100).length;
+      const sumRate    = results.reduce((s, r) => s + (r.branches[br]?.achieve_rate || 0), 0);
+      const avgRate    = withTarget > 0 ? sumRate / withTarget : null;
+      const rCol       = avgRate === null ? '#64748b' : avgRate >= 100 ? '#10b981' : avgRate >= 80 ? '#f59e0b' : '#ef4444';
+      kpiHtml += `<div class="kpi-card">
+        <div class="kpi-label" style="color:${col}">${br} 整體達成率</div>
+        <div class="kpi-value" style="color:${rCol}">${avgRate !== null ? avgRate.toFixed(1) + '%' : '—'}</div>
+        <div class="kpi-sub">${achieved} / ${withTarget} 項達標</div>
+      </div>`;
+    });
+    kpiEl.innerHTML = kpiHtml;
+ 
+    // ── Build metric map ──
+    const metricMap = {};
+    metrics.forEach(m => { metricMap[m.id] = m; });
+ 
+    // ── Detail cards ──
+    let html = '';
+    results.forEach(r => {
+      const metric = metricMap[r.metric_id];
+      if (!metric) return;
+      const isAmt  = metric.stat_field !== 'qty' && metric.stat_field !== 'count';
+      const unit   = metric.unit || FIELD_UNIT[metric.stat_field] || '元';
+      const fmtV   = v => {
+        if (v === null || v === undefined) return '—';
+        if (isAmt && !metric.unit) return fmtK(v);
+        return metric.stat_field === 'qty' ? n(v).toFixed(1) : fmt(v);
+      };
+ 
+      html += `<div style="border:1px solid #2d3f56;border-radius:10px;margin-bottom:14px;overflow:hidden">
+        <div style="background:#0f172a;padding:12px 18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span style="font-size:14px;font-weight:800;color:#e2e8f0">${metric.metric_name}</span>
+          <span class="badge badge-blue" style="font-size:11px">${TYPE_LABEL[metric.metric_type]||metric.metric_type}</span>
+          ${metric.description ? `<span style="font-size:12px;color:#64748b">${metric.description}</span>` : ''}
+          <span style="font-size:11px;color:#475569;margin-left:auto">單位：${unit}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(${BRANCHES.length},1fr)">`;
+ 
+      BRANCHES.forEach((br, bi) => {
+        const d   = r.branches[br] || {};
+        const col = brColors[br]   || '#64748b';
+        const rate = d.achieve_rate;
+        const rCol = rate === null ? '#64748b' : rate >= 100 ? '#10b981' : rate >= 80 ? '#f59e0b' : '#ef4444';
+        const barW = rate !== null ? Math.min(100, rate).toFixed(0) : 0;
+        const yoy  = d.yoy_growth;
+        const borderR = bi < BRANCHES.length - 1 ? 'border-right:1px solid #2d3f56;' : '';
+ 
+        html += `<div style="${borderR}padding:14px 16px">
+          <div style="font-size:11px;font-weight:800;color:${col};margin-bottom:10px;letter-spacing:.04em">${br}</div>
+          <div style="font-size:22px;font-weight:800;color:#e2e8f0;margin-bottom:6px">${fmtV(d.actual)}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+            <div style="flex:1;background:#0f172a;border-radius:3px;height:5px;min-width:40px">
+              <div style="width:${barW}%;height:5px;background:${rCol};border-radius:3px"></div>
+            </div>
+            <span style="font-size:13px;font-weight:800;color:${rCol};white-space:nowrap">${rate !== null ? rate.toFixed(1) + '%' : '無目標'}</span>
+          </div>
+          <div style="font-size:11px;color:#64748b;line-height:2">
+            <div style="display:flex;justify-content:space-between">
+              <span>目標</span>
+              <span style="color:#94a3b8;font-weight:600">${fmtV(d.target)}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span>去年同期</span>
+              <span>
+                <span style="color:#94a3b8;font-weight:600">${fmtV(d.last_year)}</span>
+                ${yoy !== null ? `<span style="color:${yoy >= 0 ? '#10b981' : '#ef4444'};margin-left:5px;font-size:11px">${yoy >= 0 ? '▲' : '▼'}${Math.abs(yoy).toFixed(1)}%</span>` : ''}
+              </span>
+            </div>
+          </div>
+        </div>`;
+      });
+ 
+      html += `</div></div>`;
+    });
+ 
+    if (detailEl) detailEl.innerHTML = html || '<div class="empty">此期間無業績資料</div>';
+    const lbl = document.getElementById('perfPeriodLabel');
+    if (lbl && period) lbl.textContent = `${period.slice(0,4)}年${period.slice(4)}月`;
+ 
+  } catch(e) {
+    if (detailEl) detailEl.innerHTML = `<div style="color:#ef4444;padding:16px">${e.message}</div>`;
+    kpiEl.innerHTML = '';
+  }
 }
 
 // ══════ 初始化 ══════
