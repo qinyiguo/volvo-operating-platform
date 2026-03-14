@@ -822,7 +822,7 @@ app.get('/api/stats/boutique-accessories', async (req, res) => {
         ps.branch,
         COALESCE(NULLIF(ps.sales_person,''), '（未知）')  AS sales_person,
         pc.part_type                                       AS part_type,
-        COALESCE(NULLIF(ps.department,''), '（未分類）')  AS department,
+        COALESCE(NULLIF(ps.part_type,''), '（未分類）')   AS account_type,
         SUM(ps.sale_price_untaxed)  AS total_sales,
         SUM(ps.cost_untaxed)        AS total_cost,
         SUM(ps.sale_qty)            AS total_qty,
@@ -830,7 +830,7 @@ app.get('/api/stats/boutique-accessories', async (req, res) => {
       FROM parts_sales ps
       INNER JOIN parts_catalog pc ON ps.part_number = pc.part_number
       WHERE ${where}
-      GROUP BY ps.branch, ps.sales_person, pc.part_type, ps.department
+      GROUP BY ps.branch, ps.sales_person, pc.part_type, ps.part_type
       ORDER BY ps.branch, pc.part_type, SUM(ps.sale_price_untaxed) DESC
     `, params);
 
