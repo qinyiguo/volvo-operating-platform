@@ -338,7 +338,8 @@
         <div class="card-title">🗓️ 設定營業日</div>
 
         <div class="wd-controls">
-          <select id="wdBranch" class="form-select">
+          <select id="wdBranch" class="form-select" onchange="onWdBranchChange()">
+            <option value="ALL">全部（三站同步）</option>
             <option value="AMA">AMA</option>
             <option value="AMC">AMC</option>
             <option value="AMD">AMD</option>
@@ -727,17 +728,54 @@ async function loadWdList() {
       el.innerHTML = '<div style="color:#64748b;font-size:13px;padding:12px 0">尚未設定任何月份，系統將使用自動偵測工作天數</div>';
       return;
     }
-    el.innerHTML = `<div class="wd-existing-list">${rows.map(r => {
-      const days = Array.isArray(r.work_dates) ? r.work_dates.length : 0;
-      const period = r.period;
-      return `<div class="wd-existing-item">
-        <div class="info">
-          <div class="name"><span class="badge badge-blue">${r.branch}</span> &nbsp;${period.slice(0,4)}年${period.slice(4)}月</div>
-          <div class="sub">${days} 個營業日${r.note ? ' · ' + r.note : ''}</div>
-        </div>
-        <button class="btn btn-secondary btn-sm" onclick="quickEditWd('${r.branch}','${r.period}')">編輯</button>
-        <button class="btn btn-danger btn-sm" onclick="quickDeleteWd('${r.branch}','${r.period}')">刪除</button>
-      </div>`;
+
+    // 依 period 分組
+    const byPeriod = {};
+    rows.forEach(r => {
+      if (!byPeriod[r.period]) byPeriod[r.period] = {};
+      byPeriod[r.period][r.branch] = r;
+    });
+
+    const periods = Object.keys(byPeriod).sort().reverse();
+    const BRANCHES = ['AMA','AMC','AMD'];
+
+    el.innerHTML = `<div class="wd-existing-list">${periods.map(period => {
+      const pRows = byPeriod[period];
+      const label = `${period.slice(0,4)}年${period.slice(4)}月`;
+
+      // 判斷是否三站同步
+      const allPresent = BRANCHES.every(b => pRows[b]);
+      const dayCounts  = BRANCHES.map(b => pRows[b]?.work_dates?.length || 0);
+      const allSame    = allPresent && dayCounts.every(c => c === dayCounts[0]);
+
+      if (allSame) {
+        // 三站同步 → 一列顯示
+        return `<div class="wd-existing-item">
+          <div class="info">
+            <div class="name">
+              <span class="badge" style="background:rgba(16,185,129,.15);color:#10b981">三站同步</span>
+              &nbsp;${label}
+            </div>
+            <div class="sub">AMA / AMC / AMD 均為 ${dayCounts[0]} 個營業日</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="quickEditWd('ALL','${period}')">編輯（同步）</button>
+          <button class="btn btn-danger btn-sm" onclick="quickDeleteWd('ALL','${period}')">刪除三站</button>
+        </div>`;
+      } else {
+        // 各站不同 → 逐站顯示
+        return BRANCHES.filter(b => pRows[b]).map(b => {
+          const r = pRows[b];
+          const days = r.work_dates?.length || 0;
+          return `<div class="wd-existing-item">
+            <div class="info">
+              <div class="name"><span class="badge badge-blue">${b}</span> &nbsp;${label}</div>
+              <div class="sub">${days} 個營業日${r.note ? ' · ' + r.note : ''}</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="quickEditWd('${b}','${period}')">編輯</button>
+            <button class="btn btn-danger btn-sm" onclick="quickDeleteWd('${b}','${period}')">刪除</button>
+          </div>`;
+        }).join('');
+      }
     }).join('')}</div>`;
   } catch(e) { el.innerHTML = `<div style="color:#ef4444;font-size:13px">${e.message}</div>`; }
 }
@@ -750,9 +788,24 @@ function quickEditWd(branch, period) {
 }
 
 async function quickDeleteWd(branch, period) {
-  if (!confirm(`確定刪除 ${branch} ${period.slice(0,4)}年${period.slice(4)}月 的工作天數設定嗎？\n刪除後將回到自動偵測。`)) return;
-  await fetch(`/api/working-days?branch=${branch}&period=${period}`, { method:'DELETE' });
+  const targets = branch === 'ALL' ? ['AMA','AMC','AMD'] : [branch];
+  const label = branch === 'ALL' ? '三站' : branch;
+  if (!confirm(`確定刪除 ${label} ${period.slice(0,4)}年${period.slice(4)}月 的工作天數設定嗎？\n刪除後將回到自動偵測。`)) return;
+  await Promise.all(targets.map(br =>
+    fetch(`/api/working-days?branch=${br}&period=${period}`, { method:'DELETE' })
+  ));
   loadWdList();
+}
+
+function onWdBranchChange() {
+  // 切換到「全部」時隱藏刪除按鈕（因為代表三站，需個別處理）
+  const isAll = document.getElementById('wdBranch').value === 'ALL';
+  document.getElementById('btnWdDelete').style.display = 'none';
+  if (isAll) {
+    document.getElementById('wdConfigStatus').textContent = '設定後將同步寫入 AMA、AMC、AMD';
+  } else {
+    document.getElementById('wdConfigStatus').textContent = '';
+  }
 }
 
 async function loadWdCalendar() {
@@ -763,24 +816,56 @@ async function loadWdCalendar() {
   if (!period) { statusEl.textContent = '請選擇期間'; return; }
 
   const year  = parseInt(period.slice(0,4));
-  const month = parseInt(period.slice(4)) - 1; // 0-indexed
+  const month = parseInt(period.slice(4)) - 1;
 
-  // 取得已存設定
-  try {
-    const data = await (await fetch(`/api/working-days?branch=${branch}&period=${period}`)).json();
-    wdWorkDates = new Set(Array.isArray(data.work_dates) ? data.work_dates : []);
-    const isConfigured = wdWorkDates.size > 0 || (data.updated_at && data.work_dates !== undefined && data.work_dates !== null);
-    statusEl.textContent = wdWorkDates.size > 0 ? `✅ 已設定 ${wdWorkDates.size} 天` : '⚠️ 尚未設定（將使用自動偵測）';
-    document.getElementById('btnWdDelete').style.display = (data.work_dates !== undefined && data.period === period) ? '' : 'none';
-  } catch(e) {
-    wdWorkDates = new Set();
-    statusEl.textContent = '載入失敗';
+  if (branch === 'ALL') {
+    // 全部模式：嘗試載入 AMA 的設定作為預設（若有），否則從空白開始
+    try {
+      const data = await (await fetch(`/api/working-days?branch=AMA&period=${period}`)).json();
+      wdWorkDates = new Set(Array.isArray(data.work_dates) ? data.work_dates : []);
+
+      // 檢查三站設定是否一致
+      const [amc, amd] = await Promise.all([
+        (await fetch(`/api/working-days?branch=AMC&period=${period}`)).json(),
+        (await fetch(`/api/working-days?branch=AMD&period=${period}`)).json(),
+      ]);
+      const amaDays = [...wdWorkDates].sort().join(',');
+      const amcDays = [...new Set(amc.work_dates||[])].sort().join(',');
+      const amdDays = [...new Set(amd.work_dates||[])].sort().join(',');
+
+      if (wdWorkDates.size > 0) {
+        if (amaDays === amcDays && amaDays === amdDays) {
+          statusEl.textContent = `✅ 三站已同步設定 ${wdWorkDates.size} 天，點格子可修改後再同步儲存`;
+        } else {
+          statusEl.textContent = `⚠️ 三站設定不同（AMA:${[...wdWorkDates].length}天 AMC:${amc.work_dates?.length||0}天 AMD:${amd.work_dates?.length||0}天），儲存將覆蓋為相同設定`;
+        }
+      } else {
+        statusEl.textContent = '尚未設定，儲存後三站將套用相同工作天數';
+      }
+      document.getElementById('btnWdDelete').style.display = 'none';
+    } catch(e) {
+      wdWorkDates = new Set();
+      statusEl.textContent = '載入失敗，從空白開始';
+    }
+    document.getElementById('wdMonthTitle').textContent = `${year}年${month+1}月 — AMA + AMC + AMD（同步）`;
+  } else {
+    // 單站模式
+    try {
+      const data = await (await fetch(`/api/working-days?branch=${branch}&period=${period}`)).json();
+      wdWorkDates = new Set(Array.isArray(data.work_dates) ? data.work_dates : []);
+      statusEl.textContent = wdWorkDates.size > 0
+        ? `✅ 已設定 ${wdWorkDates.size} 天`
+        : '⚠️ 尚未設定（將使用自動偵測）';
+      document.getElementById('btnWdDelete').style.display =
+        (data.work_dates !== undefined && data.period === period) ? '' : 'none';
+    } catch(e) {
+      wdWorkDates = new Set();
+      statusEl.textContent = '載入失敗';
+    }
+    document.getElementById('wdMonthTitle').textContent = `${year}年${month+1}月 — ${branch}`;
   }
 
-  // 建立月曆
-  document.getElementById('wdMonthTitle').textContent = `${year}年${month+1}月 — ${branch}`;
   document.getElementById('wdCalendarWrap').style.display = '';
-
   renderWdCalendar(year, month);
 }
 
@@ -864,20 +949,29 @@ async function saveWdConfig() {
   if (!period) { msgEl.textContent = '請先選擇期間'; msgEl.style.color='#ef4444'; return; }
 
   btn.disabled = true;
-  msgEl.textContent = '儲存中...'; msgEl.style.color='#64748b';
+  const work_dates = [...wdWorkDates].sort();
+  const targets = branch === 'ALL' ? ['AMA','AMC','AMD'] : [branch];
+
+  msgEl.textContent = branch === 'ALL' ? '同步儲存三站中...' : '儲存中...';
+  msgEl.style.color = '#64748b';
+
   try {
-    const work_dates = [...wdWorkDates].sort();
-    const res = await fetch('/api/working-days', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ branch, period, work_dates }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || '儲存失敗');
-    msgEl.textContent = `✅ 已儲存 ${data.count} 個營業日`;
+    await Promise.all(targets.map(br =>
+      fetch('/api/working-days', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ branch: br, period, work_dates }),
+      }).then(r => r.json()).then(d => { if (d.error) throw new Error(`${br}: ${d.error}`); })
+    ));
+
+    const label = branch === 'ALL' ? 'AMA、AMC、AMD 三站' : branch;
+    msgEl.textContent = `✅ 已儲存 ${label} 共 ${work_dates.length} 個營業日`;
     msgEl.style.color = '#10b981';
-    document.getElementById('wdConfigStatus').textContent = `✅ 已設定 ${data.count} 天`;
-    document.getElementById('btnWdDelete').style.display = '';
+    document.getElementById('wdConfigStatus').textContent =
+      branch === 'ALL'
+        ? `✅ 三站已同步設定 ${work_dates.length} 天`
+        : `✅ 已設定 ${work_dates.length} 天`;
+    if (branch !== 'ALL') document.getElementById('btnWdDelete').style.display = '';
     loadWdList();
   } catch(e) {
     msgEl.textContent = '❌ ' + e.message;
@@ -888,8 +982,12 @@ async function saveWdConfig() {
 async function deleteWdConfig() {
   const branch = document.getElementById('wdBranch').value;
   const period = document.getElementById('wdPeriod').value;
-  if (!confirm(`確定刪除 ${branch} ${period.slice(0,4)}年${period.slice(4)}月 的工作天數設定？`)) return;
-  await fetch(`/api/working-days?branch=${branch}&period=${period}`, { method:'DELETE' });
+  const targets = branch === 'ALL' ? ['AMA','AMC','AMD'] : [branch];
+  const label = branch === 'ALL' ? 'AMA、AMC、AMD 三站' : branch;
+  if (!confirm(`確定刪除 ${label} ${period.slice(0,4)}年${period.slice(4)}月 的工作天數設定？\n刪除後將回到自動偵測。`)) return;
+  await Promise.all(targets.map(br =>
+    fetch(`/api/working-days?branch=${br}&period=${period}`, { method:'DELETE' })
+  ));
   wdClearAll();
   document.getElementById('wdConfigStatus').textContent = '⚠️ 已刪除（將使用自動偵測）';
   document.getElementById('btnWdDelete').style.display = 'none';
