@@ -188,6 +188,9 @@
         <span class="icon">📅</span> 工作天數
       </div>
     </div>
+    <div class="sidebar-item" onclick="showSection('performance')" id="menu-performance">
+      <span class="icon">🎯</span> 業績目標
+    </div>
     <div class="sidebar-section">
       <div class="sidebar-label">系統</div>
       <div class="sidebar-item" onclick="showSection('password')" id="menu-password">
@@ -430,6 +433,148 @@
       </div>
     </div>
 
+    <!-- ── 業績目標 ── -->
+    <div class="section-page" id="section-performance">
+      <div class="page-title">🎯 業績目標</div>
+      <p class="page-sub">定義業績追蹤指標，並設定各月目標與去年實績，用於統計頁業績進度</p>
+ 
+      <!-- 指標定義 -->
+      <div class="card">
+        <div class="card-title">
+          📋 指標定義
+          <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="perfStartNew()">＋ 新增指標</button>
+        </div>
+ 
+        <!-- Editor -->
+        <div id="perfEditorPanel" style="display:none" class="editor-panel">
+          <div style="font-size:14px;font-weight:700;margin-bottom:16px" id="perfEditorTitle">新增指標</div>
+          <div class="form-row">
+            <label>名稱</label>
+            <input type="text" id="perfName" class="form-input" placeholder="例：機油銷售量、精品業績..." maxlength="100">
+          </div>
+          <div class="form-row">
+            <label>說明</label>
+            <input type="text" id="perfDesc" class="form-input" placeholder="（選填）" maxlength="200">
+          </div>
+          <div class="form-row">
+            <label>類型</label>
+            <select id="perfType" class="form-select" onchange="onPerfTypeChange()" style="flex:none">
+              <option value="repair_income">🔧 維修收入（total_untaxed）</option>
+              <option value="parts">🔩 零件銷售（依篩選條件）</option>
+              <option value="boutique">💎 精品 / 配件銷售（需型錄）</option>
+            </select>
+          </div>
+ 
+          <!-- repair options -->
+          <div id="perfRepairOptions">
+            <div class="hint" style="margin:8px 0 10px">追蹤維修收入合計（未稅），可選擇性篩選特定帳類。<strong>留空 = 統計全部帳類。</strong></div>
+            <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">帳類篩選（可多選，留空=全部）</div>
+            <div class="part-type-grid" id="perfRepairAccountTypes"></div>
+          </div>
+ 
+          <!-- parts options -->
+          <div id="perfPartsOptions" style="display:none">
+            <div class="logic-hint" style="margin-bottom:10px">
+              <strong>不同類型之間 AND</strong>，<strong>同類型多個值 OR</strong>（同 SA 零件銷售設定邏輯）
+            </div>
+            <div class="filter-list" id="perfFilterList"></div>
+            <div style="background:#1e293b;border:1px solid #2d3f56;border-radius:8px;padding:12px;margin-bottom:14px">
+              <div style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:8px">新增條件</div>
+              <div class="add-filter-row">
+                <select id="perfAddType" class="form-select" onchange="onPerfFilterTypeChange()">
+                  <option value="category_code">零件類別碼</option>
+                  <option value="function_code">功能碼</option>
+                  <option value="part_number">零件編號</option>
+                  <option value="part_type">付款類別</option>
+                </select>
+                <div class="lookup-wrap" id="perfLookupWrap">
+                  <input type="text" id="perfAddValue" class="lookup-input" placeholder="輸入代碼或名稱搜尋..." oninput="debouncePerfLookup()" autocomplete="off">
+                  <div class="lookup-dropdown" id="perfLookupDropdown" style="display:none"></div>
+                </div>
+                <button class="btn btn-secondary btn-sm" id="perfBtnAddFilter" onclick="addPerfFilter()">＋ 加入</button>
+              </div>
+              <div id="perfPartTypePanel" style="display:none;margin-top:10px">
+                <div class="part-type-grid" id="perfPartTypeCheckboxes"></div>
+                <button class="btn btn-secondary btn-sm" style="margin-top:6px" onclick="addPerfPartTypeFilters()">＋ 加入勾選</button>
+              </div>
+            </div>
+            <div class="stat-method-group">
+              <div class="stat-method-label">統計方式</div>
+              <div class="stat-method-options">
+                <label class="stat-radio-item selected" id="perfSmLabel-amount" onclick="selectPerfStatMethod('amount')">
+                  <input type="radio" name="perf_stat_method" value="amount" checked>
+                  <div class="stat-radio-info"><span class="stat-radio-name">💰 金額</span><span class="stat-radio-desc">加總售價（元）</span></div>
+                </label>
+                <label class="stat-radio-item" id="perfSmLabel-qty" onclick="selectPerfStatMethod('qty')">
+                  <input type="radio" name="perf_stat_method" value="qty">
+                  <div class="stat-radio-info"><span class="stat-radio-name">📦 數量</span><span class="stat-radio-desc">加總銷售件數</span></div>
+                </label>
+                <label class="stat-radio-item" id="perfSmLabel-count" onclick="selectPerfStatMethod('count')">
+                  <input type="radio" name="perf_stat_method" value="count">
+                  <div class="stat-radio-info"><span class="stat-radio-name">🧾 筆數</span><span class="stat-radio-desc">計算銷售單數</span></div>
+                </label>
+              </div>
+            </div>
+          </div>
+ 
+          <!-- boutique options -->
+          <div id="perfBoutiqueOptions" style="display:none">
+            <div class="hint" style="margin:8px 0 10px">從 parts_sales JOIN parts_catalog 取得精品/配件銷售金額。需先上傳零件型錄（零配件比對）。</div>
+            <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">品項類型</div>
+            <div class="part-type-grid" id="perfBoutiqueTypeChips"></div>
+            <div style="font-size:12px;font-weight:700;color:#64748b;margin:14px 0 8px">帳類篩選（留空=全部帳類）</div>
+            <div class="part-type-grid" id="perfBoutiqueAccountChips"></div>
+          </div>
+ 
+          <div class="form-row" style="margin-top:14px">
+            <label>單位</label>
+            <input type="text" id="perfUnit" class="form-input" placeholder="留空自動判斷（金額=元，數量=件）" maxlength="20" style="max-width:280px">
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+            <button class="btn btn-secondary" onclick="perfCancelEdit()">取消</button>
+            <button class="btn btn-primary" id="perfBtnSave" onclick="perfSave()">儲存指標</button>
+          </div>
+        </div>
+ 
+        <!-- Metric List -->
+        <div class="config-list" id="perfMetricList" style="margin-top:4px">
+          <div style="color:#64748b;font-size:13px;padding:8px 0"><span class="spinner"></span>載入中</div>
+        </div>
+      </div>
+ 
+      <!-- 目標設定 -->
+      <div class="card">
+        <div class="card-title">🎯 目標數值設定</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
+          <select id="perfTgtMetric" class="form-select" style="flex:1;min-width:180px" onchange="onPerfTgtMetricChange()">
+            <option value="">選擇指標...</option>
+          </select>
+          <select id="perfTgtPeriod" class="form-select" style="min-width:140px">
+            <option value="">選擇期間...</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" onclick="loadPerfTargets()">載入</button>
+        </div>
+ 
+        <div id="perfTargetGrid" style="display:none">
+          <div class="hint" id="perfTgtHint" style="margin-bottom:12px"></div>
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead>
+              <tr>
+                <th style="padding:10px 12px;background:#0f172a;text-align:left;border-bottom:1px solid #2d3f56;width:100px">據點</th>
+                <th style="padding:10px 12px;background:#0f172a;text-align:right;border-bottom:1px solid #2d3f56">月目標</th>
+                <th style="padding:10px 12px;background:#0f172a;text-align:right;border-bottom:1px solid #2d3f56">去年同期實績</th>
+              </tr>
+            </thead>
+            <tbody id="perfTgtBody"></tbody>
+          </table>
+          <div style="display:flex;align-items:center;gap:10px;justify-content:flex-end;margin-top:14px">
+            <div id="perfTgtMsg" style="font-size:13px;flex:1"></div>
+            <button class="btn btn-primary" id="perfBtnSaveTgt" onclick="savePerfTargets()">💾 儲存目標</button>
+          </div>
+        </div>
+      </div>
+    </div>
+   
   </div><!-- /main -->
 </div><!-- /layout -->
 
@@ -437,7 +582,7 @@
 // ══════════════════════════════════════════════════════════
 // 側欄切換
 // ══════════════════════════════════════════════════════════
-const sections = ['upload','dbstatus','sa-config','working-days','password'];
+const sections = ['upload','dbstatus','sa-config','working-days','performance','password'];
 
 function showSection(id) {
   sections.forEach(s => {
@@ -447,6 +592,7 @@ function showSection(id) {
   if (id === 'dbstatus') loadCounts();
   if (id === 'sa-config') loadConfigs();
   if (id === 'working-days') { loadWdPeriods(); loadWdList(); }
+  if (id === 'performance') { loadPerfMetrics(); loadPerfTgtPeriods(); }
 }
 
 // ══════════════════════════════════════════════════════════
