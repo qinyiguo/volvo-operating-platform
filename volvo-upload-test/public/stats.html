@@ -184,6 +184,7 @@
   <!-- ══════ 維修收入 ══════ -->
   <div id="tab-repair">
     <div id="repairKPI" class="kpi-grid"></div>
+    <div id="grandKPI"></div>
     <div class="card">
       <div class="card-title">
         💰 收入分類分析（未稅）
@@ -226,14 +227,13 @@
             <th class="num" style="color:#3b82f6">零件銷售</th>
             <th class="num" style="color:#10b981">配件銷售</th>
             <th class="num" style="color:#f59e0b">精品銷售</th>
-            <th class="num" style="color:#94a3b8">銷售小計</th>
             <th class="num">引擎工資</th><th class="num">鈑金</th><th class="num">烤漆</th>
             <th class="num">洗車美容</th><th class="num">外包</th><th class="num">附加服務</th>
             <th class="num">工資小計</th>
             <th class="num">零件成本(未稅)</th>
             <th class="num" style="color:#f59e0b">合計成本</th><th>附註</th>
           </tr></thead>
-          <tbody id="tbIncomeCost"><tr><td colspan="17" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
+          <tbody id="tbIncomeCost"><tr><td colspan="16" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -591,6 +591,16 @@ async function loadIncomeSummary(period, branch) {
 
     const grandRevenue = paidTotal + preCost.total;
 
+    // ── 注入總計 card 到頂部 KPI 區 ──
+    document.getElementById('grandKPI').innerHTML = `
+      <div class="kpi-grid" style="margin-bottom:20px">
+        <div class="kpi-card" style="border-color:#475569;background:#1e293b;grid-column:1/-1;max-width:320px">
+          <div class="kpi-label" style="color:#94a3b8">📌 總計（有費收入＋無費成本）</div>
+          <div class="kpi-value" style="color:#e2e8f0;font-size:32px">${fmtK(grandRevenue)}</div>
+          <div class="kpi-sub">有費 ${fmtK(paidTotal)} ＋ 無費成本 ${fmtK(preCost.total)}</div>
+        </div>
+      </div>`;
+
     // ── 有費收入摘要 cards ──
     let cardsHtml = '';
     ['general','insurance','extended','voucher','external','paid'].forEach(gk => {
@@ -605,8 +615,6 @@ async function loadIncomeSummary(period, branch) {
         cardsHtml += `<div class="income-cat-card ${meta.cls}"><div class="income-cat-label">${meta.icon} ${meta.label}</div><div class="income-cat-value">${fmtK(g?.total_untaxed||0)}</div><div class="income-cat-sub">${g?.car_count||0} 台</div></div>`;
       }
     });
-    // 總計 card
-    cardsHtml += `<div class="income-cat-card type-grand" style="border-color:#475569"><div class="income-cat-label">📌 總計（有費＋無費成本）</div><div class="income-cat-value">${fmtK(grandRevenue)}</div><div class="income-cat-sub">有費 ${fmtK(paidTotal)} + 無費成本 ${fmtK(preCost.total)}</div></div>`;
     cardsEl.innerHTML = cardsHtml || '<div style="color:#64748b;font-size:13px;grid-column:1/-1">無資料</div>';
 
     // ── 無費成本摘要 cards ──
@@ -680,7 +688,7 @@ async function loadIncomeSummary(period, branch) {
     // ── 無費成本明細 ──
     let costRows = '';
     let costTotal = { cars:0, partsCost:0, engine:0, bodywork:0, paint:0, carwash:0, outsource:0, addon:0, wage:0, total:0,
-                      parts_sales:0, acc_sales:0, boutique_sales:0, sales_sub:0 };
+                      parts_sales:0, acc_sales:0, boutique_sales:0 };
     byType.forEach(r => {
       const gk = ACCOUNT_GROUP(r.account_type);
       if (!COST_GROUPS.has(gk)) return;
@@ -689,7 +697,6 @@ async function loadIncomeSummary(period, branch) {
       const partsSales    = n(r.parts_income_nt);
       const accSales      = n(r.accessories_income_nt);
       const boutiqueSales = n(r.boutique_income_nt);
-      const salesSub      = partsSales + accSales + boutiqueSales;
       // 成本
       const partsCost  = n(r.parts_cost_nt);
       const engineWage = n(r.engine_wage_nt);
@@ -705,7 +712,6 @@ async function loadIncomeSummary(period, branch) {
       costTotal.parts_sales  += partsSales;
       costTotal.acc_sales    += accSales;
       costTotal.boutique_sales += boutiqueSales;
-      costTotal.sales_sub    += salesSub;
       costTotal.partsCost    += partsCost;
       costTotal.engine       += engineWage;
       costTotal.bodywork     += bodywork;
@@ -716,7 +722,7 @@ async function loadIncomeSummary(period, branch) {
       costTotal.wage         += wageTotal;
       costTotal.total        += rowTotal;
 
-      const salesStyle = salesSub > 0 ? 'color:#94a3b8' : 'color:#334155';
+      const salesStyle = '';
       costRows += `<tr class="cost-row">
         <td><span class="badge badge-blue">${r.branch||'—'}</span></td>
         <td><span class="badge ${meta.badge}">${r.account_type}</span></td>
@@ -724,7 +730,6 @@ async function loadIncomeSummary(period, branch) {
         <td class="num" style="color:#3b82f6">${partsSales>0?fmt(partsSales):'—'}</td>
         <td class="num" style="color:#10b981">${accSales>0?fmt(accSales):'—'}</td>
         <td class="num" style="color:#f59e0b">${boutiqueSales>0?fmt(boutiqueSales):'—'}</td>
-        <td class="num" style="${salesStyle};font-weight:600">${salesSub>0?fmt(salesSub):'—'}</td>
         <td class="num">${engineWage>0?fmt(engineWage):'—'}</td>
         <td class="num">${bodywork>0?fmt(bodywork):'—'}</td>
         <td class="num">${paint>0?fmt(paint):'—'}</td>
@@ -745,7 +750,6 @@ async function loadIncomeSummary(period, branch) {
         <td class="num" style="color:#3b82f6">${fmt(costTotal.parts_sales)}</td>
         <td class="num" style="color:#10b981">${fmt(costTotal.acc_sales)}</td>
         <td class="num" style="color:#f59e0b">${fmt(costTotal.boutique_sales)}</td>
-        <td class="num" style="color:#94a3b8;font-weight:700">${fmt(costTotal.sales_sub)}</td>
         <td class="num">${fmt(costTotal.engine)}</td>
         <td class="num">${fmt(costTotal.bodywork)}</td>
         <td class="num">${fmt(costTotal.paint)}</td>
@@ -758,7 +762,7 @@ async function loadIncomeSummary(period, branch) {
         <td></td>
       </tr>`;
     }
-    costEl.innerHTML = costRows || '<tr><td colspan="17" class="empty">無無費工單資料</td></tr>';
+    costEl.innerHTML = costRows || '<tr><td colspan="16" class="empty">無無費工單資料</td></tr>';
   } catch(e) {
     cardsEl.innerHTML = `<div style="color:#ef4444;grid-column:1/-1">${e.message}</div>`;
     costCardsEl.innerHTML = '';
