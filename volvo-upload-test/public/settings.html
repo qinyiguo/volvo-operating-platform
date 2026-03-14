@@ -16,7 +16,6 @@
 
   .layout { display: flex; min-height: calc(100vh - 53px); }
 
-  /* 左側選單 */
   .sidebar {
     width: 220px; flex-shrink: 0;
     background: #1e293b; border-right: 1px solid #2d3f56;
@@ -33,9 +32,7 @@
   .sidebar-item:hover { background: #253347; color: #e2e8f0; }
   .sidebar-item.active { background: rgba(59,130,246,.15); color: #3b82f6; }
   .sidebar-item .icon { font-size: 16px; width: 20px; text-align: center; }
-  .sidebar-badge { margin-left: auto; background: #2d3f56; color: #94a3b8; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; }
 
-  /* 主內容 */
   .main { flex: 1; padding: 28px; overflow-y: auto; max-width: 960px; }
   .page-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
   .page-sub { font-size: 13px; color: #64748b; margin-bottom: 24px; }
@@ -54,7 +51,6 @@
   .btn-sm { padding: 5px 10px; font-size: 12px; }
   .btn:disabled { opacity: .5; cursor: not-allowed; }
 
-  /* 上傳 */
   .upload-zone { border: 2px dashed #2d3f56; border-radius: 8px; padding: 36px; text-align: center; cursor: pointer; transition: all .2s; }
   .upload-zone:hover, .upload-zone.drag { border-color: #3b82f6; background: rgba(59,130,246,.05); }
   .upload-zone .icon { font-size: 36px; margin-bottom: 8px; }
@@ -68,6 +64,7 @@
   .badge-blue { background: rgba(59,130,246,.15); color: #3b82f6; }
   .badge-purple { background: rgba(139,92,246,.15); color: #8b5cf6; }
   .badge-yellow { background: rgba(245,158,11,.15); color: #f59e0b; }
+  .badge-orange { background: rgba(249,115,22,.15); color: #fb923c; }
 
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   th { background: #0f172a; color: #64748b; font-size: 11px; font-weight: 700; text-align: left; padding: 9px 12px; border-bottom: 1px solid #2d3f56; white-space: nowrap; }
@@ -96,7 +93,6 @@
   .config-item-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
   .config-list { display: flex; flex-direction: column; gap: 8px; }
 
-  /* 設定編輯 inline 面板 */
   .editor-panel { background: #0f172a; border: 1px solid #3b82f6; border-radius: 10px; padding: 20px; margin-top: 8px; }
   .form-row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; }
   .form-row label { font-size: 12px; color: #64748b; font-weight: 600; white-space: nowrap; padding-top: 9px; min-width: 40px; }
@@ -110,6 +106,7 @@
   .type-category_code { background: rgba(59,130,246,.2); color: #60a5fa; }
   .type-function_code  { background: rgba(139,92,246,.2); color: #a78bfa; }
   .type-part_number    { background: rgba(16,185,129,.2); color: #34d399; }
+  .type-part_type      { background: rgba(249,115,22,.2); color: #fb923c; }
   .filter-val { font-size: 13px; font-weight: 600; flex: 1; }
   .filter-sub { font-size: 11px; color: #64748b; }
   .remove-btn { background: none; border: none; color: #475569; cursor: pointer; font-size: 18px; line-height: 1; padding: 0 2px; }
@@ -128,6 +125,35 @@
 
   .logic-hint { font-size: 12px; color: #64748b; background: #0f172a; border: 1px solid #2d3f56; border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; line-height: 1.7; }
   .logic-hint strong { color: #94a3b8; }
+
+  /* 付款類別 checkbox */
+  .part-type-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .part-type-chip {
+    display: flex; align-items: center; gap: 5px; cursor: pointer;
+    background: #1e293b; border: 1px solid #2d3f56; border-radius: 6px;
+    padding: 5px 10px; font-size: 12px; font-weight: 600; color: #94a3b8;
+    transition: all .15s; user-select: none;
+  }
+  .part-type-chip:hover { border-color: #fb923c; color: #fb923c; }
+  .part-type-chip input { display: none; }
+  .part-type-chip.checked { background: rgba(249,115,22,.15); border-color: #fb923c; color: #fb923c; }
+  .part-type-chip.disabled { opacity: .4; pointer-events: none; }
+
+  /* 統計方式 radio */
+  .stat-method-group { margin-bottom: 14px; }
+  .stat-method-label { font-size: 13px; font-weight: 700; color: #94a3b8; margin-bottom: 10px; }
+  .stat-method-options { display: flex; gap: 8px; flex-wrap: wrap; }
+  .stat-radio-item {
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+    background: #1e293b; border: 1px solid #2d3f56; border-radius: 8px;
+    padding: 10px 14px; transition: all .15s; flex: 1; min-width: 130px;
+  }
+  .stat-radio-item:hover { border-color: #3b82f6; }
+  .stat-radio-item input[type=radio] { accent-color: #3b82f6; width: 15px; height: 15px; }
+  .stat-radio-item.selected { border-color: #3b82f6; background: rgba(59,130,246,.1); }
+  .stat-radio-info { display: flex; flex-direction: column; }
+  .stat-radio-name { font-size: 13px; font-weight: 700; }
+  .stat-radio-desc { font-size: 11px; color: #64748b; margin-top: 1px; }
 
   .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #2d3f56; border-top-color: #3b82f6; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 6px; vertical-align: middle; }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -176,7 +202,6 @@
 </nav>
 
 <div class="layout">
-  <!-- 左側選單 -->
   <div class="sidebar">
     <div class="sidebar-section">
       <div class="sidebar-label">資料管理</div>
@@ -192,7 +217,6 @@
       <div class="sidebar-item" onclick="showSection('sa-config')" id="menu-sa-config">
         <span class="icon">👤</span> SA 零件銷售
       </div>
-      <!-- 未來可新增其他設定項目 -->
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label">系統</div>
@@ -202,7 +226,6 @@
     </div>
   </div>
 
-  <!-- 主內容 -->
   <div class="main">
 
     <!-- ── 上傳 Excel ───────────────────────────────────── -->
@@ -295,19 +318,57 @@
           <div style="background:#1e293b;border:1px solid #2d3f56;border-radius:8px;padding:12px;margin-bottom:14px">
             <div style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:8px">新增條件</div>
             <div class="add-filter-row">
-              <select id="addType" class="form-select" onchange="clearLookup()">
+              <select id="addType" class="form-select" onchange="onTypeChange()">
                 <option value="category_code">零件類別碼</option>
                 <option value="function_code">功能碼</option>
                 <option value="part_number">零件編號</option>
+                <option value="part_type">付款類別</option>
               </select>
-              <div class="lookup-wrap">
+
+              <!-- 一般輸入（類別碼/功能碼/零件編號） -->
+              <div class="lookup-wrap" id="lookupWrap">
                 <input type="text" id="addValue" class="lookup-input" placeholder="輸入代碼或名稱搜尋..."
                   oninput="debounceLookup()" autocomplete="off">
                 <div class="lookup-dropdown" id="lookupDropdown" style="display:none"></div>
               </div>
-              <button class="btn btn-secondary btn-sm" onclick="addFilter()">＋ 加入</button>
+              <button class="btn btn-secondary btn-sm" id="btnAddFilter" onclick="addFilter()">＋ 加入</button>
             </div>
+
+            <!-- 付款類別 checkbox 面板 -->
+            <div id="partTypePanel" style="display:none;margin-top:10px">
+              <div class="part-type-grid" id="partTypeCheckboxes"></div>
+              <button class="btn btn-secondary btn-sm" onclick="addPartTypeFilters()">＋ 加入勾選項目</button>
+            </div>
+
             <div id="addHint" style="font-size:11px;color:#64748b;margin-top:6px;min-height:16px"></div>
+          </div>
+
+          <!-- 統計方式 -->
+          <div class="stat-method-group">
+            <div class="stat-method-label">統計方式</div>
+            <div class="stat-method-options">
+              <label class="stat-radio-item selected" id="smLabel-amount" onclick="selectStatMethod('amount')">
+                <input type="radio" name="stat_method" value="amount" checked>
+                <div class="stat-radio-info">
+                  <span class="stat-radio-name">💰 銷售金額</span>
+                  <span class="stat-radio-desc">加總售價（元）</span>
+                </div>
+              </label>
+              <label class="stat-radio-item" id="smLabel-quantity" onclick="selectStatMethod('quantity')">
+                <input type="radio" name="stat_method" value="quantity">
+                <div class="stat-radio-info">
+                  <span class="stat-radio-name">📦 數量</span>
+                  <span class="stat-radio-desc">加總銷售件數</span>
+                </div>
+              </label>
+              <label class="stat-radio-item" id="smLabel-count" onclick="selectStatMethod('count')">
+                <input type="radio" name="stat_method" value="count">
+                <div class="stat-radio-info">
+                  <span class="stat-radio-name">🧾 筆數</span>
+                  <span class="stat-radio-desc">計算銷售單數</span>
+                </div>
+              </label>
+            </div>
           </div>
 
           <div style="display:flex;gap:8px;justify-content:flex-end">
@@ -361,8 +422,8 @@
       </div>
     </div>
 
-  </div><!-- /main -->
-</div><!-- /layout -->
+  </div>
+</div>
 
 <script>
 // ══════════════════════════════════════════════════════════
@@ -489,8 +550,40 @@ let editingConfigId = null;
 let editingFilters  = [];
 let lookupTimer     = null;
 
-const typeLabel = { category_code:'零件類別碼', function_code:'功能碼', part_number:'零件編號' };
+const PART_TYPES = ['一般', '票劵', '內結', '保險', '延保', '保固', '善意維修', 'VSA'];
 
+const typeLabel = {
+  category_code: '零件類別碼',
+  function_code:  '功能碼',
+  part_number:    '零件編號',
+  part_type:      '付款類別',
+};
+
+const STAT_METHOD_INFO = {
+  amount:   { label: '金額',  badgeClass: 'badge-blue' },
+  quantity: { label: '數量',  badgeClass: 'badge-green' },
+  count:    { label: '筆數',  badgeClass: 'badge-purple' },
+};
+
+// ── 統計方式選擇 ──
+function selectStatMethod(val) {
+  document.querySelectorAll('input[name="stat_method"]').forEach(el => {
+    el.checked = el.value === val;
+  });
+  ['amount','quantity','count'].forEach(v => {
+    document.getElementById(`smLabel-${v}`)?.classList.toggle('selected', v === val);
+  });
+}
+
+function getStatMethod() {
+  return document.querySelector('input[name="stat_method"]:checked')?.value || 'amount';
+}
+
+function setStatMethod(val) {
+  selectStatMethod(val || 'amount');
+}
+
+// ── 設定列表 ──
 async function loadConfigs() {
   try {
     const res = await fetch('/api/sa-config');
@@ -511,15 +604,18 @@ function renderConfigList() {
       </div>`;
     return;
   }
-  el.innerHTML = configs.map(c => `
+  el.innerHTML = configs.map(c => {
+    const sm = STAT_METHOD_INFO[c.stat_method] || STAT_METHOD_INFO.amount;
+    return `
     <div class="config-item">
       <div class="config-item-info">
         <div class="config-item-name">${c.config_name}</div>
         ${c.description ? `<div class="config-item-desc">${c.description}</div>` : ''}
         <div class="config-item-tags">
+          <span class="badge ${sm.badgeClass}" style="font-size:11px">統計：${sm.label}</span>
           ${(c.filters||[]).map(f => `
-            <span class="badge type-${f.type}" style="font-size:11px">
-              ${typeLabel[f.type]}: ${f.value}
+            <span class="badge" style="font-size:11px;${typeBadgeStyle(f.type)}">
+              ${typeLabel[f.type]||f.type}: ${f.value}
             </span>
           `).join('')}
         </div>
@@ -528,8 +624,18 @@ function renderConfigList() {
         <button class="btn btn-secondary btn-sm" onclick="startEditConfig(${c.id})">編輯</button>
         <button class="btn btn-danger btn-sm" onclick="deleteConfig(${c.id},'${c.config_name.replace(/'/g,"\\'")}')">刪除</button>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
+}
+
+function typeBadgeStyle(type) {
+  const map = {
+    category_code: 'background:rgba(59,130,246,.15);color:#60a5fa',
+    function_code:  'background:rgba(139,92,246,.15);color:#a78bfa',
+    part_number:    'background:rgba(16,185,129,.15);color:#34d399',
+    part_type:      'background:rgba(249,115,22,.15);color:#fb923c',
+  };
+  return map[type] || 'background:rgba(100,116,139,.15);color:#94a3b8';
 }
 
 function startNewConfig() {
@@ -538,8 +644,9 @@ function startNewConfig() {
   document.getElementById('editorTitle').textContent = '新增設定';
   document.getElementById('cfgName').value = '';
   document.getElementById('cfgDesc').value = '';
+  setStatMethod('amount');
   renderFilterList();
-  clearLookup();
+  resetAddRow();
   document.getElementById('editorPanel').style.display = '';
   document.getElementById('cfgName').focus();
 }
@@ -551,8 +658,9 @@ function startEditConfig(id) {
   document.getElementById('editorTitle').textContent = `編輯設定 — ${cfg.config_name}`;
   document.getElementById('cfgName').value = cfg.config_name;
   document.getElementById('cfgDesc').value = cfg.description || '';
+  setStatMethod(cfg.stat_method || 'amount');
   renderFilterList();
-  clearLookup();
+  resetAddRow();
   document.getElementById('editorPanel').style.display = '';
   document.getElementById('editorPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
@@ -571,6 +679,7 @@ async function deleteConfig(id, name) {
 async function saveConfig() {
   const config_name = document.getElementById('cfgName').value.trim();
   const description = document.getElementById('cfgDesc').value.trim();
+  const stat_method = getStatMethod();
   if (!config_name) { alert('請輸入設定名稱'); return; }
   if (!editingFilters.length) { alert('請至少新增一個篩選條件'); return; }
 
@@ -583,7 +692,7 @@ async function saveConfig() {
     const res    = await fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ config_name, description, filters }),
+      body: JSON.stringify({ config_name, description, filters, stat_method }),
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
@@ -605,7 +714,7 @@ function renderFilterList() {
   }
   el.innerHTML = editingFilters.map((f, i) => `
     <div class="filter-tag-row">
-      <span class="type-badge type-${f.type}">${typeLabel[f.type]}</span>
+      <span class="type-badge type-${f.type}">${typeLabel[f.type]||f.type}</span>
       <span class="filter-val">${f.value}</span>
       <button class="remove-btn" onclick="removeFilter(${i})" title="移除">×</button>
     </div>
@@ -615,6 +724,10 @@ function renderFilterList() {
 function removeFilter(i) {
   editingFilters.splice(i, 1);
   renderFilterList();
+  // 如果目前顯示 part_type 面板，要重新 render chip 狀態
+  if (document.getElementById('addType').value === 'part_type') {
+    renderPartTypeCheckboxes();
+  }
 }
 
 function addFilter() {
@@ -623,14 +736,74 @@ function addFilter() {
   const hint  = document.getElementById('addHint');
   if (!value) { hint.textContent = '請輸入值'; return; }
   if (editingFilters.some(f => f.type === type && f.value === value)) {
-    hint.textContent = '此條件已存在';
-    return;
+    hint.textContent = '此條件已存在'; return;
   }
   editingFilters.push({ type, value });
   renderFilterList();
   document.getElementById('addValue').value = '';
   hint.textContent = '';
   clearLookup();
+}
+
+// ── 付款類別 checkbox ──
+function renderPartTypeCheckboxes() {
+  const existing = editingFilters.filter(f => f.type === 'part_type').map(f => f.value);
+  document.getElementById('partTypeCheckboxes').innerHTML = PART_TYPES.map(pt => {
+    const already = existing.includes(pt);
+    return `<label class="part-type-chip ${already ? 'disabled' : ''}" onclick="togglePartTypeChip(this, '${pt}')">
+      <input type="checkbox" value="${pt}" ${already ? 'disabled' : ''}>
+      ${pt}${already ? ' ✓' : ''}
+    </label>`;
+  }).join('');
+}
+
+function togglePartTypeChip(el, val) {
+  if (el.classList.contains('disabled')) return;
+  const cb = el.querySelector('input');
+  cb.checked = !cb.checked;
+  el.classList.toggle('checked', cb.checked);
+}
+
+function addPartTypeFilters() {
+  const hint = document.getElementById('addHint');
+  const checked = [...document.querySelectorAll('#partTypeCheckboxes input:checked')];
+  if (!checked.length) { hint.textContent = '請至少勾選一個付款類別'; return; }
+  let added = 0;
+  checked.forEach(cb => {
+    const val = cb.value;
+    if (!editingFilters.some(f => f.type === 'part_type' && f.value === val)) {
+      editingFilters.push({ type: 'part_type', value: val });
+      added++;
+    }
+  });
+  renderFilterList();
+  renderPartTypeCheckboxes(); // 重新 render 讓剛加的變成 disabled
+  hint.textContent = added ? `已加入 ${added} 個付款類別` : '所選項目已全部存在';
+}
+
+// ── 類型切換 ──
+function onTypeChange() {
+  const type = document.getElementById('addType').value;
+  const isPartType = type === 'part_type';
+  document.getElementById('lookupWrap').style.display    = isPartType ? 'none' : '';
+  document.getElementById('btnAddFilter').style.display  = isPartType ? 'none' : '';
+  document.getElementById('partTypePanel').style.display = isPartType ? '' : 'none';
+  document.getElementById('addHint').textContent = '';
+  if (isPartType) {
+    renderPartTypeCheckboxes();
+  } else {
+    clearLookup();
+  }
+}
+
+function resetAddRow() {
+  document.getElementById('addType').value = 'category_code';
+  document.getElementById('addValue').value = '';
+  document.getElementById('lookupDropdown').style.display = 'none';
+  document.getElementById('addHint').textContent = '';
+  document.getElementById('lookupWrap').style.display = '';
+  document.getElementById('btnAddFilter').style.display = '';
+  document.getElementById('partTypePanel').style.display = 'none';
 }
 
 // ── 自動完成 ──
@@ -647,6 +820,7 @@ function debounceLookup() {
 
 async function doLookup() {
   const type = document.getElementById('addType').value;
+  if (type === 'part_type') return;
   const q    = document.getElementById('addValue').value.trim();
   const dd   = document.getElementById('lookupDropdown');
   if (!q) { dd.style.display = 'none'; return; }
