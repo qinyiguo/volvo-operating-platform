@@ -138,6 +138,12 @@
   tr.subtotal-row:hover td { background: rgba(249,115,22,.1); }
   tr.total-row td { background: rgba(59,130,246,.08); font-weight: 800; }
   tr.total-row:hover td { background: rgba(59,130,246,.12); }
+
+  /* Sticky thead 分隔線 */
+  #boutiqueMatrix thead tr:last-child th,
+  #saMatrix thead tr:last-child th {
+    box-shadow: 0 2px 0 #2d3f56;
+  }
 </style>
 </head>
 <body>
@@ -287,7 +293,7 @@
   <div id="tab-boutique" style="display:none">
     <div style="background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.25);border-radius:8px;padding:10px 14px;font-size:12px;color:#a78bfa;margin-bottom:14px;line-height:1.8">
       💡 <strong>資料來源</strong>：零件銷售明細（parts_sales），品項類型透過<strong>零件型錄（parts_catalog）</strong>比對 part_number 判斷。
-      若無型錄資料，則以零件銷售明細中的 Paycode 欄位判斷。「帳類」欄位對應零件銷售的「付款部門」（department）欄位。
+      若無型錄資料，則以零件銷售明細中的 Paycode 欄位判斷。「帳類」欄位對應零件銷售的「帳類」（part_type）欄位。
     </div>
     <div id="boutiqueKPI" class="kpi-grid"></div>
     <div class="card" style="padding:0">
@@ -796,18 +802,19 @@ async function loadBoutiqueAccessories(period, branch) {
 
     const thB = 'padding:8px 10px;text-align:left;font-size:11px;font-weight:700;color:#64748b;background:#0f172a;border-bottom:1px solid #2d3f56;white-space:nowrap;';
     const thN = thB + 'text-align:right;';
-    const tdB = 'padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.4);font-size:12px;vertical-align:middle;';
+    const tdB = 'padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.4);font-size:12px;vertical-align:middle;border-top:0;';
     const tdN = tdB + 'text-align:right;font-variant-numeric:tabular-nums;';
     // 水平 sticky（左欄固定）
     const sTh = (l,e='') => `position:sticky;left:${l}px;z-index:5;background:#0f172a;${e}`;
     const sTd = (l,bg='#111827',e='') => `position:sticky;left:${l}px;z-index:2;background:${bg};${e}`;
-    // 垂直 sticky（表頭固定）row1 top:0, row2 top:表頭第一行高度
-    const sThTop0 = `position:sticky;top:0;z-index:4;`;
-    const sThTop1 = `position:sticky;top:32px;z-index:4;`;
+    // 垂直 sticky（表頭第一列 top:0，第二列用 JS 動態設定）
+    const sThTop0 = 'position:sticky;top:0;z-index:4;background:#0f172a;';
+    const sThTop1 = 'position:sticky;top:0;z-index:4;background:#0f172a;';  // top will be set by rAF
     // 左+上同時固定（左上角固定欄）
     const sThCorner = (l,e='') => `position:sticky;left:${l}px;top:0;z-index:6;background:#0f172a;${e}`;
 
-    let html = `<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>`;
+    // border-collapse:separate + border-spacing:0 讓 sticky thead 正常運作
+    let html = `<table style="width:100%;border-collapse:separate;border-spacing:0;font-size:12px"><thead><tr>`;
     html += `<th rowspan="2" style="${thB}${sThCorner(0,'border-right:1px solid #2d3f56;width:36px')}">#</th>`;
     html += `<th rowspan="2" style="${thB}${sThCorner(36,'border-right:1px solid #2d3f56;width:60px')}">據點</th>`;
     html += `<th rowspan="2" style="${thB}${sThCorner(96,'border-right:2px solid #374151;min-width:110px')}">銷售人員</th>`;
@@ -948,14 +955,14 @@ async function loadSASales() {
     const cfgColors     = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#f97316','#84cc16'];
     const thBase = 'padding:10px 14px;text-align:left;font-size:12px;font-weight:700;color:#64748b;background:#0f172a;border-bottom:1px solid #2d3f56;white-space:nowrap;';
     const thNum  = thBase + 'text-align:right;';
-    const tdBase = 'padding:9px 14px;border-bottom:1px solid rgba(45,63,86,.4);font-size:13px;vertical-align:middle;';
+    const tdBase = 'padding:9px 14px;border-bottom:1px solid rgba(45,63,86,.4);font-size:13px;vertical-align:middle;border-top:0;';
     const tdNum  = tdBase + 'text-align:right;font-variant-numeric:tabular-nums;';
     const stTh   = (l, e='') => `position:sticky;left:${l}px;z-index:5;background:#0f172a;${e}`;
     const stTd   = (l, bg='#111827', e='') => `position:sticky;left:${l}px;z-index:2;background:${bg};${e}`;
-    const saThTop0 = `position:sticky;top:0;z-index:4;`;
-    const saThTop1 = `position:sticky;top:38px;z-index:4;`;
+    const saThTop0 = 'position:sticky;top:0;z-index:4;background:#0f172a;';
+    const saThTop1 = 'position:sticky;top:0;z-index:4;background:#0f172a;';  // top will be set by rAF
     const saCorner = (l,e='') => `position:sticky;left:${l}px;top:0;z-index:6;background:#0f172a;${e}`;
-    let html = `<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>`;
+    let html = `<table style="width:100%;border-collapse:separate;border-spacing:0;font-size:13px"><thead><tr>`;
     html += `<th style="${thBase}${saCorner(0,'border-right:1px solid #2d3f56;width:40px')}" rowspan="2">#</th>`;
     html += `<th style="${thBase}${saCorner(40,'border-right:1px solid #2d3f56;width:70px')}" rowspan="2">據點</th>`;
     html += `<th style="${thBase}${saCorner(110,'border-right:2px solid #374151;min-width:130px')}" rowspan="2">銷售人員</th>`;
