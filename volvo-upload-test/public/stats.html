@@ -757,7 +757,7 @@ async function loadBoutiqueAccessories(period, branch) {
     const branchColors = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b' };
     const typeColors   = { '精品':'#8b5cf6', '配件':'#14b8a6' };
 
-    const deptSet = new Set(rows.map(r => r.department));
+    const deptSet = new Set(rows.map(r => r.account_type));
     const depts   = [...deptSet].sort((a, b) => {
       const ai = DEPT_ORDER.indexOf(a), bi = DEPT_ORDER.indexOf(b);
       if (ai >= 0 && bi >= 0) return ai - bi;
@@ -786,7 +786,7 @@ async function loadBoutiqueAccessories(period, branch) {
     rows.forEach(r => {
       const key = `${r.branch}|||${r.sales_person}`;
       if (!pivotMap[key]) pivotMap[key] = { branch:r.branch, sales_person:r.sales_person, cells:{} };
-      pivotMap[key].cells[`${r.part_type}|||${r.department}`] = { sales:n(r.total_sales), qty:n(r.total_qty), cnt:parseInt(r.cnt||0) };
+      pivotMap[key].cells[`${r.part_type}|||${r.account_type}`] = { sales:n(r.total_sales), qty:n(r.total_qty), cnt:parseInt(r.cnt||0) };
     });
     const getRowTotal = row => PART_TYPES.reduce((s,pt) => s + depts.reduce((ss,d) => ss + (row.cells[`${pt}|||${d}`]?.sales||0), 0), 0);
     const pivotRows = Object.values(pivotMap).sort((a,b) => {
