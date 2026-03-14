@@ -143,6 +143,32 @@ const initDatabase = async () => {
         updated_at TIMESTAMPTZ DEFAULT NOW(),
         UNIQUE (branch, period)
       )`);
+    
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS performance_metrics (
+        id SERIAL PRIMARY KEY,
+        metric_name VARCHAR(100) NOT NULL,
+        description TEXT DEFAULT '',
+        metric_type VARCHAR(20) NOT NULL DEFAULT 'repair_income',
+        filters JSONB NOT NULL DEFAULT '[]',
+        stat_field VARCHAR(20) NOT NULL DEFAULT 'amount',
+        unit VARCHAR(20) DEFAULT '',
+        sort_order INTEGER DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )`);
+ 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS performance_targets (
+        id SERIAL PRIMARY KEY,
+        metric_id INTEGER NOT NULL,
+        branch VARCHAR(10) NOT NULL,
+        period VARCHAR(6) NOT NULL,
+        target_value NUMERIC(15,2),
+        last_year_value NUMERIC(15,2),
+        note TEXT DEFAULT '',
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(metric_id, branch, period)
+      )`);
 
     console.log('[initDB] ✅ 所有表格建立完成');
   } catch (err) {
@@ -880,6 +906,159 @@ app.put('/api/auth/settings/password', async (req, res) => {
   await pool.query("UPDATE app_settings SET value=$1 WHERE key='settings_password'",[newPassword]);
   SESSION_TOKENS.clear();
   res.json({ ok:true });
+});
+
+// ────────────────────────────────────────────────────────────
+// 業績指標 API (CRUD)
+// ────────────────────────────────────────────────────────────
+app.get('/api/performance-metrics', async (req, res) => {
+  try {
+    res.json((await pool.query(`SELECT * FROM performance_metrics ORDER BY sort_order, id`)).rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+ 
+app.post('/api/performance-metrics', async (req, res) => {
+  const { metric_name, description, metric_type, filters, stat_field, unit, sort_order } = req.body;
+  if (!metric_name) return res.status(400).json({ error: '名稱為必填' });
+  try {
+    const r = await pool.query(
+      `INSERT INTO performance_metrics (metric_name,description,metric_type,filters,stat_field,unit,sort_order) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+      [metric_name.trim(), description||'', metric_type||'repair_income', JSON.stringify(filters||[]), stat_field||'amount', unit||'', sort_order||0]
+    );
+    res.json(r.rows[0]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+ 
+app.put('/api/performance-metrics/:id', async (req, res) => {
+  const { metric_name, description, metric_type, filters, stat_field, unit, sort_order } = req.body;
+  if (!metric_name) return res.status(400).json({ error: '名稱為必填' });
+  try {
+    const r = await pool.query(
+      `UPDATE performance_metrics SET metric_name=$1,description=$2,metric_type=$3,filters=$4,stat_field=$5,unit=$6,sort_order=$7 WHERE id=$8 RETURNING *`,
+      [metric_name.trim(), description||'', metric_type||'repair_income', JSON.stringify(filters||[]), stat_field||'amount', unit||'', sort_order||0, req.params.id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error: '找不到指標' });
+    res.json(r.rows[0]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+ 
+app.delete('/api/performance-metrics/:id', async (req, res) => {
+  try {
+    await pool.query(`DELETE FROM performance_targets WHERE metric_id=$1`, [req.params.id]);
+    await pool.query(`DELETE FROM performance_metrics WHERE id=$1`, [req.params.id]);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ────────────────────────────────────────────────────────────
+// 業績目標 API
+// ────────────────────────────────────────────────────────────
+app.get('/api/performance-targets', async (req, res) => {
+  const { metric_id, period } = req.query;
+  try {
+    const conds = []; const params = []; let idx = 1;
+    if (metric_id) { conds.push(`metric_id=$${idx++}`); params.push(metric_id); }
+    if (period) { conds.push(`period=$${idx++}`); params.push(period); }
+    const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
+    res.json((await pool.query(`SELECT * FROM performance_targets ${where} ORDER BY branch`, params)).rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+ 
+app.put('/api/performance-targets/batch', async (req, res) => {
+  const { metric_id, period, entries } = req.body;
+  if (!metric_id || !period || !Array.isArray(entries)) return res.status(400).json({ error: '參數不完整' });
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    for (const e of entries) {
+      await client.query(
+        `INSERT INTO performance_targets (metric_id,branch,period,target_value,last_year_value,note,updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,NOW())
+         ON CONFLICT (metric_id,branch,period) DO UPDATE SET
+           target_value=$4, last_year_value=$5, note=$6, updated_at=NOW()`,
+        [metric_id, e.branch, period, e.target_value||null, e.last_year_value||null, e.note||'']
+      );
+    }
+    await client.query('COMMIT');
+    res.json({ ok: true });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: err.message });
+  } finally { client.release(); }
+});
+
+// ────────────────────────────────────────────────────────────
+// 業績統計 API
+// ────────────────────────────────────────────────────────────
+app.get('/api/stats/performance', async (req, res) => {
+  const { period, branch } = req.query;
+  if (!period) return res.status(400).json({ error: 'period 為必填' });
+  try {
+    const metrics = (await pool.query(`SELECT * FROM performance_metrics ORDER BY sort_order, id`)).rows;
+    if (!metrics.length) return res.json({ metrics: [], results: [] });
+ 
+    const BRANCHES = branch ? [branch] : ['AMA','AMC','AMD'];
+    const tRes = await pool.query(
+      `SELECT * FROM performance_targets WHERE period=$1${branch ? ' AND branch=$2' : ''}`,
+      branch ? [period, branch] : [period]
+    );
+    const tMap = {};
+    tRes.rows.forEach(t => { tMap[`${t.metric_id}|||${t.branch}`] = t; });
+ 
+    const results = [];
+    for (const metric of metrics) {
+      const filters = metric.filters || [];
+      const mr = { metric_id: metric.id, branches: {} };
+ 
+      for (const br of BRANCHES) {
+        let actual = 0;
+        try {
+          if (metric.metric_type === 'repair_income') {
+            const acTypes = filters.filter(f => f.type === 'account_type').map(f => f.value);
+            const q = `SELECT COALESCE(SUM(total_untaxed),0) as v FROM repair_income WHERE period=$1 AND branch=$2${acTypes.length ? ' AND account_type=ANY($3)' : ''}`;
+            actual = parseFloat((await pool.query(q, acTypes.length ? [period, br, acTypes] : [period, br])).rows[0]?.v || 0);
+          } else if (metric.metric_type === 'parts') {
+            const cc = filters.filter(f=>f.type==='category_code').map(f=>f.value);
+            const fc = filters.filter(f=>f.type==='function_code').map(f=>f.value);
+            const pn = filters.filter(f=>f.type==='part_number').map(f=>f.value);
+            const pt = filters.filter(f=>f.type==='part_type').map(f=>f.value);
+            const c = [`period=$1`,`branch=$2`], p = [period, br]; let i = 3;
+            if (cc.length) { c.push(`category_code=ANY($${i++})`); p.push(cc); }
+            if (fc.length) { c.push(`function_code=ANY($${i++})`); p.push(fc); }
+            if (pn.length) { c.push(`part_number=ANY($${i++})`); p.push(pn); }
+            if (pt.length) { c.push(`part_type=ANY($${i++})`); p.push(pt); }
+            const fld = metric.stat_field === 'qty' ? 'SUM(sale_qty)' : metric.stat_field === 'count' ? 'COUNT(*)' : 'SUM(sale_price_untaxed)';
+            actual = parseFloat((await pool.query(`SELECT COALESCE(${fld},0) as v FROM parts_sales WHERE ${c.join(' AND ')}`, p)).rows[0]?.v || 0);
+          } else if (metric.metric_type === 'boutique') {
+            const bt = filters.filter(f=>f.type==='boutique_type').map(f=>f.value);
+            const ac = filters.filter(f=>f.type==='account_type').map(f=>f.value);
+            const c = [`ps.period=$1`,`ps.branch=$2`], p = [period, br]; let i = 3;
+            if (bt.length) { c.push(`pc.part_type=ANY($${i++})`); p.push(bt); }
+            else c.push(`pc.part_type IN ('精品','配件')`);
+            if (ac.length) { c.push(`ps.part_type=ANY($${i++})`); p.push(ac); }
+            actual = parseFloat((await pool.query(
+              `SELECT COALESCE(SUM(ps.sale_price_untaxed),0) as v
+               FROM parts_sales ps JOIN parts_catalog pc ON ps.part_number=pc.part_number
+               WHERE ${c.join(' AND ')}`, p
+            )).rows[0]?.v || 0);
+          }
+        } catch(e) { actual = 0; }
+ 
+        const t  = tMap[`${metric.id}|||${br}`] || {};
+        const tv = parseFloat(t.target_value    || 0);
+        const ly = parseFloat(t.last_year_value || 0);
+        mr.branches[br] = {
+          actual,
+          target:       tv || null,
+          last_year:    ly || null,
+          achieve_rate: tv > 0 ? (actual / tv * 100) : null,
+          yoy_growth:   ly > 0 ? ((actual - ly) / ly * 100) : null,
+        };
+      }
+      results.push(mr);
+    }
+    res.json({ metrics, results });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ============================================================
