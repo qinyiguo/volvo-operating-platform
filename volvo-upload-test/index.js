@@ -514,12 +514,7 @@ app.post('/api/sa-config', async (req, res) => {
   if (!config_name) return res.status(400).json({ error:'名稱為必填' });
   if (!Array.isArray(filters)||!filters.length) return res.status(400).json({ error:'至少需要一個篩選條件' });
   const method = ['amount','quantity','count'].includes(stat_method) ? stat_method : 'amount';
-  // ★ 驗證 person_type
-  const ptype  = ['sales_person','pickup_person'].includes(person_type) ? person_type : 'sales_person';
-  try {
-    res.json((await pool.query(
-      `INSERT INTO sa_sales_config (config_name,description,filters,stat_method,person_type)
-       VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+  const ptype  = ['sales_person','pickup_person','both'].includes(person_type) ? person_type : 'sales_person';
       [config_name.trim(), description||'', JSON.stringify(filters), method, ptype]
     )).rows[0]);
   }
@@ -531,8 +526,8 @@ app.put('/api/sa-config/:id', async (req, res) => {
   if (!config_name) return res.status(400).json({ error:'名稱為必填' });
   if (!Array.isArray(filters)||!filters.length) return res.status(400).json({ error:'至少需要一個篩選條件' });
   const method = ['amount','quantity','count'].includes(stat_method) ? stat_method : 'amount';
-  // ★ 驗證 person_type
-  const ptype  = ['sales_person','pickup_person'].includes(person_type) ? person_type : 'sales_person';
+  // ★ 驗證 person_type（支援 'both'）
+  const ptype  = ['sales_person','pickup_person','both'].includes(person_type) ? person_type : 'sales_person';
   try {
     const r = await pool.query(
       `UPDATE sa_sales_config
@@ -873,25 +868,36 @@ app.get('/api/periods', async (req, res) => {
 // SA 銷售矩陣 API  ★ 完整改寫：支援 person_type + branch JOIN
 // ============================================================
 app.get('/api/stats/sa-sales-matrix', async (req, res) => {
-  const { period, branch } = req.query;
+  const { period, branch, view } = req.query;
+  // ★ view = 'sales_person'（預設）或 'pickup_person'，決定此次要看哪個子分頁
+  const viewParam  = view === 'pickup_person' ? 'pickup_person' : 'sales_person';
+  const personCol  = viewParam; // GROUP BY 欄位跟著 view 走
+
   try {
-    const configs = (await pool.query(
+    const allConfigs = (await pool.query(
       `SELECT id,config_name,filters,stat_method,person_type FROM sa_sales_config ORDER BY id`
     )).rows;
+
+    // ★ 只保留此 view 對應的設定：
+    //   person_type = 'sales_person' → 只出現在 sales 頁
+    //   person_type = 'pickup_person' → 只出現在 tech 頁
+    //   person_type = 'both'          → 兩頁都出現，但各自用該頁的 personCol
+    const configs = allConfigs.filter(cfg => {
+      const pt = cfg.person_type || 'sales_person';
+      return pt === viewParam || pt === 'both';
+    });
+
     if (!configs.length) return res.json({ configs:[], rows:[], colTotals:{} });
 
     const saMap = {};
 
     for (const cfg of configs) {
-      const filters    = cfg.filters || [];
-      const catCodes   = filters.filter(f=>f.type==='category_code').map(f=>f.value);
-      const funcCodes  = filters.filter(f=>f.type==='function_code').map(f=>f.value);
-      const partNums   = filters.filter(f=>f.type==='part_number').map(f=>f.value);
-      const partTypes  = filters.filter(f=>f.type==='part_type').map(f=>f.value);
-      const workCodes  = filters.filter(f=>f.type==='work_code').map(f=>f.value);
-      // ★ person_type 決定群組欄位
-      const personType = cfg.person_type || 'sales_person';
-      const personCol  = personType === 'pickup_person' ? 'pickup_person' : 'sales_person';
+      const filters   = cfg.filters || [];
+      const catCodes  = filters.filter(f=>f.type==='category_code').map(f=>f.value);
+      const funcCodes = filters.filter(f=>f.type==='function_code').map(f=>f.value);
+      const partNums  = filters.filter(f=>f.type==='part_number').map(f=>f.value);
+      const partTypes = filters.filter(f=>f.type==='part_type').map(f=>f.value);
+      const workCodes = filters.filter(f=>f.type==='work_code').map(f=>f.value);
 
       const hasPartsConds = catCodes.length||funcCodes.length||partNums.length||partTypes.length;
       const hasWageConds  = workCodes.length;
@@ -925,7 +931,7 @@ app.get('/api/stats/sa-sales-matrix', async (req, res) => {
                          cfg.stat_method === 'quantity' ? 'SUM(tp.standard_hours)' :
                          'COUNT(DISTINCT tp.work_order)';
 
-        // ★ DISTINCT ON (branch, work_order)：各據點 work_order 可能重複，必須同時比對 branch
+        // DISTINCT ON (branch, work_order)：各據點 work_order 可能重複，必須同時比對 branch
         const r = await pool.query(`
           SELECT tp.branch,
             COALESCE(NULLIF(ps_uniq.person_name, ''), '（未知）') AS sa_name,
@@ -957,7 +963,7 @@ app.get('/api/stats/sa-sales-matrix', async (req, res) => {
         }
 
       } else {
-        // ── 零件銷售路徑 ── ★ 依 personType 選擇 GROUP BY 欄位
+        // ── 零件銷售路徑 ── 依 view 的 personCol GROUP BY
         const conds=[]; const params=[]; let idx=1;
         if (period) { conds.push(`period=$${idx++}`); params.push(period); }
         if (branch) { conds.push(`branch=$${idx++}`); params.push(branch); }
