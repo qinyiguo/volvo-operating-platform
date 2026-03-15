@@ -1101,6 +1101,93 @@ app.post('/api/upload-revenue-targets', upload.single('file'), async (req, res) 
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// 解析「橫式分區」原生目標 Excel（每月各據點，K 為單位）
+app.post('/api/upload-revenue-targets-native', upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: '請選擇檔案' });
+  const year = String(req.body.year || '').trim();
+  if (!year.match(/^\d{4}$/)) return res.status(400).json({ error: '請指定正確的年份（4位數）' });
+  try {
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer', cellDates: true });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+    const MONTHS_LABEL = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+    const BRANCHES = ['AMA','AMC','AMD'];
+    const SECTION_MAP = [
+      { kw: ['有效營收','有費營收'], field: 'paid'     },
+      { kw: ['鈑烤'],               field: 'bodywork'  },
+      { kw: ['一般營收'],           field: 'general'   },
+      { kw: ['延保'],               field: 'extended'  },
+    ];
+    const data = {};
+    let curField = null;
+    let monthColIdx = {};
+    for (let ri = 0; ri < raw.length; ri++) {
+      const row = raw[ri];
+      const rowStr = row.map(c => String(c||'')).join('|');
+      for (const sm of SECTION_MAP) {
+        if (sm.kw.some(kw => rowStr.includes(kw))) {
+          curField = sm.field; monthColIdx = {};
+          if (!data[curField]) data[curField] = {};
+          break;
+        }
+      }
+      const monthHits = row.filter(c => MONTHS_LABEL.includes(String(c||'').trim())).length;
+      if (monthHits >= 6) {
+        monthColIdx = {};
+        row.forEach((cell, ci) => {
+          const idx = MONTHS_LABEL.indexOf(String(cell||'').trim());
+          if (idx >= 0) monthColIdx[idx + 1] = ci;
+        });
+        continue;
+      }
+      if (!curField || Object.keys(monthColIdx).length === 0) continue;
+      const branchRaw = String(row[0]||row[1]||'').trim().toUpperCase();
+      const matchedBranch = BRANCHES.find(b => branchRaw === b || branchRaw.endsWith(b));
+      if (!matchedBranch) continue;
+      if (!data[curField][matchedBranch]) data[curField][matchedBranch] = {};
+      for (const [mo, ci] of Object.entries(monthColIdx)) {
+        const v = parseFloat(String(row[ci]||'').replace(/,/g,''));
+        if (!isNaN(v) && v > 0) data[curField][matchedBranch][parseInt(mo)] = v;
+      }
+    }
+    const entriesMap = {};
+    for (const [field, branchData] of Object.entries(data)) {
+      for (const [branch, monthData] of Object.entries(branchData)) {
+        for (const [mo, valK] of Object.entries(monthData)) {
+          const period = `${year}${String(mo).padStart(2,'0')}`;
+          const key = `${branch}_${period}`;
+          if (!entriesMap[key]) entriesMap[key] = { branch, period };
+          entriesMap[key][`${field}_target`] = Math.round(valK * 1000);
+        }
+      }
+    }
+    const entries = Object.values(entriesMap);
+    if (!entries.length) return res.status(400).json({ error: '找不到有效資料，請確認格式（需含 AMA/AMC/AMD 及月份欄）' });
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      for (const e of entries) {
+        await client.query(`
+          INSERT INTO revenue_targets (branch,period,paid_target,bodywork_target,general_target,extended_target,updated_at)
+          VALUES ($1,$2,$3,$4,$5,$6,NOW())
+          ON CONFLICT (branch,period) DO UPDATE SET
+            paid_target    = COALESCE($3, revenue_targets.paid_target),
+            bodywork_target= COALESCE($4, revenue_targets.bodywork_target),
+            general_target = COALESCE($5, revenue_targets.general_target),
+            extended_target= COALESCE($6, revenue_targets.extended_target),
+            updated_at=NOW()
+        `, [e.branch, e.period, e.paid_target||null, e.bodywork_target||null, e.general_target||null, e.extended_target||null]);
+      }
+      await client.query('COMMIT');
+      const summary = {};
+      entries.forEach(e => { if (!summary[e.period]) summary[e.period] = []; summary[e.period].push(e.branch); });
+      const FIELD_LABEL = { paid:'有費營收', bodywork:'鈑烤營收', general:'一般營收', extended:'延保營收' };
+      res.json({ ok:true, count:entries.length, year, summary, fields:Object.keys(data).map(f=>FIELD_LABEL[f]||f) });
+    } catch(err) { await client.query('ROLLBACK'); throw err; }
+    finally { client.release(); }
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 // ============================================================
 // 收入明細分解 API
 // ============================================================
