@@ -287,24 +287,29 @@ async function loadIncomeBreakdown(period, branch) {
         </td>`;
       }
       html += `</tr>`;
-    });
 
-    // 無費細項
-    const allOtherDetail = [];
-    BRANCHES.forEach(br => {
-      (bdata[br]?.other_detail || []).forEach(od => {
-        if (!allOtherDetail.find(x => x.account_type === od.account_type)) allOtherDetail.push(od);
-      });
-    });
-    allOtherDetail.forEach(od => {
-      html += `<tr><td style="padding:7px 16px 7px 36px;border-bottom:1px solid rgba(45,63,86,.2)">
-        <span style="font-size:12px;color:#475569">${od.account_type}</span></td>`;
-      BRANCHES.forEach(br => {
-        const match = (bdata[br]?.other_detail || []).find(x => x.account_type === od.account_type);
-        html += `<td style="text-align:right;padding:7px 16px;border-bottom:1px solid rgba(45,63,86,.2);font-size:12px;color:#475569;font-variant-numeric:tabular-nums">${match?.total > 0 ? fmtK(match.total) : '—'}</td>`;
-      });
-      if (BRANCHES.length > 1) html += `<td style="border-bottom:1px solid rgba(45,63,86,.2);border-left:1px solid #374151"></td>`;
-      html += `</tr>`;
+      // 無費細項：插在「無費成本」列的正下方
+      if (row.key === 'other_total') {
+        const allOtherDetail = [];
+        BRANCHES.forEach(br => {
+          (bdata[br]?.other_detail || []).forEach(od => {
+            if (!allOtherDetail.find(x => x.account_type === od.account_type)) allOtherDetail.push(od);
+          });
+        });
+        allOtherDetail.forEach(od => {
+          html += `<tr><td style="padding:6px 16px 6px 36px;border-bottom:1px solid rgba(45,63,86,.2)">
+            <div style="display:flex;align-items:center;gap:6px">
+              <div style="width:3px;height:12px;background:#1e293b;border-radius:2px;flex-shrink:0"></div>
+              <span style="font-size:12px;color:#475569">${od.account_type}</span>
+            </div></td>`;
+          BRANCHES.forEach(br => {
+            const match = (bdata[br]?.other_detail || []).find(x => x.account_type === od.account_type);
+            html += `<td style="text-align:right;padding:6px 16px;border-bottom:1px solid rgba(45,63,86,.2);font-size:12px;color:#475569;font-variant-numeric:tabular-nums">${match?.total > 0 ? fmtK(match.total) : '—'}</td>`;
+          });
+          if (BRANCHES.length > 1) html += `<td style="border-bottom:1px solid rgba(45,63,86,.2);border-left:1px solid #374151"></td>`;
+          html += `</tr>`;
+        });
+      }
     });
 
     html += `</tbody></table></div>
