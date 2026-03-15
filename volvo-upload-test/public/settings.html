@@ -283,6 +283,7 @@
                 <option value="function_code">功能碼</option>
                 <option value="part_number">零件編號</option>
                 <option value="part_type">付款類別</option>
+                <option value="work_code">工資代碼</option>
               </select>
               <div class="lookup-wrap" id="lookupWrap">
                 <input type="text" id="addValue" class="lookup-input" placeholder="輸入代碼或名稱搜尋..." oninput="debounceLookup()" autocomplete="off">
@@ -293,6 +294,14 @@
             <div id="partTypePanel" style="display:none;margin-top:10px">
               <div class="part-type-grid" id="partTypeCheckboxes"></div>
               <button class="btn btn-secondary btn-sm" onclick="addPartTypeFilters()">＋ 加入勾選項目</button>
+            </div>
+            <!-- 工資代碼輸入區 -->
+            <div id="workCodePanel" style="display:none;margin-top:10px;background:#1e293b;border:1px solid #2d3f56;border-radius:8px;padding:10px">
+              <div style="font-size:11px;color:#64748b;margin-bottom:8px">精確：<code>17300</code>　或　範圍：<code>00030-00033</code>（以連字號分隔）</div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="text" id="workCodeInput" class="lookup-input" placeholder="例：17300 或 00030-00033" style="flex:1">
+                <button class="btn btn-secondary btn-sm" onclick="addWorkCodeFilter()">＋ 加入</button>
+              </div>
             </div>
             <div id="addHint" style="font-size:11px;color:#64748b;margin-top:6px;min-height:16px"></div>
           </div>
@@ -1010,7 +1019,7 @@ async function loadCounts() {
 // ══ SA 銷售設定 ══
 let configs = [], editingConfigId = null, editingFilters = [], lookupTimer = null;
 const PART_TYPES = ['一般','票劵','內結','保險','延保','保固','善意維修','VSA'];
-const typeLabel = { category_code:'零件類別碼', function_code:'功能碼', part_number:'零件編號', part_type:'付款類別' };
+const typeLabel = { category_code:'零件類別碼', function_code:'功能碼', part_number:'零件編號', part_type:'付款類別', work_code:'工資代碼' };
 const STAT_METHOD_INFO = { amount:{label:'金額',badgeClass:'badge-blue'}, quantity:{label:'數量',badgeClass:'badge-green'}, count:{label:'筆數',badgeClass:'badge-gray'} };
 function selectStatMethod(val) { document.querySelectorAll('input[name="stat_method"]').forEach(el => el.checked = el.value===val); ['amount','quantity','count'].forEach(v => document.getElementById(`smLabel-${v}`)?.classList.toggle('selected', v===val)); }
 function getStatMethod() { return document.querySelector('input[name="stat_method"]:checked')?.value||'amount'; }
@@ -1041,7 +1050,7 @@ function renderConfigList() {
   }).join('');
 }
 function typeBadgeStyle(type) {
-  const map = { category_code:'background:rgba(59,130,246,.15);color:#60a5fa', function_code:'background:rgba(139,92,246,.15);color:#a78bfa', part_number:'background:rgba(16,185,129,.15);color:#34d399', part_type:'background:rgba(249,115,22,.15);color:#fb923c' };
+  const map = { category_code:'background:rgba(59,130,246,.15);color:#60a5fa', function_code:'background:rgba(139,92,246,.15);color:#a78bfa', part_number:'background:rgba(16,185,129,.15);color:#34d399', part_type:'background:rgba(249,115,22,.15);color:#fb923c', work_code:'background:rgba(20,184,166,.15);color:#2dd4bf' };
   return map[type]||'background:rgba(100,116,139,.15);color:#94a3b8';
 }
 function startNewConfig() { editingConfigId=null; editingFilters=[]; document.getElementById('editorTitle').textContent='新增設定'; document.getElementById('cfgName').value=''; document.getElementById('cfgDesc').value=''; setStatMethod('amount'); renderFilterList(); resetAddRow(); document.getElementById('editorPanel').style.display=''; document.getElementById('cfgName').focus(); }
@@ -1061,11 +1070,12 @@ function addFilter(){const type=document.getElementById('addType').value,value=d
 function renderPartTypeCheckboxes(){const existing=editingFilters.filter(f=>f.type==='part_type').map(f=>f.value);document.getElementById('partTypeCheckboxes').innerHTML=PART_TYPES.map(pt=>{const already=existing.includes(pt);return`<label class="part-type-chip ${already?'disabled':''}" onclick="togglePartTypeChip(this,'${pt}')"><input type="checkbox" value="${pt}" ${already?'disabled':''}>${pt}${already?' ✓':''}</label>`;}).join('');}
 function togglePartTypeChip(el,val){if(el.classList.contains('disabled'))return;const cb=el.querySelector('input');cb.checked=!cb.checked;el.classList.toggle('checked',cb.checked);}
 function addPartTypeFilters(){const hint=document.getElementById('addHint'),checked=[...document.querySelectorAll('#partTypeCheckboxes input:checked')];if(!checked.length){hint.textContent='請至少勾選一個付款類別';return;}let added=0;checked.forEach(cb=>{if(!editingFilters.some(f=>f.type==='part_type'&&f.value===cb.value)){editingFilters.push({type:'part_type',value:cb.value});added++;}});renderFilterList();renderPartTypeCheckboxes();hint.textContent=added?`已加入 ${added} 個付款類別`:'所選項目已全部存在';}
-function onTypeChange(){const type=document.getElementById('addType').value,isP=type==='part_type';document.getElementById('lookupWrap').style.display=isP?'none':'';document.getElementById('btnAddFilter').style.display=isP?'none':'';document.getElementById('partTypePanel').style.display=isP?'':'none';document.getElementById('addHint').textContent='';if(isP)renderPartTypeCheckboxes();else clearLookup();}
-function resetAddRow(){document.getElementById('addType').value='category_code';document.getElementById('addValue').value='';document.getElementById('lookupDropdown').style.display='none';document.getElementById('addHint').textContent='';document.getElementById('lookupWrap').style.display='';document.getElementById('btnAddFilter').style.display='';document.getElementById('partTypePanel').style.display='none';}
+function onTypeChange(){const type=document.getElementById('addType').value,isP=type==='part_type',isW=type==='work_code';document.getElementById('lookupWrap').style.display=(isP||isW)?'none':'';document.getElementById('btnAddFilter').style.display=(isP||isW)?'none':'';document.getElementById('partTypePanel').style.display=isP?'':'none';document.getElementById('workCodePanel').style.display=isW?'':'none';document.getElementById('addHint').textContent='';if(isP)renderPartTypeCheckboxes();else clearLookup();}
+function addWorkCodeFilter(){const raw=document.getElementById('workCodeInput').value.trim(),hint=document.getElementById('addHint');if(!raw){hint.textContent='請輸入工資代碼';return;}if(editingFilters.some(f=>f.type==='work_code'&&f.value===raw)){hint.textContent='此代碼已存在';return;}editingFilters.push({type:'work_code',value:raw});renderFilterList();document.getElementById('workCodeInput').value='';hint.textContent='';}
+function resetAddRow(){document.getElementById('addType').value='category_code';document.getElementById('addValue').value='';document.getElementById('lookupDropdown').style.display='none';document.getElementById('addHint').textContent='';document.getElementById('lookupWrap').style.display='';document.getElementById('btnAddFilter').style.display='';document.getElementById('partTypePanel').style.display='none';document.getElementById('workCodePanel').style.display='none';}
 function clearLookup(){document.getElementById('addValue').value='';document.getElementById('lookupDropdown').style.display='none';document.getElementById('addHint').textContent='';}
 function debounceLookup(){clearTimeout(lookupTimer);lookupTimer=setTimeout(doLookup,280);}
-async function doLookup(){const type=document.getElementById('addType').value;if(type==='part_type')return;const q=document.getElementById('addValue').value.trim(),dd=document.getElementById('lookupDropdown');if(!q){dd.style.display='none';return;}try{const data=await(await fetch(`/api/sa-config/parts-lookup?type=${type}&q=${encodeURIComponent(q)}`)).json();if(!data.length){dd.style.display='none';return;}dd.innerHTML=data.map(item=>type==='part_number'?`<div class="lookup-item" onclick="pickLookup('${esc(item.value)}')"><div class="lookup-item-val">${item.value}</div><div class="lookup-item-sub">${item.label||''} 類別:${item.category_code||'-'} 功能:${item.function_code||'-'}</div></div>`:`<div class="lookup-item" onclick="pickLookup('${esc(item.value)}')"><div class="lookup-item-val">${item.value}</div><div class="lookup-item-sub">涵蓋 ${item.part_count} 種零件 — ${(item.sample_names||'').slice(0,60)}</div></div>`).join('');dd.style.display='block';}catch(e){dd.style.display='none';}}
+async function doLookup(){const type=document.getElementById('addType').value;if(type==='part_type'||type==='work_code')return;const q=document.getElementById('addValue').value.trim(),dd=document.getElementById('lookupDropdown');if(!q){dd.style.display='none';return;}try{const data=await(await fetch(`/api/sa-config/parts-lookup?type=${type}&q=${encodeURIComponent(q)}`)).json();if(!data.length){dd.style.display='none';return;}dd.innerHTML=data.map(item=>type==='part_number'?`<div class="lookup-item" onclick="pickLookup('${esc(item.value)}')"><div class="lookup-item-val">${item.value}</div><div class="lookup-item-sub">${item.label||''} 類別:${item.category_code||'-'} 功能:${item.function_code||'-'}</div></div>`:`<div class="lookup-item" onclick="pickLookup('${esc(item.value)}')"><div class="lookup-item-val">${item.value}</div><div class="lookup-item-sub">涵蓋 ${item.part_count} 種零件 — ${(item.sample_names||'').slice(0,60)}</div></div>`).join('');dd.style.display='block';}catch(e){dd.style.display='none';}}
 function pickLookup(value){document.getElementById('addValue').value=value;document.getElementById('lookupDropdown').style.display='none';}
 const esc=s=>s.replace(/'/g,"\\'");
 document.addEventListener('click',e=>{const wrap=document.getElementById('addValue')?.closest('.lookup-wrap');if(wrap&&!wrap.contains(e.target))document.getElementById('lookupDropdown').style.display='none';});
