@@ -67,13 +67,19 @@
     <span id="lastUpdate" style="margin-left:auto;font-size:12px;color:#64748b"></span>
   </div>
 
-  <!-- 四大營收 KPI -->
-  <div id="revenueKPISection" style="margin-bottom:20px;display:none">
-    <!-- 有費營收（全寬） -->
-    <div id="revKPI-paid" style="margin-bottom:12px"></div>
-    <!-- 一般/鈑烤/延保（三欄） -->
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px" id="revKPI-sub"></div>
+  <!-- Tab 切換 -->
+  <div style="display:flex;gap:2px;background:#1e293b;border-radius:8px;padding:3px;margin-bottom:20px;width:fit-content">
+    <button id="tab-btn-progress" class="tab active" onclick="switchPerfTab('progress')">📊 業績進度</button>
+    <button id="tab-btn-estimate" class="tab" onclick="switchPerfTab('estimate')">✏️ 業績預估設定</button>
   </div>
+
+  <!-- ══ 業績進度 ══ -->
+  <div id="tab-progress">
+    <!-- 四大營收 KPI -->
+    <div id="revenueKPISection" style="margin-bottom:20px;display:none">
+      <div id="revKPI-paid" style="margin-bottom:12px"></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px" id="revKPI-sub"></div>
+    </div>
 
   <!-- 收入明細分解 -->
   <div class="card" id="perfBreakdownCard">
@@ -96,7 +102,41 @@
     </div>
     <div id="perfDetail"></div>
   </div>
-</div>
+  </div><!-- /tab-progress -->
+
+  <!-- ══ 業績預估設定 ══ -->
+  <div id="tab-estimate" style="display:none">
+    <div class="card">
+      <div class="card-title">
+        ✏️ 業績預估設定
+        <span id="estPeriodLabel" class="card-title-note"></span>
+        <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="saveAllEstimates()">💾 儲存預估</button>
+      </div>
+      <div class="hint" style="margin-bottom:16px">
+        輸入各據點本月各項營收預估值（千元 K），儲存後會顯示在業績進度的達成率旁邊。<br>
+        💡 例如預估 AMA 有費營收約 25,000K，就在對應欄位填入 <strong>25000</strong>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="estTable" style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:10px 14px;background:#0f172a;color:#64748b;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;min-width:80px">據點</th>
+              <th style="text-align:right;padding:10px 14px;background:#0f172a;color:#f97316;font-size:12px;font-weight:800;border-bottom:1px solid #2d3f56;min-width:160px">🔶 有費營收 (K)</th>
+              <th style="text-align:right;padding:10px 14px;background:#0f172a;color:#3b82f6;font-size:12px;font-weight:800;border-bottom:1px solid #2d3f56;min-width:160px">💙 一般營收 (K)</th>
+              <th style="text-align:right;padding:10px 14px;background:#0f172a;color:#8b5cf6;font-size:12px;font-weight:800;border-bottom:1px solid #2d3f56;min-width:160px">🔨 鈑烤營收 (K)</th>
+              <th style="text-align:right;padding:10px 14px;background:#0f172a;color:#10b981;font-size:12px;font-weight:800;border-bottom:1px solid #2d3f56;min-width:160px">🛡️ 延保營收 (K)</th>
+            </tr>
+          </thead>
+          <tbody id="estTableBody">
+            <tr><td colspan="5" style="padding:24px;text-align:center;color:#64748b"><span class="spinner"></span>載入中</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="estSaveMsg" style="font-size:13px;min-height:20px;margin-top:12px;text-align:right"></div>
+    </div>
+  </div><!-- /tab-estimate -->
+
+</div><!-- /container -->
 
 <script>
 const n    = (v) => parseFloat(v || 0);
@@ -119,56 +159,108 @@ async function loadPeriods() {
   } catch(e) {}
 }
 
-// ══ 預估輸入處理 ══
-let _estSaveTimer = null;
-const _estPending = {}; // { 'key_branch': value }
-
-function onEstInput(key, branch, valK, period) {
-  const v = parseFloat(valK);
-  const estKey = `${key}_${branch}`;
-  _estPending[estKey] = { key, branch, period, value: isNaN(v) || v <= 0 ? null : Math.round(v * 1000) };
-
-  // 即時更新預估達成率顯示（不重新 fetch，直接算）
-  updateEstDisplay(key, branch, v);
-
-  // debounce 存檔（1.5秒後自動儲存）
-  clearTimeout(_estSaveTimer);
-  _estSaveTimer = setTimeout(() => saveEstimates(period), 1500);
+// ══ Tab 切換 ══
+function switchPerfTab(tab) {
+  ['progress','estimate'].forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = t === tab ? '' : 'none';
+    document.getElementById(`tab-btn-${t}`)?.classList.toggle('active', t === tab);
+  });
+  if (tab === 'estimate') renderEstTable();
 }
 
-function updateEstDisplay(key, branch, valK) {
-  // 找對應的 target input 旁邊元素 - 用 card reload 比較簡單，這裡只觸發 re-render
-  // 實際上儲存後 loadRevenueKPI 會重新拉資料
+// ══ 預估設定頁 ══
+async function renderEstTable() {
+  const period = document.getElementById('selPeriod').value;
+  const branch = document.getElementById('selBranch').value;
+  const tbody = document.getElementById('estTableBody');
+  const lbl = document.getElementById('estPeriodLabel');
+  if (lbl && period) lbl.textContent = `${period.slice(0,4)}年${period.slice(4)}月`;
+
+  if (!period) {
+    tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;text-align:center;color:#64748b">請先選擇期間後按查詢</td></tr>';
+    return;
+  }
+  tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;text-align:center;color:#64748b"><span class="spinner"></span>載入中</td></tr>';
+  try {
+    const estRes = await fetch(`/api/revenue-estimates?period=${period}${branch?'&branch='+branch:''}`).then(r=>r.json());
+    const eMap = {}; (Array.isArray(estRes) ? estRes : []).forEach(e => { eMap[e.branch] = e; });
+    const BRANCHES = branch ? [branch] : ['AMA','AMC','AMD'];
+    const brColors = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b' };
+    const KEYS = [
+      { key:'paid',     col:'#f97316' },
+      { key:'general',  col:'#3b82f6' },
+      { key:'bodywork', col:'#8b5cf6' },
+      { key:'extended', col:'#10b981' },
+    ];
+
+    tbody.innerHTML = BRANCHES.map(br => {
+      const e = eMap[br] || {};
+      const bCol = brColors[br] || '#64748b';
+      return `<tr>
+        <td style="padding:12px 14px;border-bottom:1px solid rgba(45,63,86,.3)">
+          <span style="display:inline-block;padding:4px 12px;border-radius:6px;font-size:13px;font-weight:800;background:${bCol}22;color:${bCol}">${br}</span>
+        </td>
+        ${KEYS.map(m => {
+          const existing = e[`${m.key}_estimate`];
+          const val = existing ? Math.round(existing / 1000) : '';
+          return `<td style="padding:8px 14px;border-bottom:1px solid rgba(45,63,86,.3)">
+            <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
+              <input type="number" id="est-${m.key}-${br}"
+                value="${val}" placeholder="—" min="0" step="1"
+                style="background:#0f172a;border:1px solid #2d3f56;color:${m.col};padding:8px 12px;border-radius:6px;font-size:13px;font-weight:700;width:130px;text-align:right;outline:none"
+                onfocus="this.style.borderColor='${m.col}'"
+                onblur="this.style.borderColor='#2d3f56'">
+              <span style="font-size:12px;color:#475569">K</span>
+            </div>
+          </td>`;
+        }).join('')}
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;
+  }
 }
 
-async function saveEstimates(period) {
-  if (!Object.keys(_estPending).length) return;
-  const BRANCHES = ['AMA','AMC','AMD'];
+async function saveAllEstimates() {
+  const period = document.getElementById('selPeriod').value;
+  const branch = document.getElementById('selBranch').value;
+  const msgEl = document.getElementById('estSaveMsg');
+  if (!period) { msgEl.textContent = '請先選擇期間'; msgEl.style.color = '#ef4444'; return; }
+
+  const BRANCHES = branch ? [branch] : ['AMA','AMC','AMD'];
   const KEYS = ['paid','general','bodywork','extended'];
-
-  // 每個 branch 組成一筆 entry
   const entries = BRANCHES.map(br => {
     const e = { branch: br, period };
     KEYS.forEach(k => {
-      const pending = _estPending[`${k}_${br}`];
-      if (pending !== undefined) e[`${k}_estimate`] = pending.value;
+      const v = parseFloat(document.getElementById(`est-${k}-${br}`)?.value);
+      e[`${k}_estimate`] = (!isNaN(v) && v > 0) ? Math.round(v * 1000) : null;
     });
     return e;
-  }).filter(e => KEYS.some(k => e[`${k}_estimate`] !== undefined));
+  });
 
-  if (!entries.length) return;
+  const btn = document.querySelector('[onclick="saveAllEstimates()"]');
+  if (btn) { btn.disabled = true; btn.textContent = '儲存中...'; }
+  msgEl.textContent = ''; msgEl.style.color = '#64748b';
   try {
-    await fetch('/api/revenue-estimates/batch', {
+    const res = await fetch('/api/revenue-estimates/batch', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ entries })
     });
-    // 清空 pending
-    Object.keys(_estPending).forEach(k => delete _estPending[k]);
-    // 顯示已儲存提示
-    const lu = document.getElementById('lastUpdate');
-    if (lu) { const prev = lu.textContent; lu.textContent = '✅ 預估已自動儲存'; setTimeout(() => lu.textContent = prev, 2000); }
-  } catch(e) { console.error('儲存預估失敗', e); }
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    msgEl.textContent = `✅ 預估已儲存（${period.slice(0,4)}年${period.slice(4)}月）`;
+    msgEl.style.color = '#10b981';
+    // 切回進度頁時重新載入
+    if (document.getElementById('tab-progress').style.display !== 'none') {
+      loadRevenueKPI(period, branch);
+    }
+  } catch(e) {
+    msgEl.textContent = '❌ ' + e.message;
+    msgEl.style.color = '#ef4444';
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '💾 儲存預估'; }
+  }
 }
 
 async function doLoad() {
@@ -258,17 +350,7 @@ async function loadRevenueKPI(period, branch) {
               ${yoy !== null ? `<span style="color:${yoy>=0?'#10b981':'#ef4444'};margin-left:4px">${yoy>=0?'▲':'▼'}${Math.abs(yoy).toFixed(1)}%</span>` : ''}
             </span>
           </div>
-          <!-- 預估輸入 -->
-          <div style="border-top:1px solid #2d3f56;padding-top:8px;display:flex;align-items:center;gap:6px">
-            <span style="font-size:11px;color:#475569;white-space:nowrap">預估</span>
-            <input type="number" id="est-${m.key}-${br}"
-              value="${est > 0 ? Math.round(est/1000) : ''}"
-              placeholder="輸入千元..."
-              oninput="onEstInput('${m.key}','${br}',this.value,'${period}')"
-              style="flex:1;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:5px 8px;border-radius:6px;font-size:12px;min-width:0;text-align:right"
-              min="0" step="1">
-            <span style="font-size:11px;color:#475569">K</span>
-          </div>
+
         </div>`;
       });
 
