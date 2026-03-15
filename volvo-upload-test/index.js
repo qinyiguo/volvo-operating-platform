@@ -115,7 +115,8 @@ const initDatabase = async () => {
         stat_method VARCHAR(20) NOT NULL DEFAULT 'amount',
         created_at TIMESTAMPTZ DEFAULT NOW(), updated_at TIMESTAMPTZ DEFAULT NOW()
       )`);
-    await client.query(`ALTER TABLE sa_sales_config ADD COLUMN IF NOT EXISTS stat_method VARCHAR(20) NOT NULL DEFAULT 'amount'`);
+    await client.query(`ALTER TABLE sa_sales_config ADD COLUMN IF NOT EXISTS person_type VARCHAR(20) NOT NULL DEFAULT 'sales_person'`);
+
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS app_settings (key VARCHAR(100) PRIMARY KEY, value TEXT NOT NULL)`);
@@ -503,24 +504,34 @@ app.post('/api/upload', upload.array('files', 8), async (req, res) => {
 // SA 銷售設定 API
 // ============================================================
 app.get('/api/sa-config', async (req, res) => {
-  try { res.json((await pool.query(`SELECT id,config_name,description,filters,stat_method,created_at,updated_at FROM sa_sales_config ORDER BY id`)).rows); }
+  try { res.json((await pool.query(
+    `SELECT id,config_name,description,filters,stat_method,person_type,created_at,updated_at FROM sa_sales_config ORDER BY id`
+  )).rows); }
   catch (err) { res.status(500).json({ error: err.message }); }
 });
 app.post('/api/sa-config', async (req, res) => {
-  const { config_name, description, filters, stat_method } = req.body;
+  const { config_name, description, filters, stat_method, person_type } = req.body;
   if (!config_name) return res.status(400).json({ error:'名稱為必填' });
   if (!Array.isArray(filters)||!filters.length) return res.status(400).json({ error:'至少需要一個篩選條件' });
   const method = ['amount','quantity','count'].includes(stat_method) ? stat_method : 'amount';
-  try { res.json((await pool.query(`INSERT INTO sa_sales_config (config_name,description,filters,stat_method) VALUES ($1,$2,$3,$4) RETURNING *`,[config_name.trim(),description||'',JSON.stringify(filters),method])).rows[0]); }
+  const ptype  = ['sales_person','pickup_person'].includes(person_type) ? person_type : 'sales_person';
+  try { res.json((await pool.query(
+    `INSERT INTO sa_sales_config (config_name,description,filters,stat_method,person_type) VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+    [config_name.trim(),description||'',JSON.stringify(filters),method,ptype]
+  )).rows[0]); }
   catch (err) { res.status(500).json({ error: err.message }); }
 });
 app.put('/api/sa-config/:id', async (req, res) => {
-  const { config_name, description, filters, stat_method } = req.body;
+  const { config_name, description, filters, stat_method, person_type } = req.body;
   if (!config_name) return res.status(400).json({ error:'名稱為必填' });
   if (!Array.isArray(filters)||!filters.length) return res.status(400).json({ error:'至少需要一個篩選條件' });
   const method = ['amount','quantity','count'].includes(stat_method) ? stat_method : 'amount';
+  const ptype  = ['sales_person','pickup_person'].includes(person_type) ? person_type : 'sales_person';
   try {
-    const r = await pool.query(`UPDATE sa_sales_config SET config_name=$1,description=$2,filters=$3,stat_method=$4,updated_at=NOW() WHERE id=$5 RETURNING *`,[config_name.trim(),description||'',JSON.stringify(filters),method,req.params.id]);
+    const r = await pool.query(
+      `UPDATE sa_sales_config SET config_name=$1,description=$2,filters=$3,stat_method=$4,person_type=$5,updated_at=NOW() WHERE id=$6 RETURNING *`,
+      [config_name.trim(),description||'',JSON.stringify(filters),method,ptype,req.params.id]
+    );
     if (!r.rows.length) return res.status(404).json({ error:'找不到設定' });
     res.json(r.rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -857,55 +868,83 @@ app.get('/api/periods', async (req, res) => {
 app.get('/api/stats/sa-sales-matrix', async (req, res) => {
   const { period, branch } = req.query;
   try {
-    const configs = (await pool.query(`SELECT id,config_name,filters,stat_method FROM sa_sales_config ORDER BY id`)).rows;
+    const configs = (await pool.query(
+      `SELECT id,config_name,filters,stat_method,person_type FROM sa_sales_config ORDER BY id`
+    )).rows;
     if (!configs.length) return res.json({ configs:[], rows:[], colTotals:{} });
+
     const saMap = {};
+
     for (const cfg of configs) {
-      const filters = cfg.filters||[];
-      const catCodes  = filters.filter(f=>f.type==='category_code').map(f=>f.value);
-      const funcCodes = filters.filter(f=>f.type==='function_code').map(f=>f.value);
-      const partNums  = filters.filter(f=>f.type==='part_number').map(f=>f.value);
-      const partTypes = filters.filter(f=>f.type==='part_type').map(f=>f.value);
-      const workCodes = filters.filter(f=>f.type==='work_code').map(f=>f.value);
+      const filters    = cfg.filters || [];
+      const catCodes   = filters.filter(f=>f.type==='category_code').map(f=>f.value);
+      const funcCodes  = filters.filter(f=>f.type==='function_code').map(f=>f.value);
+      const partNums   = filters.filter(f=>f.type==='part_number').map(f=>f.value);
+      const partTypes  = filters.filter(f=>f.type==='part_type').map(f=>f.value);
+      const workCodes  = filters.filter(f=>f.type==='work_code').map(f=>f.value);
+      const personType = cfg.person_type || 'sales_person';
+      const personCol  = personType === 'pickup_person' ? 'pickup_person' : 'sales_person';
 
       const hasPartsConds = catCodes.length||funcCodes.length||partNums.length||partTypes.length;
       const hasWageConds  = workCodes.length;
       if (!hasPartsConds && !hasWageConds) continue;
 
       if (hasWageConds) {
-        // 工資代碼：從 tech_performance 查詢，以技師為單位
+        // ── 工資代碼路徑 ──
+        // 透過 tech_performance JOIN parts_sales (ON work_order) 取得 sales_person / pickup_person
         const conds=[]; const params=[]; let idx=1;
-        if (period) { conds.push(`period=$${idx++}`); params.push(period); }
-        if (branch) { conds.push(`branch=$${idx++}`); params.push(branch); }
-        // work_code 支援精確和範圍（格式：from-to）
+        if (period) { conds.push(`tp.period=$${idx++}`); params.push(period); }
+        if (branch) { conds.push(`tp.branch=$${idx++}`); params.push(branch); }
+
+        const acTypes = filters.filter(f=>f.type==='account_type').map(f=>f.value);
+        if (acTypes.length) { conds.push(`tp.account_type=ANY($${idx++})`); params.push(acTypes); }
+
         const wcConds = [];
         for (const wc of workCodes) {
           if (wc.includes('-')) {
             const [from, to] = wc.split('-').map(s=>s.trim());
-            wcConds.push(`work_code BETWEEN $${idx++} AND $${idx++}`);
+            wcConds.push(`tp.work_code BETWEEN $${idx++} AND $${idx++}`);
             params.push(from, to);
           } else {
-            wcConds.push(`work_code=$${idx++}`);
+            wcConds.push(`tp.work_code=$${idx++}`);
             params.push(wc);
           }
         }
         if (wcConds.length) conds.push(`(${wcConds.join(' OR ')})`);
+
         const where = conds.length ? 'WHERE '+conds.join(' AND ') : '';
-        const statExpr = cfg.stat_method === 'amount' ? 'SUM(wage)' :
-                         cfg.stat_method === 'quantity' ? 'SUM(standard_hours)' :
-                         'COUNT(DISTINCT work_order)';
-        const r = await pool.query(
-          `SELECT branch, COALESCE(NULLIF(tech_name_clean,''),'（未知）') AS sa_name,
-           ${statExpr} AS val FROM tech_performance ${where} GROUP BY branch, sa_name`, params
-        );
+        const statExpr = cfg.stat_method === 'amount'   ? 'SUM(tp.wage)' :
+                         cfg.stat_method === 'quantity' ? 'SUM(tp.standard_hours)' :
+                         'COUNT(DISTINCT tp.work_order)';
+
+        // DISTINCT ON: 每個 work_order 只取一筆 parts_sales，避免 1:N 爆炸
+        const r = await pool.query(`
+          SELECT tp.branch,
+            COALESCE(NULLIF(ps_uniq.person_name,''), '（未知）') AS sa_name,
+            ${statExpr} AS val
+          FROM tech_performance tp
+          LEFT JOIN (
+            SELECT DISTINCT ON (work_order) work_order, ${personCol} AS person_name
+            FROM parts_sales
+            ORDER BY work_order, id
+          ) ps_uniq ON ps_uniq.work_order = tp.work_order
+          ${where}
+          GROUP BY tp.branch, sa_name
+        `, params);
+
         for (const row of r.rows) {
           const key = `${row.branch}|||${row.sa_name}`;
           if (!saMap[key]) saMap[key] = { branch:row.branch, sa_name:row.sa_name, configs:{} };
           const v = parseFloat(row.val||0);
-          saMap[key].configs[cfg.id] = { qty: cfg.stat_method==='quantity'?v:0, sales: cfg.stat_method==='amount'?v:0, cnt: cfg.stat_method==='count'?v:parseInt(v) };
+          saMap[key].configs[cfg.id] = {
+            qty:  cfg.stat_method==='quantity' ? v : 0,
+            sales: cfg.stat_method==='amount'  ? v : 0,
+            cnt:  cfg.stat_method==='count'    ? parseInt(v) : 0,
+          };
         }
+
       } else {
-        // 零件銷售
+        // ── 零件銷售路徑 ── 依 personType 選擇群組欄位
         const conds=[]; const params=[]; let idx=1;
         if (period) { conds.push(`period=$${idx++}`); params.push(period); }
         if (branch) { conds.push(`branch=$${idx++}`); params.push(branch); }
@@ -914,25 +953,33 @@ app.get('/api/stats/sa-sales-matrix', async (req, res) => {
         if (partNums.length)  { conds.push(`part_number=ANY($${idx++})`);    params.push(partNums); }
         if (partTypes.length) { conds.push(`part_type=ANY($${idx++})`);      params.push(partTypes); }
         const where = conds.length ? 'WHERE '+conds.join(' AND ') : '';
-        const r = await pool.query(
-          `SELECT branch,COALESCE(NULLIF(sales_person,''),'（未知）') AS sa_name,
-           SUM(sale_qty) AS qty,SUM(sale_price_untaxed) AS sales,COUNT(*) AS cnt
-           FROM parts_sales ${where} GROUP BY branch,sa_name`, params
-        );
+        const r = await pool.query(`
+          SELECT branch, COALESCE(NULLIF(${personCol},''),'（未知）') AS sa_name,
+          SUM(sale_qty) AS qty, SUM(sale_price_untaxed) AS sales, COUNT(*) AS cnt
+          FROM parts_sales ${where} GROUP BY branch, sa_name
+        `, params);
         for (const row of r.rows) {
           const key = `${row.branch}|||${row.sa_name}`;
           if (!saMap[key]) saMap[key] = { branch:row.branch, sa_name:row.sa_name, configs:{} };
-          saMap[key].configs[cfg.id] = { qty:parseFloat(row.qty||0), sales:parseFloat(row.sales||0), cnt:parseInt(row.cnt||0) };
+          saMap[key].configs[cfg.id] = {
+            qty:   parseFloat(row.qty||0),
+            sales: parseFloat(row.sales||0),
+            cnt:   parseInt(row.cnt||0),
+          };
         }
       }
     }
+
     const rows = Object.values(saMap).sort((a,b) => {
       if (a.branch!==b.branch) return a.branch<b.branch?-1:1;
       return Object.values(b.configs).reduce((s,c)=>s+c.sales,0) - Object.values(a.configs).reduce((s,c)=>s+c.sales,0);
     });
     const colTotals = {};
     for (const cfg of configs) {
-      colTotals[cfg.id] = rows.reduce((s,row) => { const c=row.configs[cfg.id]||{qty:0,sales:0,cnt:0}; return {qty:s.qty+c.qty,sales:s.sales+c.sales,cnt:s.cnt+c.cnt}; },{qty:0,sales:0,cnt:0});
+      colTotals[cfg.id] = rows.reduce((s,row) => {
+        const c=row.configs[cfg.id]||{qty:0,sales:0,cnt:0};
+        return {qty:s.qty+c.qty, sales:s.sales+c.sales, cnt:s.cnt+c.cnt};
+      },{qty:0,sales:0,cnt:0});
     }
     res.json({ configs, rows, colTotals });
   } catch (err) { res.status(500).json({ error: err.message }); }
