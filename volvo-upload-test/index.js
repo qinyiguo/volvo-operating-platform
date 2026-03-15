@@ -1109,15 +1109,15 @@ app.post('/api/upload-revenue-targets-native', upload.single('file'), async (req
   if (!year.match(/^\d{4}$/)) return res.status(400).json({ error: '請指定正確的年份（4位數）' });
   const suffix = dataType === 'last_year' ? '_last_year' : '_target';
   try {
-    const workbook = XLSX.read(req.file.buffer, { type: 'buffer', cellDates: true });
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer', cellDates: false, cellNF: true, cellText: false });
     // 嘗試找含目標資料的工作表（優先找含關鍵字的）
-    const SHEET_KWS = ['目標','年度','營收'];
+    const SHEET_KWS = ['目標','年度','營收','實績'];
     let sheetName = workbook.SheetNames[0];
     for (const sn of workbook.SheetNames) {
       if (SHEET_KWS.some(kw => sn.includes(kw))) { sheetName = sn; break; }
     }
     const sheet = workbook.Sheets[sheetName];
-    const raw = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+    const raw = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: true });
 
     const BRANCHES = ['AMA','AMC','AMD'];
     const SECTION_MAP = [
@@ -1194,7 +1194,7 @@ app.post('/api/upload-revenue-targets-native', upload.single('file'), async (req
           const period = `${year}${String(mo).padStart(2,'0')}`;
           const key = `${branch}_${period}`;
           if (!entriesMap[key]) entriesMap[key] = { branch, period };
-          entriesMap[key][`${field}${suffix}`] = Math.round(valK * 1000);
+          entriesMap[key][`${field}${suffix}`] = Math.round(valK); // 值已是元，不乘1000
         }
       }
     }
