@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Volvo 營運統計</title>
+<title>Volvo 設定</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
@@ -12,577 +12,1095 @@
   .nav-link { padding: 16px 16px; color: #64748b; font-size: 13px; font-weight: 600; text-decoration: none; border-bottom: 2px solid transparent; }
   .nav-link:hover { color: #e2e8f0; }
   .nav-link.active { color: #3b82f6; border-bottom-color: #3b82f6; }
-  .container { padding: 24px; max-width: 1400px; margin: 0 auto; }
-  .filter-bar { display: flex; gap: 10px; align-items: center; background: #1e293b; border: 1px solid #2d3f56; border-radius: 10px; padding: 12px 16px; margin-bottom: 20px; flex-wrap: wrap; }
-  .filter-bar label { font-size: 12px; color: #64748b; font-weight: 600; }
-  .filter-bar select { background: #0f172a; border: 1px solid #2d3f56; color: #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 13px; }
-  .btn { padding: 7px 16px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; }
+  .layout { display: flex; min-height: calc(100vh - 53px); }
+  .sidebar { width: 220px; flex-shrink: 0; background: #1e293b; border-right: 1px solid #2d3f56; padding: 20px 12px; }
+  .sidebar-section { margin-bottom: 24px; }
+  .sidebar-label { font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .06em; padding: 0 8px; margin-bottom: 6px; }
+  .sidebar-item { display: flex; align-items: center; gap: 8px; padding: 9px 10px; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 600; color: #64748b; transition: all .15s; }
+  .sidebar-item:hover { background: #253347; color: #e2e8f0; }
+  .sidebar-item.active { background: rgba(59,130,246,.15); color: #3b82f6; }
+  .sidebar-item .icon { font-size: 16px; width: 20px; text-align: center; }
+  .main { flex: 1; padding: 28px; overflow-y: auto; max-width: 980px; }
+  .page-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+  .page-sub { font-size: 13px; color: #64748b; margin-bottom: 24px; }
+  .card { background: #1e293b; border: 1px solid #2d3f56; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 14px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card-title-note { font-size: 12px; font-weight: 400; color: #64748b; margin-left: auto; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; }
   .btn-primary { background: #3b82f6; color: #fff; }
   .btn-primary:hover { background: #2563eb; }
   .btn-secondary { background: #253347; color: #cbd5e1; border: 1px solid #2d3f56; }
   .btn-secondary:hover { background: #2d3f56; }
-  .btn-sm { padding: 4px 10px; font-size: 12px; }
-  .tabs { display: flex; gap: 2px; background: #1e293b; border-radius: 8px; padding: 3px; margin-bottom: 20px; flex-wrap: wrap; }
-  .tab { padding: 8px 16px; border: none; background: transparent; color: #64748b; font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 6px; white-space: nowrap; }
-  .tab:hover { color: #e2e8f0; background: #253347; }
-  .tab.active { background: #3b82f6; color: #fff; }
-  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
-  .kpi-card { background: #1e293b; border: 1px solid #2d3f56; border-radius: 10px; padding: 18px; }
-  .kpi-label { font-size: 12px; color: #64748b; margin-bottom: 6px; }
-  .kpi-value { font-size: 26px; font-weight: 800; color: #fff; }
-  .kpi-sub { font-size: 12px; color: #64748b; margin-top: 4px; }
-  .kpi-green  { color: #10b981; }
-  .kpi-blue   { color: #3b82f6; }
-  .kpi-yellow { color: #f59e0b; }
-  .kpi-purple { color: #8b5cf6; }
-  .kpi-red    { color: #ef4444; }
-  .kpi-teal   { color: #14b8a6; }
-  .kpi-orange { color: #f97316; }
-  .card { background: #1a2332; border: 1px solid #2d3f56; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
-  .card-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-  .card-title-note { font-size: 11px; font-weight: 400; color: #64748b; margin-left: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { background: #0f172a; color: #64748b; font-size: 12px; font-weight: 600; text-align: left; padding: 10px 12px; border-bottom: 1px solid #2d3f56; white-space: nowrap; }
-  td { padding: 9px 12px; border-bottom: 1px solid rgba(45,63,86,.4); vertical-align: middle; }
-  tr:hover td { background: rgba(37,51,71,.5); }
-  .num { text-align: right; font-variant-numeric: tabular-nums; }
-  .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #2d3f56; }
+  .btn-danger { background: rgba(239,68,68,.12); color: #ef4444; border: 1px solid rgba(239,68,68,.25); }
+  .btn-danger:hover { background: rgba(239,68,68,.2); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .upload-zone { border: 2px dashed #2d3f56; border-radius: 8px; padding: 36px; text-align: center; cursor: pointer; transition: all .2s; }
+  .upload-zone:hover, .upload-zone.drag { border-color: #3b82f6; background: rgba(59,130,246,.05); }
+  .upload-zone .icon { font-size: 36px; margin-bottom: 8px; }
+  .upload-zone p { color: #64748b; font-size: 12px; margin-top: 4px; }
+  input[type=file] { display: none; }
+  .file-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #2d3f56; font-size: 13px; }
+  .result-item { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #2d3f56; font-size: 13px; }
   .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
-  .badge-blue   { background: rgba(59,130,246,.15); color: #3b82f6; }
-  .badge-green  { background: rgba(16,185,129,.15); color: #10b981; }
+  .badge-green { background: rgba(16,185,129,.15); color: #10b981; }
+  .badge-red { background: rgba(239,68,68,.15); color: #ef4444; }
+  .badge-blue { background: rgba(59,130,246,.15); color: #3b82f6; }
   .badge-yellow { background: rgba(245,158,11,.15); color: #f59e0b; }
-  .badge-purple { background: rgba(139,92,246,.15); color: #8b5cf6; }
-  .badge-red    { background: rgba(239,68,68,.15); color: #ef4444; }
-  .badge-teal   { background: rgba(20,184,166,.15); color: #14b8a6; }
-  .badge-orange { background: rgba(249,115,22,.15); color: #f97316; }
-  .badge-gray   { background: rgba(100,116,139,.15); color: #94a3b8; }
-  .empty { text-align: center; padding: 48px; color: #64748b; font-size: 14px; }
-  .loading { text-align: center; padding: 48px; color: #64748b; }
-  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #2d3f56; border-top-color: #3b82f6; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 8px; vertical-align: middle; }
+  .badge-gray { background: rgba(100,116,139,.15); color: #94a3b8; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #0f172a; color: #64748b; font-size: 11px; font-weight: 700; text-align: left; padding: 9px 12px; border-bottom: 1px solid #2d3f56; white-space: nowrap; }
+  td { padding: 9px 12px; border-bottom: 1px solid rgba(45,63,86,.4); vertical-align: middle; }
+  tr:hover td { background: rgba(37,51,71,.4); }
+  .num { text-align: right; }
+  .hint { background: rgba(59,130,246,.07); border: 1px solid rgba(59,130,246,.2); border-radius: 8px; padding: 11px 14px; font-size: 12px; color: #94a3b8; line-height: 1.8; margin-bottom: 14px; }
+  .hint code { background: #0f172a; padding: 1px 5px; border-radius: 3px; color: #60a5fa; }
+  .counts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap: 8px; }
+  .count-card { background: #0f172a; border: 1px solid #2d3f56; border-radius: 8px; padding: 12px; text-align: center; }
+  .count-val { font-size: 24px; font-weight: 800; }
+  .count-label { font-size: 11px; color: #64748b; margin-top: 2px; }
+  .config-item { background: #0f172a; border: 1px solid #2d3f56; border-radius: 10px; padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px; transition: border-color .15s; }
+  .config-item:hover { border-color: #3b82f6; }
+  .config-item-info { flex: 1; min-width: 0; }
+  .config-item-name { font-weight: 700; font-size: 14px; }
+  .config-item-desc { font-size: 12px; color: #64748b; margin-top: 2px; }
+  .config-item-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .config-list { display: flex; flex-direction: column; gap: 8px; }
+  .editor-panel { background: #0f172a; border: 1px solid #3b82f6; border-radius: 10px; padding: 20px; margin-top: 8px; }
+  .form-row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; }
+  .form-row label { font-size: 12px; color: #64748b; font-weight: 600; white-space: nowrap; padding-top: 9px; min-width: 40px; }
+  .form-input { background: #1e293b; border: 1px solid #2d3f56; color: #e2e8f0; padding: 8px 12px; border-radius: 6px; font-size: 13px; flex: 1; min-width: 0; }
+  .form-input:focus { outline: none; border-color: #3b82f6; }
+  .form-select { background: #1e293b; border: 1px solid #2d3f56; color: #e2e8f0; padding: 8px 10px; border-radius: 6px; font-size: 13px; }
+  .filter-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .filter-tag-row { display: flex; align-items: center; gap: 8px; background: #1e293b; border: 1px solid #2d3f56; border-radius: 7px; padding: 7px 12px; }
+  .type-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 5px; white-space: nowrap; }
+  .type-category_code { background: rgba(59,130,246,.2); color: #60a5fa; }
+  .type-function_code  { background: rgba(139,92,246,.2); color: #a78bfa; }
+  .type-part_number    { background: rgba(16,185,129,.2); color: #34d399; }
+  .type-part_type      { background: rgba(249,115,22,.2); color: #fb923c; }
+  .type-account_type   { background: rgba(20,184,166,.2); color: #2dd4bf; }
+  .type-boutique_type  { background: rgba(139,92,246,.2); color: #a78bfa; }
+  .remove-btn { background: none; border: none; color: #475569; cursor: pointer; font-size: 18px; line-height: 1; padding: 0 2px; }
+  .remove-btn:hover { color: #ef4444; }
+  .add-filter-row { display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap; }
+  .lookup-wrap { position: relative; flex: 1; min-width: 180px; }
+  .lookup-input { width: 100%; background: #1e293b; border: 1px solid #2d3f56; color: #e2e8f0; padding: 8px 12px; border-radius: 6px; font-size: 13px; }
+  .lookup-input:focus { outline: none; border-color: #3b82f6; }
+  .lookup-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #1e293b; border: 1px solid #2d3f56; border-radius: 8px; z-index: 100; max-height: 240px; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
+  .lookup-item { padding: 9px 12px; cursor: pointer; border-bottom: 1px solid rgba(45,63,86,.4); }
+  .lookup-item:last-child { border-bottom: none; }
+  .lookup-item:hover { background: rgba(59,130,246,.1); }
+  .lookup-item-val { font-size: 13px; font-weight: 600; }
+  .lookup-item-sub { font-size: 11px; color: #64748b; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .logic-hint { font-size: 12px; color: #64748b; background: #0f172a; border: 1px solid #2d3f56; border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; line-height: 1.7; }
+  .logic-hint strong { color: #94a3b8; }
+  .part-type-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .part-type-chip { display: flex; align-items: center; gap: 5px; cursor: pointer; background: #1e293b; border: 1px solid #2d3f56; border-radius: 6px; padding: 5px 10px; font-size: 12px; font-weight: 600; color: #94a3b8; transition: all .15s; user-select: none; }
+  .part-type-chip:hover { border-color: #fb923c; color: #fb923c; }
+  .part-type-chip input { display: none; }
+  .part-type-chip.checked { background: rgba(249,115,22,.15); border-color: #fb923c; color: #fb923c; }
+  .part-type-chip.disabled { opacity: .4; pointer-events: none; }
+  .stat-method-group { margin-bottom: 14px; }
+  .stat-method-label { font-size: 13px; font-weight: 700; color: #94a3b8; margin-bottom: 10px; }
+  .stat-method-options { display: flex; gap: 8px; flex-wrap: wrap; }
+  .stat-radio-item { display: flex; align-items: center; gap: 8px; cursor: pointer; background: #1e293b; border: 1px solid #2d3f56; border-radius: 8px; padding: 10px 14px; transition: all .15s; flex: 1; min-width: 130px; }
+  .stat-radio-item:hover { border-color: #3b82f6; }
+  .stat-radio-item input[type=radio] { accent-color: #3b82f6; width: 15px; height: 15px; }
+  .stat-radio-item.selected { border-color: #3b82f6; background: rgba(59,130,246,.1); }
+  .stat-radio-info { display: flex; flex-direction: column; }
+  .stat-radio-name { font-size: 13px; font-weight: 700; }
+  .stat-radio-desc { font-size: 11px; color: #64748b; margin-top: 1px; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #2d3f56; border-top-color: #3b82f6; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 6px; vertical-align: middle; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .rank-no { font-weight: 800; color: #64748b; width: 30px; }
-  .rank-1 { color: #f59e0b; }
-  .rank-2 { color: #94a3b8; }
-  .rank-3 { color: #b45309; }
-  .bar-wrap { display: flex; align-items: center; gap: 8px; }
-  .bar-bg { flex: 1; background: #0f172a; border-radius: 4px; height: 6px; min-width: 60px; }
-  .bar-fill { height: 6px; border-radius: 4px; background: #3b82f6; }
-  .bar-fill.green  { background: #10b981; }
-  .bar-fill.yellow { background: #f59e0b; }
-  .up   { color: #10b981; }
-  .down { color: #ef4444; }
-  .income-section-title { font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .06em; padding: 0 0 10px; margin-bottom: 12px; border-bottom: 1px solid #2d3f56; display: flex; align-items: center; gap: 8px; }
-  .income-category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 20px; }
-  .income-cat-card { background: #0f172a; border: 1px solid #2d3f56; border-radius: 10px; padding: 14px 16px; position: relative; overflow: hidden; }
-  .income-cat-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 3px 0 0 3px; }
-  .income-cat-card.type-general::before   { background: #3b82f6; }
-  .income-cat-card.type-insurance::before { background: #10b981; }
-  .income-cat-card.type-extended::before  { background: #8b5cf6; }
-  .income-cat-card.type-voucher::before   { background: #f59e0b; }
-  .income-cat-card.type-external::before  { background: #14b8a6; }
-  .income-cat-card.type-paid::before      { background: #f97316; }
-  .income-cat-card.type-grand::before     { background: #e2e8f0; }
-  .income-cat-card.type-internal::before  { background: #64748b; }
-  .income-cat-card.type-warranty::before  { background: #6366f1; }
-  .income-cat-card.type-vsa::before       { background: #ec4899; }
-  .income-cat-card.type-goodwill::before  { background: #06b6d4; }
-  .income-cat-label { font-size: 11px; color: #64748b; margin-bottom: 5px; font-weight: 600; }
-  .income-cat-value { font-size: 22px; font-weight: 800; }
-  .income-cat-sub   { font-size: 11px; color: #64748b; margin-top: 3px; }
-  .income-cat-card.type-general .income-cat-value   { color: #3b82f6; }
-  .income-cat-card.type-insurance .income-cat-value { color: #10b981; }
-  .income-cat-card.type-extended .income-cat-value  { color: #8b5cf6; }
-  .income-cat-card.type-voucher .income-cat-value   { color: #f59e0b; }
-  .income-cat-card.type-external .income-cat-value  { color: #14b8a6; }
-  .income-cat-card.type-paid .income-cat-value      { color: #f97316; font-size: 26px; }
-  .income-cat-card.type-grand .income-cat-value     { color: #e2e8f0; font-size: 26px; }
-  .income-cat-card.type-internal .income-cat-value  { color: #94a3b8; }
-  .income-cat-card.type-warranty .income-cat-value  { color: #818cf8; }
-  .income-cat-card.type-vsa .income-cat-value       { color: #f472b6; }
-  .income-cat-card.type-goodwill .income-cat-value  { color: #22d3ee; }
-  .divider-label { display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .06em; margin: 20px 0 12px; }
-  .divider-label::after { content: ''; flex: 1; height: 1px; background: #2d3f56; }
-  tr.cost-row td { background: rgba(100,116,139,.04); }
-  tr.cost-row:hover td { background: rgba(100,116,139,.1); }
-  tr.subtotal-row td { background: rgba(249,115,22,.06); font-weight: 700; }
-  tr.subtotal-row:hover td { background: rgba(249,115,22,.1); }
-  tr.total-row td { background: rgba(59,130,246,.08); font-weight: 800; }
-  tr.total-row:hover td { background: rgba(59,130,246,.12); }
-  #boutiqueMatrix thead tr:last-child th, #saMatrix thead tr:last-child th { box-shadow: 0 2px 0 #2d3f56; }
-  /* ── 業績進度 ── */
-  .perf-block { border: 1px solid #2d3f56; border-radius: 10px; margin-bottom: 14px; overflow: hidden; transition: border-color .15s; }
-  .perf-block:hover { border-color: #3b82f6; }
-  .perf-block-header { background: #0f172a; padding: 12px 18px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; border-bottom: 1px solid #2d3f56; }
-  .perf-block-body { display: grid; }
-  .perf-cell { padding: 14px 16px; }
-  .perf-cell + .perf-cell { border-left: 1px solid #2d3f56; }
+  .empty-state { text-align: center; padding: 40px 20px; color: #64748b; }
+  .empty-state .big { font-size: 36px; margin-bottom: 10px; }
+  .section-page { display: none; }
+  .section-page.active { display: block; }
+  .wd-controls { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .wd-calendar { display: grid; grid-template-columns: repeat(7,1fr); gap: 5px; margin-bottom: 16px; }
+  .wd-day-head { text-align: center; font-size: 11px; font-weight: 700; color: #475569; padding: 4px 0; }
+  .wd-day-head.sun { color: #ef4444; }
+  .wd-day-head.sat { color: #3b82f6; }
+  .wd-day-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; border: 1.5px solid #2d3f56; background: #0f172a; color: #64748b; transition: all .12s; user-select: none; }
+  .wd-day-cell:hover { border-color: #3b82f6; color: #93c5fd; }
+  .wd-day-cell.work { background: rgba(16,185,129,.15); border-color: #10b981; color: #10b981; }
+  .wd-day-cell.work:hover { background: rgba(16,185,129,.25); }
+  .wd-day-cell.empty { background: transparent; border-color: transparent; cursor: default; }
+  .wd-day-cell.empty:hover { border-color: transparent; }
+  .wd-summary { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 13px; }
+  .wd-count { font-weight: 800; font-size: 20px; color: #10b981; }
+  .wd-legend { display: flex; gap: 14px; font-size: 12px; color: #64748b; }
+  .wd-legend span { display: flex; align-items: center; gap: 5px; }
+  .wd-legend .dot { width: 10px; height: 10px; border-radius: 3px; }
+  .wd-existing-list { display: flex; flex-direction: column; gap: 6px; }
+  .wd-existing-item { display: flex; align-items: center; gap: 10px; background: #0f172a; border: 1px solid #2d3f56; border-radius: 8px; padding: 10px 14px; }
+  .wd-existing-item .info { flex: 1; }
+  .wd-existing-item .name { font-weight: 700; }
+  .wd-existing-item .sub { font-size: 12px; color: #64748b; margin-top: 2px; }
 </style>
 </head>
 <body>
-<nav class="nav">
-  <span class="nav-brand">🚗 Volvo 營運統計</span>
-  <a href="/performance.html" class="nav-link">🎯 業績指標與預估</a>
-  <a href="/stats.html" class="nav-link active">📊 各廠明細</a>
-  <a href="/settings.html" class="nav-link">⚙️ 設定</a>
-</nav>
-<div class="container">
-  <div class="filter-bar">
-    <label>期間</label>
-    <select id="selPeriod"><option value="">全部期間</option></select>
-    <label>據點</label>
-    <select id="selBranch">
-      <option value="">全部</option>
-      <option value="AMA">AMA</option>
-      <option value="AMC">AMC</option>
-      <option value="AMD">AMD</option>
-    </select>
-    <button class="btn btn-primary" onclick="loadAll()">查詢</button>
-    <span id="lastUpdate" style="margin-left:auto;font-size:12px;color:#64748b"></span>
+<!-- 鎖定畫面 -->
+<div id="lockScreen" style="position:fixed;inset:0;background:#0f172a;z-index:9999;display:flex;align-items:center;justify-content:center;">
+  <div style="background:#1e293b;border:1px solid #2d3f56;border-radius:16px;padding:44px 40px;width:100%;max-width:360px;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.6);">
+    <div style="font-size:44px;margin-bottom:12px">🔒</div>
+    <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:6px">設定管理</div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:28px">請輸入管理員密碼以繼續</div>
+    <input type="password" id="lockInput" placeholder="輸入密碼..."
+      style="width:100%;box-sizing:border-box;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:12px 16px;border-radius:8px;font-size:16px;margin-bottom:8px;text-align:center;letter-spacing:4px;outline:none"
+      onkeydown="if(event.key==='Enter') doLogin()" autocomplete="current-password">
+    <div id="lockError" style="font-size:12px;color:#ef4444;height:20px;margin-bottom:10px;line-height:20px"></div>
+    <button id="lockBtn" onclick="doLogin()" style="width:100%;background:#3b82f6;color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">進入設定</button>
   </div>
-  <div class="tabs">
-    <button class="tab active" onclick="switchTab('repair')">🔧 維修收入</button>
-    <button class="tab" onclick="switchTab('tech')">👨‍🔧 技師工資</button>
-    <button class="tab" onclick="switchTab('parts')">🔩 零件銷售</button>
-    <button class="tab" onclick="switchTab('boutique')">💎 精品配件銷售</button>
-    <button class="tab" onclick="switchTab('sa-sales')">👤 SA 零件銷售</button>
-    <button class="tab" onclick="switchTab('trend')">📈 月份趨勢</button>
-    <button class="tab" onclick="switchTab('daily')">📅 每日進廠台數</button>
-  </div>
-  <!-- 維修收入 -->
-  <div id="tab-repair">
-    <div id="repairKPI" class="kpi-grid"></div>
-    <div id="grandKPI"></div>
-    <div class="card">
-      <div class="card-title">💰 收入分類分析（未稅）<span class="card-title-note">各收入欄位÷1.05換算未稅｜零件成本已為未稅｜外賣來自零件銷售</span></div>
-      <div class="income-section-title">📊 有費收入摘要</div>
-      <div id="incomeCategoryCards" class="income-category-grid"><div style="color:#64748b;font-size:13px;grid-column:1/-1"><span class="spinner"></span>載入中</div></div>
-      <div class="divider-label">有費收入明細（未稅）</div>
-      <div class="table-wrap" style="margin-bottom:16px">
-        <table>
-          <thead><tr><th>據點</th><th>帳類</th><th class="num">台數</th><th class="num">引擎工資</th><th class="num">零件</th><th class="num">配件</th><th class="num">精品</th><th class="num">鈑金</th><th class="num">烤漆</th><th class="num">洗車美容</th><th class="num">外包</th><th class="num">附加服務</th><th class="num" style="color:#10b981">合計(未稅)</th></tr></thead>
-          <tbody id="tbIncomeRevenue"><tr><td colspan="13" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
-        </table>
-      </div>
-      <div class="divider-label">無費工單成本（內結 / 保固 / VSA / 善意維修）</div>
-      <div class="income-section-title" style="margin-top:4px">📋 無費工單成本摘要</div>
-      <div id="incomeCostCards" class="income-category-grid"><div style="color:#64748b;font-size:13px;grid-column:1/-1"><span class="spinner"></span>載入中</div></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>據點</th><th>帳類</th><th class="num">台數</th><th class="num" style="color:#3b82f6">零件銷售</th><th class="num" style="color:#10b981">配件銷售</th><th class="num" style="color:#f59e0b">精品銷售</th><th class="num">引擎工資</th><th class="num">鈑金</th><th class="num">烤漆</th><th class="num">洗車美容</th><th class="num">外包</th><th class="num">附加服務</th><th class="num">工資小計</th><th class="num">零件成本(未稅)</th><th class="num" style="color:#f59e0b">合計成本</th><th>附註</th></tr></thead>
-          <tbody id="tbIncomeCost"><tr><td colspan="16" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">📋 SA 業績排名</div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>#</th><th>據點</th><th>服務顧問</th><th class="num">出廠台數</th><th class="num">總營收(未稅)</th><th class="num">引擎工資</th><th class="num">零件收入</th><th class="num">佔比</th></tr></thead>
-          <tbody id="tbSA"><tr><td colspan="8" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">📂 帳類分析</div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>據點</th><th>帳類</th><th class="num">工單數</th><th class="num">總營收</th><th class="num">零件</th><th class="num">引擎工資</th><th class="num">鈑烤</th><th class="num">零件成本</th></tr></thead>
-          <tbody id="tbAccount"><tr><td colspan="8" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- 技師工資 -->
-  <div id="tab-tech" style="display:none">
-    <div id="techKPI" class="kpi-grid"></div>
-    <div class="card">
-      <div class="card-title">🏆 技師工資排名</div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>#</th><th>據點</th><th>技師</th><th class="num">台數</th><th class="num">標準工時</th><th class="num">總工資</th><th class="num">美容工資</th><th class="num">淨工資</th><th>工資佔比</th></tr></thead>
-          <tbody id="tbTech"><tr><td colspan="9" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- 零件銷售 -->
-  <div id="tab-parts" style="display:none">
-    <div id="partsKPI" class="kpi-grid"></div>
-    <div class="card">
-      <div class="card-title">📦 零件種類彙總</div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>據點</th><th>種類</th><th class="num">筆數</th><th class="num">總數量</th><th class="num">銷售金額</th><th class="num">成本</th><th class="num">毛利</th><th class="num">毛利率</th></tr></thead>
-          <tbody id="tbPartsType"><tr><td colspan="8" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">🥇 銷售金額 Top 20 零件</div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>#</th><th>零件編號</th><th>零件名稱</th><th>種類</th><th class="num">總數量</th><th class="num">銷售金額</th></tr></thead>
-          <tbody id="tbTopParts"><tr><td colspan="6" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- 精品配件銷售 -->
-  <div id="tab-boutique" style="display:none">
-    <div style="background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.25);border-radius:8px;padding:10px 14px;font-size:12px;color:#a78bfa;margin-bottom:14px;line-height:1.8">
-      💡 <strong>資料來源</strong>：零件銷售明細（parts_sales），品項類型透過<strong>零件型錄（parts_catalog）</strong>比對 part_number 判斷。若無型錄資料，則以零件銷售明細中的 Paycode 欄位判斷。「帳類」欄位對應零件銷售的「帳類」（part_type）欄位。
-    </div>
-    <div id="boutiqueKPI" class="kpi-grid"></div>
-    <div class="card" style="padding:0">
-      <div style="padding:16px 20px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <div style="font-size:14px;font-weight:700">💎 精品 &amp; 配件銷售矩陣（各據點 × 銷售人員 × 帳類）</div>
-        <div style="font-size:12px;color:#64748b">金額單位：元（未稅）</div>
-      </div>
-      <div style="overflow-x:auto;overflow-y:auto;max-height:70vh;padding:0 0 4px">
-        <div id="boutiqueMatrix" style="min-width:700px"><div style="padding:48px;text-align:center;color:#64748b"><span class="spinner"></span>載入中...</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SA 零件銷售 -->
-  <div id="tab-sa-sales" style="display:none">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-      <div id="saMatrixMeta" style="font-size:13px;color:#64748b"></div>
-      <a href="/settings.html" style="font-size:12px;color:#64748b;text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border:1px solid #2d3f56;border-radius:6px;background:#1e293b">⚙️ 管理設定</a>
-    </div>
-    <div class="card" style="padding:0">
-      <div style="overflow-x:auto;overflow-y:auto;max-height:70vh">
-        <div id="saMatrix"><div style="padding:48px;text-align:center;color:#64748b"><span class="spinner"></span>載入中...</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 月份趨勢 -->
-  <div id="tab-trend" style="display:none">
-    <div class="card">
-      <div class="card-title">📈 各月份維修收入趨勢</div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>期間</th><th>據點</th><th class="num">出廠台數</th><th class="num">總營收</th><th class="num">引擎工資</th><th class="num">零件收入</th><th class="num">環比</th></tr></thead>
-          <tbody id="tbTrend"><tr><td colspan="7" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- 每日進廠台數 -->
-  <div id="tab-daily" style="display:none">
-    <div id="dailyKPI" class="kpi-grid"></div>
-    <div class="card">
-      <div class="card-title">📅 每日進廠台數（已排除 PDI）</div>
-      <div style="overflow-x:auto"><div id="dailyChart" style="min-width:700px;padding:8px 0"></div></div>
-    </div>
-    <div class="card">
-      <div class="card-title">📋 每日明細</div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>日期</th><th>據點</th><th class="num">進廠台數</th><th>vs 日均</th></tr></thead>
-          <tbody id="tbDaily"><tr><td colspan="4" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-
 </div>
-<script>
-let currentTab = 'repair';
-let saConfigs  = [];
-const n    = (v) => parseFloat(v || 0);
-const fmt  = (v) => Math.round(n(v)).toLocaleString();
-const fmtK = (v) => Math.round(n(v) / 1000).toLocaleString() + 'K';
-const badgeType = (t) => { const map = { '零件':'badge-blue', '配件':'badge-green', '精品':'badge-yellow' }; return map[t] || 'badge-purple'; };
-const ACCOUNT_GROUP = (s) => {
-  if (!s) return 'other';
-  const t = s.toLowerCase();
-  if (s.includes('一般')) return 'general';
-  if (s.includes('保險')) return 'insurance';
-  if (s.includes('延保')) return 'extended';
-  if (s.includes('票'))   return 'voucher';
-  if (s.includes('內結')) return 'internal';
-  if (s.includes('保固')) return 'warranty';
-  if (t.includes('vsa'))  return 'vsa';
-  if (s.includes('善意')) return 'goodwill';
-  return 'other';
-};
-const PAID_GROUPS = new Set(['general','insurance','extended']);
-const COST_GROUPS = new Set(['internal','warranty','vsa','goodwill']);
-const GROUP_META = {
-  general:   { label:'一般收入', cls:'type-general',   badge:'badge-blue',   icon:'🔵' },
-  insurance: { label:'保險收入', cls:'type-insurance', badge:'badge-green',  icon:'🟢' },
-  extended:  { label:'延保收入', cls:'type-extended',  badge:'badge-purple', icon:'🟣' },
-  voucher:   { label:'票券收入', cls:'type-voucher',   badge:'badge-yellow', icon:'🟡' },
-  external:  { label:'外賣收入', cls:'type-external',  badge:'badge-teal',   icon:'🩵' },
-  paid:      { label:'有費收入', cls:'type-paid',      badge:'badge-orange', icon:'🔶' },
-  grand:     { label:'總計（有費＋無費成本）', cls:'type-grand', badge:'badge-gray', icon:'📌' },
-  internal:  { label:'內結',     cls:'type-internal',  badge:'badge-gray',   icon:'⚙️' },
-  warranty:  { label:'保固',     cls:'type-warranty',  badge:'badge-purple', icon:'🛡️' },
-  vsa:       { label:'VSA',      cls:'type-vsa',       badge:'badge-red',    icon:'📋' },
-  goodwill:  { label:'善意維修', cls:'type-goodwill',  badge:'badge-teal',   icon:'🤝' },
-  other:     { label:'其他',     cls:'type-internal',  badge:'badge-gray',   icon:'❓' },
-};
 
-function switchTab(tab) {
-  currentTab = tab;
-  const tabs = ['repair','tech','parts','boutique','sa-sales','trend','daily'];
-  document.querySelectorAll('.tab').forEach((t, i) => { t.classList.toggle('active', tabs[i] === tab); });
-  tabs.forEach(t => { document.getElementById(`tab-${t}`).style.display = t === tab ? '' : 'none'; });
+<nav class="nav">
+  <span class="nav-brand">🚗 Volvo DMS</span>
+  <a href="/performance.html" class="nav-link">🎯 業績指標與預估</a>
+  <a href="/stats.html" class="nav-link">📊 各廠明細</a>
+  <a href="/settings.html" class="nav-link active">⚙️ 設定</a>
+</nav>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">資料管理</div>
+      <div class="sidebar-item active" onclick="showSection('upload')" id="menu-upload">
+        <span class="icon">📤</span> 上傳 Excel
+      </div>
+      <div class="sidebar-item" onclick="showSection('dbstatus')" id="menu-dbstatus">
+        <span class="icon">🗄️</span> 資料庫狀態
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">統計設定</div>
+      <div class="sidebar-item" onclick="showSection('sa-config')" id="menu-sa-config">
+        <span class="icon">👤</span> SA 零件銷售
+      </div>
+      <div class="sidebar-item" onclick="showSection('working-days')" id="menu-working-days">
+        <span class="icon">📅</span> 工作天數
+      </div>
+      <div class="sidebar-item" onclick="showSection('revenue-targets')" id="menu-revenue-targets">
+        <span class="icon">📈</span> 營收目標
+      </div>
+      <div class="sidebar-item" onclick="showSection('performance')" id="menu-performance">
+        <span class="icon">🎯</span> 業績目標
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">系統</div>
+      <div class="sidebar-item" onclick="showSection('password')" id="menu-password">
+        <span class="icon">🔑</span> 管理員密碼
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- ── 上傳 Excel ── -->
+    <div class="section-page active" id="section-upload">
+      <div class="page-title">📤 上傳 Excel</div>
+      <p class="page-sub">將 DMS 匯出的四種報表上傳至資料庫</p>
+      <div class="hint">
+        ⚠️ <strong>檔名需包含據點和期間</strong>，例如：<br>
+        <code>維修收入分類明細_AMA_202501.xlsx</code>　
+        <code>技師績效報表_AMC_202501.xlsx</code>　
+        <code>零件銷售明細_AMD_202501.xlsx</code>　
+        <code>業務查詢_AMA_202501.xlsx</code>
+      </div>
+      <div class="card">
+        <div class="card-title">選擇檔案</div>
+        <div class="upload-zone" id="zone" onclick="document.getElementById('fileInput').click()">
+          <div class="icon">📊</div>
+          <strong>拖拉檔案到這裡，或點擊選擇</strong>
+          <p>支援 .xlsx / .xls，最多 8 個</p>
+        </div>
+        <input type="file" id="fileInput" multiple accept=".xlsx,.xls">
+        <div id="fileList" style="margin-top:10px"></div>
+        <div style="margin-top:14px;display:flex;gap:8px;align-items:center">
+          <button class="btn btn-primary" id="btnUpload" disabled onclick="doUpload()">上傳</button>
+          <span id="uploadStatus" style="font-size:13px;color:#64748b"></span>
+        </div>
+      </div>
+      <div class="card" id="resultsCard" style="display:none">
+        <div class="card-title">上傳結果</div>
+        <div id="results"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📜 最近上傳紀錄 <span class="card-title-note"><button class="btn btn-secondary btn-sm" onclick="loadHistory()">重新整理</button></span></div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>時間</th><th>檔案</th><th>類型</th><th>據點</th><th>期間</th><th class="num">筆數</th><th>狀態</th></tr></thead>
+            <tbody id="historyBody"><tr><td colspan="7" style="color:#64748b;padding:16px"><span class="spinner"></span>載入中</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 資料庫狀態 ── -->
+    <div class="section-page" id="section-dbstatus">
+      <div class="page-title">🗄️ 資料庫狀態</div>
+      <p class="page-sub">各資料表目前的筆數</p>
+      <div class="card">
+        <div class="card-title">各表格筆數 <span class="card-title-note"><button class="btn btn-secondary btn-sm" onclick="loadCounts()">重新整理</button></span></div>
+        <div class="counts-grid" id="counts"><div style="color:#64748b;font-size:13px"><span class="spinner"></span>載入中</div></div>
+      </div>
+    </div>
+
+    <!-- ── SA 零件銷售設定 ── -->
+    <div class="section-page" id="section-sa-config">
+      <div class="page-title">👤 SA 零件銷售設定</div>
+      <p class="page-sub">設定追蹤哪些零件的銷售量，統計頁可依設定查看各 SA 業績</p>
+      <div class="card">
+        <div class="card-title">
+          設定清單
+          <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="startNewConfig()">＋ 新增設定</button>
+        </div>
+        <div id="editorPanel" style="display:none" class="editor-panel">
+          <div style="font-size:14px;font-weight:700;margin-bottom:16px" id="editorTitle">新增設定</div>
+          <div class="form-row">
+            <label>名稱</label>
+            <input type="text" id="cfgName" class="form-input" placeholder="例：機油銷售、鋼圈銷售..." maxlength="100">
+          </div>
+          <div class="form-row">
+            <label>說明</label>
+            <input type="text" id="cfgDesc" class="form-input" placeholder="（選填）" maxlength="200">
+          </div>
+          <div style="font-size:13px;font-weight:700;color:#94a3b8;margin:14px 0 8px">篩選條件</div>
+          <div class="logic-hint">
+            <strong>不同類型之間 AND（且）</strong> — 例：類別碼 93 且 功能碼 1832<br>
+            <strong>同類型多個值 OR（或）</strong> — 例：加入多個零件編號，符合任一即納入
+          </div>
+          <div class="filter-list" id="filterList"></div>
+          <div style="background:#1e293b;border:1px solid #2d3f56;border-radius:8px;padding:12px;margin-bottom:14px">
+            <div style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:8px">新增條件</div>
+            <div class="add-filter-row">
+              <select id="addType" class="form-select" onchange="onTypeChange()">
+                <option value="category_code">零件類別碼</option>
+                <option value="function_code">功能碼</option>
+                <option value="part_number">零件編號</option>
+                <option value="part_type">付款類別</option>
+              </select>
+              <div class="lookup-wrap" id="lookupWrap">
+                <input type="text" id="addValue" class="lookup-input" placeholder="輸入代碼或名稱搜尋..." oninput="debounceLookup()" autocomplete="off">
+                <div class="lookup-dropdown" id="lookupDropdown" style="display:none"></div>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="btnAddFilter" onclick="addFilter()">＋ 加入</button>
+            </div>
+            <div id="partTypePanel" style="display:none;margin-top:10px">
+              <div class="part-type-grid" id="partTypeCheckboxes"></div>
+              <button class="btn btn-secondary btn-sm" onclick="addPartTypeFilters()">＋ 加入勾選項目</button>
+            </div>
+            <div id="addHint" style="font-size:11px;color:#64748b;margin-top:6px;min-height:16px"></div>
+          </div>
+          <div class="stat-method-group">
+            <div class="stat-method-label">統計方式</div>
+            <div class="stat-method-options">
+              <label class="stat-radio-item selected" id="smLabel-amount" onclick="selectStatMethod('amount')">
+                <input type="radio" name="stat_method" value="amount" checked>
+                <div class="stat-radio-info"><span class="stat-radio-name">💰 銷售金額</span><span class="stat-radio-desc">加總售價（元）</span></div>
+              </label>
+              <label class="stat-radio-item" id="smLabel-quantity" onclick="selectStatMethod('quantity')">
+                <input type="radio" name="stat_method" value="quantity">
+                <div class="stat-radio-info"><span class="stat-radio-name">📦 數量</span><span class="stat-radio-desc">加總銷售件數</span></div>
+              </label>
+              <label class="stat-radio-item" id="smLabel-count" onclick="selectStatMethod('count')">
+                <input type="radio" name="stat_method" value="count">
+                <div class="stat-radio-info"><span class="stat-radio-name">🧾 筆數</span><span class="stat-radio-desc">計算銷售單數</span></div>
+              </label>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button class="btn btn-secondary" onclick="cancelEdit()">取消</button>
+            <button class="btn btn-primary" id="btnSaveCfg" onclick="saveConfig()">儲存設定</button>
+          </div>
+        </div>
+        <div class="config-list" id="configList" style="margin-top:4px">
+          <div style="color:#64748b;font-size:13px;padding:8px 0"><span class="spinner"></span>載入中</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 工作天數設定 ── -->
+    <div class="section-page" id="section-working-days">
+      <div class="page-title">📅 工作天數設定</div>
+      <p class="page-sub">設定各據點每個月的實際營業日，用於計算日均進廠台數</p>
+      <div class="hint">
+        💡 <strong>為什麼需要手動設定？</strong><br>
+        系統預設用「有開工單的日期」自動判斷工作天，但若颱風假、連假補班、或節日異常操作，可能導致誤判。
+        手動設定後，「每日進廠台數」的日均計算將使用設定值，並顯示 ✅ 手動設定標示。
+      </div>
+      <div class="card">
+        <div class="card-title">🗓️ 設定營業日</div>
+        <div class="wd-controls">
+          <select id="wdBranch" class="form-select" onchange="onWdBranchChange()">
+            <option value="ALL">全部（三站同步）</option>
+            <option value="AMA">AMA</option>
+            <option value="AMC">AMC</option>
+            <option value="AMD">AMD</option>
+          </select>
+          <select id="wdPeriod" class="form-select" style="min-width:140px">
+            <option value="">選擇期間...</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" onclick="loadWdCalendar()">載入</button>
+          <div id="wdConfigStatus" style="font-size:12px;color:#64748b;margin-left:4px"></div>
+        </div>
+        <div id="wdCalendarWrap" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div style="font-size:14px;font-weight:700" id="wdMonthTitle"></div>
+            <div class="wd-legend">
+              <span><div class="dot" style="background:rgba(16,185,129,.3);border:1px solid #10b981"></div>營業日</span>
+              <span><div class="dot" style="background:#0f172a;border:1px solid #2d3f56"></div>休息日</span>
+            </div>
+          </div>
+          <div class="wd-calendar" id="wdCalHeader">
+            <div class="wd-day-head sun">日</div>
+            <div class="wd-day-head">一</div>
+            <div class="wd-day-head">二</div>
+            <div class="wd-day-head">三</div>
+            <div class="wd-day-head">四</div>
+            <div class="wd-day-head">五</div>
+            <div class="wd-day-head sat">六</div>
+          </div>
+          <div class="wd-calendar" id="wdCalendar"></div>
+          <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+            <button class="btn btn-secondary btn-sm" onclick="wdSelectWeekdays()">選週一到五</button>
+            <button class="btn btn-secondary btn-sm" onclick="wdSelectAll()">全選</button>
+            <button class="btn btn-secondary btn-sm" onclick="wdClearAll()">全部清除</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px;padding:14px 0;border-top:1px solid #2d3f56;flex-wrap:wrap">
+            <div class="wd-summary">
+              <span class="wd-count" id="wdWorkCount">0</span>
+              <span style="color:#64748b;font-size:13px">個營業日</span>
+            </div>
+            <div style="margin-left:auto;display:flex;gap:8px">
+              <button class="btn btn-danger btn-sm" id="btnWdDelete" onclick="deleteWdConfig()" style="display:none">🗑️ 刪除設定（回到自動）</button>
+              <button class="btn btn-primary" onclick="saveWdConfig()" id="btnWdSave">💾 儲存工作天數</button>
+            </div>
+          </div>
+          <div id="wdMsg" style="font-size:13px;min-height:20px;margin-top:4px"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">已設定的月份 <span class="card-title-note"><button class="btn btn-secondary btn-sm" onclick="loadWdList()">重新整理</button></span></div>
+        <div id="wdExistingList">
+          <div style="color:#64748b;font-size:13px"><span class="spinner"></span>載入中</div>
+        </div>
+      </div>
+    </div>
+    <!-- ── 營收目標 ── -->
+    <div class="section-page" id="section-revenue-targets">
+      <div class="page-title">📈 營收目標設定</div>
+      <p class="page-sub">設定四大營收（有費/鈑烤/一般/延保）的月目標與去年實績，用於業績指標頁顯示達成率</p>
+
+      <!-- Excel 範本下載 + 上傳 -->
+      <div class="card">
+        <div class="card-title">📥 Excel 批次匯入</div>
+        <div class="hint" style="margin-bottom:14px">
+          📋 <strong>Excel 格式說明</strong>：每列代表一個據點一個月份，系統依「<code>期間</code>」（YYYYMM）和「<code>據點</code>」（AMA/AMC/AMD）自動識別。
+          一個 Excel 可以包含多個月份和多個據點。<br>
+          金額單位：<strong>元（不需要除以 1000）</strong>，例如目標 36,000,000 就填 36000000
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+          <button class="btn btn-secondary" onclick="downloadRevTemplate()">⬇️ 下載 Excel 範本</button>
+          <span style="font-size:12px;color:#64748b">下載後填寫數字，再上傳匯入</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <input type="file" id="revFileInput" accept=".xlsx,.xls" style="display:none" onchange="uploadRevFile(this)">
+          <button class="btn btn-primary" onclick="document.getElementById('revFileInput').click()">📤 上傳 Excel 匯入</button>
+          <span id="revUploadStatus" style="font-size:13px;color:#64748b"></span>
+        </div>
+        <div id="revUploadResult" style="margin-top:12px"></div>
+      </div>
+
+      <!-- 手動設定 -->
+      <div class="card">
+        <div class="card-title">
+          ✏️ 手動設定
+          <span class="card-title-note">
+            <select id="revPeriodSel" class="form-select" style="font-size:12px" onchange="loadRevManual()">
+              <option value="">選擇期間...</option>
+            </select>
+          </span>
+        </div>
+        <div id="revManualGrid" style="display:none">
+          <div style="overflow-x:auto">
+            <table>
+              <thead>
+                <tr>
+                  <th style="min-width:80px">據點</th>
+                  <th class="num">有費營收<br><span style="font-weight:400;color:#64748b">目標</span></th>
+                  <th class="num">有費營收<br><span style="font-weight:400;color:#64748b">去年</span></th>
+                  <th class="num">鈑烤營收<br><span style="font-weight:400;color:#64748b">目標</span></th>
+                  <th class="num">鈑烤營收<br><span style="font-weight:400;color:#64748b">去年</span></th>
+                  <th class="num">一般營收<br><span style="font-weight:400;color:#64748b">目標</span></th>
+                  <th class="num">一般營收<br><span style="font-weight:400;color:#64748b">去年</span></th>
+                  <th class="num">延保營收<br><span style="font-weight:400;color:#64748b">目標</span></th>
+                  <th class="num">延保營收<br><span style="font-weight:400;color:#64748b">去年</span></th>
+                </tr>
+              </thead>
+              <tbody id="revManualBody"></tbody>
+            </table>
+          </div>
+          <div style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:14px">
+            <div id="revManualMsg" style="font-size:13px;flex:1"></div>
+            <button class="btn btn-primary" onclick="saveRevManual()">💾 儲存</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 已設定清單 -->
+      <div class="card">
+        <div class="card-title">已設定月份 <span class="card-title-note"><button class="btn btn-secondary btn-sm" onclick="loadRevList()">重新整理</button></span></div>
+        <div id="revList"><div style="color:#64748b;font-size:13px"><span class="spinner"></span>載入中</div></div>
+      </div>
+    </div>
+
+    <!-- ── 業績目標 ── -->
+    <div class="section-page" id="section-performance">
+      <div class="page-title">🎯 業績目標</div>
+      <p class="page-sub">定義業績追蹤指標，並設定各月目標與去年實績，用於統計頁業績進度</p>
+
+      <!-- 指標定義 -->
+      <div class="card">
+        <div class="card-title">
+          📋 指標定義
+          <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="perfStartNew()">＋ 新增指標</button>
+        </div>
+        <div id="perfEditorPanel" style="display:none" class="editor-panel">
+          <div style="font-size:14px;font-weight:700;margin-bottom:16px" id="perfEditorTitle">新增指標</div>
+          <div class="form-row">
+            <label>名稱</label>
+            <input type="text" id="perfName" class="form-input" placeholder="例：機油銷售量、精品業績..." maxlength="100">
+          </div>
+          <div class="form-row">
+            <label>說明</label>
+            <input type="text" id="perfDesc" class="form-input" placeholder="（選填）" maxlength="200">
+          </div>
+          <div class="form-row">
+            <label>類型</label>
+            <select id="perfType" class="form-select" onchange="onPerfTypeChange()" style="flex:none">
+              <option value="repair_income">🔧 維修收入（合計未稅）</option>
+              <option value="repair_subfield">🔨 維修收入（子欄位）— 鈑烤/工資等</option>
+              <option value="parts">🔩 零件銷售（依篩選條件）</option>
+              <option value="boutique">💎 精品 / 配件銷售（需型錄）</option>
+            </select>
+          </div>
+
+          <!-- 維修收入選項 -->
+          <div id="perfRepairOptions">
+            <div class="hint" style="margin:8px 0 10px">追蹤維修收入合計（未稅），可選擇性篩選特定帳類。<strong>留空 = 統計全部帳類。</strong></div>
+            <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">帳類篩選（可多選，留空=全部）</div>
+            <div class="part-type-grid" id="perfRepairAccountTypes"></div>
+          </div>
+
+          <!-- 零件銷售選項 -->
+          <div id="perfPartsOptions" style="display:none">
+            <div class="logic-hint" style="margin-bottom:10px">
+              <strong>不同類型之間 AND</strong>，<strong>同類型多個值 OR</strong>（同 SA 零件銷售設定邏輯）
+            </div>
+            <div class="filter-list" id="perfFilterList"></div>
+            <div style="background:#1e293b;border:1px solid #2d3f56;border-radius:8px;padding:12px;margin-bottom:14px">
+              <div style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:8px">新增條件</div>
+              <div class="add-filter-row">
+                <select id="perfAddType" class="form-select" onchange="onPerfFilterTypeChange()">
+                  <option value="category_code">零件類別碼</option>
+                  <option value="function_code">功能碼</option>
+                  <option value="part_number">零件編號</option>
+                  <option value="part_type">付款類別</option>
+                </select>
+                <div class="lookup-wrap" id="perfLookupWrap">
+                  <input type="text" id="perfAddValue" class="lookup-input" placeholder="輸入代碼或名稱搜尋..." oninput="debouncePerfLookup()" autocomplete="off">
+                  <div class="lookup-dropdown" id="perfLookupDropdown" style="display:none"></div>
+                </div>
+                <button class="btn btn-secondary btn-sm" id="perfBtnAddFilter" onclick="addPerfFilter()">＋ 加入</button>
+              </div>
+              <div id="perfPartTypePanel" style="display:none;margin-top:10px">
+                <div class="part-type-grid" id="perfPartTypeCheckboxes"></div>
+                <button class="btn btn-secondary btn-sm" style="margin-top:6px" onclick="addPerfPartTypeFilters()">＋ 加入勾選</button>
+              </div>
+            </div>
+            <div class="stat-method-group">
+              <div class="stat-method-label">統計方式</div>
+              <div class="stat-method-options">
+                <label class="stat-radio-item selected" id="perfSmLabel-amount" onclick="selectPerfStatMethod('amount')">
+                  <input type="radio" name="perf_stat_method" value="amount" checked>
+                  <div class="stat-radio-info"><span class="stat-radio-name">💰 金額</span><span class="stat-radio-desc">加總售價（元）</span></div>
+                </label>
+                <label class="stat-radio-item" id="perfSmLabel-qty" onclick="selectPerfStatMethod('qty')">
+                  <input type="radio" name="perf_stat_method" value="qty">
+                  <div class="stat-radio-info"><span class="stat-radio-name">📦 數量</span><span class="stat-radio-desc">加總銷售件數</span></div>
+                </label>
+                <label class="stat-radio-item" id="perfSmLabel-count" onclick="selectPerfStatMethod('count')">
+                  <input type="radio" name="perf_stat_method" value="count">
+                  <div class="stat-radio-info"><span class="stat-radio-name">🧾 筆數</span><span class="stat-radio-desc">計算銷售單數</span></div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- 精品配件選項 -->
+          <div id="perfBoutiqueOptions" style="display:none">
+            <div class="hint" style="margin:8px 0 10px">從 parts_sales JOIN parts_catalog 取得精品/配件銷售金額。需先上傳零件型錄（零配件比對）。</div>
+            <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">品項類型（精品 / 配件）</div>
+            <div class="part-type-grid" id="perfBoutiqueTypeChips"></div>
+            <div style="font-size:12px;font-weight:700;color:#64748b;margin:14px 0 8px">帳類篩選（Paycode，留空=全部）</div>
+            <div class="part-type-grid" id="perfBoutiqueAccountChips"></div>
+          </div>
+
+          <!-- 維修收入子欄位選項 -->
+          <div id="perfSubfieldOptions" style="display:none">
+            <div class="hint" style="margin:8px 0 12px">
+              選擇<strong>工單篩選模式</strong>和<strong>判斷欄位</strong>，搭配帳類篩選，可精確設定鈑烤、工資等分項指標。
+            </div>
+
+            <!-- 工單篩選模式 -->
+            <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">⚙️ 工單篩選模式</div>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
+              <label class="stat-radio-item selected" id="woModeLabel-wo_has" onclick="selectWoMode('wo_has')">
+                <input type="radio" name="wo_mode" value="wo_has" checked>
+                <div class="stat-radio-info">
+                  <span class="stat-radio-name">🎯 包含指定欄位的工單 → SUM(合計未稅)</span>
+                  <span class="stat-radio-desc">工單中只要有任一勾選欄位 &gt; 0，就計入整張工單金額。<strong>用於：自費鈑烤</strong>（帳類=一般，欄位=鈑金＋烤漆）</span>
+                </div>
+              </label>
+              <label class="stat-radio-item" id="woModeLabel-wo_exclude" onclick="selectWoMode('wo_exclude')">
+                <input type="radio" name="wo_mode" value="wo_exclude">
+                <div class="stat-radio-info">
+                  <span class="stat-radio-name">🚫 排除指定欄位的工單 → SUM(合計未稅)</span>
+                  <span class="stat-radio-desc">工單中所有勾選欄位都 = 0，才計入整張工單金額。<strong>用於：一般收入扣鈑烤</strong>（帳類=一般，欄位=鈑金＋烤漆）</span>
+                </div>
+              </label>
+              <label class="stat-radio-item" id="woModeLabel-sum" onclick="selectWoMode('sum')">
+                <input type="radio" name="wo_mode" value="sum">
+                <div class="stat-radio-info">
+                  <span class="stat-radio-name">➕ 直接加總子欄位數值</span>
+                  <span class="stat-radio-desc">SUM(欄位1 ＋ 欄位2 ＋…)，不看整張工單金額。<strong>用於：保險鈑烤</strong>（帳類=保險，欄位=合計未稅）</span>
+                </div>
+              </label>
+            </div>
+
+            <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">📊 判斷欄位（可多選）</div>
+            <div class="part-type-grid" id="perfSubfieldChips" style="margin-bottom:14px"></div>
+            <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">帳類篩選（可多選，留空=全部）</div>
+            <div class="part-type-grid" id="perfSubfieldAccountChips"></div>
+          </div>
+
+          <div class="form-row" style="margin-top:14px">
+            <label>單位</label>
+            <input type="text" id="perfUnit" class="form-input" placeholder="留空自動判斷（金額=元，數量=件）" maxlength="20" style="max-width:280px">
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+            <button class="btn btn-secondary" onclick="perfCancelEdit()">取消</button>
+            <button class="btn btn-primary" id="perfBtnSave" onclick="perfSave()">儲存指標</button>
+          </div>
+        </div>
+        <div class="config-list" id="perfMetricList" style="margin-top:4px">
+          <div style="color:#64748b;font-size:13px;padding:8px 0"><span class="spinner"></span>載入中</div>
+        </div>
+      </div>
+
+      <!-- 目標數值設定 -->
+      <div class="card">
+        <div class="card-title">🎯 目標數值設定</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
+          <select id="perfTgtMetric" class="form-select" style="flex:1;min-width:180px" onchange="onPerfTgtMetricChange()">
+            <option value="">選擇指標...</option>
+          </select>
+          <select id="perfTgtPeriod" class="form-select" style="min-width:140px">
+            <option value="">選擇期間...</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" onclick="loadPerfTargets()">載入</button>
+        </div>
+        <div id="perfTargetGrid" style="display:none">
+          <div class="hint" id="perfTgtHint" style="margin-bottom:12px"></div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:100px">據點</th>
+                <th style="text-align:right">月目標</th>
+                <th style="text-align:right">去年同期實績</th>
+              </tr>
+            </thead>
+            <tbody id="perfTgtBody"></tbody>
+          </table>
+          <div style="display:flex;align-items:center;gap:10px;justify-content:flex-end;margin-top:14px">
+            <div id="perfTgtMsg" style="font-size:13px;flex:1"></div>
+            <button class="btn btn-primary" id="perfBtnSaveTgt" onclick="savePerfTargets()">💾 儲存目標</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 管理員密碼 ── -->
+    <div class="section-page" id="section-password">
+      <div class="page-title">🔑 管理員密碼</div>
+      <div class="card" style="max-width:460px">
+        <div class="card-title">修改登入密碼</div>
+        <div style="display:flex;flex-direction:column;gap:14px;margin-top:4px">
+          <div>
+            <label style="display:block;font-size:12px;color:#64748b;margin-bottom:6px">目前密碼</label>
+            <input type="password" id="pwdCurrent" placeholder="輸入目前密碼" style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:10px 14px;border-radius:8px;font-size:14px">
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;color:#64748b;margin-bottom:6px">新密碼</label>
+            <input type="password" id="pwdNew" placeholder="輸入新密碼（至少 4 字元）" style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:10px 14px;border-radius:8px;font-size:14px">
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;color:#64748b;margin-bottom:6px">確認新密碼</label>
+            <input type="password" id="pwdConfirm" placeholder="再次輸入新密碼" style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:10px 14px;border-radius:8px;font-size:14px" onkeydown="if(event.key==='Enter') changePassword()">
+          </div>
+          <div id="pwdMsg" style="font-size:13px;min-height:20px"></div>
+          <div><button class="btn btn-primary" onclick="changePassword()" id="pwdBtn">儲存新密碼</button></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /layout -->
+<script>
+// ══ 側欄切換 ══
+const sections = ['upload','dbstatus','sa-config','working-days','revenue-targets','performance','password'];
+function showSection(id) {
+  sections.forEach(s => {
+    document.getElementById(`section-${s}`).classList.toggle('active', s === id);
+    document.getElementById(`menu-${s}`)?.classList.toggle('active', s === id);
+  });
+  if (id === 'dbstatus') loadCounts();
+  if (id === 'sa-config') loadConfigs();
+  if (id === 'working-days') { loadWdPeriods(); loadWdList(); }
+  if (id === 'revenue-targets') { loadRevPeriods(); loadRevList(); }
+  if (id === 'performance') { loadPerfMetrics(); loadPerfTgtPeriods(); }
 }
 
-async function loadPeriods() {
+// ══ 上傳 ══
+let selectedFiles = [];
+const zone = document.getElementById('zone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag'); handleFiles(e.dataTransfer.files); });
+document.getElementById('fileInput').addEventListener('change', e => handleFiles(e.target.files));
+function handleFiles(files) {
+  selectedFiles = Array.from(files).filter(f => f.name.match(/\.xlsx?$/i));
+  const list = document.getElementById('fileList');
+  if (!selectedFiles.length) { list.innerHTML = ''; return; }
+  list.innerHTML = selectedFiles.map(f => `<div class="file-item"><span>📄 ${f.name}</span><span style="color:#64748b">${(f.size/1024).toFixed(0)} KB</span></div>`).join('');
+  document.getElementById('btnUpload').disabled = false;
+}
+async function doUpload() {
+  if (!selectedFiles.length) return;
+  const btn = document.getElementById('btnUpload'), status = document.getElementById('uploadStatus');
+  btn.disabled = true; status.textContent = '上傳中...';
+  const formData = new FormData();
+  selectedFiles.forEach(f => formData.append('files', f));
+  try {
+    const res = await fetch('/api/upload', { method:'POST', body:formData });
+    const data = await res.json();
+    showResults(data.results);
+    selectedFiles = []; document.getElementById('fileList').innerHTML = '';
+    loadHistory();
+  } catch (err) { status.textContent = '上傳失敗: '+err.message; }
+  finally { btn.disabled = false; status.textContent = ''; }
+}
+function showResults(results) {
+  document.getElementById('resultsCard').style.display = '';
+  document.getElementById('results').innerHTML = results.map(r => `
+    <div class="result-item">
+      <span style="font-weight:600">${r.filename}</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        ${r.status==='success'
+          ? `<span class="badge badge-green">成功</span><span style="color:#64748b;font-size:12px">${r.fileType}/${r.branch||'-'}/${r.period||'-'}/${r.rowCount}筆</span>`
+          : `<span class="badge badge-red">失敗</span><span style="color:#ef4444;font-size:12px">${r.error}</span>`}
+      </div>
+    </div>`).join('');
+}
+async function loadHistory() {
+  try {
+    const data = await (await fetch('/api/history')).json();
+    const tbody = document.getElementById('historyBody');
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="7" style="color:#64748b;padding:16px">尚無紀錄</td></tr>'; return; }
+    tbody.innerHTML = data.map(h => `
+      <tr>
+        <td style="font-size:12px;color:#64748b;white-space:nowrap">${new Date(h.created_at).toLocaleString('zh-TW')}</td>
+        <td style="font-size:12px">${h.file_name}</td>
+        <td><span class="badge badge-blue">${h.file_type||'-'}</span></td>
+        <td>${h.branch||'-'}</td><td>${h.period||'-'}</td>
+        <td class="num">${h.row_count?.toLocaleString()||0}</td>
+        <td><span class="badge ${h.status==='success'?'badge-green':'badge-red'}">${h.status==='success'?'成功':'失敗'}</span></td>
+      </tr>`).join('');
+  } catch(e) { document.getElementById('historyBody').innerHTML = `<tr><td colspan="7" style="color:#ef4444">${e.message}</td></tr>`; }
+}
+async function loadCounts() {
+  try {
+    const data = await (await fetch('/api/counts')).json();
+    if (data.error) throw new Error(data.error);
+    document.getElementById('counts').innerHTML = data.map(r => `
+      <div class="count-card"><div class="count-val">${parseInt(r['筆數']).toLocaleString()}</div><div class="count-label">${r['表格']}</div></div>`).join('');
+  } catch(e) { document.getElementById('counts').innerHTML = `<span style="color:#ef4444;font-size:13px">❌ ${e.message}</span>`; }
+}
+
+// ══ SA 銷售設定 ══
+let configs = [], editingConfigId = null, editingFilters = [], lookupTimer = null;
+const PART_TYPES = ['一般','票劵','內結','保險','延保','保固','善意維修','VSA'];
+const typeLabel = { category_code:'零件類別碼', function_code:'功能碼', part_number:'零件編號', part_type:'付款類別' };
+const STAT_METHOD_INFO = { amount:{label:'金額',badgeClass:'badge-blue'}, quantity:{label:'數量',badgeClass:'badge-green'}, count:{label:'筆數',badgeClass:'badge-gray'} };
+function selectStatMethod(val) { document.querySelectorAll('input[name="stat_method"]').forEach(el => el.checked = el.value===val); ['amount','quantity','count'].forEach(v => document.getElementById(`smLabel-${v}`)?.classList.toggle('selected', v===val)); }
+function getStatMethod() { return document.querySelector('input[name="stat_method"]:checked')?.value||'amount'; }
+function setStatMethod(val) { selectStatMethod(val||'amount'); }
+async function loadConfigs() {
+  try { configs = await (await fetch('/api/sa-config')).json(); renderConfigList(); }
+  catch(e) { document.getElementById('configList').innerHTML = `<div style="color:#ef4444">${e.message}</div>`; }
+}
+function renderConfigList() {
+  const el = document.getElementById('configList');
+  if (!configs.length) { el.innerHTML = `<div class="empty-state"><div class="big">📋</div><div>尚無設定，點擊「新增設定」開始建立追蹤項目</div></div>`; return; }
+  el.innerHTML = configs.map(c => {
+    const sm = STAT_METHOD_INFO[c.stat_method]||STAT_METHOD_INFO.amount;
+    return `<div class="config-item">
+      <div class="config-item-info">
+        <div class="config-item-name">${c.config_name}</div>
+        ${c.description ? `<div class="config-item-desc">${c.description}</div>` : ''}
+        <div class="config-item-tags">
+          <span class="badge ${sm.badgeClass}" style="font-size:11px">統計：${sm.label}</span>
+          ${(c.filters||[]).map(f => `<span class="badge" style="font-size:11px;${typeBadgeStyle(f.type)}">${typeLabel[f.type]||f.type}: ${f.value}</span>`).join('')}
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn btn-secondary btn-sm" onclick="startEditConfig(${c.id})">編輯</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteConfig(${c.id},'${c.config_name.replace(/'/g,"\\'")}')">刪除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function typeBadgeStyle(type) {
+  const map = { category_code:'background:rgba(59,130,246,.15);color:#60a5fa', function_code:'background:rgba(139,92,246,.15);color:#a78bfa', part_number:'background:rgba(16,185,129,.15);color:#34d399', part_type:'background:rgba(249,115,22,.15);color:#fb923c' };
+  return map[type]||'background:rgba(100,116,139,.15);color:#94a3b8';
+}
+function startNewConfig() { editingConfigId=null; editingFilters=[]; document.getElementById('editorTitle').textContent='新增設定'; document.getElementById('cfgName').value=''; document.getElementById('cfgDesc').value=''; setStatMethod('amount'); renderFilterList(); resetAddRow(); document.getElementById('editorPanel').style.display=''; document.getElementById('cfgName').focus(); }
+function startEditConfig(id) { const cfg=configs.find(c=>c.id===id); editingConfigId=id; editingFilters=(cfg.filters||[]).map(f=>({...f})); document.getElementById('editorTitle').textContent=`編輯設定 — ${cfg.config_name}`; document.getElementById('cfgName').value=cfg.config_name; document.getElementById('cfgDesc').value=cfg.description||''; setStatMethod(cfg.stat_method||'amount'); renderFilterList(); resetAddRow(); document.getElementById('editorPanel').style.display=''; document.getElementById('editorPanel').scrollIntoView({behavior:'smooth',block:'nearest'}); }
+function cancelEdit() { document.getElementById('editorPanel').style.display='none'; editingFilters=[]; }
+async function deleteConfig(id,name) { if(!confirm(`確定要刪除「${name}」嗎？`))return; await fetch(`/api/sa-config/${id}`,{method:'DELETE'}); await loadConfigs(); }
+async function saveConfig() {
+  const config_name=document.getElementById('cfgName').value.trim(), description=document.getElementById('cfgDesc').value.trim(), stat_method=getStatMethod();
+  if(!config_name){alert('請輸入設定名稱');return;} if(!editingFilters.length){alert('請至少新增一個篩選條件');return;}
+  const filters=editingFilters.map(({type,value})=>({type,value})); const btn=document.getElementById('btnSaveCfg'); btn.disabled=true;
+  try { const url=editingConfigId?`/api/sa-config/${editingConfigId}`:'/api/sa-config'; const method=editingConfigId?'PUT':'POST'; const data=await(await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify({config_name,description,filters,stat_method})})).json(); if(data.error)throw new Error(data.error); cancelEdit(); await loadConfigs(); }
+  catch(e){alert('儲存失敗：'+e.message);} finally{btn.disabled=false;}
+}
+function renderFilterList() { const el=document.getElementById('filterList'); if(!editingFilters.length){el.innerHTML='<div style="color:#64748b;font-size:12px;padding:4px 0 8px">尚未新增篩選條件</div>';return;} el.innerHTML=editingFilters.map((f,i)=>`<div class="filter-tag-row"><span class="type-badge type-${f.type}">${typeLabel[f.type]||f.type}</span><span style="font-size:13px;font-weight:600;flex:1">${f.value}</span><button class="remove-btn" onclick="removeFilter(${i})" title="移除">×</button></div>`).join(''); }
+function removeFilter(i){editingFilters.splice(i,1);renderFilterList();if(document.getElementById('addType').value==='part_type')renderPartTypeCheckboxes();}
+function addFilter(){const type=document.getElementById('addType').value,value=document.getElementById('addValue').value.trim(),hint=document.getElementById('addHint');if(!value){hint.textContent='請輸入值';return;}if(editingFilters.some(f=>f.type===type&&f.value===value)){hint.textContent='此條件已存在';return;}editingFilters.push({type,value});renderFilterList();document.getElementById('addValue').value='';hint.textContent='';clearLookup();}
+function renderPartTypeCheckboxes(){const existing=editingFilters.filter(f=>f.type==='part_type').map(f=>f.value);document.getElementById('partTypeCheckboxes').innerHTML=PART_TYPES.map(pt=>{const already=existing.includes(pt);return`<label class="part-type-chip ${already?'disabled':''}" onclick="togglePartTypeChip(this,'${pt}')"><input type="checkbox" value="${pt}" ${already?'disabled':''}>${pt}${already?' ✓':''}</label>`;}).join('');}
+function togglePartTypeChip(el,val){if(el.classList.contains('disabled'))return;const cb=el.querySelector('input');cb.checked=!cb.checked;el.classList.toggle('checked',cb.checked);}
+function addPartTypeFilters(){const hint=document.getElementById('addHint'),checked=[...document.querySelectorAll('#partTypeCheckboxes input:checked')];if(!checked.length){hint.textContent='請至少勾選一個付款類別';return;}let added=0;checked.forEach(cb=>{if(!editingFilters.some(f=>f.type==='part_type'&&f.value===cb.value)){editingFilters.push({type:'part_type',value:cb.value});added++;}});renderFilterList();renderPartTypeCheckboxes();hint.textContent=added?`已加入 ${added} 個付款類別`:'所選項目已全部存在';}
+function onTypeChange(){const type=document.getElementById('addType').value,isP=type==='part_type';document.getElementById('lookupWrap').style.display=isP?'none':'';document.getElementById('btnAddFilter').style.display=isP?'none':'';document.getElementById('partTypePanel').style.display=isP?'':'none';document.getElementById('addHint').textContent='';if(isP)renderPartTypeCheckboxes();else clearLookup();}
+function resetAddRow(){document.getElementById('addType').value='category_code';document.getElementById('addValue').value='';document.getElementById('lookupDropdown').style.display='none';document.getElementById('addHint').textContent='';document.getElementById('lookupWrap').style.display='';document.getElementById('btnAddFilter').style.display='';document.getElementById('partTypePanel').style.display='none';}
+function clearLookup(){document.getElementById('addValue').value='';document.getElementById('lookupDropdown').style.display='none';document.getElementById('addHint').textContent='';}
+function debounceLookup(){clearTimeout(lookupTimer);lookupTimer=setTimeout(doLookup,280);}
+async function doLookup(){const type=document.getElementById('addType').value;if(type==='part_type')return;const q=document.getElementById('addValue').value.trim(),dd=document.getElementById('lookupDropdown');if(!q){dd.style.display='none';return;}try{const data=await(await fetch(`/api/sa-config/parts-lookup?type=${type}&q=${encodeURIComponent(q)}`)).json();if(!data.length){dd.style.display='none';return;}dd.innerHTML=data.map(item=>type==='part_number'?`<div class="lookup-item" onclick="pickLookup('${esc(item.value)}')"><div class="lookup-item-val">${item.value}</div><div class="lookup-item-sub">${item.label||''} 類別:${item.category_code||'-'} 功能:${item.function_code||'-'}</div></div>`:`<div class="lookup-item" onclick="pickLookup('${esc(item.value)}')"><div class="lookup-item-val">${item.value}</div><div class="lookup-item-sub">涵蓋 ${item.part_count} 種零件 — ${(item.sample_names||'').slice(0,60)}</div></div>`).join('');dd.style.display='block';}catch(e){dd.style.display='none';}}
+function pickLookup(value){document.getElementById('addValue').value=value;document.getElementById('lookupDropdown').style.display='none';}
+const esc=s=>s.replace(/'/g,"\\'");
+document.addEventListener('click',e=>{const wrap=document.getElementById('addValue')?.closest('.lookup-wrap');if(wrap&&!wrap.contains(e.target))document.getElementById('lookupDropdown').style.display='none';});
+// ══ 工作天數設定 ══
+let wdWorkDates = new Set();
+async function loadWdPeriods(){try{const periods=await(await fetch('/api/periods')).json();const sel=document.getElementById('wdPeriod');sel.innerHTML='<option value="">選擇期間...</option>';periods.forEach(p=>{const opt=document.createElement('option');opt.value=p;opt.textContent=`${p.slice(0,4)}年${p.slice(4)}月`;sel.appendChild(opt);});if(periods.length)sel.value=periods[0];}catch(e){}}
+async function loadWdList(){const el=document.getElementById('wdExistingList');try{const rows=await(await fetch('/api/working-days')).json();if(!rows.length){el.innerHTML='<div style="color:#64748b;font-size:13px;padding:12px 0">尚未設定任何月份，系統將使用自動偵測工作天數</div>';return;}const byPeriod={};rows.forEach(r=>{if(!byPeriod[r.period])byPeriod[r.period]={};byPeriod[r.period][r.branch]=r;});const periods=Object.keys(byPeriod).sort().reverse();const BRANCHES=['AMA','AMC','AMD'];el.innerHTML=`<div class="wd-existing-list">${periods.map(period=>{const pRows=byPeriod[period];const label=`${period.slice(0,4)}年${period.slice(4)}月`;const allPresent=BRANCHES.every(b=>pRows[b]);const dayCounts=BRANCHES.map(b=>pRows[b]?.work_dates?.length||0);const allSame=allPresent&&dayCounts.every(c=>c===dayCounts[0]);if(allSame){return`<div class="wd-existing-item"><div class="info"><div class="name"><span class="badge" style="background:rgba(16,185,129,.15);color:#10b981">三站同步</span>&nbsp;${label}</div><div class="sub">AMA / AMC / AMD 均為 ${dayCounts[0]} 個營業日</div></div><button class="btn btn-secondary btn-sm" onclick="quickEditWd('ALL','${period}')">編輯（同步）</button><button class="btn btn-danger btn-sm" onclick="quickDeleteWd('ALL','${period}')">刪除三站</button></div>`;}else{return BRANCHES.filter(b=>pRows[b]).map(b=>{const r=pRows[b];const days=r.work_dates?.length||0;return`<div class="wd-existing-item"><div class="info"><div class="name"><span class="badge badge-blue">${b}</span>&nbsp;${label}</div><div class="sub">${days} 個營業日${r.note?' · '+r.note:''}</div></div><button class="btn btn-secondary btn-sm" onclick="quickEditWd('${b}','${period}')">編輯</button><button class="btn btn-danger btn-sm" onclick="quickDeleteWd('${b}','${period}')">刪除</button></div>`;}).join('');}}).join('')}</div>`;}catch(e){el.innerHTML=`<div style="color:#ef4444;font-size:13px">${e.message}</div>`;}}
+function quickEditWd(branch,period){document.getElementById('wdBranch').value=branch;document.getElementById('wdPeriod').value=period;loadWdCalendar();document.getElementById('section-working-days').scrollTop=0;}
+async function quickDeleteWd(branch,period){const targets=branch==='ALL'?['AMA','AMC','AMD']:[branch];const label=branch==='ALL'?'三站':branch;if(!confirm(`確定刪除 ${label} ${period.slice(0,4)}年${period.slice(4)}月 的工作天數設定嗎？\n刪除後將回到自動偵測。`))return;await Promise.all(targets.map(br=>fetch(`/api/working-days?branch=${br}&period=${period}`,{method:'DELETE'})));loadWdList();}
+function onWdBranchChange(){const isAll=document.getElementById('wdBranch').value==='ALL';document.getElementById('btnWdDelete').style.display='none';document.getElementById('wdConfigStatus').textContent=isAll?'設定後將同步寫入 AMA、AMC、AMD':'';}
+async function loadWdCalendar(){const branch=document.getElementById('wdBranch').value,period=document.getElementById('wdPeriod').value,statusEl=document.getElementById('wdConfigStatus');if(!period){statusEl.textContent='請選擇期間';return;}const year=parseInt(period.slice(0,4)),month=parseInt(period.slice(4))-1;if(branch==='ALL'){try{const data=await(await fetch(`/api/working-days?branch=AMA&period=${period}`)).json();wdWorkDates=new Set(Array.isArray(data.work_dates)?data.work_dates:[]);const[amc,amd]=await Promise.all([(await fetch(`/api/working-days?branch=AMC&period=${period}`)).json(),(await fetch(`/api/working-days?branch=AMD&period=${period}`)).json()]);const amaDays=[...wdWorkDates].sort().join(','),amcDays=[...new Set(amc.work_dates||[])].sort().join(','),amdDays=[...new Set(amd.work_dates||[])].sort().join(',');if(wdWorkDates.size>0){if(amaDays===amcDays&&amaDays===amdDays)statusEl.textContent=`✅ 三站已同步設定 ${wdWorkDates.size} 天，點格子可修改後再同步儲存`;else statusEl.textContent=`⚠️ 三站設定不同（AMA:${[...wdWorkDates].length}天 AMC:${amc.work_dates?.length||0}天 AMD:${amd.work_dates?.length||0}天），儲存將覆蓋為相同設定`;}else statusEl.textContent='尚未設定，儲存後三站將套用相同工作天數';document.getElementById('btnWdDelete').style.display='none';}catch(e){wdWorkDates=new Set();statusEl.textContent='載入失敗，從空白開始';}document.getElementById('wdMonthTitle').textContent=`${year}年${month+1}月 — AMA + AMC + AMD（同步）`;}else{try{const data=await(await fetch(`/api/working-days?branch=${branch}&period=${period}`)).json();wdWorkDates=new Set(Array.isArray(data.work_dates)?data.work_dates:[]);statusEl.textContent=wdWorkDates.size>0?`✅ 已設定 ${wdWorkDates.size} 天`:'⚠️ 尚未設定（將使用自動偵測）';document.getElementById('btnWdDelete').style.display=(data.work_dates!==undefined&&data.period===period)?'':'none';}catch(e){wdWorkDates=new Set();statusEl.textContent='載入失敗';}document.getElementById('wdMonthTitle').textContent=`${year}年${month+1}月 — ${branch}`;}document.getElementById('wdCalendarWrap').style.display='';renderWdCalendar(year,month);}
+function renderWdCalendar(year,month){const cal=document.getElementById('wdCalendar');const firstDay=new Date(year,month,1).getDay(),daysInMonth=new Date(year,month+1,0).getDate();let html='';for(let i=0;i<firstDay;i++)html+=`<div class="wd-day-cell empty"></div>`;for(let d=1;d<=daysInMonth;d++){const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`,dow=(firstDay+d-1)%7,isWork=wdWorkDates.has(dateStr),cls=['wd-day-cell',isWork?'work':'',dow===0?'sun-col':'',dow===6?'sat-col':''].filter(Boolean).join(' ');html+=`<div class="${cls}" data-date="${dateStr}" onclick="toggleWdDay('${dateStr}')">${d}</div>`;}cal.innerHTML=html;updateWdCount();}
+function toggleWdDay(dateStr){if(wdWorkDates.has(dateStr))wdWorkDates.delete(dateStr);else wdWorkDates.add(dateStr);const cell=document.querySelector(`.wd-day-cell[data-date="${dateStr}"]`);if(cell)cell.classList.toggle('work',wdWorkDates.has(dateStr));updateWdCount();}
+function updateWdCount(){document.getElementById('wdWorkCount').textContent=wdWorkDates.size;}
+function wdSelectWeekdays(){document.querySelectorAll('.wd-day-cell:not(.empty)').forEach(cell=>{const dow=new Date(cell.dataset.date).getDay();if(dow>=1&&dow<=5){wdWorkDates.add(cell.dataset.date);cell.classList.add('work');}else{wdWorkDates.delete(cell.dataset.date);cell.classList.remove('work');}});updateWdCount();}
+function wdSelectAll(){document.querySelectorAll('.wd-day-cell:not(.empty)').forEach(cell=>{wdWorkDates.add(cell.dataset.date);cell.classList.add('work');});updateWdCount();}
+function wdClearAll(){wdWorkDates.clear();document.querySelectorAll('.wd-day-cell:not(.empty)').forEach(cell=>cell.classList.remove('work'));updateWdCount();}
+async function saveWdConfig(){const branch=document.getElementById('wdBranch').value,period=document.getElementById('wdPeriod').value,msgEl=document.getElementById('wdMsg'),btn=document.getElementById('btnWdSave');if(!period){msgEl.textContent='請先選擇期間';msgEl.style.color='#ef4444';return;}btn.disabled=true;const work_dates=[...wdWorkDates].sort(),targets=branch==='ALL'?['AMA','AMC','AMD']:[branch];msgEl.textContent=branch==='ALL'?'同步儲存三站中...':'儲存中...';msgEl.style.color='#64748b';try{await Promise.all(targets.map(br=>fetch('/api/working-days',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({branch:br,period,work_dates})}).then(r=>r.json()).then(d=>{if(d.error)throw new Error(`${br}: ${d.error}`);})));const label=branch==='ALL'?'AMA、AMC、AMD 三站':branch;msgEl.textContent=`✅ 已儲存 ${label} 共 ${work_dates.length} 個營業日`;msgEl.style.color='#10b981';document.getElementById('wdConfigStatus').textContent=branch==='ALL'?`✅ 三站已同步設定 ${work_dates.length} 天`:`✅ 已設定 ${work_dates.length} 天`;if(branch!=='ALL')document.getElementById('btnWdDelete').style.display='';loadWdList();}catch(e){msgEl.textContent='❌ '+e.message;msgEl.style.color='#ef4444';}finally{btn.disabled=false;}}
+async function deleteWdConfig(){const branch=document.getElementById('wdBranch').value,period=document.getElementById('wdPeriod').value,targets=branch==='ALL'?['AMA','AMC','AMD']:[branch],label=branch==='ALL'?'AMA、AMC、AMD 三站':branch;if(!confirm(`確定刪除 ${label} ${period.slice(0,4)}年${period.slice(4)}月 的工作天數設定？\n刪除後將回到自動偵測。`))return;await Promise.all(targets.map(br=>fetch(`/api/working-days?branch=${br}&period=${period}`,{method:'DELETE'})));wdClearAll();document.getElementById('wdConfigStatus').textContent='⚠️ 已刪除（將使用自動偵測）';document.getElementById('btnWdDelete').style.display='none';document.getElementById('wdMsg').textContent='';loadWdList();}
+// ══ 業績目標設定 ══
+let perfMetrics=[], perfEditingId=null, perfFilters=[], perfLookupTimer=null;
+const PERF_ALL_ACCOUNT=['一般','票劵','內結','保險','延保','保固','善意維修','VSA'];
+const PERF_BOUTIQUE=['精品','配件'];
+const PERF_TYPE_LABEL={repair_income:'🔧 維修收入(合計)',repair_subfield:'🔨 維修收入(子欄位)',parts:'🔩 零件銷售',boutique:'💎 精品配件'};
+const PERF_FIELD_UNIT={amount:'元',qty:'件',count:'筆'};
+const PERF_SUBFIELDS=[
+  {value:'bodywork_income',  label:'鈑金收入'},
+  {value:'paint_income',     label:'烤漆收入'},
+  {value:'engine_wage',      label:'引擎工資'},
+  {value:'parts_income',     label:'零件收入'},
+  {value:'accessories_income',label:'配件收入'},
+  {value:'boutique_income',  label:'精品收入'},
+  {value:'carwash_income',   label:'洗車美容'},
+  {value:'outsource_income', label:'外包收入'},
+  {value:'addon_income',     label:'附加服務'},
+  {value:'total_untaxed',    label:'合計（未稅）'},
+];
+function _buildSubfieldChips(selectedVals){
+  document.getElementById('perfSubfieldChips').innerHTML=PERF_SUBFIELDS.map(sf=>{
+    const on=selectedVals.includes(sf.value);
+    return`<label class="part-type-chip ${on?'checked':''}" onclick="toggleGenericChip(this)" style="min-width:100px"><input type="checkbox" value="${sf.value}" ${on?'checked':''}>${sf.label}</label>`;
+  }).join('');
+}
+function selectWoMode(val){document.querySelectorAll('input[name="wo_mode"]').forEach(el=>el.checked=el.value===val);['wo_has','wo_exclude','sum'].forEach(v=>document.getElementById(`woModeLabel-${v}`)?.classList.toggle('selected',v===val));}
+function getWoMode(){return document.querySelector('input[name="wo_mode"]:checked')?.value||'wo_has';}
+
+async function loadPerfMetrics(){try{perfMetrics=await(await fetch('/api/performance-metrics')).json();renderPerfMetricList();updatePerfTgtSelect();}catch(e){document.getElementById('perfMetricList').innerHTML=`<div style="color:#ef4444">${e.message}</div>`;}}
+
+function renderPerfMetricList(){
+  const el=document.getElementById('perfMetricList');
+  if(!perfMetrics.length){el.innerHTML=`<div class="empty-state"><div class="big">🎯</div><div>尚未建立指標，點擊「新增指標」開始設定</div></div>`;return;}
+  el.innerHTML=perfMetrics.map(m=>`<div class="config-item">
+    <div class="config-item-info">
+      <div class="config-item-name">${m.metric_name}</div>
+      ${m.description?`<div class="config-item-desc">${m.description}</div>`:''}
+      <div class="config-item-tags">
+        <span class="badge badge-blue">${PERF_TYPE_LABEL[m.metric_type]||m.metric_type}</span>
+        ${m.stat_field&&m.metric_type==='parts'?`<span class="badge badge-gray">統計：${PERF_FIELD_UNIT[m.stat_field]||m.stat_field}</span>`:''}
+        ${m.unit?`<span class="badge badge-gray">單位：${m.unit}</span>`:''}
+        ${(m.filters||[]).slice(0,4).map(f=>`<span class="badge" style="font-size:10px;background:rgba(100,116,139,.12);color:#94a3b8">${f.type}:${f.value}</span>`).join('')}
+        ${(m.filters||[]).length>4?`<span style="font-size:11px;color:#475569">+${m.filters.length-4}…</span>`:''}
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;flex-shrink:0">
+      <button class="btn btn-secondary btn-sm" onclick="perfStartEdit(${m.id})">編輯</button>
+      <button class="btn btn-danger btn-sm" onclick="perfDelete(${m.id},'${m.metric_name.replace(/'/g,"\\'")}')">刪除</button>
+    </div>
+  </div>`).join('');
+}
+
+function updatePerfTgtSelect(){const sel=document.getElementById('perfTgtMetric');const cur=sel.value;sel.innerHTML='<option value="">選擇指標...</option>';perfMetrics.forEach(m=>{const o=document.createElement('option');o.value=m.id;o.textContent=m.metric_name;sel.appendChild(o);});if(cur)sel.value=cur;}
+
+function onPerfTypeChange(){const t=document.getElementById('perfType').value;document.getElementById('perfRepairOptions').style.display=t==='repair_income'?'':'none';document.getElementById('perfPartsOptions').style.display=t==='parts'?'':'none';document.getElementById('perfBoutiqueOptions').style.display=t==='boutique'?'':'none';document.getElementById('perfSubfieldOptions').style.display=t==='repair_subfield'?'':'none';if(t==='repair_subfield'){_buildSubfieldChips([]);_buildChips('perfSubfieldAccountChips',PERF_ALL_ACCOUNT,[]);}}
+
+function _buildChips(containerId,values,selectedVals){document.getElementById(containerId).innerHTML=values.map(v=>{const on=selectedVals.includes(v);return`<label class="part-type-chip ${on?'checked':''}" onclick="toggleGenericChip(this)"><input type="checkbox" value="${v}" ${on?'checked':''}>${v}</label>`;}).join('');}
+function toggleGenericChip(el){const cb=el.querySelector('input');cb.checked=!cb.checked;el.classList.toggle('checked',cb.checked);}
+function _getCheckedValues(containerId){return[...document.querySelectorAll(`#${containerId} input:checked`)].map(cb=>cb.value);}
+
+function perfStartNew(){perfEditingId=null;perfFilters=[];document.getElementById('perfEditorTitle').textContent='新增指標';['perfName','perfDesc','perfUnit'].forEach(id=>document.getElementById(id).value='');document.getElementById('perfType').value='repair_income';onPerfTypeChange();_buildChips('perfRepairAccountTypes',PERF_ALL_ACCOUNT,[]);_buildChips('perfBoutiqueTypeChips',PERF_BOUTIQUE,['精品','配件']);_buildChips('perfBoutiqueAccountChips',PERF_ALL_ACCOUNT,[]);_buildSubfieldChips([]);_buildChips('perfSubfieldAccountChips',PERF_ALL_ACCOUNT,[]);selectWoMode('wo_has');selectPerfStatMethod('amount');renderPerfFilterList();document.getElementById('perfEditorPanel').style.display='';document.getElementById('perfName').focus();}
+
+function perfStartEdit(id){const m=perfMetrics.find(x=>x.id===id);if(!m)return;perfEditingId=id;perfFilters=(m.filters||[]).map(f=>({...f}));document.getElementById('perfEditorTitle').textContent=`編輯指標 — ${m.metric_name}`;document.getElementById('perfName').value=m.metric_name;document.getElementById('perfDesc').value=m.description||'';document.getElementById('perfUnit').value=m.unit||'';document.getElementById('perfType').value=m.metric_type;onPerfTypeChange();if(m.metric_type==='repair_income'){_buildChips('perfRepairAccountTypes',PERF_ALL_ACCOUNT,perfFilters.filter(f=>f.type==='account_type').map(f=>f.value));}if(m.metric_type==='repair_subfield'){const sf=perfFilters.filter(f=>f.type==='subfield').map(f=>f.value);const ac=perfFilters.filter(f=>f.type==='account_type').map(f=>f.value);const wm=perfFilters.find(f=>f.type==='wo_mode')?.value||'wo_has';_buildSubfieldChips(sf);_buildChips('perfSubfieldAccountChips',PERF_ALL_ACCOUNT,ac);selectWoMode(wm);}if(m.metric_type==='boutique'){const bt=perfFilters.filter(f=>f.type==='boutique_type').map(f=>f.value);const ac=perfFilters.filter(f=>f.type==='account_type').map(f=>f.value);_buildChips('perfBoutiqueTypeChips',PERF_BOUTIQUE,bt.length?bt:['精品','配件']);_buildChips('perfBoutiqueAccountChips',PERF_ALL_ACCOUNT,ac);}if(m.metric_type==='parts'){selectPerfStatMethod(m.stat_field||'amount');renderPerfFilterList();}document.getElementById('perfEditorPanel').style.display='';document.getElementById('perfEditorPanel').scrollIntoView({behavior:'smooth',block:'nearest'});}
+
+function perfCancelEdit(){document.getElementById('perfEditorPanel').style.display='none';perfFilters=[];}
+function selectPerfStatMethod(val){document.querySelectorAll('input[name="perf_stat_method"]').forEach(el=>el.checked=el.value===val);['amount','qty','count'].forEach(v=>document.getElementById(`perfSmLabel-${v}`)?.classList.toggle('selected',v===val));}
+function getPerfStatMethod(){return document.querySelector('input[name="perf_stat_method"]:checked')?.value||'amount';}
+
+const _perfTypeLabel={category_code:'零件類別碼',function_code:'功能碼',part_number:'零件編號',part_type:'付款類別'};
+function renderPerfFilterList(){const el=document.getElementById('perfFilterList');if(!el)return;if(!perfFilters.length){el.innerHTML='<div style="color:#64748b;font-size:12px;padding:4px 0 8px">尚未新增篩選條件</div>';return;}el.innerHTML=perfFilters.map((f,i)=>`<div class="filter-tag-row"><span class="type-badge type-${f.type}">${_perfTypeLabel[f.type]||f.type}</span><span style="font-size:13px;font-weight:600;flex:1">${f.value}</span><button class="remove-btn" onclick="removePerfFilter(${i})">×</button></div>`).join('');}
+function removePerfFilter(i){perfFilters.splice(i,1);renderPerfFilterList();}
+function onPerfFilterTypeChange(){const t=document.getElementById('perfAddType').value,isP=t==='part_type';document.getElementById('perfLookupWrap').style.display=isP?'none':'';document.getElementById('perfBtnAddFilter').style.display=isP?'none':'';document.getElementById('perfPartTypePanel').style.display=isP?'':'none';if(isP)renderPerfPTCheckboxes();}
+function renderPerfPTCheckboxes(){const existing=perfFilters.filter(f=>f.type==='part_type').map(f=>f.value);document.getElementById('perfPartTypeCheckboxes').innerHTML=PERF_ALL_ACCOUNT.map(pt=>{const al=existing.includes(pt);return`<label class="part-type-chip ${al?'disabled':''}" onclick="togglePerfPT(this)"><input type="checkbox" value="${pt}" ${al?'disabled':''}>${pt}${al?' ✓':''}</label>`;}).join('');}
+function togglePerfPT(el){if(el.classList.contains('disabled'))return;const cb=el.querySelector('input');cb.checked=!cb.checked;el.classList.toggle('checked',cb.checked);}
+function addPerfFilter(){const type=document.getElementById('perfAddType').value,value=document.getElementById('perfAddValue').value.trim();if(!value||perfFilters.some(f=>f.type===type&&f.value===value))return;perfFilters.push({type,value});renderPerfFilterList();document.getElementById('perfAddValue').value='';document.getElementById('perfLookupDropdown').style.display='none';}
+function addPerfPartTypeFilters(){[...document.querySelectorAll('#perfPartTypeCheckboxes input:checked')].forEach(cb=>{if(!perfFilters.some(f=>f.type==='part_type'&&f.value===cb.value))perfFilters.push({type:'part_type',value:cb.value});});renderPerfFilterList();renderPerfPTCheckboxes();}
+function debouncePerfLookup(){clearTimeout(perfLookupTimer);perfLookupTimer=setTimeout(doPerfLookup,280);}
+async function doPerfLookup(){const type=document.getElementById('perfAddType').value;if(type==='part_type')return;const q=document.getElementById('perfAddValue').value.trim(),dd=document.getElementById('perfLookupDropdown');if(!q){dd.style.display='none';return;}try{const data=await(await fetch(`/api/sa-config/parts-lookup?type=${type}&q=${encodeURIComponent(q)}`)).json();if(!data.length){dd.style.display='none';return;}dd.innerHTML=data.map(item=>type==='part_number'?`<div class="lookup-item" onclick="pickPerfLookup('${esc(item.value)}')"><div class="lookup-item-val">${item.value}</div><div class="lookup-item-sub">${item.label||''}</div></div>`:`<div class="lookup-item" onclick="pickPerfLookup('${esc(item.value)}')"><div class="lookup-item-val">${item.value}</div><div class="lookup-item-sub">${(item.sample_names||'').slice(0,60)}</div></div>`).join('');dd.style.display='block';}catch(e){dd.style.display='none';}}
+function pickPerfLookup(val){document.getElementById('perfAddValue').value=val;document.getElementById('perfLookupDropdown').style.display='none';}
+document.addEventListener('click',e=>{const wrap=document.getElementById('perfAddValue')?.closest('.lookup-wrap');if(wrap&&!wrap.contains(e.target))document.getElementById('perfLookupDropdown').style.display='none';});
+
+async function perfSave(){
+  const metric_name=document.getElementById('perfName').value.trim(),description=document.getElementById('perfDesc').value.trim(),metric_type=document.getElementById('perfType').value,unit=document.getElementById('perfUnit').value.trim();
+  if(!metric_name){alert('請輸入指標名稱');return;}
+  let filters=[],stat_field='amount';
+  if(metric_type==='repair_income'){filters=_getCheckedValues('perfRepairAccountTypes').map(v=>({type:'account_type',value:v}));}
+  else if(metric_type==='repair_subfield'){
+    const sf=_getCheckedValues('perfSubfieldChips');
+    const ac=_getCheckedValues('perfSubfieldAccountChips');
+    const wm=getWoMode();
+    if(!sf.length){alert('請至少勾選一個判斷欄位');return;}
+    filters=[...sf.map(v=>({type:'subfield',value:v})),...ac.map(v=>({type:'account_type',value:v})),{type:'wo_mode',value:wm}];
+    stat_field='amount';
+  }
+  else if(metric_type==='parts'){if(!perfFilters.length){alert('請至少新增一個篩選條件');return;}filters=perfFilters.map(({type,value})=>({type,value}));stat_field=getPerfStatMethod();}
+  else if(metric_type==='boutique'){const bt=_getCheckedValues('perfBoutiqueTypeChips'),ac=_getCheckedValues('perfBoutiqueAccountChips');filters=[...bt.map(v=>({type:'boutique_type',value:v})),...ac.map(v=>({type:'account_type',value:v}))];stat_field='amount';}
+  const btn=document.getElementById('perfBtnSave');btn.disabled=true;
+  try{const url=perfEditingId?`/api/performance-metrics/${perfEditingId}`:'/api/performance-metrics';const res=await(await fetch(url,{method:perfEditingId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({metric_name,description,metric_type,filters,stat_field,unit})})).json();if(res.error)throw new Error(res.error);perfCancelEdit();await loadPerfMetrics();}
+  catch(e){alert('儲存失敗：'+e.message);}finally{btn.disabled=false;}
+}
+async function perfDelete(id,name){if(!confirm(`確定刪除指標「${name}」及其所有目標？`))return;await fetch(`/api/performance-metrics/${id}`,{method:'DELETE'});await loadPerfMetrics();}
+
+async function loadPerfTgtPeriods(){try{const periods=await(await fetch('/api/periods')).json();const sel=document.getElementById('perfTgtPeriod');sel.innerHTML='<option value="">選擇期間...</option>';periods.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=`${p.slice(0,4)}年${p.slice(4)}月`;sel.appendChild(o);});if(periods.length)sel.value=periods[0];}catch(e){}}
+function onPerfTgtMetricChange(){document.getElementById('perfTargetGrid').style.display='none';}
+
+async function loadPerfTargets(){
+  const metricId=document.getElementById('perfTgtMetric').value,period=document.getElementById('perfTgtPeriod').value;
+  if(!metricId||!period){alert('請選擇指標和期間');return;}
+  const metric=perfMetrics.find(m=>m.id==metricId),unit=metric?.unit||PERF_FIELD_UNIT[metric?.stat_field]||'元';
+  const hintEl=document.getElementById('perfTgtHint');
+  if(hintEl)hintEl.innerHTML=`💡 設定 <strong>${metric?.metric_name}</strong> 在 <strong>${period.slice(0,4)}年${period.slice(4)}月</strong> 的目標數值。單位：${unit}`;
+  try{
+    const data=await(await fetch(`/api/performance-targets?metric_id=${metricId}&period=${period}`)).json();
+    const tMap={};data.forEach(t=>{tMap[t.branch]=t;});
+    document.getElementById('perfTgtBody').innerHTML=['AMA','AMC','AMD'].map(br=>{
+      const t=tMap[br]||{},bCol=br==='AMA'?'#3b82f6':br==='AMC'?'#10b981':'#f59e0b';
+      return`<tr>
+        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.4)"><span style="display:inline-block;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:700;background:${bCol}22;color:${bCol}">${br}</span></td>
+        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.4)"><input type="number" class="form-input" id="perfTgt-${br}" value="${t.target_value||''}" placeholder="目標數值" step="any" style="width:100%;text-align:right;min-width:120px"></td>
+        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.4)"><input type="number" class="form-input" id="perfLY-${br}" value="${t.last_year_value||''}" placeholder="去年同期" step="any" style="width:100%;text-align:right;min-width:120px"></td>
+      </tr>`;
+    }).join('');
+    document.getElementById('perfTargetGrid').style.display='';
+    document.getElementById('perfTgtMsg').textContent='';
+  }catch(e){alert('載入失敗：'+e.message);}
+}
+
+async function savePerfTargets(){
+  const metricId=document.getElementById('perfTgtMetric').value,period=document.getElementById('perfTgtPeriod').value;if(!metricId||!period)return;
+  const entries=['AMA','AMC','AMD'].map(br=>({branch:br,target_value:parseFloat(document.getElementById(`perfTgt-${br}`)?.value)||null,last_year_value:parseFloat(document.getElementById(`perfLY-${br}`)?.value)||null}));
+  const btn=document.getElementById('perfBtnSaveTgt');btn.disabled=true;const msgEl=document.getElementById('perfTgtMsg');msgEl.textContent='儲存中...';msgEl.style.color='#64748b';
+  try{const res=await(await fetch('/api/performance-targets/batch',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({metric_id:metricId,period,entries})})).json();if(res.error)throw new Error(res.error);msgEl.textContent='✅ 目標已儲存';msgEl.style.color='#10b981';}
+  catch(e){msgEl.textContent='❌ '+e.message;msgEl.style.color='#ef4444';}finally{btn.disabled=false;}
+}
+
+// ══ 營收目標 ══
+const REV_COLS = [
+  { key:'paid',     label:'有費營收' },
+  { key:'bodywork', label:'鈑烤營收' },
+  { key:'general',  label:'一般營收' },
+  { key:'extended', label:'延保營收' },
+];
+
+async function loadRevPeriods() {
   try {
     const periods = await (await fetch('/api/periods')).json();
-    const sel = document.getElementById('selPeriod');
+    const sel = document.getElementById('revPeriodSel');
+    sel.innerHTML = '<option value="">選擇期間...</option>';
     periods.forEach(p => {
-      const opt = document.createElement('option');
-      opt.value = p; opt.textContent = `${p.slice(0,4)}年${p.slice(4)}月`;
-      sel.appendChild(opt);
+      const o = document.createElement('option');
+      o.value = p; o.textContent = `${p.slice(0,4)}年${p.slice(4)}月`;
+      sel.appendChild(o);
     });
-    if (periods.length) sel.value = periods[0];
+    if (periods.length) { sel.value = periods[0]; loadRevManual(); }
   } catch(e) {}
 }
 
-async function loadAll() {
-  const period = document.getElementById('selPeriod').value;
-  const branch = document.getElementById('selBranch').value;
-  document.getElementById('lastUpdate').textContent = '更新中...';
-  await Promise.all([
-    loadRepair(period, branch),
-    loadIncomeSummary(period, branch),
-    loadTech(period, branch),
-    loadParts(period, branch),
-    loadBoutiqueAccessories(period, branch),
-    loadTrend(branch),
-    loadDaily(period, branch),
-    loadSASales(),
-  ]);
-  document.getElementById('lastUpdate').textContent = `更新於 ${new Date().toLocaleTimeString('zh-TW')}`;
+async function loadRevManual() {
+  const period = document.getElementById('revPeriodSel').value;
+  const grid = document.getElementById('revManualGrid');
+  if (!period) { grid.style.display = 'none'; return; }
+  try {
+    const rows = await (await fetch(`/api/revenue-targets?period=${period}`)).json();
+    const tMap = {}; rows.forEach(r => { tMap[r.branch] = r; });
+    document.getElementById('revManualBody').innerHTML = ['AMA','AMC','AMD'].map(br => {
+      const t = tMap[br] || {};
+      const bCol = br==='AMA'?'#3b82f6':br==='AMC'?'#10b981':'#f59e0b';
+      const inp = (field) => `<input type="number" id="rev-${br}-${field}" value="${t[field]||''}" placeholder="—" step="any" class="form-input" style="width:100%;min-width:110px;text-align:right">`;
+      return `<tr>
+        <td><span style="display:inline-block;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:700;background:${bCol}22;color:${bCol}">${br}</span></td>
+        ${REV_COLS.map(c => `<td style="padding:6px 8px">${inp(c.key+'_target')}</td><td style="padding:6px 8px">${inp(c.key+'_last_year')}</td>`).join('')}
+      </tr>`;
+    }).join('');
+    grid.style.display = '';
+    document.getElementById('revManualMsg').textContent = '';
+  } catch(e) { document.getElementById('revManualMsg').textContent = '載入失敗: '+e.message; }
 }
 
-async function loadRepair(period, branch) {
-  try {
-    const params = new URLSearchParams(); if (period) params.set('period', period); if (branch) params.set('branch', branch);
-    const data = await (await fetch(`/api/stats/repair?${params}`)).json();
-    if (data.error) throw new Error(data.error);
-    const totals = data.totals;
-    const totalRevenue = totals.reduce((s,r) => s + n(r.total_untaxed), 0);
-    const totalCars    = totals.reduce((s,r) => s + parseInt(r.car_count||0), 0);
-    const totalEngine  = totals.reduce((s,r) => s + n(r.engine_wage), 0);
-    const totalParts   = totals.reduce((s,r) => s + n(r.parts_income), 0);
-    const totalCost    = totals.reduce((s,r) => s + n(r.parts_cost), 0);
-    document.getElementById('repairKPI').innerHTML = `
-      <div class="kpi-card"><div class="kpi-label">總營收（未稅）</div><div class="kpi-value kpi-green">${fmtK(totalRevenue)}</div><div class="kpi-sub">元（千）</div></div>
-      <div class="kpi-card"><div class="kpi-label">出廠台數</div><div class="kpi-value kpi-blue">${totalCars.toLocaleString()}</div><div class="kpi-sub">台</div></div>
-      <div class="kpi-card"><div class="kpi-label">引擎工資</div><div class="kpi-value">${fmtK(totalEngine)}</div><div class="kpi-sub">K</div></div>
-      <div class="kpi-card"><div class="kpi-label">零件收入</div><div class="kpi-value">${fmtK(totalParts)}</div><div class="kpi-sub">K</div></div>
-      <div class="kpi-card"><div class="kpi-label">零件成本</div><div class="kpi-value kpi-yellow">${fmtK(totalCost)}</div><div class="kpi-sub">K</div></div>
-      ${totals.map(t => `<div class="kpi-card"><div class="kpi-label">${t.branch} 營收</div><div class="kpi-value">${fmtK(t.total_untaxed)}</div><div class="kpi-sub">${parseInt(t.car_count||0)}台 | 引擎${fmtK(t.engine_wage)}</div></div>`).join('')}`;
-    const saRows = data.bySA; const maxRev = Math.max(...saRows.map(r => n(r.total_untaxed)), 1);
-    document.getElementById('tbSA').innerHTML = saRows.length
-      ? saRows.map((r, i) => `<tr><td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td><td><span class="badge badge-blue">${r.branch}</span></td><td style="font-weight:600">${r.service_advisor}</td><td class="num">${parseInt(r.car_count||0)}</td><td class="num" style="font-weight:700;color:#10b981">${fmt(r.total_untaxed)}</td><td class="num">${fmt(r.engine_wage)}</td><td class="num">${fmt(r.parts_income)}</td><td style="min-width:120px"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${(n(r.total_untaxed)/maxRev*100).toFixed(0)}%"></div></div><span style="font-size:11px;color:#64748b">${(n(r.total_untaxed)/maxRev*100).toFixed(0)}%</span></div></td></tr>`).join('')
-      : '<tr><td colspan="8" class="empty">無資料</td></tr>';
-    document.getElementById('tbAccount').innerHTML = data.summary.length
-      ? data.summary.map(r => `<tr><td><span class="badge badge-blue">${r.branch}</span></td><td><span class="badge ${badgeType(r.account_type)}">${r.account_type||'-'}</span></td><td class="num">${parseInt(r.work_order_count||0).toLocaleString()}</td><td class="num" style="font-weight:700">${fmt(r.total_untaxed)}</td><td class="num">${fmt(r.parts_income)}</td><td class="num">${fmt(r.engine_wage)}</td><td class="num">${fmt(r.bodywork_income)}</td><td class="num" style="color:#f59e0b">${fmt(r.parts_cost)}</td></tr>`).join('')
-      : '<tr><td colspan="8" class="empty">無資料</td></tr>';
-  } catch(e) { document.getElementById('tbSA').innerHTML = `<tr><td colspan="8" style="color:#ef4444;padding:16px">${e.message}</td></tr>`; }
-}
-
-async function loadIncomeSummary(period, branch) {
-  const cardsEl = document.getElementById('incomeCategoryCards');
-  const costCardsEl = document.getElementById('incomeCostCards');
-  const revenueEl = document.getElementById('tbIncomeRevenue');
-  const costEl = document.getElementById('tbIncomeCost');
-  try {
-    const params = new URLSearchParams(); if (period) params.set('period', period); if (branch) params.set('branch', branch);
-    const data = await (await fetch(`/api/stats/income-summary?${params}`)).json();
-    if (data.error) throw new Error(data.error);
-    const { byType, externalSales, techByType, externalCategory } = data;
-    const grouped = {};
-    byType.forEach(r => {
-      const gk = ACCOUNT_GROUP(r.account_type);
-      if (!grouped[gk]) grouped[gk] = { total_untaxed:0, car_count:0, engine_wage:0, parts_income:0, accessories_income:0, boutique_income:0, bodywork_income:0, paint_income:0, carwash_income:0, outsource_income:0, addon_income:0, parts_cost:0 };
-      const g = grouped[gk];
-      g.total_untaxed+=n(r.total_untaxed); g.car_count+=n(r.car_count); g.engine_wage+=n(r.engine_wage_nt); g.parts_income+=n(r.parts_income_nt); g.accessories_income+=n(r.accessories_income_nt); g.boutique_income+=n(r.boutique_income_nt); g.bodywork_income+=n(r.bodywork_income_nt); g.paint_income+=n(r.paint_income_nt); g.carwash_income+=n(r.carwash_income_nt); g.outsource_income+=n(r.outsource_income_nt); g.addon_income+=n(r.addon_income_nt); g.parts_cost+=n(r.parts_cost_nt);
+async function saveRevManual() {
+  const period = document.getElementById('revPeriodSel').value;
+  if (!period) return;
+  const entries = ['AMA','AMC','AMD'].map(br => {
+    const e = { branch: br, period };
+    REV_COLS.forEach(c => {
+      e[c.key+'_target']    = parseFloat(document.getElementById(`rev-${br}-${c.key}_target`)?.value) || null;
+      e[c.key+'_last_year'] = parseFloat(document.getElementById(`rev-${br}-${c.key}_last_year`)?.value) || null;
     });
-    const extTotal = externalSales.reduce((s,r) => s + n(r.total_sales), 0);
-    const extOrders = externalSales.reduce((s,r) => s + parseInt(r.order_count||0), 0);
-    const paidTotal = (grouped['general']?.total_untaxed||0) + (grouped['insurance']?.total_untaxed||0) + (grouped['extended']?.total_untaxed||0) + extTotal;
-    const preCost = { total:0, cars:0, partsCost:0, engine:0, bodywork:0, paint:0, carwash:0, outsource:0, addon:0, wage:0, parts_sales:0, acc_sales:0, boutique_sales:0 };
-    byType.forEach(r => {
-      const gk = ACCOUNT_GROUP(r.account_type); if (!COST_GROUPS.has(gk)) return;
-      const partsCost=n(r.parts_cost_nt),engineWage=n(r.engine_wage_nt),bodywork=n(r.bodywork_income_nt),paint=n(r.paint_income_nt),carwash=n(r.carwash_income_nt),outsource=n(r.outsource_income_nt),addon=n(r.addon_income_nt),wageTotal=engineWage+bodywork+paint+carwash+outsource+addon;
-      preCost.cars+=n(r.car_count); preCost.partsCost+=partsCost; preCost.engine+=engineWage; preCost.bodywork+=bodywork; preCost.paint+=paint; preCost.carwash+=carwash; preCost.outsource+=outsource; preCost.addon+=addon; preCost.wage+=wageTotal; preCost.total+=partsCost+wageTotal; preCost.parts_sales+=n(r.parts_income_nt); preCost.acc_sales+=n(r.accessories_income_nt); preCost.boutique_sales+=n(r.boutique_income_nt);
-    });
-    const grandRevenue = paidTotal + preCost.total;
-    document.getElementById('grandKPI').innerHTML = `<div class="kpi-grid" style="margin-bottom:20px"><div class="kpi-card" style="border-color:#475569;background:#1e293b;grid-column:1/-1;max-width:320px"><div class="kpi-label" style="color:#94a3b8">📌 總計（有費收入＋無費成本）</div><div class="kpi-value" style="color:#e2e8f0;font-size:32px">${fmtK(grandRevenue)}</div><div class="kpi-sub">有費 ${fmtK(paidTotal)} ＋ 無費成本 ${fmtK(preCost.total)}</div></div></div>`;
-    let cardsHtml = '';
-    ['general','insurance','extended','voucher','external','paid'].forEach(gk => {
-      const meta = GROUP_META[gk]||GROUP_META.other;
-      if (gk==='external') { cardsHtml+=`<div class="income-cat-card ${meta.cls}"><div class="income-cat-label">${meta.icon} ${meta.label}</div><div class="income-cat-value">${fmtK(extTotal)}</div><div class="income-cat-sub">${extOrders} 筆 · 來源: ${externalCategory}</div></div>`; }
-      else if (gk==='paid') { cardsHtml+=`<div class="income-cat-card ${meta.cls}"><div class="income-cat-label">${meta.icon} ${meta.label}</div><div class="income-cat-value">${fmtK(paidTotal)}</div><div class="income-cat-sub">一般+保險+延保+外賣</div></div>`; }
-      else { const g=grouped[gk]; if(!g&&gk!=='voucher')return; cardsHtml+=`<div class="income-cat-card ${meta.cls}"><div class="income-cat-label">${meta.icon} ${meta.label}</div><div class="income-cat-value">${fmtK(g?.total_untaxed||0)}</div><div class="income-cat-sub">${g?.car_count||0} 台</div></div>`; }
-    });
-    cardsEl.innerHTML = cardsHtml||'<div style="color:#64748b;font-size:13px;grid-column:1/-1">無資料</div>';
-    const COST_GROUP_ORDER=['internal','warranty','vsa','goodwill']; let costCardsHtml='';
-    COST_GROUP_ORDER.forEach(gk => { const meta=GROUP_META[gk]; const g=grouped[gk]; if(!g)return; const gPartsCost=g.parts_cost,gWage=g.engine_wage+g.bodywork_income+g.paint_income+g.carwash_income+g.outsource_income+g.addon_income,gTotal=gPartsCost+gWage; costCardsHtml+=`<div class="income-cat-card ${meta.cls}"><div class="income-cat-label">${meta.icon} ${meta.label}</div><div class="income-cat-value">${fmtK(gTotal)}</div><div class="income-cat-sub">${parseInt(g.car_count)} 台 · 零件成本 ${fmtK(gPartsCost)} · 工資 ${fmtK(gWage)}</div></div>`; });
-    costCardsHtml+=`<div class="income-cat-card" style="background:#0f172a;border:1px solid #f59e0b"><div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:#f59e0b;border-radius:3px 0 0 3px"></div><div class="income-cat-label" style="color:#f59e0b">⚠️ 無費工單成本合計</div><div class="income-cat-value" style="color:#f59e0b;font-size:26px">${fmtK(preCost.total)}</div><div class="income-cat-sub">${parseInt(preCost.cars)} 台 · 零件成本 ${fmtK(preCost.partsCost)} · 工資 ${fmtK(preCost.wage)}</div></div>`;
-    costCardsEl.innerHTML = costCardsHtml||'<div style="color:#64748b;font-size:13px;grid-column:1/-1">無無費工單資料</div>';
-    const REVENUE_GROUPS=['general','insurance','extended','voucher']; let revRows=''; let revSub={cars:0,engine:0,parts:0,acc:0,boutique:0,bodywork:0,paint:0,carwash:0,out:0,addon:0,total:0};
-    byType.forEach(r => {
-      const gk=ACCOUNT_GROUP(r.account_type); if(!REVENUE_GROUPS.includes(gk))return;
-      const meta=GROUP_META[gk]||GROUP_META.other; const total=n(r.total_untaxed);
-      revSub.cars+=n(r.car_count); revSub.engine+=n(r.engine_wage_nt); revSub.parts+=n(r.parts_income_nt); revSub.acc+=n(r.accessories_income_nt); revSub.boutique+=n(r.boutique_income_nt); revSub.bodywork+=n(r.bodywork_income_nt); revSub.paint+=n(r.paint_income_nt); revSub.carwash+=n(r.carwash_income_nt); revSub.out+=n(r.outsource_income_nt); revSub.addon+=n(r.addon_income_nt); revSub.total+=total;
-      revRows+=`<tr><td><span class="badge badge-blue">${r.branch}</span></td><td><span class="badge ${meta.badge}">${r.account_type}</span></td><td class="num">${parseInt(r.car_count||0)}</td><td class="num">${fmt(r.engine_wage_nt)}</td><td class="num">${fmt(r.parts_income_nt)}</td><td class="num">${fmt(r.accessories_income_nt)}</td><td class="num">${fmt(r.boutique_income_nt)}</td><td class="num">${fmt(r.bodywork_income_nt)}</td><td class="num">${fmt(r.paint_income_nt)}</td><td class="num">${fmt(r.carwash_income_nt)}</td><td class="num">${fmt(r.outsource_income_nt)}</td><td class="num">${fmt(r.addon_income_nt)}</td><td class="num" style="color:#10b981;font-weight:700">${fmt(total)}</td></tr>`;
-    });
-    if (extTotal>0) { revRows+=`<tr><td><span class="badge badge-teal">外賣</span></td><td><span class="badge badge-teal">外賣(零件銷售)</span></td><td class="num">${extOrders} 筆</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num" style="color:#14b8a6;font-weight:700">${fmt(extTotal)}</td></tr>`; revSub.total+=extTotal; }
-    revRows+=`<tr class="subtotal-row"><td></td><td style="color:#f97316">有費小計</td><td class="num">${parseInt(revSub.cars)}</td><td class="num">${fmt(revSub.engine)}</td><td class="num">${fmt(revSub.parts)}</td><td class="num">${fmt(revSub.acc)}</td><td class="num">${fmt(revSub.boutique)}</td><td class="num">${fmt(revSub.bodywork)}</td><td class="num">${fmt(revSub.paint)}</td><td class="num">${fmt(revSub.carwash)}</td><td class="num">${fmt(revSub.out)}</td><td class="num">${fmt(revSub.addon)}</td><td class="num" style="color:#f97316;font-size:14px">${fmt(paidTotal)}</td></tr>`;
-    revenueEl.innerHTML = revRows||'<tr><td colspan="13" class="empty">無資料</td></tr>';
-    let costRows=''; let costTotal={cars:0,partsCost:0,engine:0,bodywork:0,paint:0,carwash:0,outsource:0,addon:0,wage:0,total:0,parts_sales:0,acc_sales:0,boutique_sales:0};
-    byType.forEach(r => {
-      const gk=ACCOUNT_GROUP(r.account_type); if(!COST_GROUPS.has(gk))return;
-      const meta=GROUP_META[gk]||GROUP_META.other;
-      const partsSales=n(r.parts_income_nt),accSales=n(r.accessories_income_nt),boutiqueSales=n(r.boutique_income_nt),partsCost=n(r.parts_cost_nt),engineWage=n(r.engine_wage_nt),bodywork=n(r.bodywork_income_nt),paint=n(r.paint_income_nt),carwash=n(r.carwash_income_nt),outsource=n(r.outsource_income_nt),addon=n(r.addon_income_nt),wageTotal=engineWage+bodywork+paint+carwash+outsource+addon,rowTotal=partsCost+wageTotal;
-      costTotal.cars+=n(r.car_count); costTotal.parts_sales+=partsSales; costTotal.acc_sales+=accSales; costTotal.boutique_sales+=boutiqueSales; costTotal.partsCost+=partsCost; costTotal.engine+=engineWage; costTotal.bodywork+=bodywork; costTotal.paint+=paint; costTotal.carwash+=carwash; costTotal.outsource+=outsource; costTotal.addon+=addon; costTotal.wage+=wageTotal; costTotal.total+=rowTotal;
-      costRows+=`<tr class="cost-row"><td><span class="badge badge-blue">${r.branch||'—'}</span></td><td><span class="badge ${meta.badge}">${r.account_type}</span></td><td class="num">${parseInt(r.car_count||0)}</td><td class="num" style="color:#3b82f6">${partsSales>0?fmt(partsSales):'—'}</td><td class="num" style="color:#10b981">${accSales>0?fmt(accSales):'—'}</td><td class="num" style="color:#f59e0b">${boutiqueSales>0?fmt(boutiqueSales):'—'}</td><td class="num">${engineWage>0?fmt(engineWage):'—'}</td><td class="num">${bodywork>0?fmt(bodywork):'—'}</td><td class="num">${paint>0?fmt(paint):'—'}</td><td class="num">${carwash>0?fmt(carwash):'—'}</td><td class="num">${outsource>0?fmt(outsource):'—'}</td><td class="num">${addon>0?fmt(addon):'—'}</td><td class="num" style="color:#94a3b8;font-weight:600">${fmt(wageTotal)}</td><td class="num" style="color:#f59e0b">${fmt(partsCost)}</td><td class="num" style="color:#f59e0b;font-weight:700">${fmt(rowTotal)}</td><td style="font-size:11px;color:#475569">成本+工資（無收入認列）</td></tr>`;
-    });
-    if (costRows) { costRows+=`<tr class="total-row"><td></td><td style="color:#3b82f6">無費合計</td><td class="num">${parseInt(costTotal.cars)}</td><td class="num" style="color:#3b82f6">${fmt(costTotal.parts_sales)}</td><td class="num" style="color:#10b981">${fmt(costTotal.acc_sales)}</td><td class="num" style="color:#f59e0b">${fmt(costTotal.boutique_sales)}</td><td class="num">${fmt(costTotal.engine)}</td><td class="num">${fmt(costTotal.bodywork)}</td><td class="num">${fmt(costTotal.paint)}</td><td class="num">${fmt(costTotal.carwash)}</td><td class="num">${fmt(costTotal.outsource)}</td><td class="num">${fmt(costTotal.addon)}</td><td class="num" style="color:#94a3b8;font-weight:700">${fmt(costTotal.wage)}</td><td class="num" style="color:#f59e0b">${fmt(costTotal.partsCost)}</td><td class="num" style="color:#f59e0b;font-size:14px">${fmt(costTotal.total)}</td><td></td></tr>`; }
-    costEl.innerHTML = costRows||'<tr><td colspan="16" class="empty">無無費工單資料</td></tr>';
-  } catch(e) { cardsEl.innerHTML=`<div style="color:#ef4444;grid-column:1/-1">${e.message}</div>`; costCardsEl.innerHTML=''; revenueEl.innerHTML=`<tr><td colspan="13" style="color:#ef4444;padding:16px">${e.message}</td></tr>`; costEl.innerHTML=`<tr><td colspan="17" style="color:#ef4444;padding:16px">${e.message}</td></tr>`; }
-}
-
-async function loadTech(period, branch) {
+    return e;
+  });
+  const msgEl = document.getElementById('revManualMsg');
+  msgEl.textContent = '儲存中...'; msgEl.style.color = '#64748b';
   try {
-    const params = new URLSearchParams(); if (period) params.set('period', period); if (branch) params.set('branch', branch);
-    const data = await (await fetch(`/api/stats/tech?${params}`)).json();
-    if (data.error) throw new Error(data.error);
-    const rows = data.ranking; const totalWage = rows.reduce((s,r) => s + n(r.total_wage), 0); const maxWage = Math.max(...rows.map(r => n(r.total_wage)), 1);
-    document.getElementById('techKPI').innerHTML = `<div class="kpi-card"><div class="kpi-label">技師人數</div><div class="kpi-value kpi-blue">${rows.length}</div><div class="kpi-sub">人</div></div><div class="kpi-card"><div class="kpi-label">工資總額</div><div class="kpi-value kpi-green">${fmtK(totalWage)}</div><div class="kpi-sub">K</div></div><div class="kpi-card"><div class="kpi-label">平均工資</div><div class="kpi-value">${rows.length ? fmt(totalWage/rows.length) : 0}</div><div class="kpi-sub">元/人</div></div>`;
-    document.getElementById('tbTech').innerHTML = rows.length
-      ? rows.map((r,i) => `<tr><td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td><td><span class="badge badge-blue">${r.branch}</span></td><td style="font-weight:600">${r.tech_name_clean}</td><td class="num">${parseInt(r.car_count||0)}</td><td class="num">${n(r.total_hours).toFixed(1)}</td><td class="num" style="font-weight:700;color:#10b981">${fmt(r.total_wage)}</td><td class="num" style="color:#f59e0b">${fmt(r.beauty_wage)}</td><td class="num" style="color:#3b82f6">${fmt(r.net_wage)}</td><td style="min-width:120px"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill green" style="width:${(n(r.total_wage)/maxWage*100).toFixed(0)}%"></div></div><span style="font-size:11px;color:#64748b">${totalWage > 0 ? (n(r.total_wage)/totalWage*100).toFixed(1) : 0}%</span></div></td></tr>`).join('')
-      : '<tr><td colspan="9" class="empty">無資料</td></tr>';
-  } catch(e) { document.getElementById('tbTech').innerHTML = `<tr><td colspan="9" style="color:#ef4444;padding:16px">${e.message}</td></tr>`; }
+    const res = await (await fetch('/api/revenue-targets/batch', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ entries }) })).json();
+    if (res.error) throw new Error(res.error);
+    msgEl.textContent = '✅ 已儲存'; msgEl.style.color = '#10b981';
+    loadRevList();
+  } catch(e) { msgEl.textContent = '❌ '+e.message; msgEl.style.color = '#ef4444'; }
 }
 
-async function loadParts(period, branch) {
+async function loadRevList() {
+  const el = document.getElementById('revList');
   try {
-    const params = new URLSearchParams(); if (period) params.set('period', period); if (branch) params.set('branch', branch);
-    const data = await (await fetch(`/api/stats/parts?${params}`)).json();
-    if (data.error) throw new Error(data.error);
-    const byType = data.byType; const totalSales = byType.reduce((s,r) => s + n(r.total_sales), 0); const totalCost = byType.reduce((s,r) => s + n(r.total_cost), 0);
-    document.getElementById('partsKPI').innerHTML = `<div class="kpi-card"><div class="kpi-label">銷售總額</div><div class="kpi-value kpi-green">${fmtK(totalSales)}</div><div class="kpi-sub">K</div></div><div class="kpi-card"><div class="kpi-label">成本總額</div><div class="kpi-value kpi-yellow">${fmtK(totalCost)}</div><div class="kpi-sub">K</div></div><div class="kpi-card"><div class="kpi-label">毛利</div><div class="kpi-value kpi-blue">${fmtK(totalSales-totalCost)}</div><div class="kpi-sub">K</div></div><div class="kpi-card"><div class="kpi-label">毛利率</div><div class="kpi-value">${totalSales > 0 ? ((totalSales-totalCost)/totalSales*100).toFixed(1) : 0}%</div></div>`;
-    document.getElementById('tbPartsType').innerHTML = byType.length ? byType.map(r => { const s=n(r.total_sales),c=n(r.total_cost),m=s>0?((s-c)/s*100):0; return `<tr><td><span class="badge badge-blue">${r.branch}</span></td><td><span class="badge ${badgeType(r.part_type)}">${r.part_type||'-'}</span></td><td class="num">${parseInt(r.count||0).toLocaleString()}</td><td class="num">${n(r.total_qty).toLocaleString()}</td><td class="num" style="font-weight:700">${fmt(s)}</td><td class="num">${fmt(c)}</td><td class="num" style="color:#10b981">${fmt(s-c)}</td><td class="num" style="color:${m>20?'#10b981':m>10?'#f59e0b':'#ef4444'}">${m.toFixed(1)}%</td></tr>`; }).join('') : '<tr><td colspan="8" class="empty">無資料</td></tr>';
-    document.getElementById('tbTopParts').innerHTML = data.topParts.length ? data.topParts.map((r,i) => `<tr><td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td><td style="font-family:monospace;font-size:12px">${r.part_number}</td><td>${r.part_name||'-'}</td><td><span class="badge ${badgeType(r.part_type)}">${r.part_type||'-'}</span></td><td class="num">${n(r.total_qty).toLocaleString()}</td><td class="num" style="font-weight:700;color:#10b981">${fmt(r.total_sales)}</td></tr>`).join('') : '<tr><td colspan="6" class="empty">無資料</td></tr>';
-  } catch(e) { document.getElementById('tbPartsType').innerHTML = `<tr><td colspan="8" style="color:#ef4444;padding:16px">${e.message}</td></tr>`; }
+    const rows = await (await fetch('/api/revenue-targets')).json();
+    if (!rows.length) { el.innerHTML = '<div style="color:#64748b;font-size:13px;padding:8px 0">尚無設定</div>'; return; }
+    // Group by period
+    const byPeriod = {};
+    rows.forEach(r => { if (!byPeriod[r.period]) byPeriod[r.period] = []; byPeriod[r.period].push(r); });
+    const periods = Object.keys(byPeriod).sort().reverse();
+    el.innerHTML = `<div style="overflow-x:auto"><table style="width:100%;font-size:12px;border-collapse:collapse">
+      <thead><tr>
+        <th style="text-align:left;padding:8px 12px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56">期間</th>
+        <th style="text-align:left;padding:8px 12px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56">據點</th>
+        ${REV_COLS.map(c => `<th style="text-align:right;padding:8px 12px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56">${c.label}<br>目標/去年</th>`).join('')}
+        <th style="padding:8px 12px;background:#0f172a;border-bottom:1px solid #2d3f56"></th>
+      </tr></thead>
+      <tbody>${periods.map(p => byPeriod[p].map(r => {
+        const bCol = r.branch==='AMA'?'#3b82f6':r.branch==='AMC'?'#10b981':'#f59e0b';
+        const fk = v => v ? (parseInt(v)/1000).toLocaleString()+'K' : '—';
+        return `<tr>
+          <td style="padding:8px 12px;border-bottom:1px solid rgba(45,63,86,.3)">${p.slice(0,4)}年${p.slice(4)}月</td>
+          <td style="padding:8px 12px;border-bottom:1px solid rgba(45,63,86,.3)"><span style="background:${bCol}22;color:${bCol};padding:2px 8px;border-radius:5px;font-weight:700">${r.branch}</span></td>
+          ${REV_COLS.map(c => `<td style="text-align:right;padding:8px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:#94a3b8">${fk(r[c.key+'_target'])} / ${fk(r[c.key+'_last_year'])}</td>`).join('')}
+          <td style="padding:8px 12px;border-bottom:1px solid rgba(45,63,86,.3)"><button class="btn btn-danger btn-sm" onclick="deleteRevRow('${r.branch}','${p}')">刪除</button></td>
+        </tr>`;
+      }).join('')).join('')}</tbody>
+    </table></div>`;
+  } catch(e) { el.innerHTML = `<div style="color:#ef4444">${e.message}</div>`; }
 }
 
-async function loadBoutiqueAccessories(period, branch) {
-  const kpiEl=document.getElementById('boutiqueKPI'); const matrixEl=document.getElementById('boutiqueMatrix');
-  if (!kpiEl||!matrixEl) return;
-  kpiEl.innerHTML='<div style="padding:12px;color:#64748b;font-size:13px"><span class="spinner"></span>載入中</div>';
-  matrixEl.innerHTML='<div style="padding:40px;text-align:center;color:#64748b"><span class="spinner"></span>載入中...</div>';
+async function deleteRevRow(branch, period) {
+  if (!confirm(`確定刪除 ${branch} ${period.slice(0,4)}年${period.slice(4)}月 的目標設定？`)) return;
+  await fetch(`/api/revenue-targets?branch=${branch}&period=${period}`, { method:'DELETE' });
+  loadRevList();
+}
+
+function downloadRevTemplate() {
+  // 產生 CSV 範本讓使用者下載（不需要 xlsx library 在前端）
+  const header = ['期間','據點','有費營收_目標','有費營收_去年','鈑烤營收_目標','鈑烤營收_去年','一般營收_目標','一般營收_去年','延保營收_目標','延保營收_去年'];
+  const now = new Date();
+  const y = now.getFullYear(), m = String(now.getMonth()+1).padStart(2,'0');
+  const rows = [
+    [y+''+m, 'AMA', 36000000, 37000000, 8000000, 7500000, 21000000, 22000000, 800000, 750000],
+    [y+''+m, 'AMC', 10000000, 11000000, 2000000, 1800000,  5700000,  6000000, 200000, 180000],
+    [y+''+m, 'AMD', 16000000, 17000000, 2500000, 2300000,  8800000,  9500000, 300000, 280000],
+  ];
+  const csv = [header, ...rows].map(r => r.join(',')).join('\r\n');
+  const bom = '\uFEFF'; // UTF-8 BOM for Excel
+  const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `營收目標範本_${y}${m}.csv`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function uploadRevFile(input) {
+  const file = input.files[0]; if (!file) return;
+  const statusEl = document.getElementById('revUploadStatus');
+  const resultEl = document.getElementById('revUploadResult');
+  statusEl.textContent = '上傳中...'; resultEl.innerHTML = '';
+  const formData = new FormData(); formData.append('file', file);
   try {
-    const params=new URLSearchParams(); if(period)params.set('period',period); if(branch)params.set('branch',branch);
-    const data=await(await fetch(`/api/stats/boutique-accessories?${params}`)).json();
-    if(data.error)throw new Error(data.error);
-    const {rows,kpi}=data;
-    if(!rows.length){kpiEl.innerHTML=`<div style="color:#64748b;padding:12px;font-size:13px;grid-column:1/-1">無精品或配件資料。請確認已上傳<strong>零件型錄（零配件比對）</strong>。</div>`;matrixEl.innerHTML='';return;}
-    const PART_TYPES=['精品','配件'];const DEPT_ORDER=['一般','保險','延保','票券','內結','保固','VSA','善意維修'];const branchColors={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};const typeColors={'精品':'#8b5cf6','配件':'#14b8a6'};
-    const deptSet=new Set(rows.map(r=>r.account_type));const depts=[...deptSet].sort((a,b)=>{const ai=DEPT_ORDER.indexOf(a),bi=DEPT_ORDER.indexOf(b);if(ai>=0&&bi>=0)return ai-bi;if(ai>=0)return -1;if(bi>=0)return 1;return a.localeCompare(b,'zh-TW');});
-    const totalB=kpi.filter(r=>r.part_type==='精品').reduce((s,r)=>s+n(r.total_sales),0);const totalA=kpi.filter(r=>r.part_type==='配件').reduce((s,r)=>s+n(r.total_sales),0);const branches=[...new Set(rows.map(r=>r.branch))].sort();
-    let kpiHtml=`<div class="kpi-card"><div class="kpi-label">精品銷售合計</div><div class="kpi-value kpi-purple">${fmtK(totalB)}</div><div class="kpi-sub">K 元（未稅）</div></div><div class="kpi-card"><div class="kpi-label">配件銷售合計</div><div class="kpi-value kpi-teal">${fmtK(totalA)}</div><div class="kpi-sub">K 元（未稅）</div></div><div class="kpi-card"><div class="kpi-label">精品 ＋ 配件</div><div class="kpi-value kpi-green">${fmtK(totalB+totalA)}</div><div class="kpi-sub">K 元（未稅）</div></div>`;
-    branches.forEach(br=>{const brB=kpi.filter(r=>r.branch===br&&r.part_type==='精品').reduce((s,r)=>s+n(r.total_sales),0);const brA=kpi.filter(r=>r.branch===br&&r.part_type==='配件').reduce((s,r)=>s+n(r.total_sales),0);const col=branchColors[br]||'#94a3b8';kpiHtml+=`<div class="kpi-card"><div class="kpi-label" style="color:${col}">${br} 精品＋配件</div><div class="kpi-value" style="color:${col}">${fmtK(brB+brA)}</div><div class="kpi-sub">精 ${fmtK(brB)} ／ 配 ${fmtK(brA)}</div></div>`;});
-    kpiEl.innerHTML=kpiHtml;
-    const pivotMap={};rows.forEach(r=>{const key=`${r.branch}|||${r.sales_person}`;if(!pivotMap[key])pivotMap[key]={branch:r.branch,sales_person:r.sales_person,cells:{}};pivotMap[key].cells[`${r.part_type}|||${r.account_type}`]={sales:n(r.total_sales),qty:n(r.total_qty),cnt:parseInt(r.cnt||0)};});
-    const getRowTotal=row=>PART_TYPES.reduce((s,pt)=>s+depts.reduce((ss,d)=>ss+(row.cells[`${pt}|||${d}`]?.sales||0),0),0);
-    const pivotRows=Object.values(pivotMap).sort((a,b)=>{if(a.branch!==b.branch)return a.branch<b.branch?-1:1;return getRowTotal(b)-getRowTotal(a);});
-    const thB='padding:8px 10px;text-align:left;font-size:11px;font-weight:700;color:#64748b;background:#0f172a;border-bottom:1px solid #2d3f56;white-space:nowrap;';const thN=thB+'text-align:right;';const tdB='padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.4);font-size:12px;vertical-align:middle;border-top:0;';const tdN=tdB+'text-align:right;font-variant-numeric:tabular-nums;';
-    const sTh=(l,e='')=>`position:sticky;left:${l}px;z-index:5;background:#0f172a;${e}`;const sTd=(l,bg='#111827',e='')=>`position:sticky;left:${l}px;z-index:2;background:${bg};${e}`;const sThCorner=(l,e='')=>`position:sticky;left:${l}px;z-index:3;background:#0f172a;${e}`;
-    let html=`<table style="width:100%;border-collapse:separate;border-spacing:0;font-size:12px"><thead style="position:sticky;top:0;z-index:4;"><tr>`;
-    html+=`<th rowspan="2" style="${thB}${sThCorner(0,'border-right:1px solid #2d3f56;width:36px')}">#</th>`;html+=`<th rowspan="2" style="${thB}${sThCorner(36,'border-right:1px solid #2d3f56;width:60px')}">據點</th>`;html+=`<th rowspan="2" style="${thB}${sThCorner(96,'border-right:2px solid #374151;min-width:110px')}">銷售人員</th>`;
-    PART_TYPES.forEach((pt,pi)=>{const col=typeColors[pt]||'#94a3b8';const span=depts.length+1;const bdr=pi<PART_TYPES.length-1?'2px solid #374151':'1px solid #2d3f56';html+=`<th colspan="${span}" style="${thB}background:#0f172a;text-align:center;color:${col};border-right:${bdr};border-bottom:1px solid #1e293b">${pt}</th>`;});
-    html+=`<th rowspan="2" style="${thN}background:#0f172a;color:#10b981;border-left:2px solid #374151">總計(元)</th></tr><tr>`;
-    PART_TYPES.forEach((pt,pi)=>{depts.forEach(d=>{html+=`<th style="${thN}background:#0f172a;font-size:10px;color:#475569;border-right:1px solid #2d3f56">${d}</th>`;});const bdr=pi<PART_TYPES.length-1?'2px solid #374151':'1px solid #2d3f56';html+=`<th style="${thN}background:#0f172a;color:${typeColors[pt]||'#94a3b8'};font-size:10px;border-right:${bdr}">小計</th>`;});
-    html+=`</tr></thead><tbody>`;let rowIdx=0,grandTotal=0;const colGT={};
-    branches.forEach(br=>{const bCol=branchColors[br]||'#64748b';const brRows=pivotRows.filter(r=>r.branch===br);const brSub={};let brTotal=0;
-      brRows.forEach(row=>{rowIdx++;const bg=rowIdx%2===0?'#0e1a29':'#111827';html+=`<tr>`;html+=`<td style="${tdB}${sTd(0,bg,'color:#64748b;font-weight:700;border-right:1px solid #2d3f56;width:36px')}">${rowIdx}</td>`;html+=`<td style="${tdB}${sTd(36,bg,'border-right:1px solid #2d3f56;width:60px')}"><span style="display:inline-block;padding:2px 6px;border-radius:5px;font-size:10px;font-weight:700;background:${bCol}22;color:${bCol}">${br}</span></td>`;html+=`<td style="${tdB}${sTd(96,bg,'font-weight:600;border-right:2px solid #374151;min-width:110px')}">${row.sales_person}</td>`;
-        let rowTotal=0;PART_TYPES.forEach((pt,pi)=>{let ptSub=0;const col=typeColors[pt]||'#94a3b8';depts.forEach(d=>{const v=row.cells[`${pt}|||${d}`]?.sales||0;const ck=`${pt}|||${d}`;ptSub+=v;colGT[ck]=(colGT[ck]||0)+v;brSub[ck]=(brSub[ck]||0)+v;html+=`<td style="${tdN}${v>0?'':'color:#334155;'}border-right:1px solid #2d3f56">${v>0?fmt(v):'—'}</td>`;});rowTotal+=ptSub;const bdr=pi<PART_TYPES.length-1?'2px solid #374151':'1px solid #2d3f56';const stk=`${pt}|||TOTAL`;brSub[stk]=(brSub[stk]||0)+ptSub;colGT[stk]=(colGT[stk]||0)+ptSub;html+=`<td style="${tdN}color:${col};font-weight:700;border-right:${bdr}">${ptSub>0?fmt(ptSub):'—'}</td>`;});
-        grandTotal+=rowTotal;brTotal+=rowTotal;html+=`<td style="${tdN}color:#10b981;font-weight:800;border-left:2px solid #374151">${rowTotal>0?fmt(rowTotal):'—'}</td></tr>`;});
-      const subAlpha=br==='AMA'?'59,130,246':br==='AMC'?'16,185,129':'245,158,11';html+=`<tr style="background:rgba(${subAlpha},.07);border-top:1px solid ${bCol}44">`;html+=`<td style="${tdB}${sTd(0,'transparent','border-right:1px solid #2d3f56')}"></td>`;html+=`<td style="${tdB}${sTd(36,'transparent','border-right:1px solid #2d3f56')}"><span style="font-size:10px;font-weight:800;color:${bCol}">${br}</span></td>`;html+=`<td style="${tdB}${sTd(96,'transparent','font-size:11px;color:#64748b;border-right:2px solid #374151')}">${brRows.length} 人</td>`;
-      PART_TYPES.forEach((pt,pi)=>{const col=typeColors[pt]||'#94a3b8';let ptBrT=0;depts.forEach(d=>{const v=brSub[`${pt}|||${d}`]||0;ptBrT+=v;html+=`<td style="${tdN}color:${col};font-weight:600;font-size:11px;border-right:1px solid #2d3f56">${v>0?fmt(v):'—'}</td>`;});const bdr=pi<PART_TYPES.length-1?'2px solid #374151':'1px solid #2d3f56';html+=`<td style="${tdN}color:${col};font-weight:800;font-size:12px;border-right:${bdr}">${ptBrT>0?fmt(ptBrT):'—'}</td>`;});
-      html+=`<td style="${tdN}color:${bCol};font-weight:800;border-left:2px solid #374151">${brTotal>0?fmt(brTotal):'—'}</td></tr>`;});
-    html+=`<tr style="background:#1e293b;border-top:2px solid #3b82f6">`;html+=`<td style="${tdB}${sTd(0,'#1e293b','border-right:1px solid #2d3f56')}"></td>`;html+=`<td style="${tdB}${sTd(36,'#1e293b','border-right:1px solid #2d3f56')}"></td>`;html+=`<td style="${tdB}${sTd(96,'#1e293b','font-size:13px;font-weight:800;color:#fff;border-right:2px solid #374151')}">全廠合計</td>`;
-    PART_TYPES.forEach((pt,pi)=>{const col=typeColors[pt]||'#94a3b8';let ptGT=0;depts.forEach(d=>{const v=colGT[`${pt}|||${d}`]||0;ptGT+=v;html+=`<td style="${tdN}color:${col};font-weight:700;border-right:1px solid #2d3f56">${v>0?fmt(v):'—'}</td>`;});const bdr=pi<PART_TYPES.length-1?'2px solid #374151':'1px solid #2d3f56';html+=`<td style="${tdN}color:${col};font-weight:800;font-size:13px;border-right:${bdr}">${ptGT>0?fmt(ptGT):'—'}</td>`;});
-    html+=`<td style="${tdN}color:#10b981;font-weight:800;font-size:13px;border-left:2px solid #374151">${grandTotal>0?fmt(grandTotal):'—'}</td></tr>`;html+=`</tbody></table>`;matrixEl.innerHTML=html;
-  } catch(e){kpiEl.innerHTML=`<div style="color:#ef4444;padding:12px;grid-column:1/-1">${e.message}</div>`;matrixEl.innerHTML='';}
+    const res = await (await fetch('/api/upload-revenue-targets', { method:'POST', body: formData })).json();
+    if (res.error) throw new Error(res.error);
+    statusEl.textContent = '';
+    resultEl.innerHTML = `<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:12px 16px;font-size:13px;color:#10b981">
+      ✅ 成功匯入 <strong>${res.count}</strong> 筆資料
+      <div style="font-size:12px;color:#64748b;margin-top:6px">${res.entries?.map(e=>`${e.branch} ${e.period}`).join('、')}</div>
+    </div>`;
+    loadRevList();
+    input.value = '';
+  } catch(e) {
+    statusEl.textContent = '';
+    resultEl.innerHTML = `<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:12px 16px;font-size:13px;color:#ef4444">❌ ${e.message}</div>`;
+  }
 }
 
-async function loadConfigs() { try { saConfigs = await (await fetch('/api/sa-config')).json(); } catch(e) {} }
+// ══ 密碼驗證 & 鎖定畫面 ══
+const SETTINGS_TOKEN_KEY='volvo_settings_token';
+async function checkAuth(){const token=sessionStorage.getItem(SETTINGS_TOKEN_KEY);if(!token){showLock();return;}try{const data=await(await fetch(`/api/auth/settings/check?token=${token}`)).json();if(data.valid)hideLock();else{sessionStorage.removeItem(SETTINGS_TOKEN_KEY);showLock();}}catch(e){showLock();}}
+function showLock(){document.getElementById('lockScreen').style.display='flex';setTimeout(()=>document.getElementById('lockInput').focus(),60);}
+function hideLock(){document.getElementById('lockScreen').style.display='none';loadHistory();}
+async function doLogin(){const pwd=document.getElementById('lockInput').value,errEl=document.getElementById('lockError'),btn=document.getElementById('lockBtn');if(!pwd){errEl.textContent='請輸入密碼';return;}btn.disabled=true;btn.textContent='驗證中...';errEl.textContent='';try{const res=await fetch('/api/auth/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pwd})});const data=await res.json();if(res.ok&&data.token){sessionStorage.setItem(SETTINGS_TOKEN_KEY,data.token);document.getElementById('lockInput').value='';hideLock();}else{errEl.textContent=data.error||'密碼錯誤';document.getElementById('lockInput').value='';document.getElementById('lockInput').focus();}}catch(e){errEl.textContent='連線失敗，請重試';}finally{btn.disabled=false;btn.textContent='進入設定';}}
+async function changePassword(){const current=document.getElementById('pwdCurrent').value,newPwd=document.getElementById('pwdNew').value,confirm=document.getElementById('pwdConfirm').value,msgEl=document.getElementById('pwdMsg'),btn=document.getElementById('pwdBtn'),token=sessionStorage.getItem(SETTINGS_TOKEN_KEY);msgEl.textContent='';msgEl.style.color='#ef4444';if(!current){msgEl.textContent='請輸入目前密碼';return;}if(!newPwd){msgEl.textContent='請輸入新密碼';return;}if(newPwd.length<4){msgEl.textContent='新密碼至少需要 4 個字元';return;}if(newPwd!==confirm){msgEl.textContent='兩次輸入的新密碼不一致';return;}btn.disabled=true;btn.textContent='儲存中...';try{const res=await fetch('/api/auth/settings/password',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,currentPassword:current,newPassword:newPwd})});const data=await res.json();if(res.ok){msgEl.style.color='#10b981';msgEl.textContent='✅ 密碼已修改，請用新密碼重新登入';['pwdCurrent','pwdNew','pwdConfirm'].forEach(id=>document.getElementById(id).value='');sessionStorage.removeItem(SETTINGS_TOKEN_KEY);setTimeout(()=>{showLock();msgEl.textContent='';},1800);}else{msgEl.textContent=data.error||'修改失敗';}}catch(e){msgEl.textContent='連線失敗，請重試';}finally{btn.disabled=false;btn.textContent='儲存新密碼';}}
 
-async function loadSASales() {
-  const period=document.getElementById('selPeriod').value;const branch=document.getElementById('selBranch').value;const matrixEl=document.getElementById('saMatrix');const metaEl=document.getElementById('saMatrixMeta');
-  matrixEl.innerHTML='<div style="padding:40px;text-align:center;color:#64748b"><span class="spinner"></span>載入中...</div>';
-  const params=new URLSearchParams();if(period)params.set('period',period);if(branch)params.set('branch',branch);
-  try {
-    const data=await(await fetch(`/api/stats/sa-sales-matrix?${params}`)).json();if(data.error)throw new Error(data.error);
-    const {configs,rows,colTotals}=data;
-    if(!configs.length){matrixEl.innerHTML=`<div style="padding:48px;text-align:center;color:#64748b">尚未建立任何設定，請先至 <a href="/settings.html" style="color:#3b82f6">⚙️ 設定</a> 新增追蹤項目</div>`;metaEl.textContent='';return;}
-    if(!rows.length){matrixEl.innerHTML=`<div style="padding:48px;text-align:center;color:#64748b">此期間／據點無銷售資料</div>`;return;}
-    metaEl.textContent=`${configs.length} 個追蹤項目 · ${rows.length} 位銷售人員`;
-    const methodUnitMap={amount:'金額(元)',quantity:'數量(件)',count:'筆數(單)'};const branches=[...new Set(rows.map(r=>r.branch))].sort();const branchColors={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};const cfgColors=['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#f97316','#84cc16'];
-    const thBase='padding:10px 14px;text-align:left;font-size:12px;font-weight:700;color:#64748b;background:#0f172a;border-bottom:1px solid #2d3f56;white-space:nowrap;';const thNum=thBase+'text-align:right;';const tdBase='padding:9px 14px;border-bottom:1px solid rgba(45,63,86,.4);font-size:13px;vertical-align:middle;border-top:0;';const tdNum=tdBase+'text-align:right;font-variant-numeric:tabular-nums;';const stTh=(l,e='')=>`position:sticky;left:${l}px;z-index:5;background:#0f172a;${e}`;const stTd=(l,bg='#111827',e='')=>`position:sticky;left:${l}px;z-index:2;background:${bg};${e}`;const saCorner=(l,e='')=>`position:sticky;left:${l}px;z-index:3;background:#0f172a;${e}`;
-    let html=`<table style="width:100%;border-collapse:separate;border-spacing:0;font-size:13px"><thead style="position:sticky;top:0;z-index:4;"><tr>`;
-    html+=`<th style="${thBase}${saCorner(0,'border-right:1px solid #2d3f56;width:40px')}" rowspan="2">#</th>`;html+=`<th style="${thBase}${saCorner(40,'border-right:1px solid #2d3f56;width:70px')}" rowspan="2">據點</th>`;html+=`<th style="${thBase}${saCorner(110,'border-right:2px solid #374151;min-width:130px')}" rowspan="2">銷售人員</th>`;
-    configs.forEach((cfg,ci)=>{const col=cfgColors[ci%cfgColors.length];html+=`<th colspan="1" style="${thBase}background:#0f172a;text-align:center;color:${col};border-right:${ci<configs.length-1?'2px solid #2d3f56':'1px solid #2d3f56'};border-bottom:1px solid #1e293b">${cfg.config_name}</th>`;});
-    html+=`</tr><tr>`;configs.forEach((cfg,ci)=>{html+=`<th style="${thNum}background:#0f172a;border-right:${ci<configs.length-1?'2px solid #2d3f56':'1px solid #2d3f56'};font-size:11px">${methodUnitMap[cfg.stat_method]||'金額(元)'}</th>`;});html+=`</tr></thead><tbody>`;
-    let rowIdx=0;
-    for(const br of branches){const brRows=rows.filter(r=>r.branch===br);const brColor=branchColors[br]||'#64748b';
-      brRows.forEach(row=>{rowIdx++;const bg=rowIdx%2===0?'#0e1a29':'#111827';html+=`<tr>`;html+=`<td style="${tdBase}${stTd(0,bg,'color:#64748b;font-weight:700;border-right:1px solid #2d3f56;width:40px')}">${rowIdx}</td>`;html+=`<td style="${tdBase}${stTd(40,bg,'border-right:1px solid #2d3f56;width:70px')}"><span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;background:${brColor}22;color:${brColor}">${br}</span></td>`;html+=`<td style="${tdBase}${stTd(110,bg,'font-weight:600;border-right:2px solid #374151;min-width:130px')}">${row.sa_name}</td>`;
-        configs.forEach((cfg,ci)=>{const c=row.configs[cfg.id];const qty=c?c.qty:0,sales=c?c.sales:0,cnt=c?c.cnt:0;const has=qty>0||sales>0||cnt>0;const border=ci<configs.length-1?'2px solid #2d3f56':'';let disp,style;if(cfg.stat_method==='quantity'){disp=has?qty.toLocaleString(undefined,{maximumFractionDigits:1}):'—';style=has?'color:#e2e8f0;font-weight:600':'color:#334155';}else if(cfg.stat_method==='count'){disp=has?cnt.toLocaleString():'—';style=has?'color:#e2e8f0;font-weight:600':'color:#334155';}else{disp=has?fmt(sales):'—';style=has?'color:#10b981;font-weight:700':'color:#334155';}html+=`<td style="${tdNum}${style};border-right:${border}">${disp}</td>`;});html+=`</tr>`;});
-      const subBg=br==='AMA'?'rgba(59,130,246,.1)':br==='AMC'?'rgba(16,185,129,.1)':'rgba(245,158,11,.1)';html+=`<tr style="background:${subBg};border-top:1px solid ${brColor}44">`;html+=`<td style="${tdBase}${stTd(0,'transparent','border-right:1px solid #2d3f56')}"></td>`;html+=`<td style="${tdBase}${stTd(40,'transparent','border-right:1px solid #2d3f56')}"><span style="font-size:11px;font-weight:800;color:${brColor}">${br} 小計</span></td>`;html+=`<td style="${tdBase}${stTd(110,'transparent','font-size:12px;color:#64748b;border-right:2px solid #374151')}">${brRows.length} 人</td>`;
-      configs.forEach((cfg,ci)=>{const border=ci<configs.length-1?'2px solid #2d3f56':'';const brQ=brRows.reduce((s,r)=>s+(r.configs[cfg.id]?.qty||0),0);const brS=brRows.reduce((s,r)=>s+(r.configs[cfg.id]?.sales||0),0);const brC=brRows.reduce((s,r)=>s+(r.configs[cfg.id]?.cnt||0),0);const has=brQ>0||brS>0||brC>0;let sv;if(cfg.stat_method==='quantity')sv=has?brQ.toLocaleString(undefined,{maximumFractionDigits:1}):'—';else if(cfg.stat_method==='count')sv=has?brC.toLocaleString():'—';else sv=has?fmt(brS):'—';html+=`<td style="${tdNum}color:${brColor};font-weight:800;font-size:12px;border-right:${border}">${sv}</td>`;});html+=`</tr>`;}
-    html+=`<tr style="background:#1e293b;border-top:2px solid #3b82f6">`;html+=`<td style="${tdBase}${stTd(0,'#1e293b','border-right:1px solid #2d3f56')}"></td>`;html+=`<td style="${tdBase}${stTd(40,'#1e293b','border-right:1px solid #2d3f56')}"></td>`;html+=`<td style="${tdBase}${stTd(110,'#1e293b','font-size:13px;font-weight:800;color:#fff;border-right:2px solid #374151')}">全廠合計</td>`;
-    configs.forEach((cfg,ci)=>{const t=colTotals[cfg.id]||{qty:0,sales:0,cnt:0};const border=ci<configs.length-1?'2px solid #2d3f56':'';const has=t.qty>0||t.sales>0||t.cnt>0;let tv;if(cfg.stat_method==='quantity')tv=has?t.qty.toLocaleString(undefined,{maximumFractionDigits:1}):'—';else if(cfg.stat_method==='count')tv=has?t.cnt.toLocaleString():'—';else tv=has?fmt(t.sales):'—';html+=`<td style="${tdNum}color:#10b981;font-weight:800;font-size:13px;border-right:${border}">${tv}</td>`;});
-    html+=`</tr></tbody></table>`;matrixEl.innerHTML=html;
-  } catch(e){matrixEl.innerHTML=`<div style="padding:24px;color:#ef4444">${e.message}</div>`;}
-}
-
-async function loadTrend(branch) {
-  try {
-    const params=new URLSearchParams();if(branch)params.set('branch',branch);
-    const data=await(await fetch(`/api/stats/trend?${params}`)).json();if(data.error)throw new Error(data.error);
-    const rows=data.trend,prevMap={};
-    document.getElementById('tbTrend').innerHTML=rows.length?rows.map(r=>{const key=r.branch,cur=n(r.total_untaxed),prev=prevMap[key];const pct=prev?((cur-prev)/prev*100):null;prevMap[key]=cur;return`<tr><td>${r.period.slice(0,4)}年${r.period.slice(4)}月</td><td><span class="badge badge-blue">${r.branch}</span></td><td class="num">${parseInt(r.car_count||0)}</td><td class="num" style="font-weight:700">${fmt(r.total_untaxed)}</td><td class="num">${fmt(r.engine_wage)}</td><td class="num">${fmt(r.parts_income)}</td><td class="num ${pct===null?'':pct>=0?'up':'down'}">${pct===null?'-':(pct>=0?'▲':'▼')+Math.abs(pct).toFixed(1)+'%'}</td></tr>`;}).join(''):'<tr><td colspan="7" class="empty">無資料</td></tr>';
-  } catch(e){document.getElementById('tbTrend').innerHTML=`<tr><td colspan="7" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;}
-}
-
-async function loadDaily(period, branch) {
-  try {
-    const params=new URLSearchParams();if(period)params.set('period',period);if(branch)params.set('branch',branch);
-    const data=await(await fetch(`/api/stats/daily?${params}`)).json();if(data.error)throw new Error(data.error);
-    const summary=data.summary,daily=data.daily;
-    document.getElementById('dailyKPI').innerHTML=summary.map(r=>`<div class="kpi-card"><div class="kpi-label">${r.branch} 總台數</div><div class="kpi-value kpi-blue">${parseInt(r.total_cars||0).toLocaleString()}</div><div class="kpi-sub">台</div></div><div class="kpi-card"><div class="kpi-label">${r.branch} 工作天數</div><div class="kpi-value kpi-yellow">${parseInt(r.working_days||0)}</div><div class="kpi-sub">${r.configured_working_days!==null?'✅ 手動設定':'⚠️ 自動偵測'}</div></div><div class="kpi-card"><div class="kpi-label">${r.branch} 日均台數</div><div class="kpi-value kpi-green">${n(r.daily_avg).toFixed(1)}</div><div class="kpi-sub">最高${r.max_day}/最低${r.min_day}</div></div>`).join('');
-    const branchList=[...new Set(daily.map(r=>r.branch))].sort();const dateList=[...new Set(daily.map(r=>r.arrive_date?.slice(0,10)))].sort();const colors={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};const maxCount=Math.max(...daily.map(r=>parseInt(r.car_count||0)),1);const barW=Math.max(8,Math.min(24,Math.floor(560/(dateList.length*branchList.length+dateList.length))));const chartW=Math.max(700,dateList.length*(branchList.length*(barW+2)+10)+60);const chartH=200;const dayMap={};daily.forEach(r=>{const d=r.arrive_date?.slice(0,10);if(!dayMap[d])dayMap[d]={};dayMap[d][r.branch]=parseInt(r.car_count||0);});
-    let bars='',xLabels='';dateList.forEach((d,di)=>{const groupW=branchList.length*(barW+2),gx=50+di*(groupW+10);branchList.forEach((b,bi)=>{const val=dayMap[d]?.[b]||0,barH=val/maxCount*(chartH-40),x=gx+bi*(barW+2),y=chartH-20-barH;bars+=`<rect x="${x}" y="${y.toFixed(1)}" width="${barW}" height="${barH.toFixed(1)}" fill="${colors[b]||'#64748b'}" rx="2" opacity="0.85"><title>${b} ${d}: ${val}台</title></rect>`;if(val>0)bars+=`<text x="${(x+barW/2).toFixed(0)}" y="${(y-3).toFixed(0)}" text-anchor="middle" font-size="9" fill="#94a3b8">${val}</text>`;});xLabels+=`<text x="${(gx+(branchList.length*(barW+2))/2).toFixed(0)}" y="${chartH-4}" text-anchor="middle" font-size="9" fill="#64748b">${d.slice(8)}</text>`;});
-    let yAxis='';for(let i=0;i<=4;i++){const val=Math.round(maxCount*i/4),y=chartH-20-(i/4)*(chartH-40);yAxis+=`<line x1="45" y1="${y.toFixed(0)}" x2="${chartW}" y2="${y.toFixed(0)}" stroke="#2d3f56" stroke-width="1"/><text x="40" y="${(y+4).toFixed(0)}" text-anchor="end" font-size="9" fill="#64748b">${val}</text>`;}
-    const legend=branchList.map((b,i)=>`<rect x="${50+i*70}" y="8" width="10" height="10" fill="${colors[b]||'#64748b'}" rx="2"/><text x="${63+i*70}" y="17" font-size="11" fill="#94a3b8">${b}</text>`).join('');
-    document.getElementById('dailyChart').innerHTML=`<svg viewBox="0 0 ${chartW} ${chartH+10}" style="width:100%;height:auto;display:block">${yAxis}${bars}${xLabels}${legend}</svg>`;
-    const avgMap={};summary.forEach(r=>avgMap[r.branch]=n(r.daily_avg));
-    document.getElementById('tbDaily').innerHTML=daily.length?daily.map(r=>{const cnt=parseInt(r.car_count||0),avg=avgMap[r.branch]||0,diff=cnt-avg,pct=avg>0?(diff/avg*100):0;return`<tr><td>${r.arrive_date?.slice(0,10)}</td><td><span class="badge badge-blue">${r.branch}</span></td><td class="num" style="font-weight:700">${cnt}</td><td class="num ${diff>=0?'up':'down'}">${diff>=0?'▲':'▼'}${Math.abs(diff).toFixed(1)}<span style="font-size:11px;color:#64748b">(${pct>=0?'+':''}${pct.toFixed(0)}%)</span></td></tr>`;}).join(''):'<tr><td colspan="4" class="empty">無資料</td></tr>';
-  } catch(e){document.getElementById('dailyKPI').innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;}
-}
-
-(async () => {
-  await loadPeriods();
-  await Promise.all([loadAll(), loadConfigs()]);
-})();
+// ══ 初始化 ══
+checkAuth();
 </script>
 </body>
 </html>
