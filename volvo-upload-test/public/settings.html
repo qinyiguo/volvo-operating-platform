@@ -1334,25 +1334,12 @@ const PERF_SUBFIELDS=[
   {value:'addon_income',     label:'附加服務'},
   {value:'total_untaxed',    label:'合計（未稅）'},
 ];
-
-// ── 工資代碼（tech_wage）子函式 ──
-let perfTwcCodes = [];
 function selectPerfTwcMethod(val){document.querySelectorAll('input[name="perf_twc_method"]').forEach(el=>el.checked=el.value===val);['count','amount','hours'].forEach(v=>document.getElementById(`perfTwcSmLabel-${v}`)?.classList.toggle('selected',v===val));}
 function getPerfTwcMethod(){return document.querySelector('input[name="perf_twc_method"]:checked')?.value||'count';}
 function renderPerfTwcCodeList(){const el=document.getElementById('perfTwcCodeList');if(!el)return;if(!perfTwcCodes.length){el.innerHTML='<div style="color:#64748b;font-size:12px;padding:4px 0 8px">尚未加入代碼</div>';return;}el.innerHTML=perfTwcCodes.map((wc,i)=>`<div class="filter-tag-row"><span class="type-badge" style="background:rgba(59,130,246,.2);color:#60a5fa">${wc.type==='range'?'範圍':'精確'}</span><span style="font-size:13px;font-weight:600;flex:1">${wc.type==='range'?`${wc.from}～${wc.to}`:wc.value}</span><button class="remove-btn" onclick="removePerfTwcCode(${i})">×</button></div>`).join('');}
 function removePerfTwcCode(i){perfTwcCodes.splice(i,1);renderPerfTwcCodeList();}
 function addPerfTwcCode(){const raw=document.getElementById('perfTwcCodeInput').value.trim();if(!raw)return;if(raw.includes('-')){const[from,to]=raw.split('-').map(s=>s.trim());if(from&&to)perfTwcCodes.push({type:'range',from,to});}else{perfTwcCodes.push({type:'exact',value:raw});}document.getElementById('perfTwcCodeInput').value='';renderPerfTwcCodeList();}
-  {value:'bodywork_income',  label:'鈑金收入'},
-  {value:'paint_income',     label:'烤漆收入'},
-  {value:'engine_wage',      label:'引擎工資'},
-  {value:'parts_income',     label:'零件收入'},
-  {value:'accessories_income',label:'配件收入'},
-  {value:'boutique_income',  label:'精品收入'},
-  {value:'carwash_income',   label:'洗車美容'},
-  {value:'outsource_income', label:'外包收入'},
-  {value:'addon_income',     label:'附加服務'},
-  {value:'total_untaxed',    label:'合計（未稅）'},
-];
+  
 function _buildSubfieldChips(selectedVals){
   document.getElementById('perfSubfieldChips').innerHTML=PERF_SUBFIELDS.map(sf=>{
     const on=selectedVals.includes(sf.value);
