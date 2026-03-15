@@ -1026,6 +1026,29 @@ app.get('/api/stats/performance', async (req, res) => {
                FROM parts_sales ps JOIN parts_catalog pc ON ps.part_number=pc.part_number
                WHERE ${c.join(' AND ')}`, p
             )).rows[0]?.v || 0);
+
+          } else if (metric.metric_type === 'repair_subfield') {
+            // 維修收入子欄位：自選加總欄位 + 帳類篩選
+            // 例：自費鈑烤 = account_type=['一般'], subfields=['bodywork_income','paint_income']
+            //     保險鈑烤 = account_type=['保險'], subfields=['total_untaxed']
+            const VALID_COLS = new Set([
+              'bodywork_income','paint_income','engine_wage','parts_income',
+              'accessories_income','boutique_income','carwash_income',
+              'outsource_income','addon_income','total_untaxed','parts_cost'
+            ]);
+            const acTypes  = filters.filter(f => f.type === 'account_type').map(f => f.value);
+            const subfields = filters.filter(f => f.type === 'subfield' && VALID_COLS.has(f.value)).map(f => f.value);
+            if (!subfields.length) {
+              actual = 0;
+            } else {
+              const sumExpr = subfields.map(c => `COALESCE(${c},0)`).join(' + ');
+              const p = [period, br]; let i = 3;
+              let where = 'period=$1 AND branch=$2';
+              if (acTypes.length) { where += ` AND account_type=ANY($${i++})`; p.push(acTypes); }
+              actual = parseFloat((await pool.query(
+                `SELECT COALESCE(SUM(${sumExpr}),0) as v FROM repair_income WHERE ${where}`, p
+              )).rows[0]?.v || 0);
+            }
           }
         } catch(e) { actual = 0; }
 
