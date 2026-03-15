@@ -67,12 +67,12 @@
     <span id="lastUpdate" style="margin-left:auto;font-size:12px;color:#64748b"></span>
   </div>
 
-  <!-- KPI 整體達成率 -->
-  <div id="perfKPI" class="kpi-grid"></div>
-
   <!-- 四大營收 KPI -->
   <div id="revenueKPISection" style="margin-bottom:20px;display:none">
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px" id="revenueKPIGrid"></div>
+    <!-- 有費營收（全寬） -->
+    <div id="revKPI-paid" style="margin-bottom:12px"></div>
+    <!-- 一般/鈑烤/延保（三欄） -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px" id="revKPI-sub"></div>
   </div>
 
   <!-- 收入明細分解 -->
@@ -134,8 +134,7 @@ async function doLoad() {
 // ══ 四大營收 KPI ══
 async function loadRevenueKPI(period, branch) {
   const section = document.getElementById('revenueKPISection');
-  const grid = document.getElementById('revenueKPIGrid');
-  if (!section || !grid) return;
+  if (!section) return;
   if (!period) { section.style.display = 'none'; return; }
 
   try {
@@ -151,23 +150,19 @@ async function loadRevenueKPI(period, branch) {
     (Array.isArray(tgtRes) ? tgtRes : []).forEach(t => { tMap[t.branch] = t; });
     const bdata = bkRes.branches || {};
 
-    const METRICS = [
-      { key:'paid',     label:'🔶 有費營收', color:'#f97316', actualKey:'paid_total'     },
-      { key:'bodywork', label:'🔨 鈑烤營收', color:'#8b5cf6', actualKey:'bodywork_total' },
-      { key:'general',  label:'💙 一般營收', color:'#3b82f6', actualKey:'general_total'  },
-      { key:'extended', label:'🛡️ 延保營收', color:'#10b981', actualKey:'extended'       },
-    ];
-
-    let html = '';
-    METRICS.forEach(m => {
-      html += `<div style="background:#1a2332;border:1px solid #2d3f56;border-radius:12px;padding:16px;overflow:hidden">
-        <div style="font-size:13px;font-weight:800;color:${m.color};margin-bottom:14px">${m.label}</div>
-        <div style="display:grid;grid-template-columns:repeat(${BRANCHES.length},1fr);gap:0;border-top:1px solid #2d3f56">`;
+    const buildCard = (m, fullWidth) => {
+      const cols = fullWidth ? BRANCHES.length : BRANCHES.length;
+      let card = `<div style="background:#1a2332;border:1px solid #2d3f56;border-radius:12px;overflow:hidden">
+        <div style="padding:12px 18px 10px;border-bottom:1px solid #2d3f56;display:flex;align-items:center;gap:8px">
+          <span style="font-size:14px;font-weight:800;color:${m.color}">${m.label}</span>
+          ${fullWidth ? `<span style="font-size:11px;color:#475569;margin-left:4px">一般＋保險鈑烤＋延保</span>` : ''}
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(${cols},1fr)">`;
 
       BRANCHES.forEach((br, bi) => {
-        const col  = brColors[br] || '#64748b';
-        const t    = tMap[br] || {};
-        const bd   = bdata[br] || {};
+        const col    = brColors[br] || '#64748b';
+        const t      = tMap[br] || {};
+        const bd     = bdata[br] || {};
         const actual = bd[m.actualKey] || 0;
         const target = parseFloat(t[`${m.key}_target`] || 0);
         const ly     = parseFloat(t[`${m.key}_last_year`] || 0);
@@ -177,14 +172,14 @@ async function loadRevenueKPI(period, branch) {
         const barW   = rate !== null ? Math.min(100, rate).toFixed(0) : 0;
         const borderR = bi < BRANCHES.length - 1 ? 'border-right:1px solid #2d3f56;' : '';
 
-        html += `<div style="padding:12px 14px;${borderR}">
-          <div style="font-size:11px;font-weight:800;color:${col};margin-bottom:8px">${br}</div>
-          <div style="font-size:18px;font-weight:800;color:#e2e8f0;margin-bottom:2px">${fmtK(actual)}</div>
-          <div style="display:flex;align-items:center;gap:5px;margin-bottom:8px">
-            <div style="flex:1;background:#0f172a;border-radius:3px;height:4px">
-              <div style="width:${barW}%;height:4px;background:${rCol};border-radius:3px;transition:width .4s"></div>
+        card += `<div style="padding:${fullWidth?'16px 20px':'14px 16px'};${borderR}">
+          <div style="font-size:11px;font-weight:800;color:${col};margin-bottom:8px;letter-spacing:.04em">${br}</div>
+          <div style="font-size:${fullWidth?'24px':'20px'};font-weight:800;color:#e2e8f0;margin-bottom:6px">${fmtK(actual)}</div>
+          <div style="display:flex;align-items:center;gap:5px;margin-bottom:10px">
+            <div style="flex:1;background:#0f172a;border-radius:3px;height:5px">
+              <div style="width:${barW}%;height:5px;background:${rCol};border-radius:3px;transition:width .4s"></div>
             </div>
-            <span style="font-size:12px;font-weight:800;color:${rCol};white-space:nowrap">${rate !== null ? rate.toFixed(1)+'%' : '—'}</span>
+            <span style="font-size:${fullWidth?'13px':'12px'};font-weight:800;color:${rCol};white-space:nowrap">${rate !== null ? rate.toFixed(1)+'%' : '—'}</span>
           </div>
           <div style="display:grid;grid-template-columns:auto 1fr;gap:2px 8px;font-size:11px;color:#64748b;align-items:center">
             <span>目標</span>
@@ -198,13 +193,28 @@ async function loadRevenueKPI(period, branch) {
         </div>`;
       });
 
-      html += `</div></div>`;
-    });
+      card += `</div></div>`;
+      return card;
+    };
 
-    grid.innerHTML = html;
+    // 有費營收 — 全寬
+    const paidEl = document.getElementById('revKPI-paid');
+    if (paidEl) paidEl.innerHTML = buildCard(
+      { key:'paid', label:'🔶 有費營收', color:'#f97316', actualKey:'paid_total' }, true
+    );
+
+    // 一般 / 鈑烤 / 延保 — 三欄
+    const subEl = document.getElementById('revKPI-sub');
+    if (subEl) subEl.innerHTML = [
+      { key:'general',  label:'💙 一般營收', color:'#3b82f6', actualKey:'general_total'  },
+      { key:'bodywork', label:'🔨 鈑烤營收', color:'#8b5cf6', actualKey:'bodywork_total' },
+      { key:'extended', label:'🛡️ 延保營收', color:'#10b981', actualKey:'extended'       },
+    ].map(m => buildCard(m, false)).join('');
+
     section.style.display = '';
   } catch(e) {
-    grid.innerHTML = `<div style="color:#ef4444;padding:12px">${e.message}</div>`;
+    const paidEl = document.getElementById('revKPI-paid');
+    if (paidEl) paidEl.innerHTML = `<div style="color:#ef4444;padding:12px">${e.message}</div>`;
     section.style.display = '';
   }
 }
@@ -309,15 +319,11 @@ async function loadIncomeBreakdown(period, branch) {
 
 // ══ 業績進度 ══
 async function loadPerformance(period, branch) {
-  const kpiEl    = document.getElementById('perfKPI');
   const detailEl = document.getElementById('perfDetail');
   const noConfEl = document.getElementById('perfNoConfig');
-  if (!kpiEl) return;
   if (!period) {
-    kpiEl.innerHTML = '<div style="color:#64748b;padding:12px;font-size:13px">請先選擇期間後按查詢</div>';
     if (detailEl) detailEl.innerHTML = ''; return;
   }
-  kpiEl.innerHTML = '';
   if (detailEl) detailEl.innerHTML = '<div class="loading"><span class="spinner"></span>載入中</div>';
   try {
     const params = new URLSearchParams({ period });
@@ -327,8 +333,7 @@ async function loadPerformance(period, branch) {
     const { metrics, results } = data;
     if (!metrics.length) {
       if (noConfEl) noConfEl.style.display = '';
-      if (detailEl) detailEl.innerHTML = '';
-      kpiEl.innerHTML = ''; return;
+      if (detailEl) detailEl.innerHTML = ''; return;
     }
     if (noConfEl) noConfEl.style.display = 'none';
 
@@ -336,23 +341,6 @@ async function loadPerformance(period, branch) {
     const brColors = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b' };
     const TYPE_LABEL = { repair_income:'🔧 維修收入(合計)', repair_subfield:'🔨 維修收入(子欄位)', parts:'🔩 零件銷售', boutique:'💎 精品配件' };
     const FIELD_UNIT = { amount:'元', qty:'件', count:'筆' };
-
-    // KPI
-    let kpiHtml = '';
-    BRANCHES.forEach(br => {
-      const col = brColors[br] || '#64748b';
-      const withTarget = results.filter(r => r.branches[br]?.target !== null).length;
-      const achieved   = results.filter(r => (r.branches[br]?.achieve_rate || 0) >= 100).length;
-      const sumRate    = results.reduce((s, r) => s + (r.branches[br]?.achieve_rate || 0), 0);
-      const avgRate    = withTarget > 0 ? sumRate / withTarget : null;
-      const rCol = avgRate === null ? '#64748b' : avgRate >= 100 ? '#10b981' : avgRate >= 80 ? '#f59e0b' : '#ef4444';
-      kpiHtml += `<div class="kpi-card">
-        <div class="kpi-label" style="color:${col}">${br} 整體達成率</div>
-        <div class="kpi-value" style="color:${rCol}">${avgRate !== null ? avgRate.toFixed(1) + '%' : '—'}</div>
-        <div class="kpi-sub">${achieved} / ${withTarget} 項達標</div>
-      </div>`;
-    });
-    kpiEl.innerHTML = kpiHtml;
 
     const metricMap = {}; metrics.forEach(m => { metricMap[m.id] = m; });
     let html = '';
@@ -414,7 +402,6 @@ async function loadPerformance(period, branch) {
     if (lbl && period) lbl.textContent = `${period.slice(0,4)}年${period.slice(4)}月`;
   } catch(e) {
     if (detailEl) detailEl.innerHTML = `<div style="color:#ef4444;padding:16px">${e.message}</div>`;
-    kpiEl.innerHTML = '';
   }
 }
 
