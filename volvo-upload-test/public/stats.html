@@ -346,7 +346,9 @@ async function loadPeriods() {
       opt.value = p; opt.textContent = `${p.slice(0,4)}年${p.slice(4)}月`;
       sel.appendChild(opt);
     });
-    if (periods.length) sel.value = periods[0];
+    const now = new Date();
+    const curPeriod = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}`;
+    sel.value = periods.includes(curPeriod) ? curPeriod : (periods.length ? periods[0] : '');
   } catch(e) {}
 }
 
