@@ -1105,7 +1105,9 @@ app.post('/api/upload-revenue-targets', upload.single('file'), async (req, res) 
 app.post('/api/upload-revenue-targets-native', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '請選擇檔案' });
   const year = String(req.body.year || '').trim();
+  const dataType = String(req.body.dataType || 'target').trim(); // 'target' or 'last_year'
   if (!year.match(/^\d{4}$/)) return res.status(400).json({ error: '請指定正確的年份（4位數）' });
+  const suffix = dataType === 'last_year' ? '_last_year' : '_target';
   try {
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer', cellDates: true });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -1157,7 +1159,7 @@ app.post('/api/upload-revenue-targets-native', upload.single('file'), async (req
           const period = `${year}${String(mo).padStart(2,'0')}`;
           const key = `${branch}_${period}`;
           if (!entriesMap[key]) entriesMap[key] = { branch, period };
-          entriesMap[key][`${field}_target`] = Math.round(valK * 1000);
+          entriesMap[key][`${field}${suffix}`] = Math.round(valK * 1000);
         }
       }
     }
@@ -1167,22 +1169,35 @@ app.post('/api/upload-revenue-targets-native', upload.single('file'), async (req
     try {
       await client.query('BEGIN');
       for (const e of entries) {
-        await client.query(`
-          INSERT INTO revenue_targets (branch,period,paid_target,bodywork_target,general_target,extended_target,updated_at)
-          VALUES ($1,$2,$3,$4,$5,$6,NOW())
-          ON CONFLICT (branch,period) DO UPDATE SET
-            paid_target    = COALESCE($3, revenue_targets.paid_target),
-            bodywork_target= COALESCE($4, revenue_targets.bodywork_target),
-            general_target = COALESCE($5, revenue_targets.general_target),
-            extended_target= COALESCE($6, revenue_targets.extended_target),
-            updated_at=NOW()
-        `, [e.branch, e.period, e.paid_target||null, e.bodywork_target||null, e.general_target||null, e.extended_target||null]);
+        if (dataType === 'last_year') {
+          await client.query(`
+            INSERT INTO revenue_targets (branch,period,paid_last_year,bodywork_last_year,general_last_year,extended_last_year,updated_at)
+            VALUES ($1,$2,$3,$4,$5,$6,NOW())
+            ON CONFLICT (branch,period) DO UPDATE SET
+              paid_last_year    = COALESCE($3, revenue_targets.paid_last_year),
+              bodywork_last_year= COALESCE($4, revenue_targets.bodywork_last_year),
+              general_last_year = COALESCE($5, revenue_targets.general_last_year),
+              extended_last_year= COALESCE($6, revenue_targets.extended_last_year),
+              updated_at=NOW()
+          `, [e.branch, e.period, e.paid_last_year||null, e.bodywork_last_year||null, e.general_last_year||null, e.extended_last_year||null]);
+        } else {
+          await client.query(`
+            INSERT INTO revenue_targets (branch,period,paid_target,bodywork_target,general_target,extended_target,updated_at)
+            VALUES ($1,$2,$3,$4,$5,$6,NOW())
+            ON CONFLICT (branch,period) DO UPDATE SET
+              paid_target    = COALESCE($3, revenue_targets.paid_target),
+              bodywork_target= COALESCE($4, revenue_targets.bodywork_target),
+              general_target = COALESCE($5, revenue_targets.general_target),
+              extended_target= COALESCE($6, revenue_targets.extended_target),
+              updated_at=NOW()
+          `, [e.branch, e.period, e.paid_target||null, e.bodywork_target||null, e.general_target||null, e.extended_target||null]);
+        }
       }
       await client.query('COMMIT');
       const summary = {};
       entries.forEach(e => { if (!summary[e.period]) summary[e.period] = []; summary[e.period].push(e.branch); });
       const FIELD_LABEL = { paid:'有費營收', bodywork:'鈑烤營收', general:'一般營收', extended:'延保營收' };
-      res.json({ ok:true, count:entries.length, year, summary, fields:Object.keys(data).map(f=>FIELD_LABEL[f]||f) });
+      res.json({ ok:true, count:entries.length, year, dataType, summary, fields:Object.keys(data).map(f=>FIELD_LABEL[f]||f) });
     } catch(err) { await client.query('ROLLBACK'); throw err; }
     finally { client.release(); }
   } catch(err) { res.status(500).json({ error: err.message }); }
