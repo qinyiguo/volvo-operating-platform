@@ -289,20 +289,21 @@
         </label>
       </div>
 
-      <div class="modal-section-label">人員分類</div>
+      <div class="modal-section-label">人員分類（可同時勾選兩個）</div>
       <div style="font-size:12px;color:#64748b;background:#0f172a;border:1px solid #2d3f56;border-radius:6px;padding:8px 12px;margin-bottom:10px;line-height:1.7">
-        <strong>銷售人員</strong>：依 parts_sales.sales_person 統計，對應 SA / 業務員<br>
-        <strong>技師施工</strong>：依 parts_sales.pickup_person 統計，對應領料 / 施工技師
+        同時勾選兩個時，此設定會同時出現在「銷售人員」與「技師施工」兩個分頁<br>
+        <strong>銷售人員</strong>：依 parts_sales.sales_person 統計<br>
+        <strong>技師施工</strong>：依 parts_sales.pickup_person 統計
       </div>
       <div class="stat-method-options">
-        <label class="stat-radio-item selected" id="ptLabel-sales_person" onclick="selectPersonType('sales_person')">
-          <input type="radio" name="person_type" value="sales_person" checked>
+        <div class="stat-radio-item selected" id="ptLabel-sales_person" onclick="togglePersonType('sales_person')">
+          <input type="checkbox" name="person_type" value="sales_person" checked style="pointer-events:none;accent-color:#3b82f6;width:15px;height:15px">
           <div class="stat-radio-info"><span class="stat-radio-name">👤 銷售人員</span><span class="stat-radio-desc">SA / 業務員（sales_person）</span></div>
-        </label>
-        <label class="stat-radio-item" id="ptLabel-pickup_person" onclick="selectPersonType('pickup_person')">
-          <input type="radio" name="person_type" value="pickup_person">
+        </div>
+        <div class="stat-radio-item" id="ptLabel-pickup_person" onclick="togglePersonType('pickup_person')">
+          <input type="checkbox" name="person_type" value="pickup_person" style="pointer-events:none;accent-color:#f59e0b;width:15px;height:15px">
           <div class="stat-radio-info"><span class="stat-radio-name">🔧 技師施工</span><span class="stat-radio-desc">領料 / 施工技師（pickup_person）</span></div>
-        </label>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -1015,8 +1016,34 @@ const PERSON_TYPE_INFO = { sales_person:{label:'👤 銷售人員',badgeStyle:'b
 function selectStatMethod(val) { document.querySelectorAll('input[name="stat_method"]').forEach(el => el.checked = el.value===val); ['amount','quantity','count'].forEach(v => document.getElementById(`smLabel-${v}`)?.classList.toggle('selected', v===val)); }
 function getStatMethod() { return document.querySelector('input[name="stat_method"]:checked')?.value||'amount'; }
 function setStatMethod(val) { selectStatMethod(val||'amount'); }
-function selectPersonType(val) { document.querySelectorAll('input[name="person_type"]').forEach(el => el.checked = el.value===val); ['sales_person','pickup_person'].forEach(v => document.getElementById(`ptLabel-${v}`)?.classList.toggle('selected', v===val)); }
-function getPersonType() { return document.querySelector('input[name="person_type"]:checked')?.value||'sales_person'; }
+function togglePersonType(val) {
+  const cb = document.querySelector(`input[name="person_type"][value="${val}"]`);
+  const label = document.getElementById(`ptLabel-${val}`);
+  if (!cb || !label) return;
+  // 至少一個必須勾選
+  const checkedCount = document.querySelectorAll('input[name="person_type"]:checked').length;
+  if (cb.checked && checkedCount <= 1) { return; } // 阻止取消最後一個
+  cb.checked = !cb.checked;
+  label.classList.toggle('selected', cb.checked);
+}
+function getPersonType() {
+  const vals = [...document.querySelectorAll('input[name="person_type"]:checked')].map(el => el.value);
+  if (vals.includes('sales_person') && vals.includes('pickup_person')) return 'both';
+  return vals[0] || 'sales_person';
+}
+// 載入設定時還原勾選狀態
+function setPersonType(val) {
+  const isSales = val === 'sales_person' || val === 'both';
+  const isTech  = val === 'pickup_person' || val === 'both';
+  ['sales_person','pickup_person'].forEach(v => {
+    const cb    = document.querySelector(`input[name="person_type"][value="${v}"]`);
+    const label = document.getElementById(`ptLabel-${v}`);
+    if (!cb || !label) return;
+    const on = v === 'sales_person' ? isSales : isTech;
+    cb.checked = on;
+    label.classList.toggle('selected', on);
+  });
+}
 async function loadConfigs() {
   try { configs = await (await fetch('/api/sa-config')).json(); renderConfigList(); }
   catch(e) { document.getElementById('configList').innerHTML = `<div style="color:#ef4444">${e.message}</div>`; }
@@ -1052,7 +1079,7 @@ function startNewConfig() {
   editingConfigId=null; editingFilters=[];
   document.getElementById('editorTitle').textContent='新增設定';
   document.getElementById('cfgName').value=''; document.getElementById('cfgDesc').value='';
-  setStatMethod('amount'); selectPersonType('sales_person'); renderFilterList(); resetAddRow();
+  setStatMethod('amount'); setPersonType('sales_person'); renderFilterList(); resetAddRow();
   openModal('saModal');
   setTimeout(()=>document.getElementById('cfgName').focus(),100);
 }
@@ -1060,7 +1087,7 @@ function startEditConfig(id) {
   const cfg=configs.find(c=>c.id===id); editingConfigId=id; editingFilters=(cfg.filters||[]).map(f=>({...f}));
   document.getElementById('editorTitle').textContent=`編輯設定 — ${cfg.config_name}`;
   document.getElementById('cfgName').value=cfg.config_name; document.getElementById('cfgDesc').value=cfg.description||'';
-  setStatMethod(cfg.stat_method||'amount'); selectPersonType(cfg.person_type||'sales_person'); renderFilterList(); resetAddRow();
+  setStatMethod(cfg.stat_method||'amount'); setPersonType(cfg.person_type||'sales_person'); renderFilterList(); resetAddRow();
   openModal('saModal');
 }
 function cancelEdit() { closeModal('saModal'); editingFilters=[]; }
