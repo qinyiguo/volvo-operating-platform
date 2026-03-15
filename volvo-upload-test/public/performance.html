@@ -7,8 +7,6 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
-
-  /* ══ STICKY HEADER ══ */
   .sticky-header { position: sticky; top: 0; z-index: 200; background: #0f172a; box-shadow: 0 4px 24px rgba(0,0,0,.6); }
   .nav { background: #1e293b; border-bottom: 1px solid #2d3f56; padding: 0 24px; display: flex; align-items: center; }
   .nav-brand { font-size: 15px; font-weight: 700; color: #fff; padding: 16px 0; margin-right: 24px; }
@@ -18,12 +16,12 @@
   .header-body { padding: 10px 24px 8px; }
   .filter-bar { display: flex; gap: 10px; align-items: center; background: #1e293b; border: 1px solid #2d3f56; border-radius: 10px; padding: 10px 16px; margin-bottom: 10px; flex-wrap: wrap; }
   .filter-bar label { font-size: 12px; color: #64748b; font-weight: 600; }
-  .filter-bar select { background: #0f172a; border: 1px solid #2d3f56; color: #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 13px; }
+  .branch-select { background: #0f172a; border: 1px solid #2d3f56; color: #e2e8f0; padding: 7px 10px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; outline: none; transition: border-color .15s; }
+  .branch-select:hover, .branch-select:focus { border-color: #3b82f6; }
   .tab-bar-wrap { display: flex; gap: 0; background: #0f172a; border: 1px solid #2d3f56; border-radius: 10px; padding: 4px; width: fit-content; }
   .tab-btn { padding: 8px 20px; border: none; border-radius: 7px; font-size: 13px; font-weight: 700; cursor: pointer; background: transparent; color: #64748b; transition: all .15s; }
   .tab-btn.active { background: #3b82f6; color: #fff; }
   .tab-btn:hover:not(.active) { color: #e2e8f0; }
-
   .container { padding: 16px 24px 24px; max-width: 1400px; margin: 0 auto; }
   .btn { padding: 7px 16px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; }
   .btn-primary { background: #3b82f6; color: #fff; }
@@ -37,44 +35,61 @@
   .card-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .card-title-note { font-size: 11px; font-weight: 400; color: #64748b; margin-left: auto; }
   .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
-  .badge-blue   { background: rgba(59,130,246,.15); color: #3b82f6; }
-  .badge-green  { background: rgba(16,185,129,.15); color: #10b981; }
-  .badge-gray   { background: rgba(100,116,139,.15); color: #94a3b8; }
-  .empty { text-align: center; padding: 48px; color: #64748b; font-size: 14px; }
+  .badge-blue { background: rgba(59,130,246,.15); color: #3b82f6; }
+  .badge-green { background: rgba(16,185,129,.15); color: #10b981; }
+  .badge-gray { background: rgba(100,116,139,.15); color: #94a3b8; }
   .loading { text-align: center; padding: 48px; color: #64748b; }
   .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #2d3f56; border-top-color: #3b82f6; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 8px; vertical-align: middle; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .perf-block { border: 1px solid #2d3f56; border-radius: 10px; margin-bottom: 14px; overflow: hidden; }
   .perf-block-header { background: #0f172a; padding: 12px 18px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .perf-block-body { display: grid; }
-  .perf-cell { padding: 16px 20px; border-right: 1px solid #2d3f56; }
-  .perf-cell:last-child { border-right: none; }
-
-  /* ══ 達標摘要列 ══ */
-  .achieve-bar {
-    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
-    background: rgba(15,23,42,.9); border: 1px solid #2d3f56;
-    border-radius: 10px; padding: 12px 16px; margin-bottom: 14px;
-  }
+  .perf-cell { padding: 16px 20px; }
+  .achieve-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; background: rgba(15,23,42,.9); border: 1px solid #2d3f56; border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; }
   .achieve-bar-label { font-size: 11px; color: #475569; font-weight: 700; letter-spacing: .05em; white-space: nowrap; }
-  .achieve-chip {
-    display: flex; align-items: center; gap: 8px;
-    background: rgba(255,255,255,.03); border: 1px solid #2d3f56;
-    border-radius: 8px; padding: 8px 14px; transition: border-color .15s;
-  }
-  .achieve-chip .br-name { font-size: 12px; font-weight: 800; }
-  .achieve-chip .ac-count { font-size: 22px; font-weight: 800; line-height: 1; }
-  .achieve-chip .ac-total { font-size: 12px; color: #475569; }
-  .achieve-chip .ac-bar-wrap { display: flex; flex-direction: column; gap: 3px; }
-  .achieve-chip .ac-bar-bg { width: 48px; background: #0f172a; border-radius: 3px; height: 4px; }
-  .achieve-chip .ac-bar-fill { height: 4px; border-radius: 3px; transition: width .4s; }
-  .achieve-chip .ac-pct { font-size: 10px; font-weight: 700; }
+  .achieve-chip { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,.03); border: 1px solid #2d3f56; border-radius: 8px; padding: 8px 14px; }
   .full-badge { font-size: 10px; padding: 2px 7px; border-radius: 10px; background: rgba(16,185,129,.15); color: #10b981; white-space: nowrap; }
+
+  /* ══ Custom Period Selector ══ */
+  .period-selector { position: relative; }
+  .period-btn { display: flex; align-items: center; gap: 8px; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: 7px 12px 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .15s; user-select: none; min-width: 148px; justify-content: space-between; outline: none; }
+  .period-btn:hover { border-color: #3b82f6; background: #141f33; }
+  .period-btn.open { border-color: #3b82f6; background: #141f33; }
+  .period-btn .pb-year { font-size: 11px; font-weight: 600; color: #64748b; margin-right: 2px; }
+  .period-btn .pb-month { font-size: 15px; font-weight: 800; color: #e2e8f0; }
+  .period-btn .pb-arrow { font-size: 9px; color: #475569; transition: transform .2s; line-height: 1; margin-left: 4px; }
+  .period-btn.open .pb-arrow { transform: rotate(180deg); color: #3b82f6; }
+  .period-dropdown { position: absolute; top: calc(100% + 6px); left: 0; background: #1a2740; border: 1px solid #334155; border-radius: 12px; box-shadow: 0 16px 48px rgba(0,0,0,.8); z-index: 9999; width: 260px; overflow: hidden; display: none; flex-direction: column; }
+  .period-dropdown.open { display: flex; }
+  .period-dd-header { padding: 12px 14px 10px; border-bottom: 1px solid #2d3f56; flex-shrink: 0; }
+  .period-dd-header-title { font-size: 11px; font-weight: 700; color: #475569; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 8px; }
+  .period-dd-search input { width: 100%; background: #0f172a; border: 1px solid #2d3f56; color: #e2e8f0; padding: 7px 12px; border-radius: 7px; font-size: 12px; outline: none; transition: border-color .15s; }
+  .period-dd-search input:focus { border-color: #3b82f6; }
+  .period-dd-list { overflow-y: auto; max-height: 340px; padding: 6px 0; }
+  .period-dd-list::-webkit-scrollbar { width: 4px; }
+  .period-dd-list::-webkit-scrollbar-track { background: transparent; }
+  .period-dd-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+  .period-dd-year-group { padding: 0; }
+  .period-dd-year-label { font-size: 11px; font-weight: 700; color: #374151; letter-spacing: .06em; padding: 8px 14px 4px; display: flex; align-items: center; gap: 8px; }
+  .period-dd-year-label::after { content: ''; flex: 1; height: 1px; background: #1e3050; }
+  .period-dd-months { display: grid; grid-template-columns: repeat(3,1fr); gap: 4px; padding: 0 10px 8px; }
+  .period-dd-mo { display: flex; flex-direction: column; align-items: center; padding: 8px 6px; border-radius: 8px; cursor: pointer; transition: all .12s; border: 1px solid transparent; }
+  .period-dd-mo:hover { background: rgba(59,130,246,.1); border-color: rgba(59,130,246,.3); }
+  .period-dd-mo.selected { background: rgba(59,130,246,.18); border-color: #3b82f6; }
+  .period-dd-mo.current-month { border-color: rgba(16,185,129,.4); }
+  .period-dd-mo.current-month:not(.selected) { background: rgba(16,185,129,.06); }
+  .period-dd-mo .mo-num { font-size: 15px; font-weight: 800; color: #94a3b8; line-height: 1; }
+  .period-dd-mo.selected .mo-num { color: #3b82f6; }
+  .period-dd-mo.current-month:not(.selected) .mo-num { color: #10b981; }
+  .period-dd-mo .mo-label { font-size: 10px; color: #475569; margin-top: 2px; }
+  .period-dd-mo.selected .mo-label { color: #6aa3f8; }
+  .period-dd-mo .mo-dot { width: 4px; height: 4px; border-radius: 50%; background: transparent; margin-top: 3px; }
+  .period-dd-mo.has-data .mo-dot { background: #10b981; }
+  .period-dd-mo.selected .mo-dot { background: #3b82f6; }
 </style>
 </head>
 <body>
 
-<!-- ══ STICKY HEADER ══ -->
 <div class="sticky-header">
   <nav class="nav">
     <span class="nav-brand">🚗 Volvo DMS</span>
@@ -85,9 +100,9 @@
   <div class="header-body">
     <div class="filter-bar">
       <label>期間</label>
-      <select id="selPeriod"><option value="">全部期間</option></select>
+      <div id="periodSelectorWrap"></div>
       <label>據點</label>
-      <select id="selBranch">
+      <select id="selBranch" class="branch-select">
         <option value="">全部</option>
         <option value="AMA">AMA</option>
         <option value="AMC">AMC</option>
@@ -104,26 +119,21 @@
 </div>
 
 <div class="container">
-
-  <!-- ══ 業績進度 ══ -->
   <div id="tab-progress">
     <div id="revenueKPISection" style="margin-bottom:20px;display:none">
       <div id="revKPI-paid" style="margin-bottom:12px"></div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px" id="revKPI-sub"></div>
     </div>
-
-    <div class="card" id="perfBreakdownCard">
+    <div class="card">
       <div class="card-title">📊 收入明細分解<span id="perfBreakdownPeriod" class="card-title-note"></span></div>
       <div id="perfBreakdown"><div class="loading"><span class="spinner"></span>載入中</div></div>
     </div>
-
     <div class="card">
       <div class="card-title">
         🎯 各指標業績進度
         <span id="perfPeriodLabel" class="card-title-note"></span>
         <a href="/settings.html" style="font-size:12px;color:#64748b;text-decoration:none;padding:4px 8px;border:1px solid #2d3f56;border-radius:5px;background:#1e293b;margin-left:auto">⚙️ 設定指標</a>
       </div>
-      <!-- 達標摘要列 -->
       <div id="branchAchieveBar" class="achieve-bar" style="display:none"></div>
       <div id="perfNoConfig" style="display:none;padding:48px;text-align:center;color:#64748b">
         尚未建立業績指標，請前往 <a href="/settings.html" style="color:#3b82f6">⚙️ 設定 → 業績目標</a> 新增追蹤項目
@@ -132,7 +142,6 @@
     </div>
   </div>
 
-  <!-- ══ 業績預估設定 ══ -->
   <div id="tab-estimate" style="display:none">
     <div class="card">
       <div class="card-title">
@@ -141,17 +150,16 @@
         <button class="btn btn-primary" style="margin-left:auto;padding:5px 12px;font-size:12px" onclick="saveAllEstimates()">💾 儲存預估</button>
       </div>
       <div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:11px 14px;font-size:12px;color:#94a3b8;line-height:1.8;margin-bottom:14px">
-        輸入各據點本月各項營收預估值（千元 K），儲存後會顯示在業績進度的達成率旁邊。<br>
-        💡 例如預估 AMA 有費營收約 25,000K，就在對應欄位填入 <strong>25000</strong>
+        輸入各據點本月各項營收預估值（千元 K）。💡 例如預估 AMA 有費營收約 25,000K，就填入 <strong>25000</strong>
       </div>
       <div style="overflow-x:auto">
         <table style="width:100%;border-collapse:collapse;font-size:13px">
           <thead><tr>
-            <th style="text-align:left;padding:10px 14px;background:#0f172a;color:#64748b;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;min-width:80px">據點</th>
-            <th style="text-align:right;padding:10px 14px;background:#0f172a;color:#f97316;font-size:12px;font-weight:800;border-bottom:1px solid #2d3f56;min-width:160px">🔶 有費營收 (K)</th>
-            <th style="text-align:right;padding:10px 14px;background:#0f172a;color:#3b82f6;font-size:12px;font-weight:800;border-bottom:1px solid #2d3f56;min-width:160px">💙 一般營收 (K)</th>
-            <th style="text-align:right;padding:10px 14px;background:#0f172a;color:#8b5cf6;font-size:12px;font-weight:800;border-bottom:1px solid #2d3f56;min-width:160px">🔨 鈑烤營收 (K)</th>
-            <th style="text-align:right;padding:10px 14px;background:#0f172a;color:#10b981;font-size:12px;font-weight:800;border-bottom:1px solid #2d3f56;min-width:160px">🛡️ 延保營收 (K)</th>
+            <th style="text-align:left;padding:10px 14px;background:#0f172a;color:#64748b;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56">據點</th>
+            <th style="text-align:right;padding:10px 14px;background:#0f172a;color:#f97316;font-size:12px;font-weight:800;border-bottom:1px solid #2d3f56">🔶 有費營收 (K)</th>
+            <th style="text-align:right;padding:10px 14px;background:#0f172a;color:#3b82f6;font-size:12px;font-weight:800;border-bottom:1px solid #2d3f56">💙 一般營收 (K)</th>
+            <th style="text-align:right;padding:10px 14px;background:#0f172a;color:#8b5cf6;font-size:12px;font-weight:800;border-bottom:1px solid #2d3f56">🔨 鈑烤營收 (K)</th>
+            <th style="text-align:right;padding:10px 14px;background:#0f172a;color:#10b981;font-size:12px;font-weight:800;border-bottom:1px solid #2d3f56">🛡️ 延保營收 (K)</th>
           </tr></thead>
           <tbody id="estTableBody"><tr><td colspan="5" style="padding:24px;text-align:center;color:#64748b"><span class="spinner"></span>載入中</td></tr></tbody>
         </table>
@@ -159,7 +167,6 @@
       <div id="estSaveMsg" style="font-size:13px;min-height:20px;margin-top:12px;text-align:right"></div>
     </div>
   </div>
-
 </div>
 
 <script>
@@ -167,130 +174,247 @@ const n    = (v) => parseFloat(v || 0);
 const fmt  = (v) => Math.round(n(v)).toLocaleString();
 const fmtK = (v) => Math.round(n(v) / 1000).toLocaleString() + 'K';
 
+let _currentPeriod = '';
+let _allPeriods = [];
+
+// ══ Custom Period Selector ══
+function getPeriod() { return _currentPeriod; }
+
+function initPeriodSelector(periods) {
+  _allPeriods = periods;
+  const wrap = document.getElementById('periodSelectorWrap');
+  if (!wrap) return;
+  renderPeriodSelector('');
+}
+
+function renderPeriodSelector(filterQ) {
+  const wrap = document.getElementById('periodSelectorWrap');
+  if (!wrap) return;
+  const now = new Date();
+  const thisMonth = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}`;
+
+  function fmtP(p) {
+    if (!p) return '全部期間';
+    return `${p.slice(0,4)}年${p.slice(4)}月`;
+  }
+
+  // Group by year
+  const groups = {};
+  (_allPeriods).forEach(p => {
+    const yr = p.slice(0,4);
+    if (!groups[yr]) groups[yr] = [];
+    groups[yr].push(p);
+  });
+
+  const btnContent = _currentPeriod
+    ? `<span class="pb-year">${_currentPeriod.slice(0,4)}</span><span class="pb-month">${parseInt(_currentPeriod.slice(4))}月</span>`
+    : `<span class="pb-month" style="color:#64748b">全部期間</span>`;
+
+  let listHtml = '';
+  Object.keys(groups).sort((a,b)=>b-a).forEach(yr => {
+    const months = groups[yr]; // sorted desc from API
+    listHtml += `<div class="period-dd-year-group">
+      <div class="period-dd-year-label">${yr}</div>
+      <div class="period-dd-months">`;
+    // Show months 1-12, mark which exist
+    for (let mo = 12; mo >= 1; mo--) {
+      const p = `${yr}${String(mo).padStart(2,'0')}`;
+      const exists = months.includes(p);
+      if (!filterQ || fmtP(p).includes(filterQ)) {
+        const isSel = p === _currentPeriod;
+        const isCur = p === thisMonth;
+        listHtml += `<div class="period-dd-mo ${isSel?'selected':''} ${isCur?'current-month':''} ${exists?'has-data':''}"
+          onclick="selectPeriod('${p}')">
+          <span class="mo-num">${mo}</span>
+          <span class="mo-label">月</span>
+          <span class="mo-dot"></span>
+        </div>`;
+      }
+    }
+    listHtml += `</div></div>`;
+  });
+
+  wrap.innerHTML = `
+    <div class="period-selector" id="ps-root">
+      <button class="period-btn" id="ps-btn" type="button" onclick="togglePeriodDD(event)">
+        ${btnContent}
+        <span class="pb-arrow">▼</span>
+      </button>
+      <div class="period-dropdown" id="ps-dd">
+        <div class="period-dd-header">
+          <div class="period-dd-year-label" style="padding:0 0 6px;font-size:11px;color:#475569">選擇期間</div>
+          <div class="period-dd-search">
+            <input type="text" placeholder="🔍 搜尋 例：2026年03月" id="ps-search"
+              oninput="filterPeriodDD(this.value)" onclick="event.stopPropagation()">
+          </div>
+        </div>
+        <div class="period-dd-list" id="ps-list">${listHtml}</div>
+      </div>
+    </div>`;
+}
+
+window.togglePeriodDD = function(e) {
+  e.stopPropagation();
+  const btn = document.getElementById('ps-btn');
+  const dd = document.getElementById('ps-dd');
+  if (!btn || !dd) return;
+  const isOpen = dd.classList.contains('open');
+  closeAllPD();
+  if (!isOpen) {
+    btn.classList.add('open');
+    dd.classList.add('open');
+    setTimeout(() => document.getElementById('ps-search')?.focus(), 50);
+  }
+};
+
+window.filterPeriodDD = function(q) {
+  const now = new Date();
+  const thisMonth = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}`;
+  function fmtP(p) { return `${p.slice(0,4)}年${p.slice(4)}月`; }
+  const groups = {};
+  _allPeriods.filter(p => !q || fmtP(p).includes(q) || p.includes(q.replace(/[^0-9]/g,''))).forEach(p => {
+    const yr = p.slice(0,4); if (!groups[yr]) groups[yr] = []; groups[yr].push(p);
+  });
+  let listHtml = '';
+  if (!Object.keys(groups).length) {
+    listHtml = '<div style="padding:20px;text-align:center;color:#475569;font-size:12px">無符合期間</div>';
+  } else {
+    Object.keys(groups).sort((a,b)=>b-a).forEach(yr => {
+      const months = groups[yr];
+      listHtml += `<div class="period-dd-year-group"><div class="period-dd-year-label">${yr}</div><div class="period-dd-months">`;
+      for (let mo = 12; mo >= 1; mo--) {
+        const p = `${yr}${String(mo).padStart(2,'0')}`;
+        if (!months.includes(p)) continue;
+        const isSel = p === _currentPeriod, isCur = p === thisMonth;
+        listHtml += `<div class="period-dd-mo ${isSel?'selected':''} ${isCur?'current-month':''} has-data" onclick="selectPeriod('${p}')">
+          <span class="mo-num">${mo}</span><span class="mo-label">月</span><span class="mo-dot"></span></div>`;
+      }
+      listHtml += `</div></div>`;
+    });
+  }
+  const el = document.getElementById('ps-list');
+  if (el) el.innerHTML = listHtml;
+};
+
+window.selectPeriod = function(val) {
+  _currentPeriod = val;
+  closeAllPD();
+  renderPeriodSelector('');
+};
+
+window.closeAllPD = function() {
+  document.querySelectorAll('.period-btn.open').forEach(b => b.classList.remove('open'));
+  document.querySelectorAll('.period-dropdown.open').forEach(d => d.classList.remove('open'));
+};
+
+document.addEventListener('click', closeAllPD);
+
 async function loadPeriods() {
   try {
     const periods = await (await fetch('/api/periods')).json();
-    const sel = document.getElementById('selPeriod');
-    periods.forEach(p => {
-      const opt = document.createElement('option');
-      opt.value = p; opt.textContent = `${p.slice(0,4)}年${p.slice(4)}月`;
-      sel.appendChild(opt);
-    });
+    _allPeriods = periods;
     const now = new Date();
     const cur = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}`;
-    sel.value = periods.includes(cur) ? cur : (periods[0] || '');
+    _currentPeriod = periods.includes(cur) ? cur : (periods[0] || '');
+    initPeriodSelector(periods);
   } catch(e) {}
 }
 
 function switchPerfTab(tab) {
   ['progress','estimate'].forEach(t => {
-    document.getElementById(`tab-${t}`).style.display = t === tab ? '' : 'none';
-    document.getElementById(`tab-btn-${t}`).classList.toggle('active', t === tab);
+    document.getElementById(`tab-${t}`).style.display = t===tab?'':'none';
+    document.getElementById(`tab-btn-${t}`).classList.toggle('active', t===tab);
   });
-  if (tab === 'estimate') renderEstTable();
+  if (tab==='estimate') renderEstTable();
 }
 
 async function renderEstTable() {
-  const period = document.getElementById('selPeriod').value;
-  const branch = document.getElementById('selBranch').value;
+  const period = getPeriod(), branch = document.getElementById('selBranch').value;
   const tbody = document.getElementById('estTableBody');
   const lbl = document.getElementById('estPeriodLabel');
   if (lbl && period) lbl.textContent = `${period.slice(0,4)}年${period.slice(4)}月`;
-  if (!period) { tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;text-align:center;color:#64748b">請先選擇期間後按查詢</td></tr>'; return; }
-  tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;text-align:center;color:#64748b"><span class="spinner"></span>載入中</td></tr>';
+  if (!period) { tbody.innerHTML='<tr><td colspan="5" style="padding:24px;text-align:center;color:#64748b">請先選擇期間後按查詢</td></tr>'; return; }
+  tbody.innerHTML='<tr><td colspan="5" style="padding:24px;text-align:center;color:#64748b"><span class="spinner"></span>載入中</td></tr>';
   try {
-    const estRes = await fetch(`/api/revenue-estimates?period=${period}${branch?'&branch='+branch:''}`).then(r=>r.json());
-    const eMap = {}; (Array.isArray(estRes)?estRes:[]).forEach(e => { eMap[e.branch] = e; });
-    const BRANCHES = branch ? [branch] : ['AMA','AMC','AMD'];
-    const brColors = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b' };
-    const KEYS = [
-      { key:'paid', col:'#f97316' }, { key:'general', col:'#3b82f6' },
-      { key:'bodywork', col:'#8b5cf6' }, { key:'extended', col:'#10b981' },
-    ];
-    tbody.innerHTML = BRANCHES.map(br => {
-      const e = eMap[br] || {};
-      const bCol = brColors[br] || '#64748b';
-      return `<tr><td style="padding:12px 14px;border-bottom:1px solid rgba(45,63,86,.3)">
+    const estRes=await fetch(`/api/revenue-estimates?period=${period}${branch?'&branch='+branch:''}`).then(r=>r.json());
+    const eMap={}; (Array.isArray(estRes)?estRes:[]).forEach(e=>{eMap[e.branch]=e;});
+    const BRANCHES=branch?[branch]:['AMA','AMC','AMD'];
+    const brColors={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
+    const KEYS=[{key:'paid',col:'#f97316'},{key:'general',col:'#3b82f6'},{key:'bodywork',col:'#8b5cf6'},{key:'extended',col:'#10b981'}];
+    tbody.innerHTML=BRANCHES.map(br=>{
+      const e=eMap[br]||{}, bCol=brColors[br]||'#64748b';
+      return`<tr><td style="padding:12px 14px;border-bottom:1px solid rgba(45,63,86,.3)">
         <span style="display:inline-block;padding:4px 12px;border-radius:6px;font-size:13px;font-weight:800;background:${bCol}22;color:${bCol}">${br}</span></td>
-        ${KEYS.map(m => {
-          const val = e[`${m.key}_estimate`] ? Math.round(e[`${m.key}_estimate`]/1000) : '';
-          return `<td style="padding:8px 14px;border-bottom:1px solid rgba(45,63,86,.3)">
+        ${KEYS.map(m=>{const val=e[`${m.key}_estimate`]?Math.round(e[`${m.key}_estimate`]/1000):'';
+          return`<td style="padding:8px 14px;border-bottom:1px solid rgba(45,63,86,.3)">
             <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
               <input type="number" id="est-${m.key}-${br}" value="${val}" placeholder="—" min="0" step="1"
                 style="background:#0f172a;border:1px solid #2d3f56;color:${m.col};padding:8px 12px;border-radius:6px;font-size:13px;font-weight:700;width:130px;text-align:right;outline:none"
                 onfocus="this.style.borderColor='${m.col}'" onblur="this.style.borderColor='#2d3f56'">
-              <span style="font-size:12px;color:#475569">K</span>
-            </div></td>`;
+              <span style="font-size:12px;color:#475569">K</span></div></td>`;
         }).join('')}</tr>`;
     }).join('');
-  } catch(e) { tbody.innerHTML = `<tr><td colspan="5" style="color:#ef4444;padding:16px">${e.message}</td></tr>`; }
+  } catch(e) { tbody.innerHTML=`<tr><td colspan="5" style="color:#ef4444;padding:16px">${e.message}</td></tr>`; }
 }
 
 async function saveAllEstimates() {
-  const period = document.getElementById('selPeriod').value;
-  const branch = document.getElementById('selBranch').value;
-  const msgEl = document.getElementById('estSaveMsg');
-  if (!period) { msgEl.textContent = '請先選擇期間'; msgEl.style.color='#ef4444'; return; }
-  const BRANCHES = branch ? [branch] : ['AMA','AMC','AMD'];
-  const entries = BRANCHES.map(br => {
-    const e = { branch: br, period };
-    ['paid','general','bodywork','extended'].forEach(k => {
-      const v = parseFloat(document.getElementById(`est-${k}-${br}`)?.value);
-      e[`${k}_estimate`] = (!isNaN(v) && v>0) ? Math.round(v*1000) : null;
-    });
+  const period=getPeriod(), branch=document.getElementById('selBranch').value;
+  const msgEl=document.getElementById('estSaveMsg');
+  if(!period){msgEl.textContent='請先選擇期間';msgEl.style.color='#ef4444';return;}
+  const BRANCHES=branch?[branch]:['AMA','AMC','AMD'];
+  const entries=BRANCHES.map(br=>{
+    const e={branch:br,period};
+    ['paid','general','bodywork','extended'].forEach(k=>{const v=parseFloat(document.getElementById(`est-${k}-${br}`)?.value);e[`${k}_estimate`]=(!isNaN(v)&&v>0)?Math.round(v*1000):null;});
     return e;
   });
-  const btn = document.querySelector('[onclick="saveAllEstimates()"]');
-  if (btn) { btn.disabled=true; btn.textContent='儲存中...'; }
+  const btn=document.querySelector('[onclick="saveAllEstimates()"]');
+  if(btn){btn.disabled=true;btn.textContent='儲存中...';}
   try {
-    const res = await fetch('/api/revenue-estimates/batch', {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({entries})});
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
+    const data=await(await fetch('/api/revenue-estimates/batch',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({entries})})).json();
+    if(data.error)throw new Error(data.error);
     msgEl.textContent=`✅ 預估已儲存（${period.slice(0,4)}年${period.slice(4)}月）`;
     msgEl.style.color='#10b981';
-    switchPerfTab('progress');
-    await loadRevenueKPI(period, branch);
-  } catch(e) { msgEl.textContent='❌ '+e.message; msgEl.style.color='#ef4444'; }
-  finally { if (btn) { btn.disabled=false; btn.textContent='💾 儲存預估'; } }
+    switchPerfTab('progress'); await loadRevenueKPI(period,branch);
+  }catch(e){msgEl.textContent='❌ '+e.message;msgEl.style.color='#ef4444';}
+  finally{if(btn){btn.disabled=false;btn.textContent='💾 儲存預估';}}
 }
 
 async function doLoad() {
-  const period = document.getElementById('selPeriod').value;
-  const branch = document.getElementById('selBranch').value;
-  document.getElementById('lastUpdate').textContent = '更新中...';
-  await Promise.all([loadRevenueKPI(period,branch), loadIncomeBreakdown(period,branch), loadPerformance(period,branch)]);
-  document.getElementById('lastUpdate').textContent = `更新於 ${new Date().toLocaleTimeString('zh-TW')}`;
+  const period=getPeriod(), branch=document.getElementById('selBranch').value;
+  document.getElementById('lastUpdate').textContent='更新中...';
+  await Promise.all([loadRevenueKPI(period,branch),loadIncomeBreakdown(period,branch),loadPerformance(period,branch)]);
+  document.getElementById('lastUpdate').textContent=`更新於 ${new Date().toLocaleTimeString('zh-TW')}`;
 }
 
-async function loadRevenueKPI(period, branch) {
-  const section = document.getElementById('revenueKPISection');
-  if (!period) { section.style.display='none'; return; }
-  try {
-    const [bkRes, tgtRes, estRes] = await Promise.all([
+async function loadRevenueKPI(period,branch){
+  const section=document.getElementById('revenueKPISection');
+  if(!period){section.style.display='none';return;}
+  try{
+    const [bkRes,tgtRes,estRes]=await Promise.all([
       fetch(`/api/stats/income-breakdown?period=${period}${branch?'&branch='+branch:''}`).then(r=>r.json()),
       fetch(`/api/revenue-targets?period=${period}${branch?'&branch='+branch:''}`).then(r=>r.json()),
       fetch(`/api/revenue-estimates?period=${period}${branch?'&branch='+branch:''}`).then(r=>r.json()),
     ]);
-    if (bkRes.error) throw new Error(bkRes.error);
-    const BRANCHES = branch ? [branch] : ['AMA','AMC','AMD'];
-    const brColors = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b' };
-    const tMap = {}; (Array.isArray(tgtRes)?tgtRes:[]).forEach(t => { tMap[t.branch]=t; });
-    const eMap = {}; (Array.isArray(estRes)?estRes:[]).forEach(e => { eMap[e.branch]=e; });
-    const bdata = bkRes.branches || {};
-    const buildCard = (m, fullWidth) => {
-      let card = `<div style="background:#1a2332;border:1px solid #2d3f56;border-radius:12px;overflow:hidden">
+    if(bkRes.error)throw new Error(bkRes.error);
+    const BRANCHES=branch?[branch]:['AMA','AMC','AMD'];
+    const brColors={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
+    const tMap={};(Array.isArray(tgtRes)?tgtRes:[]).forEach(t=>{tMap[t.branch]=t;});
+    const eMap={};(Array.isArray(estRes)?estRes:[]).forEach(e=>{eMap[e.branch]=e;});
+    const bdata=bkRes.branches||{};
+    const buildCard=(m,fullWidth)=>{
+      let card=`<div style="background:#1a2332;border:1px solid #2d3f56;border-radius:12px;overflow:hidden">
         <div style="padding:12px 18px 10px;border-bottom:1px solid #2d3f56;display:flex;align-items:center;gap:8px">
           <span style="font-size:14px;font-weight:800;color:${m.color}">${m.label}</span>
           ${fullWidth?`<span style="font-size:11px;color:#475569;margin-left:4px">一般＋保險鈑烤＋延保</span>`:''}
         </div>
         <div style="display:grid;grid-template-columns:repeat(${BRANCHES.length},1fr)">`;
-      BRANCHES.forEach((br,bi) => {
-        const col=brColors[br]||'#64748b', t=tMap[br]||{}, e=eMap[br]||{}, bd=bdata[br]||{};
-        const actual=bd[m.actualKey]||0, target=parseFloat(t[`${m.key}_target`]||0), ly=parseFloat(t[`${m.key}_last_year`]||0), est=parseFloat(e[`${m.key}_estimate`]||0);
-        const rate=target>0?actual/target*100:null, estRate=target>0&&est>0?est/target*100:null, yoy=ly>0?(actual-ly)/ly*100:null;
+      BRANCHES.forEach((br,bi)=>{
+        const col=brColors[br]||'#64748b',t=tMap[br]||{},e=eMap[br]||{},bd=bdata[br]||{};
+        const actual=bd[m.actualKey]||0,target=parseFloat(t[`${m.key}_target`]||0),ly=parseFloat(t[`${m.key}_last_year`]||0),est=parseFloat(e[`${m.key}_estimate`]||0);
+        const rate=target>0?actual/target*100:null,estRate=target>0&&est>0?est/target*100:null,yoy=ly>0?(actual-ly)/ly*100:null;
         const rCol=rate===null?'#64748b':rate>=100?'#10b981':rate>=80?'#f59e0b':'#ef4444';
         const eCol=estRate===null?'#64748b':estRate>=100?'#10b981':estRate>=80?'#f59e0b':'#f97316';
-        const barW=rate!==null?Math.min(100,rate).toFixed(0):0, estBarW=estRate!==null?Math.min(100,estRate).toFixed(0):0;
+        const barW=rate!==null?Math.min(100,rate).toFixed(0):0,estBarW=estRate!==null?Math.min(100,estRate).toFixed(0):0;
         const borderR=bi<BRANCHES.length-1?'border-right:1px solid #2d3f56;':'';
         card+=`<div style="padding:${fullWidth?'16px 20px':'14px 16px'};${borderR}">
           <div style="font-size:11px;font-weight:800;color:${col};margin-bottom:8px">${br}</div>
@@ -313,35 +437,31 @@ async function loadRevenueKPI(period, branch) {
           </div>
         </div>`;
       });
-      card+=`</div></div>`;
-      return card;
+      card+=`</div></div>`;return card;
     };
-    document.getElementById('revKPI-paid').innerHTML = buildCard({key:'paid',label:'🔶 有費營收',color:'#f97316',actualKey:'paid_total'},true);
-    document.getElementById('revKPI-sub').innerHTML = [
+    document.getElementById('revKPI-paid').innerHTML=buildCard({key:'paid',label:'🔶 有費營收',color:'#f97316',actualKey:'paid_total'},true);
+    document.getElementById('revKPI-sub').innerHTML=[
       {key:'general',label:'💙 一般營收',color:'#3b82f6',actualKey:'general_total'},
       {key:'bodywork',label:'🔨 鈑烤營收',color:'#8b5cf6',actualKey:'bodywork_total'},
       {key:'extended',label:'🛡️ 延保營收',color:'#10b981',actualKey:'extended'},
     ].map(m=>buildCard(m,false)).join('');
     section.style.display='';
-  } catch(e) {
-    document.getElementById('revKPI-paid').innerHTML=`<div style="color:#ef4444;padding:12px">${e.message}</div>`;
-    section.style.display='';
-  }
+  }catch(e){document.getElementById('revKPI-paid').innerHTML=`<div style="color:#ef4444;padding:12px">${e.message}</div>`;section.style.display='';}
 }
 
-async function loadIncomeBreakdown(period, branch) {
-  const el=document.getElementById('perfBreakdown'), lblEl=document.getElementById('perfBreakdownPeriod');
-  if (!period) { el.innerHTML='<div style="color:#64748b;font-size:13px">請選擇期間後按查詢</div>'; return; }
+async function loadIncomeBreakdown(period,branch){
+  const el=document.getElementById('perfBreakdown'),lblEl=document.getElementById('perfBreakdownPeriod');
+  if(!period){el.innerHTML='<div style="color:#64748b;font-size:13px">請選擇期間後按查詢</div>';return;}
   el.innerHTML='<div class="loading"><span class="spinner"></span>載入中</div>';
-  try {
-    const params=new URLSearchParams({period}); if(branch)params.set('branch',branch);
+  try{
+    const params=new URLSearchParams({period});if(branch)params.set('branch',branch);
     const data=await(await fetch(`/api/stats/income-breakdown?${params}`)).json();
     if(data.error)throw new Error(data.error);
     if(lblEl)lblEl.textContent=`${period.slice(0,4)}年${period.slice(4)}月`;
-    const {branches:bdata}=data;
+    const{branches:bdata}=data;
     const BRANCHES=branch?[branch]:['AMA','AMC','AMD'];
     const brColors={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
-    const tot=(key)=>BRANCHES.reduce((s,br)=>s+(bdata[br]?.[key]||0),0);
+    const tot=k=>BRANCHES.reduce((s,br)=>s+(bdata[br]?.[k]||0),0);
     const ROWS=[
       {key:'bodywork_self',label:'自費鈑烤',indent:1,color:'#a78bfa',note:'帳類=一般，含鈑金/烤漆工單'},
       {key:'bodywork_insurance',label:'保險鈑烤',indent:1,color:'#a78bfa',note:'帳類=保險'},
@@ -363,7 +483,7 @@ async function loadIncomeBreakdown(period, branch) {
     const allOD=[];BRANCHES.forEach(br=>(bdata[br]?.other_detail||[]).forEach(od=>{if(!allOD.find(x=>x.account_type===od.account_type))allOD.push(od);}));
     const odHtml=allOD.map(od=>{let r=`<tr><td style="padding:6px 16px 6px 36px;border-bottom:1px solid rgba(45,63,86,.2)"><div style="display:flex;align-items:center;gap:6px"><div style="width:3px;height:12px;background:#1e293b;border-radius:2px;flex-shrink:0"></div><span style="font-size:12px;color:#475569">${od.account_type}</span></div></td>`;BRANCHES.forEach(br=>{const m=(bdata[br]?.other_detail||[]).find(x=>x.account_type===od.account_type);r+=`<td style="text-align:right;padding:6px 16px;border-bottom:1px solid rgba(45,63,86,.2);font-size:12px;color:#475569">${m?.total>0?fmtK(m.total):'—'}</td>`;});if(BRANCHES.length>1)r+=`<td style="border-bottom:1px solid rgba(45,63,86,.2);border-left:1px solid #374151"></td>`;return r+`</tr>`;}).join('');
     ROWS.forEach(row=>{
-      const bg=row.bold?'rgba(255,255,255,.03)':'transparent', bt=row.border?'border-top:2px solid #374151;':'';
+      const bg=row.bold?'rgba(255,255,255,.03)':'transparent',bt=row.border?'border-top:2px solid #374151;':'';
       if(row.key==='other_total')html+=odHtml;
       html+=`<tr style="background:${bg}"><td style="padding:10px 16px;border-bottom:1px solid rgba(45,63,86,.3);${bt}">
         <div style="display:flex;align-items:center;gap:8px;padding-left:${row.indent?20:0}px">
@@ -372,64 +492,53 @@ async function loadIncomeBreakdown(period, branch) {
           ${row.note?`<span style="font-size:11px;color:#475569">${row.note}</span>`:''}
         </div></td>`;
       BRANCHES.forEach(br=>{const v=bdata[br]?.[row.key]||0;html+=`<td style="text-align:right;padding:10px 16px;border-bottom:1px solid rgba(45,63,86,.3);${bt}font-variant-numeric:tabular-nums"><span style="font-size:${row.bold?15:13}px;font-weight:${row.bold?800:600};color:${row.color||'#e2e8f0'}">${fmtK(v)}</span></td>`;});
-      if(BRANCHES.length>1){html+=`<td style="text-align:right;padding:10px 16px;border-bottom:1px solid rgba(45,63,86,.3);${bt}font-variant-numeric:tabular-nums;background:rgba(255,255,255,.02);border-left:1px solid #374151"><span style="font-size:${row.bold?15:13}px;font-weight:${row.bold?800:600};color:${row.color||'#94a3b8'}">${fmtK(tot(row.key))}</span></td>`;}
+      if(BRANCHES.length>1){const total=tot(row.key);html+=`<td style="text-align:right;padding:10px 16px;border-bottom:1px solid rgba(45,63,86,.3);${bt}font-variant-numeric:tabular-nums;background:rgba(255,255,255,.02);border-left:1px solid #374151"><span style="font-size:${row.bold?15:13}px;font-weight:${row.bold?800:600};color:${row.color||'#94a3b8'}">${fmtK(total)}</span></td>`;}
       html+=`</tr>`;
     });
-    html+=`</tbody></table></div><div style="font-size:11px;color:#475569;margin-top:10px;line-height:2">💡 金額單位：千元（K）｜未稅｜<strong>自費鈑烤</strong>：帳類＝一般，工單內含鈑金或烤漆金額 &gt; 0</div>`;
+    html+=`</tbody></table></div><div style="font-size:11px;color:#475569;margin-top:10px;line-height:2">💡 金額單位：千元（K）｜未稅</div>`;
     el.innerHTML=html;
-  } catch(e){ el.innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`; }
+  }catch(e){el.innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;}
 }
 
-async function loadPerformance(period, branch) {
-  const detailEl=document.getElementById('perfDetail');
-  const noConfEl=document.getElementById('perfNoConfig');
-  const achBar=document.getElementById('branchAchieveBar');
-  if (!period) { detailEl.innerHTML=''; achBar.style.display='none'; return; }
+async function loadPerformance(period,branch){
+  const detailEl=document.getElementById('perfDetail'),noConfEl=document.getElementById('perfNoConfig'),achBar=document.getElementById('branchAchieveBar');
+  if(!period){detailEl.innerHTML='';achBar.style.display='none';return;}
   detailEl.innerHTML='<div class="loading"><span class="spinner"></span>載入中</div>';
   achBar.style.display='none';
-  try {
-    const params=new URLSearchParams({period}); if(branch)params.set('branch',branch);
+  try{
+    const params=new URLSearchParams({period});if(branch)params.set('branch',branch);
     const data=await(await fetch(`/api/stats/performance?${params}`)).json();
     if(data.error)throw new Error(data.error);
-    const {metrics,results}=data;
-    if(!metrics.length){ noConfEl.style.display=''; detailEl.innerHTML=''; return; }
+    const{metrics,results}=data;
+    if(!metrics.length){noConfEl.style.display='';detailEl.innerHTML='';return;}
     noConfEl.style.display='none';
     const BRANCHES=branch?[branch]:['AMA','AMC','AMD'];
     const brColors={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
     const TYPE_LABEL={repair_income:'🔧 維修收入(合計)',repair_subfield:'🔨 維修收入(子欄位)',parts:'🔩 零件銷售',boutique:'💎 精品配件',tech_wage:'🚗 工資代碼'};
     const FIELD_UNIT={amount:'元',qty:'件',count:'筆'};
-    const metricMap={}; metrics.forEach(m=>{metricMap[m.id]=m;});
-
-    // ── 達標摘要列 ──
-    const brStats={};
-    BRANCHES.forEach(br=>{brStats[br]={achieved:0,total:metrics.length};});
-    results.forEach(r=>{
-      BRANCHES.forEach(br=>{
-        const d=r.branches[br]||{};
-        if(d.achieve_rate!==null&&d.achieve_rate>=100)brStats[br].achieved++;
-      });
-    });
+    const metricMap={};metrics.forEach(m=>{metricMap[m.id]=m;});
+    // achieve summary
+    const brStats={};BRANCHES.forEach(br=>{brStats[br]={achieved:0,total:metrics.length};});
+    results.forEach(r=>{BRANCHES.forEach(br=>{const d=r.branches[br]||{};if(d.achieve_rate!==null&&d.achieve_rate>=100)brStats[br].achieved++;});});
     achBar.innerHTML=`<span class="achieve-bar-label">各據點達標情況</span>`+BRANCHES.map(br=>{
-      const s=brStats[br], col=brColors[br]||'#64748b', isAll=s.achieved===s.total&&s.total>0;
+      const s=brStats[br],col=brColors[br]||'#64748b',isAll=s.achieved===s.total&&s.total>0;
       const pct=s.total>0?Math.round(s.achieved/s.total*100):0;
       const aCol=isAll?'#10b981':s.achieved>0?'#f59e0b':'#ef4444';
-      return `<div class="achieve-chip" style="border-color:${aCol}33">
-        <span class="br-name" style="color:${col}">${br}</span>
-        <span class="ac-count" style="color:${aCol}">${s.achieved}</span>
-        <span class="ac-total">/ ${s.total} 項</span>
-        <div class="ac-bar-wrap">
-          <div class="ac-bar-bg"><div class="ac-bar-fill" style="width:${pct}%;background:${aCol}"></div></div>
-          <span class="ac-pct" style="color:${aCol}">${pct}%</span>
+      return`<div class="achieve-chip" style="border-color:${aCol}33">
+        <span style="font-size:12px;font-weight:800;color:${col}">${br}</span>
+        <span style="font-size:22px;font-weight:800;color:${aCol};line-height:1">${s.achieved}</span>
+        <span style="font-size:12px;color:#475569">/ ${s.total} 項</span>
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <div style="width:48px;background:#0f172a;border-radius:3px;height:4px"><div style="width:${pct}%;height:4px;border-radius:3px;background:${aCol};transition:width .4s"></div></div>
+          <span style="font-size:10px;font-weight:700;color:${aCol}">${pct}%</span>
         </div>
         ${isAll?'<span class="full-badge">全達標 🎉</span>':''}
       </div>`;
     }).join('');
     achBar.style.display='flex';
-
-    // ── 指標卡片 ──
     let html='';
     results.forEach(r=>{
-      const metric=metricMap[r.metric_id]; if(!metric)return;
+      const metric=metricMap[r.metric_id];if(!metric)return;
       const isAmt=metric.stat_field!=='qty'&&metric.stat_field!=='count';
       const unit=metric.unit||FIELD_UNIT[metric.stat_field]||'元';
       const fmtV=v=>{if(v===null||v===undefined)return'—';if(isAmt&&!metric.unit)return fmtK(v);return metric.stat_field==='qty'?n(v).toFixed(1):fmt(v);};
@@ -442,9 +551,9 @@ async function loadPerformance(period, branch) {
         </div>
         <div class="perf-block-body" style="grid-template-columns:repeat(${BRANCHES.length},1fr)">`;
       BRANCHES.forEach((br,bi)=>{
-        const d=r.branches[br]||{}, col=brColors[br]||'#64748b', rate=d.achieve_rate;
+        const d=r.branches[br]||{},col=brColors[br]||'#64748b',rate=d.achieve_rate;
         const rCol=rate===null?'#64748b':rate>=100?'#10b981':rate>=80?'#f59e0b':'#ef4444';
-        const barW=rate!==null?Math.min(100,rate).toFixed(0):0, yoy=d.yoy_growth;
+        const barW=rate!==null?Math.min(100,rate).toFixed(0):0,yoy=d.yoy_growth;
         const borderR=bi<BRANCHES.length-1?'border-right:1px solid #2d3f56':'';
         html+=`<div class="perf-cell" style="${borderR}">
           <div style="font-size:11px;font-weight:800;color:${col};margin-bottom:10px;letter-spacing:.04em">${br}</div>
@@ -464,10 +573,10 @@ async function loadPerformance(period, branch) {
       });
       html+=`</div></div>`;
     });
-    detailEl.innerHTML=html||'<div class="empty">此期間無業績資料</div>';
+    detailEl.innerHTML=html||'<div style="padding:48px;text-align:center;color:#64748b">此期間無業績資料</div>';
     const lbl=document.getElementById('perfPeriodLabel');
     if(lbl&&period)lbl.textContent=`${period.slice(0,4)}年${period.slice(4)}月`;
-  } catch(e){ detailEl.innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`; }
+  }catch(e){detailEl.innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;}
 }
 
 (async()=>{ await loadPeriods(); await doLoad(); })();
