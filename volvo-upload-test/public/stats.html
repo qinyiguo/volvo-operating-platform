@@ -579,8 +579,6 @@ async function loadDaily(period, branch) {
   } catch(e){document.getElementById('dailyKPI').innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;}
 }
 
-}
-
 (async () => {
   await loadPeriods();
   await Promise.all([loadAll(), loadConfigs()]);
