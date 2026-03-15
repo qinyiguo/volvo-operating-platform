@@ -1110,45 +1110,80 @@ app.post('/api/upload-revenue-targets-native', upload.single('file'), async (req
   const suffix = dataType === 'last_year' ? '_last_year' : '_target';
   try {
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer', cellDates: true });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    // 嘗試找含目標資料的工作表（優先找含關鍵字的）
+    const SHEET_KWS = ['目標','年度','營收'];
+    let sheetName = workbook.SheetNames[0];
+    for (const sn of workbook.SheetNames) {
+      if (SHEET_KWS.some(kw => sn.includes(kw))) { sheetName = sn; break; }
+    }
+    const sheet = workbook.Sheets[sheetName];
     const raw = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-    const MONTHS_LABEL = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+
     const BRANCHES = ['AMA','AMC','AMD'];
     const SECTION_MAP = [
-      { kw: ['有效營收','有費營收'], field: 'paid'     },
-      { kw: ['鈑烤'],               field: 'bodywork'  },
-      { kw: ['一般營收'],           field: 'general'   },
-      { kw: ['延保'],               field: 'extended'  },
+      { kw: ['有效營收','有費營收','有費'], field: 'paid'     },
+      { kw: ['鈑烤'],                      field: 'bodywork'  },
+      { kw: ['一般營收','一般'],            field: 'general'   },
+      { kw: ['延保'],                       field: 'extended'  },
     ];
+
+    // 月份識別：支援「1月」「2月」文字、純數字1-12、「Jan」等多種格式
+    const toMonthIndex = (cell) => {
+      const s = String(cell ?? '').trim();
+      // 「1月」～「12月」
+      const m1 = s.match(/^([1-9]|1[0-2])月$/);
+      if (m1) return parseInt(m1[1]);
+      // 純數字 1-12（需排除大數字以免誤判）
+      const m2 = s.match(/^([1-9]|1[0-2])$/);
+      if (m2) return parseInt(m2[1]);
+      // 數字型態
+      if (typeof cell === 'number' && cell >= 1 && cell <= 12 && Number.isInteger(cell)) return cell;
+      return -1;
+    };
+
     const data = {};
     let curField = null;
-    let monthColIdx = {};
+    let monthColIdx = {}; // { month_1based: col_index }
+    const debugRows = [];
+
     for (let ri = 0; ri < raw.length; ri++) {
       const row = raw[ri];
-      const rowStr = row.map(c => String(c||'')).join('|');
+      if (!row || row.every(c => c === '' || c === null || c === undefined)) continue;
+      const rowStr = row.map(c => String(c ?? '')).join('|');
+
+      // 偵測區塊標題（不能同時是月份 header 行）
       for (const sm of SECTION_MAP) {
         if (sm.kw.some(kw => rowStr.includes(kw))) {
-          curField = sm.field; monthColIdx = {};
-          if (!data[curField]) data[curField] = {};
-          break;
+          // 排除：這行本身就是月份 header 行
+          const hasMonths = row.filter(c => toMonthIndex(c) > 0).length;
+          if (hasMonths < 3) {
+            curField = sm.field;
+            monthColIdx = {};
+            if (!data[curField]) data[curField] = {};
+            break;
+          }
         }
       }
-      const monthHits = row.filter(c => MONTHS_LABEL.includes(String(c||'').trim())).length;
-      if (monthHits >= 6) {
+
+      // 偵測月份 header 行（含 6 個以上月份數值）
+      const monthCells = row.map((c, ci) => ({ mo: toMonthIndex(c), ci })).filter(x => x.mo > 0);
+      if (monthCells.length >= 6) {
         monthColIdx = {};
-        row.forEach((cell, ci) => {
-          const idx = MONTHS_LABEL.indexOf(String(cell||'').trim());
-          if (idx >= 0) monthColIdx[idx + 1] = ci;
-        });
+        monthCells.forEach(({ mo, ci }) => { monthColIdx[mo] = ci; });
         continue;
       }
+
       if (!curField || Object.keys(monthColIdx).length === 0) continue;
-      const branchRaw = String(row[0]||row[1]||'').trim().toUpperCase();
+
+      // 偵測據點資料行
+      const branchRaw = String(row[0] ?? row[1] ?? '').trim().toUpperCase();
       const matchedBranch = BRANCHES.find(b => branchRaw === b || branchRaw.endsWith(b));
       if (!matchedBranch) continue;
+
       if (!data[curField][matchedBranch]) data[curField][matchedBranch] = {};
       for (const [mo, ci] of Object.entries(monthColIdx)) {
-        const v = parseFloat(String(row[ci]||'').replace(/,/g,''));
+        const raw_v = row[ci];
+        const v = parseFloat(String(raw_v ?? '').replace(/,/g, ''));
         if (!isNaN(v) && v > 0) data[curField][matchedBranch][parseInt(mo)] = v;
       }
     }
@@ -1164,7 +1199,17 @@ app.post('/api/upload-revenue-targets-native', upload.single('file'), async (req
       }
     }
     const entries = Object.values(entriesMap);
-    if (!entries.length) return res.status(400).json({ error: '找不到有效資料，請確認格式（需含 AMA/AMC/AMD 及月份欄）' });
+    if (!entries.length) {
+      // 診斷：回傳偵測到的欄位資訊協助排錯
+      const detected = Object.keys(data);
+      const branchesFound = detected.length > 0
+        ? Object.keys(data[detected[0]] || {})
+        : [];
+      return res.status(400).json({
+        error: `找不到有效資料。已識別區塊：${detected.length ? detected.join('/') : '無'}；找到據點：${branchesFound.length ? branchesFound.join('/') : '無'}。請確認格式（AMA/AMC/AMD 及月份欄 1月～12月 或數字 1～12）`,
+        debug: { detectedFields: detected, sheetName, totalRows: raw.length }
+      });
+    }
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
