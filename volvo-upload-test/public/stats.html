@@ -121,7 +121,8 @@
 <body>
 <nav class="nav">
   <span class="nav-brand">🚗 Volvo 營運統計</span>
-  <a href="/stats.html" class="nav-link active">📊 統計</a>
+  <a href="/performance.html" class="nav-link">🎯 業績指標與預估</a>
+  <a href="/stats.html" class="nav-link active">📊 各廠明細</a>
   <a href="/settings.html" class="nav-link">⚙️ 設定</a>
 </nav>
 <div class="container">
@@ -146,7 +147,6 @@
     <button class="tab" onclick="switchTab('sa-sales')">👤 SA 零件銷售</button>
     <button class="tab" onclick="switchTab('trend')">📈 月份趨勢</button>
     <button class="tab" onclick="switchTab('daily')">📅 每日進廠台數</button>
-    <button class="tab" onclick="switchTab('performance')">🎯 業績進度</button>
   </div>
   <!-- 維修收入 -->
   <div id="tab-repair">
@@ -291,32 +291,6 @@
     </div>
   </div>
 
-  <!-- ══════ 業績進度 ══════ -->
-  <div id="tab-performance" style="display:none">
-    <div id="perfKPI" class="kpi-grid"></div>
-
-    <!-- ── 收入明細分解 ── -->
-    <div class="card" id="perfBreakdownCard">
-      <div class="card-title">
-        📊 收入明細分解
-        <span id="perfBreakdownPeriod" class="card-title-note"></span>
-      </div>
-      <div id="perfBreakdown"><div class="loading"><span class="spinner"></span>載入中</div></div>
-    </div>
-
-    <!-- ── 業績指標 ── -->
-    <div class="card">
-      <div class="card-title">
-        🎯 各指標業績進度
-        <span id="perfPeriodLabel" class="card-title-note"></span>
-        <a href="/settings.html" style="font-size:12px;color:#64748b;text-decoration:none;margin-left:8px;padding:4px 8px;border:1px solid #2d3f56;border-radius:5px;background:#1e293b">⚙️ 設定指標</a>
-      </div>
-      <div id="perfNoConfig" style="display:none;padding:48px;text-align:center;color:#64748b">
-        尚未建立業績指標，請前往 <a href="/settings.html" style="color:#3b82f6">⚙️ 設定 → 業績目標</a> 新增追蹤項目
-      </div>
-      <div id="perfDetail"></div>
-    </div>
-  </div>
 
 </div>
 <script>
@@ -358,7 +332,7 @@ const GROUP_META = {
 
 function switchTab(tab) {
   currentTab = tab;
-  const tabs = ['repair','tech','parts','boutique','sa-sales','trend','daily','performance'];
+  const tabs = ['repair','tech','parts','boutique','sa-sales','trend','daily'];
   document.querySelectorAll('.tab').forEach((t, i) => { t.classList.toggle('active', tabs[i] === tab); });
   tabs.forEach(t => { document.getElementById(`tab-${t}`).style.display = t === tab ? '' : 'none'; });
 }
@@ -389,7 +363,6 @@ async function loadAll() {
     loadTrend(branch),
     loadDaily(period, branch),
     loadSASales(),
-    loadPerformance(period, branch),
   ]);
   document.getElementById('lastUpdate').textContent = `更新於 ${new Date().toLocaleTimeString('zh-TW')}`;
 }
@@ -606,222 +579,6 @@ async function loadDaily(period, branch) {
   } catch(e){document.getElementById('dailyKPI').innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;}
 }
 
-// ══════ 收入明細分解 ══════
-async function loadIncomeBreakdown(period, branch) {
-  const el = document.getElementById('perfBreakdown');
-  const lblEl = document.getElementById('perfBreakdownPeriod');
-  if (!el) return;
-  if (!period) { el.innerHTML = '<div style="color:#64748b;font-size:13px">請選擇期間</div>'; return; }
-  el.innerHTML = '<div class="loading"><span class="spinner"></span>載入中</div>';
-  try {
-    const params = new URLSearchParams({ period });
-    if (branch) params.set('branch', branch);
-    const data = await (await fetch(`/api/stats/income-breakdown?${params}`)).json();
-    if (data.error) throw new Error(data.error);
-    if (lblEl) lblEl.textContent = `${period.slice(0,4)}年${period.slice(4)}月`;
-    const { branches: bdata } = data;
-    const BRANCHES = branch ? [branch] : ['AMA','AMC','AMD'];
-    const brColors = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b' };
-
-    // Build totals for all selected branches
-    const tot = (key) => BRANCHES.reduce((s, br) => s + (bdata[br]?.[key] || 0), 0);
-
-    // 定義列資料
-    const ROWS = [
-      { key:'bodywork_self',      label:'自費鈑烤',       indent:1, color:'#a78bfa', note:'帳類=一般，含鈑金/烤漆工單' },
-      { key:'bodywork_insurance', label:'保險鈑烤',       indent:1, color:'#a78bfa', note:'帳類=保險' },
-      { key:'bodywork_total',     label:'鈑烤合計',       indent:0, color:'#8b5cf6', bold:true },
-      { key:'extended',           label:'延保收入',       indent:0, color:'#10b981' },
-      { key:'general_no_bw',      label:'一般收入（非鈑烤）', indent:1, color:'#60a5fa', note:'帳類=一般，不含鈑金/烤漆工單' },
-      { key:'voucher',            label:'票劵收入',       indent:1, color:'#60a5fa', note:'帳類=票劵' },
-      { key:'external',           label:'外賣收入',       indent:1, color:'#2dd4bf', note:'來自零件銷售' },
-      { key:'general_total',      label:'一般營收',       indent:0, color:'#3b82f6', bold:true, note:'一般(非鈑烤)＋票劵＋外賣' },
-      { key:'paid_total',         label:'有費營收',       indent:0, color:'#f97316', bold:true, note:'一般營收＋保險鈑烤＋延保' },
-      { key:'other_total',        label:'無費成本（內結/保固/VSA/善意）', indent:0, color:'#64748b' },
-      { key:'all_total',          label:'全部營收',       indent:0, color:'#e2e8f0', bold:true, border:true, note:'有費＋無費' },
-    ];
-
-    // ── 組 HTML ──
-    // Header
-    let html = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
-      <thead><tr>
-        <th style="text-align:left;padding:9px 14px;background:#0f172a;color:#64748b;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;min-width:200px">收入項目</th>`;
-    BRANCHES.forEach(br => {
-      const col = brColors[br] || '#94a3b8';
-      html += `<th style="text-align:right;padding:9px 14px;background:#0f172a;color:${col};font-size:12px;font-weight:800;border-bottom:1px solid #2d3f56;min-width:130px">${br}</th>`;
-    });
-    if (BRANCHES.length > 1) {
-      html += `<th style="text-align:right;padding:9px 14px;background:#0f172a;color:#94a3b8;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;min-width:120px">合計</th>`;
-    }
-    html += `</tr></thead><tbody>`;
-
-    ROWS.forEach(row => {
-      const isSep = row.border;
-      const rowBg = row.bold ? 'rgba(255,255,255,.03)' : 'transparent';
-      const borderTop = isSep ? 'border-top:2px solid #374151;' : '';
-      html += `<tr style="background:${rowBg}">
-        <td style="padding:9px 14px;border-bottom:1px solid rgba(45,63,86,.3);${borderTop}">
-          <div style="display:flex;align-items:center;gap:8px;padding-left:${row.indent ? 16 : 0}px">
-            ${row.indent ? '<div style="width:3px;height:14px;background:#2d3f56;border-radius:2px;flex-shrink:0"></div>' : ''}
-            <span style="font-size:13px;font-weight:${row.bold ? 800 : 600};color:${row.color || '#e2e8f0'}">${row.label}</span>
-            ${row.note ? `<span style="font-size:11px;color:#475569">${row.note}</span>` : ''}
-          </div>
-        </td>`;
-      BRANCHES.forEach(br => {
-        const d = bdata[br];
-        const v = d ? d[row.key] : 0;
-        html += `<td style="text-align:right;padding:9px 14px;border-bottom:1px solid rgba(45,63,86,.3);${borderTop}font-variant-numeric:tabular-nums">
-          <span style="font-size:${row.bold ? 14 : 13}px;font-weight:${row.bold ? 800 : 600};color:${row.color || '#e2e8f0'}">${fmtK(v)}</span>
-        </td>`;
-      });
-      if (BRANCHES.length > 1) {
-        const total = tot(row.key);
-        html += `<td style="text-align:right;padding:9px 14px;border-bottom:1px solid rgba(45,63,86,.3);${borderTop}font-variant-numeric:tabular-nums;background:rgba(255,255,255,.02)">
-          <span style="font-size:${row.bold ? 14 : 13}px;font-weight:${row.bold ? 800 : 600};color:${row.color || '#94a3b8'}">${fmtK(total)}</span>
-        </td>`;
-      }
-      html += `</tr>`;
-    });
-
-    // 其他帳類明細（展開在無費底下）
-    const firstBr = BRANCHES[0];
-    const allOtherDetail = [];
-    BRANCHES.forEach(br => {
-      (bdata[br]?.other_detail || []).forEach(od => {
-        if (!allOtherDetail.find(x => x.account_type === od.account_type))
-          allOtherDetail.push(od);
-      });
-    });
-    allOtherDetail.forEach(od => {
-      html += `<tr>
-        <td style="padding:6px 14px 6px 30px;border-bottom:1px solid rgba(45,63,86,.2)">
-          <div style="display:flex;align-items:center;gap:8px">
-            <div style="width:3px;height:12px;background:#1e293b;border-radius:2px;flex-shrink:0"></div>
-            <span style="font-size:12px;color:#475569">${od.account_type}</span>
-          </div>
-        </td>`;
-      BRANCHES.forEach(br => {
-        const match = (bdata[br]?.other_detail || []).find(x => x.account_type === od.account_type);
-        const v = match ? match.total : 0;
-        html += `<td style="text-align:right;padding:6px 14px;border-bottom:1px solid rgba(45,63,86,.2);font-size:12px;color:#475569;font-variant-numeric:tabular-nums">${v > 0 ? fmtK(v) : '—'}</td>`;
-      });
-      if (BRANCHES.length > 1) html += `<td style="border-bottom:1px solid rgba(45,63,86,.2)"></td>`;
-      html += `</tr>`;
-    });
-
-    html += `</tbody></table></div>
-    <div style="font-size:11px;color:#475569;margin-top:10px;line-height:2">
-      💡 金額單位：千元（K）｜未稅｜<strong>自費鈑烤</strong>：帳類＝一般，工單內含鈑金或烤漆金額 &gt; 0
-    </div>`;
-    el.innerHTML = html;
-  } catch(e) {
-    el.innerHTML = `<div style="color:#ef4444;padding:16px">${e.message}</div>`;
-  }
-}
-
-// ══════ 業績進度 ══════
-async function loadPerformance(period, branch) {
-  const kpiEl    = document.getElementById('perfKPI');
-  const detailEl = document.getElementById('perfDetail');
-  const noConfEl = document.getElementById('perfNoConfig');
-  if (!kpiEl) return;
-  if (!period) {
-    kpiEl.innerHTML = '<div style="color:#64748b;padding:12px;font-size:13px">請先選擇期間後按查詢</div>';
-    if (detailEl) detailEl.innerHTML = ''; return;
-  }
-  kpiEl.innerHTML = '';
-  if (detailEl) detailEl.innerHTML = '<div class="loading"><span class="spinner"></span>載入中</div>';
-
-  // 同步載入收入明細分解
-  loadIncomeBreakdown(period, branch);
-
-  try {
-    const params = new URLSearchParams({ period });
-    if (branch) params.set('branch', branch);
-    const data = await (await fetch(`/api/stats/performance?${params}`)).json();
-    if (data.error) throw new Error(data.error);
-    const { metrics, results } = data;
-    if (!metrics.length) {
-      if (noConfEl) noConfEl.style.display = '';
-      if (detailEl) detailEl.innerHTML = '';
-      kpiEl.innerHTML = ''; return;
-    }
-    if (noConfEl) noConfEl.style.display = 'none';
-    const BRANCHES = branch ? [branch] : ['AMA','AMC','AMD'];
-    const brColors = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b' };
-    const TYPE_LABEL = { repair_income:'🔧 維修收入', parts:'🔩 零件銷售', boutique:'💎 精品配件' };
-    const FIELD_UNIT = { amount:'元', qty:'件', count:'筆' };
-    // ── KPI 整體達成率 cards ──
-    let kpiHtml = '';
-    BRANCHES.forEach(br => {
-      const col = brColors[br] || '#64748b';
-      const withTarget = results.filter(r => r.branches[br]?.target !== null).length;
-      const achieved   = results.filter(r => (r.branches[br]?.achieve_rate || 0) >= 100).length;
-      const sumRate    = results.reduce((s, r) => s + (r.branches[br]?.achieve_rate || 0), 0);
-      const avgRate    = withTarget > 0 ? sumRate / withTarget : null;
-      const rCol = avgRate === null ? '#64748b' : avgRate >= 100 ? '#10b981' : avgRate >= 80 ? '#f59e0b' : '#ef4444';
-      kpiHtml += `<div class="kpi-card"><div class="kpi-label" style="color:${col}">${br} 整體達成率</div><div class="kpi-value" style="color:${rCol}">${avgRate !== null ? avgRate.toFixed(1) + '%' : '—'}</div><div class="kpi-sub">${achieved} / ${withTarget} 項達標</div></div>`;
-    });
-    kpiEl.innerHTML = kpiHtml;
-    // ── 各指標詳細區塊 ──
-    const metricMap = {}; metrics.forEach(m => { metricMap[m.id] = m; });
-    let html = '';
-    results.forEach(r => {
-      const metric = metricMap[r.metric_id]; if (!metric) return;
-      const isAmt = metric.stat_field !== 'qty' && metric.stat_field !== 'count';
-      const unit  = metric.unit || FIELD_UNIT[metric.stat_field] || '元';
-      const fmtV = v => {
-        if (v === null || v === undefined) return '—';
-        if (isAmt && !metric.unit) return fmtK(v);
-        return metric.stat_field === 'qty' ? n(v).toFixed(1) : fmt(v);
-      };
-      html += `<div class="perf-block">
-        <div class="perf-block-header">
-          <span style="font-size:14px;font-weight:800;color:#e2e8f0">${metric.metric_name}</span>
-          <span class="badge badge-blue" style="font-size:11px">${TYPE_LABEL[metric.metric_type]||metric.metric_type}</span>
-          ${metric.description ? `<span style="font-size:12px;color:#64748b">${metric.description}</span>` : ''}
-          <span style="font-size:11px;color:#475569;margin-left:auto">單位：${unit}</span>
-        </div>
-        <div class="perf-block-body" style="grid-template-columns:repeat(${BRANCHES.length},1fr)">`;
-      BRANCHES.forEach((br, bi) => {
-        const d = r.branches[br] || {}; const col = brColors[br] || '#64748b';
-        const rate = d.achieve_rate;
-        const rCol = rate === null ? '#64748b' : rate >= 100 ? '#10b981' : rate >= 80 ? '#f59e0b' : '#ef4444';
-        const barW = rate !== null ? Math.min(100, rate).toFixed(0) : 0;
-        const yoy = d.yoy_growth;
-        html += `<div class="perf-cell${bi < BRANCHES.length - 1 ? '' : ''}">
-          <div style="font-size:11px;font-weight:800;color:${col};margin-bottom:10px;letter-spacing:.04em">${br}</div>
-          <div style="font-size:22px;font-weight:800;color:#e2e8f0;margin-bottom:6px">${fmtV(d.actual)}</div>
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
-            <div style="flex:1;background:#0f172a;border-radius:3px;height:5px;min-width:40px">
-              <div style="width:${barW}%;height:5px;background:${rCol};border-radius:3px"></div>
-            </div>
-            <span style="font-size:13px;font-weight:800;color:${rCol};white-space:nowrap">${rate !== null ? rate.toFixed(1) + '%' : '無目標'}</span>
-          </div>
-          <div style="font-size:11px;color:#64748b;line-height:2">
-            <div style="display:flex;justify-content:space-between">
-              <span>目標</span>
-              <span style="color:#94a3b8;font-weight:600">${fmtV(d.target)}</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <span>去年同期</span>
-              <span>
-                <span style="color:#94a3b8;font-weight:600">${fmtV(d.last_year)}</span>
-                ${yoy !== null ? `<span style="color:${yoy >= 0 ? '#10b981' : '#ef4444'};margin-left:5px;font-size:11px">${yoy >= 0 ? '▲' : '▼'}${Math.abs(yoy).toFixed(1)}%</span>` : ''}
-              </span>
-            </div>
-          </div>
-        </div>`;
-      });
-      html += `</div></div>`;
-    });
-    if (detailEl) detailEl.innerHTML = html || '<div class="empty">此期間無業績資料</div>';
-    const lbl = document.getElementById('perfPeriodLabel');
-    if (lbl && period) lbl.textContent = `${period.slice(0,4)}年${period.slice(4)}月`;
-  } catch(e) {
-    if (detailEl) detailEl.innerHTML = `<div style="color:#ef4444;padding:16px">${e.message}</div>`;
-    kpiEl.innerHTML = '';
-  }
 }
 
 (async () => {
