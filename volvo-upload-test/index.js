@@ -1519,8 +1519,22 @@ app.post('/api/upload-performance-targets-native', upload.single('file'), async 
     try {
       await client.query('BEGIN');
 
-      // 自動建立不存在的指標
+      // 載入所有 SA 銷售設定，用來比對名稱複製篩選條件
+      const saConfigs = (await client.query(`SELECT config_name, filters, stat_method FROM sa_sales_config`)).rows;
+      const findSaConfig = (metricName) => {
+        // 完整比對
+        let match = saConfigs.find(c => c.config_name === metricName);
+        if (match) return match;
+        // 包含比對（SA名稱包含指標名稱，或指標名稱包含SA名稱）
+        match = saConfigs.find(c =>
+          c.config_name.includes(metricName) || metricName.includes(c.config_name)
+        );
+        return match || null;
+      };
+
+      // 自動建立不存在的指標（優先從 SA 設定複製篩選條件）
       const createdMetrics = [];
+      const createdFromSA = [];
       const metricIdMap = {};
       for (const [name] of Object.entries(data)) {
         const existing = await client.query(
@@ -1529,13 +1543,20 @@ app.post('/api/upload-performance-targets-native', upload.single('file'), async 
         if (existing.rows.length) {
           metricIdMap[name] = existing.rows[0].id;
         } else {
+          // 嘗試從 SA 設定複製篩選條件
+          const saMatch = findSaConfig(name);
+          const filters = saMatch ? JSON.stringify(saMatch.filters) : '[]';
+          const statField = saMatch
+            ? (saMatch.stat_method === 'quantity' ? 'qty' : saMatch.stat_method === 'count' ? 'count' : 'amount')
+            : 'amount';
           const ins = await client.query(
             `INSERT INTO performance_metrics (metric_name, description, metric_type, filters, stat_field, unit)
-             VALUES ($1, '', 'parts', '[]', 'amount', '') RETURNING id`,
-            [name]
+             VALUES ($1, '', 'parts', $2, $3, '') RETURNING id`,
+            [name, filters, statField]
           );
           metricIdMap[name] = ins.rows[0].id;
           createdMetrics.push(name);
+          if (saMatch) createdFromSA.push({ name, saName: saMatch.config_name });
         }
       }
 
@@ -1563,6 +1584,7 @@ app.post('/api/upload-performance-targets-native', upload.single('file'), async 
         ok: true, count, year, dataType,
         metrics: Object.keys(data).map(n => ({ name: n, isK: data[n].isK })),
         created: createdMetrics,
+        createdFromSA,
         existing: Object.keys(data).filter(n => !createdMetrics.includes(n)),
       });
     } catch(err) { await client.query('ROLLBACK'); throw err; }
