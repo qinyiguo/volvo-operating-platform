@@ -846,6 +846,86 @@ app.get('/api/debug/columns', async (req, res) => {
   catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// 共用查詢邏輯
+const buildQueryConds = (period, branch) => {
+  const conds = []; const params = []; let idx = 1;
+  if (period) { conds.push(`period=$${idx++}`); params.push(period); }
+  if (branch) { conds.push(`branch=$${idx++}`); params.push(branch); }
+  return { conds, params, idx };
+};
+ 
+// 維修收入查詢
+app.get('/api/query/repair_income', async (req, res) => {
+  try {
+    const { period, branch } = req.query;
+    const { conds, params } = buildQueryConds(period, branch);
+    const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
+    const r = await pool.query(
+      `SELECT branch, period, work_order, settle_date, customer, plate_no,
+              account_type_code, account_type, parts_income, accessories_income,
+              boutique_income, engine_wage, bodywork_income, paint_income,
+              carwash_income, outsource_income, addon_income, total_untaxed,
+              total_taxed, parts_cost, service_advisor
+       FROM repair_income ${where}
+       ORDER BY branch, settle_date DESC, work_order
+       LIMIT 10000`, params);
+    res.json({ rows: r.rows, count: r.rows.length });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+ 
+// 技師績效查詢
+app.get('/api/query/tech_performance', async (req, res) => {
+  try {
+    const { period, branch } = req.query;
+    const { conds, params } = buildQueryConds(period, branch);
+    const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
+    const r = await pool.query(
+      `SELECT branch, period, tech_name_clean, dispatch_date, work_order,
+              work_code, task_content, account_type, standard_hours, wage,
+              discount, wage_category
+       FROM tech_performance ${where}
+       ORDER BY branch, dispatch_date DESC, tech_name_clean
+       LIMIT 10000`, params);
+    res.json({ rows: r.rows, count: r.rows.length });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+ 
+// 零件銷售查詢
+app.get('/api/query/parts_sales', async (req, res) => {
+  try {
+    const { period, branch } = req.query;
+    const { conds, params } = buildQueryConds(period, branch);
+    const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
+    const r = await pool.query(
+      `SELECT branch, period, category, order_no, work_order, part_number,
+              part_name, part_type, category_code, function_code, sale_qty,
+              retail_price, sale_price_untaxed, cost_untaxed, discount_rate,
+              department, pickup_person, sales_person, plate_no
+       FROM parts_sales ${where}
+       ORDER BY branch, order_no DESC
+       LIMIT 10000`, params);
+    res.json({ rows: r.rows, count: r.rows.length });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+ 
+// 業務查詢
+app.get('/api/query/business_query', async (req, res) => {
+  try {
+    const { period, branch } = req.query;
+    const { conds, params } = buildQueryConds(period, branch);
+    const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
+    const r = await pool.query(
+      `SELECT branch, period, work_order, open_time, settle_date, plate_no,
+              vin, status, repair_item, service_advisor, assigned_tech,
+              repair_tech, repair_type, car_series, car_model, model_year,
+              owner, is_ev, mileage_in, mileage_out
+       FROM business_query ${where}
+       ORDER BY branch, open_time DESC
+       LIMIT 10000`, params);
+    res.json({ rows: r.rows, count: r.rows.length });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.get('/api/periods', async (req, res) => {
   try {
     const r = await pool.query(`
