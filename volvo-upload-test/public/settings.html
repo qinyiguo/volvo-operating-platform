@@ -66,59 +66,19 @@
   .config-item-desc { font-size: 12px; color: #64748b; margin-top: 2px; }
   .config-item-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
   .config-list { display: flex; flex-direction: column; gap: 8px; }
-
-  /* ══ MODAL SYSTEM ══ */
-  .modal-backdrop {
-    display: none;
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,.7);
-    z-index: 1000;
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
-    animation: fadeIn .15s ease;
-  }
+  .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 1000; backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); animation: fadeIn .15s ease; }
   .modal-backdrop.open { display: flex; align-items: center; justify-content: center; padding: 20px; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  .modal-window {
-    background: #1a2740;
-    border: 1px solid #2d4060;
-    border-radius: 14px;
-    width: 100%;
-    max-width: 680px;
-    max-height: 90vh;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 24px 64px rgba(0,0,0,.8);
-    animation: slideUp .2s ease;
-  }
+  .modal-window { background: #1a2740; border: 1px solid #2d4060; border-radius: 14px; width: 100%; max-width: 680px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 24px 64px rgba(0,0,0,.8); animation: slideUp .2s ease; }
   @keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-  .modal-header {
-    display: flex; align-items: center; gap: 10px;
-    padding: 18px 22px 14px;
-    border-bottom: 1px solid #2d3f56;
-    flex-shrink: 0;
-  }
+  .modal-header { display: flex; align-items: center; gap: 10px; padding: 18px 22px 14px; border-bottom: 1px solid #2d3f56; flex-shrink: 0; }
   .modal-header-title { font-size: 15px; font-weight: 800; flex: 1; }
-  .modal-close {
-    width: 30px; height: 30px; border-radius: 8px;
-    border: 1px solid #2d3f56; background: #0f172a;
-    color: #64748b; font-size: 18px; line-height: 1;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: all .15s; flex-shrink: 0;
-  }
+  .modal-close { width: 30px; height: 30px; border-radius: 8px; border: 1px solid #2d3f56; background: #0f172a; color: #64748b; font-size: 18px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; flex-shrink: 0; }
   .modal-close:hover { background: rgba(239,68,68,.15); border-color: #ef4444; color: #ef4444; }
   .modal-body { overflow-y: auto; padding: 20px 22px; flex: 1; }
   .modal-body::-webkit-scrollbar { width: 5px; }
-  .modal-body::-webkit-scrollbar-track { background: transparent; }
   .modal-body::-webkit-scrollbar-thumb { background: #2d3f56; border-radius: 3px; }
-  .modal-footer {
-    padding: 14px 22px 18px;
-    border-top: 1px solid #2d3f56;
-    display: flex; gap: 8px; justify-content: flex-end;
-    flex-shrink: 0;
-  }
-
-  /* Editor content styles (same as before, now inside modal) */
+  .modal-footer { padding: 14px 22px 18px; border-top: 1px solid #2d3f56; display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0; }
   .form-row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; }
   .form-row label { font-size: 12px; color: #64748b; font-weight: 600; white-space: nowrap; padding-top: 9px; min-width: 40px; }
   .form-input { background: #0f172a; border: 1px solid #2d3f56; color: #e2e8f0; padding: 8px 12px; border-radius: 6px; font-size: 13px; flex: 1; min-width: 0; }
@@ -190,7 +150,6 @@
   .wd-existing-item .info { flex: 1; }
   .wd-existing-item .name { font-weight: 700; }
   .wd-existing-item .sub { font-size: 12px; color: #64748b; margin-top: 2px; }
-  /* inner section dividers inside modal */
   .modal-section-label { font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .05em; padding: 10px 0 6px; border-top: 1px solid #1e3050; margin-top: 4px; }
   .modal-section-label:first-child { border-top: none; padding-top: 0; }
 </style>
@@ -218,9 +177,7 @@
   <a href="/settings.html" class="nav-link active">⚙️ 設定</a>
 </nav>
 
-<!-- ══════════════════════════════════════════
-     MODAL #1 — 指標銷售設定編輯器
-══════════════════════════════════════════ -->
+<!-- ══ MODAL #1 — 指標銷售設定編輯器 ══ -->
 <div class="modal-backdrop" id="saModal">
   <div class="modal-window">
     <div class="modal-header">
@@ -236,7 +193,6 @@
         <label>說明</label>
         <input type="text" id="cfgDesc" class="form-input" placeholder="（選填）" maxlength="200">
       </div>
-
       <div class="modal-section-label">篩選條件</div>
       <div class="logic-hint">
         <strong>不同類型之間 AND（且）</strong> — 例：類別碼 93 且 功能碼 1832<br>
@@ -272,7 +228,6 @@
         </div>
         <div id="addHint" style="font-size:11px;color:#64748b;margin-top:6px;min-height:16px"></div>
       </div>
-
       <div class="modal-section-label">統計方式</div>
       <div class="stat-method-options">
         <label class="stat-radio-item selected" id="smLabel-amount" onclick="selectStatMethod('amount')">
@@ -288,7 +243,6 @@
           <div class="stat-radio-info"><span class="stat-radio-name">🧾 筆數</span><span class="stat-radio-desc">計算銷售單數</span></div>
         </label>
       </div>
-
       <div class="modal-section-label">人員分類（可同時勾選兩個）</div>
       <div style="font-size:12px;color:#64748b;background:#0f172a;border:1px solid #2d3f56;border-radius:6px;padding:8px 12px;margin-bottom:10px;line-height:1.7">
         同時勾選兩個時，此設定會同時出現在「銷售人員」與「技師施工」兩個分頁<br>
@@ -313,9 +267,7 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
-     MODAL #2 — 工資代碼設定編輯器
-══════════════════════════════════════════ -->
+<!-- ══ MODAL #2 — 工資代碼設定編輯器 ══ -->
 <div class="modal-backdrop" id="twcModal">
   <div class="modal-window">
     <div class="modal-header">
@@ -331,7 +283,6 @@
         <label>說明</label>
         <input type="text" id="twcDesc" class="form-input" placeholder="（選填）" maxlength="200">
       </div>
-
       <div class="modal-section-label">工資代碼（work_code）</div>
       <div class="filter-list" id="twcCodeList"></div>
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
@@ -340,10 +291,8 @@
         <button class="btn btn-secondary btn-sm" onclick="addTwcCode()">＋ 加入</button>
         <span id="twcCodeHint" style="font-size:11px;color:#64748b"></span>
       </div>
-
       <div class="modal-section-label">帳類篩選（可多選，留空=全部）</div>
       <div class="part-type-grid" id="twcAccountChips"></div>
-
       <div class="modal-section-label">統計方式</div>
       <div class="stat-method-options">
         <label class="stat-radio-item selected" id="twcSmLabel-count" onclick="selectTwcMethod('count')">
@@ -367,9 +316,7 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
-     MODAL #3 — 業績指標編輯器
-══════════════════════════════════════════ -->
+<!-- ══ MODAL #3 — 業績指標編輯器 ══ -->
 <div class="modal-backdrop" id="perfModal">
   <div class="modal-window" style="max-width:740px">
     <div class="modal-header">
@@ -395,14 +342,12 @@
           <option value="tech_wage">🚗 工資代碼統計（保養/洗車/美容等）</option>
         </select>
       </div>
-
       <!-- 維修收入選項 -->
       <div id="perfRepairOptions">
         <div class="hint" style="margin:8px 0 10px">追蹤維修收入合計（未稅），可選擇性篩選特定帳類。<strong>留空 = 統計全部帳類。</strong></div>
         <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">帳類篩選（可多選，留空=全部）</div>
         <div class="part-type-grid" id="perfRepairAccountTypes"></div>
       </div>
-
       <!-- 零件銷售選項 -->
       <div id="perfPartsOptions" style="display:none">
         <div class="logic-hint" style="margin-bottom:10px">
@@ -447,7 +392,6 @@
           </div>
         </div>
       </div>
-
       <!-- 精品配件選項 -->
       <div id="perfBoutiqueOptions" style="display:none">
         <div class="hint" style="margin:8px 0 10px">從 parts_sales JOIN parts_catalog 取得精品/配件銷售金額。需先上傳零件型錄。</div>
@@ -456,7 +400,6 @@
         <div style="font-size:12px;font-weight:700;color:#64748b;margin:14px 0 8px">帳類篩選（Paycode，留空=全部）</div>
         <div class="part-type-grid" id="perfBoutiqueAccountChips"></div>
       </div>
-
       <!-- 工資代碼統計選項 -->
       <div id="perfTechWageOptions" style="display:none">
         <div class="hint" style="margin:8px 0 12px">
@@ -490,7 +433,6 @@
           </div>
         </div>
       </div>
-
       <!-- 維修收入子欄位選項 -->
       <div id="perfSubfieldOptions" style="display:none">
         <div class="hint" style="margin:8px 0 12px">
@@ -525,7 +467,6 @@
         <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">帳類篩選（可多選，留空=全部）</div>
         <div class="part-type-grid" id="perfSubfieldAccountChips"></div>
       </div>
-
       <div class="form-row" style="margin-top:14px">
         <label>單位</label>
         <input type="text" id="perfUnit" class="form-input" placeholder="留空自動判斷（金額=元，數量=件）" maxlength="20" style="max-width:280px">
@@ -806,7 +747,7 @@
       </div>
     </div>
 
-    <!-- ── 零配精品銷售 ── -->
+    <!-- ── 零配精品銷售 ── ★ FIX: 指標定義 and 目標數值設定 are NOW inside this section ★ -->
     <div class="section-page" id="section-performance">
       <div class="page-title">🛒 零配精品銷售</div>
       <p class="page-sub">定義追蹤指標（零件/精品/配件等），設定各月目標與去年實績，用於統計頁業績進度</p>
@@ -830,7 +771,6 @@
             ⚠️ <strong>去年實績的年份請選「今年」（例如 2026）</strong>，而不是去年（2025）。<br>
             原因：系統把去年實績存在「今年各月」的紀錄列，和今年目標放在一起比較。
           </div>
-          </div>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <select id="perfUpYear" class="form-select"><option value="">選擇年份...</option></select>
             <button class="btn btn-secondary btn-sm" onclick="downloadPerfTemplate()">⬇️ 下載指標範本</button>
@@ -841,6 +781,8 @@
           <div id="perfUpResult" style="margin-top:10px"></div>
         </div>
       </div>
+
+      <!-- ★ 指標定義 — now correctly INSIDE section-performance ★ -->
       <div class="card">
         <div class="card-title">
           📋 指標定義
@@ -850,6 +792,8 @@
           <div style="color:#64748b;font-size:13px;padding:8px 0"><span class="spinner"></span>載入中</div>
         </div>
       </div>
+
+      <!-- ★ 目標數值設定 — now correctly INSIDE section-performance ★ -->
       <div class="card">
         <div class="card-title">🎯 目標數值設定</div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
@@ -873,7 +817,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </div><!-- end section-performance -->
 
     <!-- ── 管理員密碼 ── -->
     <div class="section-page" id="section-password">
@@ -903,208 +847,70 @@
 </div><!-- /.layout -->
 
 <script>
-// ══ Modal 輔助 ══
-function openModal(id) {
-  document.getElementById(id).classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
-  document.body.style.overflow = '';
-}
-// 點背景關閉
-['saModal','twcModal','perfModal'].forEach(id => {
-  document.getElementById(id).addEventListener('click', function(e) {
-    if (e.target === this) {
-      // 根據 modal id 呼叫對應 cancel
-      if (id === 'saModal')   cancelEdit();
-      if (id === 'twcModal')  twcCancelEdit();
-      if (id === 'perfModal') perfCancelEdit();
-    }
+// ══ Modal helpers ══
+function openModal(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';}
+function closeModal(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';}
+['saModal','twcModal','perfModal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',function(e){
+    if(e.target===this){if(id==='saModal')cancelEdit();if(id==='twcModal')twcCancelEdit();if(id==='perfModal')perfCancelEdit();}
   });
 });
-// ESC 關閉
-document.addEventListener('keydown', e => {
-  if (e.key !== 'Escape') return;
-  if (document.getElementById('saModal').classList.contains('open'))   cancelEdit();
-  if (document.getElementById('twcModal').classList.contains('open'))  twcCancelEdit();
-  if (document.getElementById('perfModal').classList.contains('open')) perfCancelEdit();
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  if(document.getElementById('saModal').classList.contains('open'))cancelEdit();
+  if(document.getElementById('twcModal').classList.contains('open'))twcCancelEdit();
+  if(document.getElementById('perfModal').classList.contains('open'))perfCancelEdit();
 });
 
-// ══ 側欄切換 ══
-const sections = ['upload','dbstatus','sa-config','working-days','tech-wage-config','revenue-targets','performance','password'];
-function showSection(id) {
-  sections.forEach(s => {
-    document.getElementById(`section-${s}`).classList.toggle('active', s === id);
-    document.getElementById(`menu-${s}`)?.classList.toggle('active', s === id);
+// ══ Sidebar ══
+const sections=['upload','dbstatus','sa-config','working-days','tech-wage-config','revenue-targets','performance','password'];
+function showSection(id){
+  sections.forEach(s=>{
+    document.getElementById(`section-${s}`).classList.toggle('active',s===id);
+    document.getElementById(`menu-${s}`)?.classList.toggle('active',s===id);
   });
-  if (id === 'dbstatus') loadCounts();
-  if (id === 'sa-config') loadConfigs();
-  if (id === 'working-days') { loadWdPeriods(); loadWdList(); }
-  if (id === 'tech-wage-config') { loadTwcConfigs(); initTwcAccountChips(); }
-  if (id === 'revenue-targets') { loadRevPeriods(); loadRevList(); }
-  if (id === 'performance') { loadPerfMetrics(); loadPerfTgtPeriods(); initPerfUpYear(); }
+  if(id==='dbstatus')loadCounts();
+  if(id==='sa-config')loadConfigs();
+  if(id==='working-days'){loadWdPeriods();loadWdList();}
+  if(id==='tech-wage-config'){loadTwcConfigs();initTwcAccountChips();}
+  if(id==='revenue-targets'){loadRevPeriods();loadRevList();}
+  if(id==='performance'){loadPerfMetrics();loadPerfTgtPeriods();initPerfUpYear();}
 }
 
-// ══ 上傳 ══
-let selectedFiles = [];
-const zone = document.getElementById('zone');
-zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
-zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
-zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag'); handleFiles(e.dataTransfer.files); });
-document.getElementById('fileInput').addEventListener('change', e => handleFiles(e.target.files));
-function handleFiles(files) {
-  selectedFiles = Array.from(files).filter(f => f.name.match(/\.xlsx?$/i));
-  const list = document.getElementById('fileList');
-  if (!selectedFiles.length) { list.innerHTML = ''; return; }
-  list.innerHTML = selectedFiles.map(f => `<div class="file-item"><span>📄 ${f.name}</span><span style="color:#64748b">${(f.size/1024).toFixed(0)} KB</span></div>`).join('');
-  document.getElementById('btnUpload').disabled = false;
-}
-async function doUpload() {
-  if (!selectedFiles.length) return;
-  const btn = document.getElementById('btnUpload'), status = document.getElementById('uploadStatus');
-  btn.disabled = true; status.textContent = '上傳中...';
-  const formData = new FormData();
-  selectedFiles.forEach(f => formData.append('files', f));
-  try {
-    const res = await fetch('/api/upload', { method:'POST', body:formData });
-    const data = await res.json();
-    showResults(data.results);
-    selectedFiles = []; document.getElementById('fileList').innerHTML = '';
-    loadHistory();
-  } catch (err) { status.textContent = '上傳失敗: '+err.message; }
-  finally { btn.disabled = false; status.textContent = ''; }
-}
-function showResults(results) {
-  document.getElementById('resultsCard').style.display = '';
-  document.getElementById('results').innerHTML = results.map(r => `
-    <div class="result-item">
-      <span style="font-weight:600">${r.filename}</span>
-      <div style="display:flex;gap:8px;align-items:center">
-        ${r.status==='success'
-          ? `<span class="badge badge-green">成功</span><span style="color:#64748b;font-size:12px">${r.fileType}/${r.branch||'-'}/${r.period||'-'}/${r.rowCount}筆</span>`
-          : `<span class="badge badge-red">失敗</span><span style="color:#ef4444;font-size:12px">${r.error}</span>`}
-      </div>
-    </div>`).join('');
-}
-async function loadHistory() {
-  try {
-    const data = await (await fetch('/api/history')).json();
-    const tbody = document.getElementById('historyBody');
-    if (!data.length) { tbody.innerHTML = '<tr><td colspan="7" style="color:#64748b;padding:16px">尚無紀錄</td></tr>'; return; }
-    tbody.innerHTML = data.map(h => `
-      <tr>
-        <td style="font-size:12px;color:#64748b;white-space:nowrap">${new Date(h.created_at).toLocaleString('zh-TW')}</td>
-        <td style="font-size:12px">${h.file_name}</td>
-        <td><span class="badge badge-blue">${h.file_type||'-'}</span></td>
-        <td>${h.branch||'-'}</td><td>${h.period||'-'}</td>
-        <td class="num">${h.row_count?.toLocaleString()||0}</td>
-        <td><span class="badge ${h.status==='success'?'badge-green':'badge-red'}">${h.status==='success'?'成功':'失敗'}</span></td>
-      </tr>`).join('');
-  } catch(e) { document.getElementById('historyBody').innerHTML = `<tr><td colspan="7" style="color:#ef4444">${e.message}</td></tr>`; }
-}
-async function loadCounts() {
-  try {
-    const data = await (await fetch('/api/counts')).json();
-    if (data.error) throw new Error(data.error);
-    document.getElementById('counts').innerHTML = data.map(r => `
-      <div class="count-card"><div class="count-val">${parseInt(r['筆數']).toLocaleString()}</div><div class="count-label">${r['表格']}</div></div>`).join('');
-  } catch(e) { document.getElementById('counts').innerHTML = `<span style="color:#ef4444;font-size:13px">❌ ${e.message}</span>`; }
-}
+// ══ Upload ══
+let selectedFiles=[];
+const zone=document.getElementById('zone');
+zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag');});
+zone.addEventListener('dragleave',()=>zone.classList.remove('drag'));
+zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag');handleFiles(e.dataTransfer.files);});
+document.getElementById('fileInput').addEventListener('change',e=>handleFiles(e.target.files));
+function handleFiles(files){selectedFiles=Array.from(files).filter(f=>f.name.match(/\.xlsx?$/i));const list=document.getElementById('fileList');if(!selectedFiles.length){list.innerHTML='';return;}list.innerHTML=selectedFiles.map(f=>`<div class="file-item"><span>📄 ${f.name}</span><span style="color:#64748b">${(f.size/1024).toFixed(0)} KB</span></div>`).join('');document.getElementById('btnUpload').disabled=false;}
+async function doUpload(){if(!selectedFiles.length)return;const btn=document.getElementById('btnUpload'),status=document.getElementById('uploadStatus');btn.disabled=true;status.textContent='上傳中...';const formData=new FormData();selectedFiles.forEach(f=>formData.append('files',f));try{const res=await fetch('/api/upload',{method:'POST',body:formData});const data=await res.json();showResults(data.results);selectedFiles=[];document.getElementById('fileList').innerHTML='';loadHistory();}catch(err){status.textContent='上傳失敗: '+err.message;}finally{btn.disabled=false;status.textContent='';}}
+function showResults(results){document.getElementById('resultsCard').style.display='';document.getElementById('results').innerHTML=results.map(r=>`<div class="result-item"><span style="font-weight:600">${r.filename}</span><div style="display:flex;gap:8px;align-items:center">${r.status==='success'?`<span class="badge badge-green">成功</span><span style="color:#64748b;font-size:12px">${r.fileType}/${r.branch||'-'}/${r.period||'-'}/${r.rowCount}筆</span>`:`<span class="badge badge-red">失敗</span><span style="color:#ef4444;font-size:12px">${r.error}</span>`}</div></div>`).join('');}
+async function loadHistory(){try{const data=await(await fetch('/api/history')).json();const tbody=document.getElementById('historyBody');if(!data.length){tbody.innerHTML='<tr><td colspan="7" style="color:#64748b;padding:16px">尚無紀錄</td></tr>';return;}tbody.innerHTML=data.map(h=>`<tr><td style="font-size:12px;color:#64748b;white-space:nowrap">${new Date(h.created_at).toLocaleString('zh-TW')}</td><td style="font-size:12px">${h.file_name}</td><td><span class="badge badge-blue">${h.file_type||'-'}</span></td><td>${h.branch||'-'}</td><td>${h.period||'-'}</td><td class="num">${h.row_count?.toLocaleString()||0}</td><td><span class="badge ${h.status==='success'?'badge-green':'badge-red'}">${h.status==='success'?'成功':'失敗'}</span></td></tr>`).join('');}catch(e){document.getElementById('historyBody').innerHTML=`<tr><td colspan="7" style="color:#ef4444">${e.message}</td></tr>`;}}
+async function loadCounts(){try{const data=await(await fetch('/api/counts')).json();if(data.error)throw new Error(data.error);document.getElementById('counts').innerHTML=data.map(r=>`<div class="count-card"><div class="count-val">${parseInt(r['筆數']).toLocaleString()}</div><div class="count-label">${r['表格']}</div></div>`).join('');}catch(e){document.getElementById('counts').innerHTML=`<span style="color:#ef4444;font-size:13px">❌ ${e.message}</span>`;}}
 
 // ══ SA 銷售設定 ══
-let configs = [], editingConfigId = null, editingFilters = [], lookupTimer = null;
-const PART_TYPES = ['一般','票劵','內結','保險','延保','保固','善意維修','VSA'];
-const typeLabel = { category_code:'零件類別碼', function_code:'功能碼', part_number:'零件編號', part_type:'付款類別', work_code:'工資代碼' };
-const STAT_METHOD_INFO = { amount:{label:'金額',badgeClass:'badge-blue'}, quantity:{label:'數量',badgeClass:'badge-green'}, count:{label:'筆數',badgeClass:'badge-gray'} };
-const PERSON_TYPE_INFO = { sales_person:{label:'👤 銷售人員',badgeStyle:'background:rgba(59,130,246,.15);color:#60a5fa'}, pickup_person:{label:'🔧 技師施工',badgeStyle:'background:rgba(245,158,11,.15);color:#f59e0b'} };
-function selectStatMethod(val) { document.querySelectorAll('input[name="stat_method"]').forEach(el => el.checked = el.value===val); ['amount','quantity','count'].forEach(v => document.getElementById(`smLabel-${v}`)?.classList.toggle('selected', v===val)); }
-function getStatMethod() { return document.querySelector('input[name="stat_method"]:checked')?.value||'amount'; }
-function setStatMethod(val) { selectStatMethod(val||'amount'); }
-function togglePersonType(val) {
-  const cb = document.querySelector(`input[name="person_type"][value="${val}"]`);
-  const label = document.getElementById(`ptLabel-${val}`);
-  if (!cb || !label) return;
-  // 至少一個必須勾選
-  const checkedCount = document.querySelectorAll('input[name="person_type"]:checked').length;
-  if (cb.checked && checkedCount <= 1) { return; } // 阻止取消最後一個
-  cb.checked = !cb.checked;
-  label.classList.toggle('selected', cb.checked);
-}
-function getPersonType() {
-  const vals = [...document.querySelectorAll('input[name="person_type"]:checked')].map(el => el.value);
-  if (vals.includes('sales_person') && vals.includes('pickup_person')) return 'both';
-  return vals[0] || 'sales_person';
-}
-// 載入設定時還原勾選狀態
-function setPersonType(val) {
-  const isSales = val === 'sales_person' || val === 'both';
-  const isTech  = val === 'pickup_person' || val === 'both';
-  ['sales_person','pickup_person'].forEach(v => {
-    const cb    = document.querySelector(`input[name="person_type"][value="${v}"]`);
-    const label = document.getElementById(`ptLabel-${v}`);
-    if (!cb || !label) return;
-    const on = v === 'sales_person' ? isSales : isTech;
-    cb.checked = on;
-    label.classList.toggle('selected', on);
-  });
-}
-async function loadConfigs() {
-  try { configs = await (await fetch('/api/sa-config')).json(); renderConfigList(); }
-  catch(e) { document.getElementById('configList').innerHTML = `<div style="color:#ef4444">${e.message}</div>`; }
-}
-function renderConfigList() {
-  const el = document.getElementById('configList');
-  if (!configs.length) { el.innerHTML = `<div class="empty-state"><div class="big">📋</div><div>尚無設定，點擊「新增設定」開始建立追蹤項目</div></div>`; return; }
-  el.innerHTML = configs.map(c => {
-    const sm = STAT_METHOD_INFO[c.stat_method]||STAT_METHOD_INFO.amount;
-    const pt = PERSON_TYPE_INFO[c.person_type||'sales_person']||PERSON_TYPE_INFO.sales_person;
-    return `<div class="config-item">
-      <div class="config-item-info">
-        <div class="config-item-name">${c.config_name}</div>
-        ${c.description ? `<div class="config-item-desc">${c.description}</div>` : ''}
-        <div class="config-item-tags">
-          <span class="badge ${sm.badgeClass}" style="font-size:11px">統計：${sm.label}</span>
-          <span class="badge" style="font-size:11px;${pt.badgeStyle}">${pt.label}</span>
-          ${(c.filters||[]).map(f => `<span class="badge" style="font-size:11px;${typeBadgeStyle(f.type)}">${typeLabel[f.type]||f.type}: ${f.value}</span>`).join('')}
-        </div>
-      </div>
-      <div style="display:flex;gap:6px;flex-shrink:0">
-        <button class="btn btn-secondary btn-sm" onclick="startEditConfig(${c.id})">編輯</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteConfig(${c.id},'${c.config_name.replace(/'/g,"\\'")}')">刪除</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-function typeBadgeStyle(type) {
-  const map = { category_code:'background:rgba(59,130,246,.15);color:#60a5fa', function_code:'background:rgba(139,92,246,.15);color:#a78bfa', part_number:'background:rgba(16,185,129,.15);color:#34d399', part_type:'background:rgba(249,115,22,.15);color:#fb923c', work_code:'background:rgba(20,184,166,.15);color:#2dd4bf' };
-  return map[type]||'background:rgba(100,116,139,.15);color:#94a3b8';
-}
-function startNewConfig() {
-  editingConfigId=null; editingFilters=[];
-  document.getElementById('editorTitle').textContent='新增設定';
-  document.getElementById('cfgName').value=''; document.getElementById('cfgDesc').value='';
-  setStatMethod('amount'); setPersonType('sales_person'); renderFilterList(); resetAddRow();
-  openModal('saModal');
-  setTimeout(()=>document.getElementById('cfgName').focus(),100);
-}
-function startEditConfig(id) {
-  const cfg=configs.find(c=>c.id===id); editingConfigId=id; editingFilters=(cfg.filters||[]).map(f=>({...f}));
-  document.getElementById('editorTitle').textContent=`編輯設定 — ${cfg.config_name}`;
-  document.getElementById('cfgName').value=cfg.config_name; document.getElementById('cfgDesc').value=cfg.description||'';
-  setStatMethod(cfg.stat_method||'amount'); setPersonType(cfg.person_type||'sales_person'); renderFilterList(); resetAddRow();
-  openModal('saModal');
-}
-function cancelEdit() { closeModal('saModal'); editingFilters=[]; }
-async function deleteConfig(id,name) { if(!confirm(`確定要刪除「${name}」嗎？`))return; await fetch(`/api/sa-config/${id}`,{method:'DELETE'}); await loadConfigs(); }
-async function saveConfig() {
-  const config_name=document.getElementById('cfgName').value.trim(), description=document.getElementById('cfgDesc').value.trim(), stat_method=getStatMethod(), person_type=getPersonType();
-  if(!config_name){alert('請輸入設定名稱');return;} if(!editingFilters.length){alert('請至少新增一個篩選條件');return;}
-  const filters=editingFilters.map(({type,value})=>({type,value})); const btn=document.getElementById('btnSaveCfg'); btn.disabled=true;
-  try { const url=editingConfigId?`/api/sa-config/${editingConfigId}`:'/api/sa-config'; const method=editingConfigId?'PUT':'POST'; const data=await(await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify({config_name,description,filters,stat_method,person_type})})).json(); if(data.error)throw new Error(data.error); cancelEdit(); await loadConfigs(); }
-  catch(e){alert('儲存失敗：'+e.message);} finally{btn.disabled=false;}
-}
-function renderFilterList() { const el=document.getElementById('filterList'); if(!editingFilters.length){el.innerHTML='<div style="color:#64748b;font-size:12px;padding:4px 0 8px">尚未新增篩選條件</div>';return;} el.innerHTML=editingFilters.map((f,i)=>`<div class="filter-tag-row"><span class="type-badge type-${f.type}">${typeLabel[f.type]||f.type}</span><span style="font-size:13px;font-weight:600;flex:1">${f.value}</span><button class="remove-btn" onclick="removeFilter(${i})" title="移除">×</button></div>`).join(''); }
+let configs=[],editingConfigId=null,editingFilters=[],lookupTimer=null;
+const PART_TYPES=['一般','票劵','內結','保險','延保','保固','善意維修','VSA'];
+const typeLabel={category_code:'零件類別碼',function_code:'功能碼',part_number:'零件編號',part_type:'付款類別',work_code:'工資代碼'};
+const STAT_METHOD_INFO={amount:{label:'金額',badgeClass:'badge-blue'},quantity:{label:'數量',badgeClass:'badge-green'},count:{label:'筆數',badgeClass:'badge-gray'}};
+const PERSON_TYPE_INFO={sales_person:{label:'👤 銷售人員',badgeStyle:'background:rgba(59,130,246,.15);color:#60a5fa'},pickup_person:{label:'🔧 技師施工',badgeStyle:'background:rgba(245,158,11,.15);color:#f59e0b'}};
+function selectStatMethod(val){document.querySelectorAll('input[name="stat_method"]').forEach(el=>el.checked=el.value===val);['amount','quantity','count'].forEach(v=>document.getElementById(`smLabel-${v}`)?.classList.toggle('selected',v===val));}
+function getStatMethod(){return document.querySelector('input[name="stat_method"]:checked')?.value||'amount';}
+function setStatMethod(val){selectStatMethod(val||'amount');}
+function togglePersonType(val){const cb=document.querySelector(`input[name="person_type"][value="${val}"]`);const label=document.getElementById(`ptLabel-${val}`);if(!cb||!label)return;const checkedCount=document.querySelectorAll('input[name="person_type"]:checked').length;if(cb.checked&&checkedCount<=1)return;cb.checked=!cb.checked;label.classList.toggle('selected',cb.checked);}
+function getPersonType(){const vals=[...document.querySelectorAll('input[name="person_type"]:checked')].map(el=>el.value);if(vals.includes('sales_person')&&vals.includes('pickup_person'))return'both';return vals[0]||'sales_person';}
+function setPersonType(val){const isSales=val==='sales_person'||val==='both';const isTech=val==='pickup_person'||val==='both';['sales_person','pickup_person'].forEach(v=>{const cb=document.querySelector(`input[name="person_type"][value="${v}"]`);const label=document.getElementById(`ptLabel-${v}`);if(!cb||!label)return;const on=v==='sales_person'?isSales:isTech;cb.checked=on;label.classList.toggle('selected',on);});}
+async function loadConfigs(){try{configs=await(await fetch('/api/sa-config')).json();renderConfigList();}catch(e){document.getElementById('configList').innerHTML=`<div style="color:#ef4444">${e.message}</div>`;}}
+function renderConfigList(){const el=document.getElementById('configList');if(!configs.length){el.innerHTML=`<div class="empty-state"><div class="big">📋</div><div>尚無設定，點擊「新增設定」開始建立追蹤項目</div></div>`;return;}el.innerHTML=configs.map(c=>{const sm=STAT_METHOD_INFO[c.stat_method]||STAT_METHOD_INFO.amount;const pt=PERSON_TYPE_INFO[c.person_type||'sales_person']||PERSON_TYPE_INFO.sales_person;return`<div class="config-item"><div class="config-item-info"><div class="config-item-name">${c.config_name}</div>${c.description?`<div class="config-item-desc">${c.description}</div>`:''}<div class="config-item-tags"><span class="badge ${sm.badgeClass}" style="font-size:11px">統計：${sm.label}</span><span class="badge" style="font-size:11px;${pt.badgeStyle}">${pt.label}</span>${(c.filters||[]).map(f=>`<span class="badge" style="font-size:11px;${typeBadgeStyle(f.type)}">${typeLabel[f.type]||f.type}: ${f.value}</span>`).join('')}</div></div><div style="display:flex;gap:6px;flex-shrink:0"><button class="btn btn-secondary btn-sm" onclick="startEditConfig(${c.id})">編輯</button><button class="btn btn-danger btn-sm" onclick="deleteConfig(${c.id},'${c.config_name.replace(/'/g,"\\'")}')">刪除</button></div></div>`;}).join('');}
+function typeBadgeStyle(type){const map={category_code:'background:rgba(59,130,246,.15);color:#60a5fa',function_code:'background:rgba(139,92,246,.15);color:#a78bfa',part_number:'background:rgba(16,185,129,.15);color:#34d399',part_type:'background:rgba(249,115,22,.15);color:#fb923c',work_code:'background:rgba(20,184,166,.15);color:#2dd4bf'};return map[type]||'background:rgba(100,116,139,.15);color:#94a3b8';}
+function startNewConfig(){editingConfigId=null;editingFilters=[];document.getElementById('editorTitle').textContent='新增設定';document.getElementById('cfgName').value='';document.getElementById('cfgDesc').value='';setStatMethod('amount');setPersonType('sales_person');renderFilterList();resetAddRow();openModal('saModal');setTimeout(()=>document.getElementById('cfgName').focus(),100);}
+function startEditConfig(id){const cfg=configs.find(c=>c.id===id);editingConfigId=id;editingFilters=(cfg.filters||[]).map(f=>({...f}));document.getElementById('editorTitle').textContent=`編輯設定 — ${cfg.config_name}`;document.getElementById('cfgName').value=cfg.config_name;document.getElementById('cfgDesc').value=cfg.description||'';setStatMethod(cfg.stat_method||'amount');setPersonType(cfg.person_type||'sales_person');renderFilterList();resetAddRow();openModal('saModal');}
+function cancelEdit(){closeModal('saModal');editingFilters=[];}
+async function deleteConfig(id,name){if(!confirm(`確定要刪除「${name}」嗎？`))return;await fetch(`/api/sa-config/${id}`,{method:'DELETE'});await loadConfigs();}
+async function saveConfig(){const config_name=document.getElementById('cfgName').value.trim(),description=document.getElementById('cfgDesc').value.trim(),stat_method=getStatMethod(),person_type=getPersonType();if(!config_name){alert('請輸入設定名稱');return;}if(!editingFilters.length){alert('請至少新增一個篩選條件');return;}const filters=editingFilters.map(({type,value})=>({type,value}));const btn=document.getElementById('btnSaveCfg');btn.disabled=true;try{const url=editingConfigId?`/api/sa-config/${editingConfigId}`:'/api/sa-config';const method=editingConfigId?'PUT':'POST';const data=await(await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify({config_name,description,filters,stat_method,person_type})})).json();if(data.error)throw new Error(data.error);cancelEdit();await loadConfigs();}catch(e){alert('儲存失敗：'+e.message);}finally{btn.disabled=false;}}
+function renderFilterList(){const el=document.getElementById('filterList');if(!editingFilters.length){el.innerHTML='<div style="color:#64748b;font-size:12px;padding:4px 0 8px">尚未新增篩選條件</div>';return;}el.innerHTML=editingFilters.map((f,i)=>`<div class="filter-tag-row"><span class="type-badge type-${f.type}">${typeLabel[f.type]||f.type}</span><span style="font-size:13px;font-weight:600;flex:1">${f.value}</span><button class="remove-btn" onclick="removeFilter(${i})" title="移除">×</button></div>`).join('');}
 function removeFilter(i){editingFilters.splice(i,1);renderFilterList();if(document.getElementById('addType').value==='part_type')renderPartTypeCheckboxes();}
 function addFilter(){const type=document.getElementById('addType').value,value=document.getElementById('addValue').value.trim(),hint=document.getElementById('addHint');if(!value){hint.textContent='請輸入值';return;}if(editingFilters.some(f=>f.type===type&&f.value===value)){hint.textContent='此條件已存在';return;}editingFilters.push({type,value});renderFilterList();document.getElementById('addValue').value='';hint.textContent='';clearLookup();}
 function renderPartTypeCheckboxes(){const existing=editingFilters.filter(f=>f.type==='part_type').map(f=>f.value);document.getElementById('partTypeCheckboxes').innerHTML=PART_TYPES.map(pt=>{const already=existing.includes(pt);return`<label class="part-type-chip ${already?'disabled':''}" onclick="togglePartTypeChip(this,'${pt}')"><input type="checkbox" value="${pt}" ${already?'disabled':''}>${pt}${already?' ✓':''}</label>`;}).join('');}
@@ -1120,7 +926,7 @@ function pickLookup(value){document.getElementById('addValue').value=value;docum
 const esc=s=>s.replace(/'/g,"\\'");
 
 // ══ 工作天數設定 ══
-let wdWorkDates = new Set();
+let wdWorkDates=new Set();
 async function loadWdPeriods(){try{const periods=await(await fetch('/api/periods')).json();const sel=document.getElementById('wdPeriod');sel.innerHTML='<option value="">選擇期間...</option>';periods.forEach(p=>{const opt=document.createElement('option');opt.value=p;opt.textContent=`${p.slice(0,4)}年${p.slice(4)}月`;sel.appendChild(opt);});const _cp=`${new Date().getFullYear()}${String(new Date().getMonth()+1).padStart(2,'0')}`;sel.value=periods.includes(_cp)?_cp:(periods.length?periods[0]:'');}catch(e){}}
 async function loadWdList(){const el=document.getElementById('wdExistingList');try{const rows=await(await fetch('/api/working-days')).json();if(!rows.length){el.innerHTML='<div style="color:#64748b;font-size:13px;padding:12px 0">尚未設定任何月份，系統將使用自動偵測工作天數</div>';return;}const byPeriod={};rows.forEach(r=>{if(!byPeriod[r.period])byPeriod[r.period]={};byPeriod[r.period][r.branch]=r;});const periods=Object.keys(byPeriod).sort().reverse();const BRANCHES=['AMA','AMC','AMD'];el.innerHTML=`<div class="wd-existing-list">${periods.map(period=>{const pRows=byPeriod[period];const label=`${period.slice(0,4)}年${period.slice(4)}月`;const allPresent=BRANCHES.every(b=>pRows[b]);const dayCounts=BRANCHES.map(b=>pRows[b]?.work_dates?.length||0);const allSame=allPresent&&dayCounts.every(c=>c===dayCounts[0]);if(allSame){return`<div class="wd-existing-item"><div class="info"><div class="name"><span class="badge" style="background:rgba(16,185,129,.15);color:#10b981">三站同步</span>&nbsp;${label}</div><div class="sub">AMA / AMC / AMD 均為 ${dayCounts[0]} 個營業日</div></div><button class="btn btn-secondary btn-sm" onclick="quickEditWd('ALL','${period}')">編輯（同步）</button><button class="btn btn-danger btn-sm" onclick="quickDeleteWd('ALL','${period}')">刪除三站</button></div>`;}else{return BRANCHES.filter(b=>pRows[b]).map(b=>{const r=pRows[b];const days=r.work_dates?.length||0;return`<div class="wd-existing-item"><div class="info"><div class="name"><span class="badge badge-blue">${b}</span>&nbsp;${label}</div><div class="sub">${days} 個營業日${r.note?' · '+r.note:''}</div></div><button class="btn btn-secondary btn-sm" onclick="quickEditWd('${b}','${period}')">編輯</button><button class="btn btn-danger btn-sm" onclick="quickDeleteWd('${b}','${period}')">刪除</button></div>`;}).join('');}}).join('')}</div>`;}catch(e){el.innerHTML=`<div style="color:#ef4444;font-size:13px">${e.message}</div>`;}}
 function quickEditWd(branch,period){document.getElementById('wdBranch').value=branch;document.getElementById('wdPeriod').value=period;loadWdCalendar();document.getElementById('section-working-days').scrollTop=0;}
@@ -1137,18 +943,13 @@ async function saveWdConfig(){const branch=document.getElementById('wdBranch').v
 async function deleteWdConfig(){const branch=document.getElementById('wdBranch').value,period=document.getElementById('wdPeriod').value,targets=branch==='ALL'?['AMA','AMC','AMD']:[branch],label=branch==='ALL'?'AMA、AMC、AMD 三站':branch;if(!confirm(`確定刪除 ${label} ${period.slice(0,4)}年${period.slice(4)}月 的工作天數設定？`))return;await Promise.all(targets.map(br=>fetch(`/api/working-days?branch=${br}&period=${period}`,{method:'DELETE'})));wdClearAll();loadWdList();}
 
 // ══ 工資代碼設定 ══
-const TWC_ALL_ACCOUNT = ['一般','票劵','內結','保險','延保','保固','善意維修','VSA'];
-let twcConfigs = [], twcEditingId = null, twcCodes = [];
-function initTwcAccountChips() { const el=document.getElementById('twcAccountChips'); if(!el||el.children.length)return; _buildChips('twcAccountChips',TWC_ALL_ACCOUNT,[]); }
-function selectTwcMethod(val) { document.querySelectorAll('input[name="twc_method"]').forEach(el=>el.checked=el.value===val); ['count','amount','hours'].forEach(v=>document.getElementById(`twcSmLabel-${v}`)?.classList.toggle('selected',v===val)); }
-function getTwcMethod() { return document.querySelector('input[name="twc_method"]:checked')?.value||'count'; }
-async function loadTwcConfigs() { try { twcConfigs=await(await fetch('/api/tech-wage-config')).json(); renderTwcList(); } catch(e) { document.getElementById('twcConfigList').innerHTML=`<div style="color:#ef4444">${e.message}</div>`; } }
-function renderTwcList() {
-  const el=document.getElementById('twcConfigList');
-  if(!twcConfigs.length){el.innerHTML=`<div class="empty-state"><div class="big">🔧</div><div>尚無設定，點擊「新增設定」建立工資代碼追蹤</div></div>`;return;}
-  const methodLabel={count:'🚗 台數',amount:'💰 工資金額',hours:'⏱️ 工時'};
-  el.innerHTML=twcConfigs.map(c=>{const codes=(c.work_codes||[]).map(wc=>wc.type==='range'?`<span class="badge badge-blue" style="font-size:11px">${wc.from}～${wc.to}</span>`:`<span class="badge badge-blue" style="font-size:11px">${wc.value}</span>`).join('');const acs=(c.account_types||[]).map(a=>`<span class="badge badge-gray" style="font-size:11px">${a}</span>`).join('');return`<div class="config-item"><div class="config-item-info"><div class="config-item-name">${c.config_name}</div>${c.description?`<div class="config-item-desc">${c.description}</div>`:''}<div class="config-item-tags"><span class="badge badge-green">${methodLabel[c.stat_method]||c.stat_method}</span>${codes}${acs}</div></div><div style="display:flex;gap:6px;flex-shrink:0"><button class="btn btn-secondary btn-sm" onclick="twcStartEdit(${c.id})">編輯</button><button class="btn btn-danger btn-sm" onclick="twcDelete(${c.id},'${c.config_name.replace(/'/g,"\\'")}')">刪除</button></div></div>`;}).join('');
-}
+const TWC_ALL_ACCOUNT=['一般','票劵','內結','保險','延保','保固','善意維修','VSA'];
+let twcConfigs=[],twcEditingId=null,twcCodes=[];
+function initTwcAccountChips(){const el=document.getElementById('twcAccountChips');if(!el||el.children.length)return;_buildChips('twcAccountChips',TWC_ALL_ACCOUNT,[]);}
+function selectTwcMethod(val){document.querySelectorAll('input[name="twc_method"]').forEach(el=>el.checked=el.value===val);['count','amount','hours'].forEach(v=>document.getElementById(`twcSmLabel-${v}`)?.classList.toggle('selected',v===val));}
+function getTwcMethod(){return document.querySelector('input[name="twc_method"]:checked')?.value||'count';}
+async function loadTwcConfigs(){try{twcConfigs=await(await fetch('/api/tech-wage-config')).json();renderTwcList();}catch(e){document.getElementById('twcConfigList').innerHTML=`<div style="color:#ef4444">${e.message}</div>`;}}
+function renderTwcList(){const el=document.getElementById('twcConfigList');if(!twcConfigs.length){el.innerHTML=`<div class="empty-state"><div class="big">🔧</div><div>尚無設定，點擊「新增設定」建立工資代碼追蹤</div></div>`;return;}const methodLabel={count:'🚗 台數',amount:'💰 工資金額',hours:'⏱️ 工時'};el.innerHTML=twcConfigs.map(c=>{const codes=(c.work_codes||[]).map(wc=>wc.type==='range'?`<span class="badge badge-blue" style="font-size:11px">${wc.from}～${wc.to}</span>`:`<span class="badge badge-blue" style="font-size:11px">${wc.value}</span>`).join('');const acs=(c.account_types||[]).map(a=>`<span class="badge badge-gray" style="font-size:11px">${a}</span>`).join('');return`<div class="config-item"><div class="config-item-info"><div class="config-item-name">${c.config_name}</div>${c.description?`<div class="config-item-desc">${c.description}</div>`:''}<div class="config-item-tags"><span class="badge badge-green">${methodLabel[c.stat_method]||c.stat_method}</span>${codes}${acs}</div></div><div style="display:flex;gap:6px;flex-shrink:0"><button class="btn btn-secondary btn-sm" onclick="twcStartEdit(${c.id})">編輯</button><button class="btn btn-danger btn-sm" onclick="twcDelete(${c.id},'${c.config_name.replace(/'/g,"\\'")}')">刪除</button></div></div>`;}).join('');}
 function twcStartNew(){twcEditingId=null;twcCodes=[];document.getElementById('twcEditorTitle').textContent='新增設定';document.getElementById('twcName').value='';document.getElementById('twcDesc').value='';document.getElementById('twcCodeInput').value='';document.getElementById('twcCodeHint').textContent='';selectTwcMethod('count');_buildChips('twcAccountChips',TWC_ALL_ACCOUNT,[]);renderTwcCodeList();openModal('twcModal');setTimeout(()=>document.getElementById('twcName').focus(),100);}
 function twcStartEdit(id){const cfg=twcConfigs.find(c=>c.id===id);if(!cfg)return;twcEditingId=id;twcCodes=[...(cfg.work_codes||[])];document.getElementById('twcEditorTitle').textContent=`編輯 — ${cfg.config_name}`;document.getElementById('twcName').value=cfg.config_name;document.getElementById('twcDesc').value=cfg.description||'';selectTwcMethod(cfg.stat_method||'count');_buildChips('twcAccountChips',TWC_ALL_ACCOUNT,cfg.account_types||[]);renderTwcCodeList();openModal('twcModal');}
 function twcCancelEdit(){closeModal('twcModal');twcCodes=[];}
@@ -1170,13 +971,7 @@ const PERF_ALL_ACCOUNT=['一般','票劵','內結','保險','延保','保固','�
 const PERF_BOUTIQUE=['精品','配件'];
 const PERF_TYPE_LABEL={repair_income:'🔧 維修收入(合計)',repair_subfield:'🔨 維修收入(子欄位)',parts:'🔩 零件銷售',boutique:'💎 精品配件',tech_wage:'🚗 工資代碼'};
 const PERF_FIELD_UNIT={amount:'元',qty:'件',count:'筆',hours:'小時'};
-const PERF_SUBFIELDS=[
-  {value:'bodywork_income',label:'鈑金收入'},{value:'paint_income',label:'烤漆收入'},
-  {value:'engine_wage',label:'引擎工資'},{value:'parts_income',label:'零件收入'},
-  {value:'accessories_income',label:'配件收入'},{value:'boutique_income',label:'精品收入'},
-  {value:'carwash_income',label:'洗車美容'},{value:'outsource_income',label:'外包收入'},
-  {value:'addon_income',label:'附加服務'},{value:'total_untaxed',label:'合計（未稅）'},
-];
+const PERF_SUBFIELDS=[{value:'bodywork_income',label:'鈑金收入'},{value:'paint_income',label:'烤漆收入'},{value:'engine_wage',label:'引擎工資'},{value:'parts_income',label:'零件收入'},{value:'accessories_income',label:'配件收入'},{value:'boutique_income',label:'精品收入'},{value:'carwash_income',label:'洗車美容'},{value:'outsource_income',label:'外包收入'},{value:'addon_income',label:'附加服務'},{value:'total_untaxed',label:'合計（未稅）'},];
 function selectPerfTwcMethod(val){document.querySelectorAll('input[name="perf_twc_method"]').forEach(el=>el.checked=el.value===val);['count','amount','hours'].forEach(v=>document.getElementById(`perfTwcSmLabel-${v}`)?.classList.toggle('selected',v===val));}
 function getPerfTwcMethod(){return document.querySelector('input[name="perf_twc_method"]:checked')?.value||'count';}
 function renderPerfTwcCodeList(){const el=document.getElementById('perfTwcCodeList');if(!el)return;if(!perfTwcCodes.length){el.innerHTML='<div style="color:#64748b;font-size:12px;padding:4px 0 8px">尚未加入代碼</div>';return;}el.innerHTML=perfTwcCodes.map((wc,i)=>`<div class="filter-tag-row"><span class="type-badge" style="background:rgba(59,130,246,.2);color:#60a5fa">${wc.type==='range'?'範圍':'精確'}</span><span style="font-size:13px;font-weight:600;flex:1">${wc.type==='range'?`${wc.from}～${wc.to}`:wc.value}</span><button class="remove-btn" onclick="removePerfTwcCode(${i})">×</button></div>`).join('');}
@@ -1185,7 +980,6 @@ function addPerfTwcCode(){const raw=document.getElementById('perfTwcCodeInput').
 function _buildSubfieldChips(selectedVals){document.getElementById('perfSubfieldChips').innerHTML=PERF_SUBFIELDS.map(sf=>{const on=selectedVals.includes(sf.value);return`<label class="part-type-chip ${on?'checked':''}" onclick="toggleGenericChip(this)" style="min-width:100px"><input type="checkbox" value="${sf.value}" ${on?'checked':''}>${sf.label}</label>`;}).join('');}
 function selectWoMode(val){document.querySelectorAll('input[name="wo_mode"]').forEach(el=>el.checked=el.value===val);['wo_has','wo_exclude','sum'].forEach(v=>document.getElementById(`woModeLabel-${v}`)?.classList.toggle('selected',v===val));}
 function getWoMode(){return document.querySelector('input[name="wo_mode"]:checked')?.value||'wo_has';}
-
 async function loadPerfMetrics(){try{perfMetrics=await(await fetch('/api/performance-metrics')).json();renderPerfMetricList();updatePerfTgtSelect();}catch(e){document.getElementById('perfMetricList').innerHTML=`<div style="color:#ef4444">${e.message}</div>`;}}
 function renderPerfMetricList(){const el=document.getElementById('perfMetricList');if(!perfMetrics.length){el.innerHTML=`<div class="empty-state"><div class="big">🎯</div><div>尚未建立指標，點擊「新增指標」開始設定</div></div>`;return;}el.innerHTML=perfMetrics.map(m=>`<div class="config-item"><div class="config-item-info"><div class="config-item-name">${m.metric_name}</div>${m.description?`<div class="config-item-desc">${m.description}</div>`:''}<div class="config-item-tags"><span class="badge badge-blue">${PERF_TYPE_LABEL[m.metric_type]||m.metric_type}</span>${m.stat_field&&m.metric_type==='parts'?`<span class="badge badge-gray">統計：${PERF_FIELD_UNIT[m.stat_field]||m.stat_field}</span>`:''} ${m.unit?`<span class="badge badge-gray">單位：${m.unit}</span>`:''} ${(m.filters||[]).slice(0,4).map(f=>`<span class="badge" style="font-size:10px;background:rgba(100,116,139,.12);color:#94a3b8">${f.type}:${f.value}</span>`).join('')} ${(m.filters||[]).length>4?`<span style="font-size:11px;color:#475569">+${m.filters.length-4}…</span>`:''}</div></div><div style="display:flex;gap:6px;flex-shrink:0"><button class="btn btn-secondary btn-sm" onclick="perfStartEdit(${m.id})">編輯</button><button class="btn btn-danger btn-sm" onclick="perfDelete(${m.id},'${m.metric_name.replace(/'/g,"\\'")}')">刪除</button></div></div>`).join('');}
 function updatePerfTgtSelect(){const sel=document.getElementById('perfTgtMetric');const cur=sel.value;sel.innerHTML='<option value="">選擇指標...</option>';perfMetrics.forEach(m=>{const o=document.createElement('option');o.value=m.id;o.textContent=m.metric_name;sel.appendChild(o);});if(cur)sel.value=cur;}
@@ -1193,30 +987,11 @@ function onPerfTypeChange(){const t=document.getElementById('perfType').value;do
 function _buildChips(containerId,values,selectedVals){document.getElementById(containerId).innerHTML=values.map(v=>{const on=selectedVals.includes(v);return`<label class="part-type-chip ${on?'checked':''}" onclick="toggleGenericChip(this)"><input type="checkbox" value="${v}" ${on?'checked':''}>${v}</label>`;}).join('');}
 function toggleGenericChip(el){const cb=el.querySelector('input');cb.checked=!cb.checked;el.classList.toggle('checked',cb.checked);}
 function _getCheckedValues(containerId){return[...document.querySelectorAll(`#${containerId} input:checked`)].map(cb=>cb.value);}
-
 function perfStartNew(){perfEditingId=null;perfFilters=[];perfTwcCodes=[];document.getElementById('perfEditorTitle').textContent='新增指標';['perfName','perfDesc','perfUnit'].forEach(id=>document.getElementById(id).value='');document.getElementById('perfType').value='repair_income';onPerfTypeChange();_buildChips('perfRepairAccountTypes',PERF_ALL_ACCOUNT,[]);_buildChips('perfBoutiqueTypeChips',PERF_BOUTIQUE,['精品','配件']);_buildChips('perfBoutiqueAccountChips',PERF_ALL_ACCOUNT,[]);_buildSubfieldChips([]);_buildChips('perfSubfieldAccountChips',PERF_ALL_ACCOUNT,[]);selectWoMode('wo_has');selectPerfStatMethod('amount');renderPerfFilterList();openModal('perfModal');setTimeout(()=>document.getElementById('perfName').focus(),100);}
-
-function perfStartEdit(id){
-  const m=perfMetrics.find(x=>x.id===id);if(!m)return;
-  perfEditingId=id;perfFilters=(m.filters||[]).map(f=>({...f}));
-  document.getElementById('perfEditorTitle').textContent=`編輯指標 — ${m.metric_name}`;
-  document.getElementById('perfName').value=m.metric_name;
-  document.getElementById('perfDesc').value=m.description||'';
-  document.getElementById('perfUnit').value=m.unit||'';
-  document.getElementById('perfType').value=m.metric_type;
-  onPerfTypeChange();
-  if(m.metric_type==='repair_income'){_buildChips('perfRepairAccountTypes',PERF_ALL_ACCOUNT,perfFilters.filter(f=>f.type==='account_type').map(f=>f.value));}
-  if(m.metric_type==='repair_subfield'){const sf=perfFilters.filter(f=>f.type==='subfield').map(f=>f.value);const ac=perfFilters.filter(f=>f.type==='account_type').map(f=>f.value);const wm=perfFilters.find(f=>f.type==='wo_mode')?.value||'wo_has';_buildSubfieldChips(sf);_buildChips('perfSubfieldAccountChips',PERF_ALL_ACCOUNT,ac);selectWoMode(wm);}
-  if(m.metric_type==='tech_wage'){perfTwcCodes=perfFilters.filter(f=>f.type==='work_code').map(f=>{if(f.value.includes('-')){const[from,to]=f.value.split('-');return{type:'range',from,to};}return{type:'exact',value:f.value};});const ac=perfFilters.filter(f=>f.type==='account_type').map(f=>f.value);renderPerfTwcCodeList();_buildChips('perfTwcAccountChips',PERF_ALL_ACCOUNT,ac);selectPerfTwcMethod(m.stat_field||'count');}
-  if(m.metric_type==='boutique'){const bt=perfFilters.filter(f=>f.type==='boutique_type').map(f=>f.value);const ac=perfFilters.filter(f=>f.type==='account_type').map(f=>f.value);_buildChips('perfBoutiqueTypeChips',PERF_BOUTIQUE,bt.length?bt:[]);_buildChips('perfBoutiqueAccountChips',PERF_ALL_ACCOUNT,ac);}
-  if(m.metric_type==='parts'){selectPerfStatMethod(m.stat_field||'amount');renderPerfFilterList();}
-  openModal('perfModal');
-}
-
+function perfStartEdit(id){const m=perfMetrics.find(x=>x.id===id);if(!m)return;perfEditingId=id;perfFilters=(m.filters||[]).map(f=>({...f}));document.getElementById('perfEditorTitle').textContent=`編輯指標 — ${m.metric_name}`;document.getElementById('perfName').value=m.metric_name;document.getElementById('perfDesc').value=m.description||'';document.getElementById('perfUnit').value=m.unit||'';document.getElementById('perfType').value=m.metric_type;onPerfTypeChange();if(m.metric_type==='repair_income'){_buildChips('perfRepairAccountTypes',PERF_ALL_ACCOUNT,perfFilters.filter(f=>f.type==='account_type').map(f=>f.value));}if(m.metric_type==='repair_subfield'){const sf=perfFilters.filter(f=>f.type==='subfield').map(f=>f.value);const ac=perfFilters.filter(f=>f.type==='account_type').map(f=>f.value);const wm=perfFilters.find(f=>f.type==='wo_mode')?.value||'wo_has';_buildSubfieldChips(sf);_buildChips('perfSubfieldAccountChips',PERF_ALL_ACCOUNT,ac);selectWoMode(wm);}if(m.metric_type==='tech_wage'){perfTwcCodes=perfFilters.filter(f=>f.type==='work_code').map(f=>{if(f.value.includes('-')){const[from,to]=f.value.split('-');return{type:'range',from,to};}return{type:'exact',value:f.value};});const ac=perfFilters.filter(f=>f.type==='account_type').map(f=>f.value);renderPerfTwcCodeList();_buildChips('perfTwcAccountChips',PERF_ALL_ACCOUNT,ac);selectPerfTwcMethod(m.stat_field||'count');}if(m.metric_type==='boutique'){const bt=perfFilters.filter(f=>f.type==='boutique_type').map(f=>f.value);const ac=perfFilters.filter(f=>f.type==='account_type').map(f=>f.value);_buildChips('perfBoutiqueTypeChips',PERF_BOUTIQUE,bt.length?bt:[]);_buildChips('perfBoutiqueAccountChips',PERF_ALL_ACCOUNT,ac);}if(m.metric_type==='parts'){selectPerfStatMethod(m.stat_field||'amount');renderPerfFilterList();}openModal('perfModal');}
 function perfCancelEdit(){closeModal('perfModal');perfFilters=[];}
 function selectPerfStatMethod(val){document.querySelectorAll('input[name="perf_stat_method"]').forEach(el=>el.checked=el.value===val);['amount','qty','count'].forEach(v=>document.getElementById(`perfSmLabel-${v}`)?.classList.toggle('selected',v===val));}
 function getPerfStatMethod(){return document.querySelector('input[name="perf_stat_method"]:checked')?.value||'amount';}
-
 const _perfTypeLabel={category_code:'零件類別碼',function_code:'功能碼',part_number:'零件編號',part_type:'付款類別'};
 function renderPerfFilterList(){const el=document.getElementById('perfFilterList');if(!el)return;if(!perfFilters.length){el.innerHTML='<div style="color:#64748b;font-size:12px;padding:4px 0 8px">尚未新增篩選條件</div>';return;}el.innerHTML=perfFilters.map((f,i)=>`<div class="filter-tag-row"><span class="type-badge type-${f.type}">${_perfTypeLabel[f.type]||f.type}</span><span style="font-size:13px;font-weight:600;flex:1">${f.value}</span><button class="remove-btn" onclick="removePerfFilter(${i})">×</button></div>`).join('');}
 function removePerfFilter(i){perfFilters.splice(i,1);renderPerfFilterList();}
@@ -1228,7 +1003,6 @@ function addPerfPartTypeFilters(){[...document.querySelectorAll('#perfPartTypeCh
 function debouncePerfLookup(){clearTimeout(perfLookupTimer);perfLookupTimer=setTimeout(doPerfLookup,280);}
 async function doPerfLookup(){const type=document.getElementById('perfAddType').value;if(type==='part_type')return;const q=document.getElementById('perfAddValue').value.trim(),dd=document.getElementById('perfLookupDropdown');if(!q){dd.style.display='none';return;}try{const data=await(await fetch(`/api/sa-config/parts-lookup?type=${type}&q=${encodeURIComponent(q)}`)).json();if(!data.length){dd.style.display='none';return;}dd.innerHTML=data.map(item=>type==='part_number'?`<div class="lookup-item" onclick="pickPerfLookup('${esc(item.value)}')"><div class="lookup-item-val">${item.value}</div><div class="lookup-item-sub">${item.label||''}</div></div>`:`<div class="lookup-item" onclick="pickPerfLookup('${esc(item.value)}')"><div class="lookup-item-val">${item.value}</div><div class="lookup-item-sub">${(item.sample_names||'').slice(0,60)}</div></div>`).join('');dd.style.display='block';}catch(e){dd.style.display='none';}}
 function pickPerfLookup(val){document.getElementById('perfAddValue').value=val;document.getElementById('perfLookupDropdown').style.display='none';}
-
 async function perfSave(){
   const metric_name=document.getElementById('perfName').value.trim(),description=document.getElementById('perfDesc').value.trim(),metric_type=document.getElementById('perfType').value,unit=document.getElementById('perfUnit').value.trim();
   if(!metric_name){alert('請輸入指標名稱');return;}
@@ -1242,7 +1016,6 @@ async function perfSave(){
   try{const url=perfEditingId?`/api/performance-metrics/${perfEditingId}`:'/api/performance-metrics';const res=await(await fetch(url,{method:perfEditingId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({metric_name,description,metric_type,filters,stat_field,unit})})).json();if(res.error)throw new Error(res.error);perfCancelEdit();await loadPerfMetrics();}catch(e){alert('儲存失敗：'+e.message);}finally{btn.disabled=false;}
 }
 async function perfDelete(id,name){if(!confirm(`確定刪除指標「${name}」及其所有目標？`))return;await fetch(`/api/performance-metrics/${id}`,{method:'DELETE'});await loadPerfMetrics();}
-
 async function loadPerfTgtPeriods(){try{const periods=await(await fetch('/api/periods')).json();const sel=document.getElementById('perfTgtPeriod');sel.innerHTML='<option value="">選擇期間...</option>';periods.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=`${p.slice(0,4)}年${p.slice(4)}月`;sel.appendChild(o);});const _cp=`${new Date().getFullYear()}${String(new Date().getMonth()+1).padStart(2,'0')}`;sel.value=periods.includes(_cp)?_cp:(periods.length?periods[0]:'');}catch(e){}}
 function onPerfTgtMetricChange(){document.getElementById('perfTargetGrid').style.display='none';}
 async function loadPerfTargets(){
@@ -1254,10 +1027,7 @@ async function loadPerfTargets(){
   try{
     const data=await(await fetch(`/api/performance-targets?metric_id=${metricId}&period=${period}`)).json();
     const tMap={};data.forEach(t=>{tMap[t.branch]=t;});
-    document.getElementById('perfTgtBody').innerHTML=['AMA','AMC','AMD'].map(br=>{
-      const t=tMap[br]||{},bCol=br==='AMA'?'#3b82f6':br==='AMC'?'#10b981':'#f59e0b';
-      return`<tr><td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.4)"><span style="display:inline-block;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:700;background:${bCol}22;color:${bCol}">${br}</span></td><td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.4)"><input type="number" class="form-input" id="perfTgt-${br}" value="${t.target_value||''}" placeholder="目標數值" step="any" style="width:100%;text-align:right;min-width:120px"></td><td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.4)"><input type="number" class="form-input" id="perfLY-${br}" value="${t.last_year_value||''}" placeholder="去年同期" step="any" style="width:100%;text-align:right;min-width:120px"></td></tr>`;
-    }).join('');
+    document.getElementById('perfTgtBody').innerHTML=['AMA','AMC','AMD'].map(br=>{const t=tMap[br]||{},bCol=br==='AMA'?'#3b82f6':br==='AMC'?'#10b981':'#f59e0b';return`<tr><td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.4)"><span style="display:inline-block;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:700;background:${bCol}22;color:${bCol}">${br}</span></td><td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.4)"><input type="number" class="form-input" id="perfTgt-${br}" value="${t.target_value||''}" placeholder="目標數值" step="any" style="width:100%;text-align:right;min-width:120px"></td><td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.4)"><input type="number" class="form-input" id="perfLY-${br}" value="${t.last_year_value||''}" placeholder="去年同期" step="any" style="width:100%;text-align:right;min-width:120px"></td></tr>`;}).join('');
     document.getElementById('perfTargetGrid').style.display='';document.getElementById('perfTgtMsg').textContent='';
   }catch(e){alert('載入失敗：'+e.message);}
 }
@@ -1281,7 +1051,7 @@ async function deleteRevRow(branch,period){if(!confirm(`確定刪除 ${branch} $
 function downloadRevTemplate(){const header=['期間','據點','有費營收_目標','有費營收_去年','鈑烤營收_目標','鈑烤營收_去年','一般營收_目標','一般營收_去年','延保營收_目標','延保營收_去年'];const now=new Date(),y=now.getFullYear();const defaults={AMA:[36000000,37000000,8000000,7500000,21000000,22000000,800000,750000],AMC:[10000000,11000000,2000000,1800000,5700000,6000000,200000,180000],AMD:[16000000,17000000,2500000,2300000,8800000,9500000,300000,280000]};const rows=[];for(let mo=1;mo<=12;mo++){const period=`${y}${String(mo).padStart(2,'0')}`;['AMA','AMC','AMD'].forEach(br=>{rows.push([period,br,...defaults[br]]);});}const csv=[header,...rows].map(r=>r.join(',')).join('\r\n');const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`營收目標範本_${y}全年.csv`;a.click();URL.revokeObjectURL(url);}
 async function uploadRevFile(input){const file=input.files[0];if(!file)return;const statusEl=document.getElementById('revUploadStatus'),resultEl=document.getElementById('revUploadResult');statusEl.textContent='上傳中...';resultEl.innerHTML='';const formData=new FormData();formData.append('file',file);try{const res=await(await fetch('/api/upload-revenue-targets',{method:'POST',body:formData})).json();if(res.error)throw new Error(res.error);statusEl.textContent='';resultEl.innerHTML=`<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:12px 16px;font-size:13px;color:#10b981">✅ 成功匯入 <strong>${res.count}</strong> 筆資料</div>`;loadRevList();input.value='';}catch(e){statusEl.textContent='';resultEl.innerHTML=`<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:12px 16px;font-size:13px;color:#ef4444">❌ ${e.message}</div>`;}}
 
-// ══ 密碼驗證 & 鎖定畫面 ══
+// ══ 密碼 ══
 const SETTINGS_TOKEN_KEY='volvo_settings_token';
 async function checkAuth(){const token=sessionStorage.getItem(SETTINGS_TOKEN_KEY);if(!token){showLock();return;}try{const data=await(await fetch(`/api/auth/settings/check?token=${token}`)).json();if(data.valid)hideLock();else{sessionStorage.removeItem(SETTINGS_TOKEN_KEY);showLock();}}catch(e){showLock();}}
 function showLock(){document.getElementById('lockScreen').style.display='flex';setTimeout(()=>document.getElementById('lockInput').focus(),60);}
