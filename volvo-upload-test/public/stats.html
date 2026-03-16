@@ -275,9 +275,8 @@
     </div>
   </div>
 
-  <!-- ★ 指標銷售與施工 — 兩個子分頁 -->
+  <!-- 指標銷售與施工 -->
   <div id="tab-sa-sales" style="display:none">
-    <!-- 子分頁列 -->
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
       <div class="sa-subtab-bar">
         <button id="saSubBtn-sales" class="sa-subtab active" onclick="switchSaSubTab('sales')">👤 銷售人員</button>
@@ -286,7 +285,6 @@
       <div id="saMatrixMeta" style="font-size:13px;color:#64748b"></div>
       <a href="/settings.html" style="font-size:12px;color:#64748b;text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border:1px solid #2d3f56;border-radius:6px;background:#1e293b;margin-left:auto">⚙️ 管理設定</a>
     </div>
-    <!-- 銷售人員子頁 -->
     <div id="saView-sales">
       <div class="card" style="padding:0">
         <div style="overflow-x:auto;overflow-y:auto;max-height:70vh">
@@ -294,7 +292,6 @@
         </div>
       </div>
     </div>
-    <!-- 技師施工子頁 -->
     <div id="saView-tech" style="display:none">
       <div class="card" style="padding:0">
         <div style="overflow-x:auto;overflow-y:auto;max-height:70vh">
@@ -321,8 +318,10 @@
   <div id="tab-daily" style="display:none">
     <div id="dailyKPI" class="kpi-grid"></div>
     <div class="card">
-      <div class="card-title">📅 每日進廠台數（已排除 PDI）</div>
-      <div style="overflow-x:auto"><div id="dailyChart" style="min-width:700px;padding:8px 0"></div></div>
+      <div class="card-title">📅 每日進廠台數（已排除 PDI）
+        <span class="card-title-note">日均台數 = 本月總台數 ÷ 已有資料工作天（進度均值）</span>
+      </div>
+      <div id="dailyChart" style="min-width:700px;padding:8px 0"></div>
     </div>
     <div class="card">
       <div class="card-title">📋 每日明細</div>
@@ -534,50 +533,22 @@ async function loadBoutiqueAccessories(period,branch){
   }catch(e){kpiEl.innerHTML=`<div style="color:#ef4444;padding:12px;grid-column:1/-1">${e.message}</div>`;matrixEl.innerHTML='';}
 }
 
-// ══ 指標銷售與施工 — 子分頁控制 ══
-let currentSaSubTab = 'sales';
-let saLoaded = { sales: false, tech: false };
-
-function switchSaSubTab(tab) {
-  currentSaSubTab = tab;
-  ['sales','tech'].forEach(t => {
-    document.getElementById(`saSubBtn-${t}`).classList.toggle('active', t === tab);
-    document.getElementById(`saView-${t}`).style.display = t === tab ? '' : 'none';
-  });
-  // 若此 tab 尚未載入，才去 fetch
-  if (!saLoaded[tab]) {
-    const view = tab === 'tech' ? 'pickup_person' : 'sales_person';
-    loadSASalesView(view, `saMatrix-${tab}`, tab);
-  }
-}
-
-// loadSASales 在 loadAll() 中呼叫，每次查詢時重置並重新載入當前子頁
-async function loadSASales() {
-  saLoaded = { sales: false, tech: false };
-  const view = currentSaSubTab === 'tech' ? 'pickup_person' : 'sales_person';
-  await loadSASalesView(view, `saMatrix-${currentSaSubTab}`, currentSaSubTab);
-}
-
-async function loadSASalesView(view, matrixElId, tabKey) {
-  const period=getPeriod(), branch=document.getElementById('selBranch').value;
-  const matrixEl=document.getElementById(matrixElId), metaEl=document.getElementById('saMatrixMeta');
+// ══ SA Sales sub-tabs ══
+let currentSaSubTab='sales';
+let saLoaded={sales:false,tech:false};
+function switchSaSubTab(tab){currentSaSubTab=tab;['sales','tech'].forEach(t=>{document.getElementById(`saSubBtn-${t}`).classList.toggle('active',t===tab);document.getElementById(`saView-${t}`).style.display=t===tab?'':'none';});if(!saLoaded[tab]){const view=tab==='tech'?'pickup_person':'sales_person';loadSASalesView(view,`saMatrix-${tab}`,tab);}}
+async function loadSASales(){saLoaded={sales:false,tech:false};const view=currentSaSubTab==='tech'?'pickup_person':'sales_person';await loadSASalesView(view,`saMatrix-${currentSaSubTab}`,currentSaSubTab);}
+async function loadSASalesView(view,matrixElId,tabKey){
+  const period=getPeriod(),branch=document.getElementById('selBranch').value;
+  const matrixEl=document.getElementById(matrixElId),metaEl=document.getElementById('saMatrixMeta');
   matrixEl.innerHTML='<div style="padding:40px;text-align:center;color:#64748b"><span class="spinner"></span>載入中...</div>';
-  const params=new URLSearchParams();
-  if(period)params.set('period',period);
-  if(branch)params.set('branch',branch);
-  params.set('view', view);
+  const params=new URLSearchParams();if(period)params.set('period',period);if(branch)params.set('branch',branch);params.set('view',view);
   try{
     const data=await(await fetch(`/api/stats/sa-sales-matrix?${params}`)).json();
     if(data.error)throw new Error(data.error);
     const{configs,rows,colTotals}=data;
-    if(!configs.length){
-      matrixEl.innerHTML=`<div style="padding:48px;text-align:center;color:#64748b">此分類尚未建立設定，請至 <a href="/settings.html" style="color:#3b82f6">⚙️ 設定</a> 新增並勾選「${view==='pickup_person'?'技師施工':'銷售人員'}」</div>`;
-      metaEl.textContent=''; saLoaded[tabKey]=true; return;
-    }
-    if(!rows.length){
-      matrixEl.innerHTML=`<div style="padding:48px;text-align:center;color:#64748b">此期間／據點無資料</div>`;
-      saLoaded[tabKey]=true; return;
-    }
+    if(!configs.length){matrixEl.innerHTML=`<div style="padding:48px;text-align:center;color:#64748b">此分類尚未建立設定，請至 <a href="/settings.html" style="color:#3b82f6">⚙️ 設定</a> 新增</div>`;metaEl.textContent='';saLoaded[tabKey]=true;return;}
+    if(!rows.length){matrixEl.innerHTML=`<div style="padding:48px;text-align:center;color:#64748b">此期間／據點無資料</div>`;saLoaded[tabKey]=true;return;}
     metaEl.textContent=`${configs.length} 個追蹤項目 · ${rows.length} 位${view==='pickup_person'?'技師':'銷售人員'}`;
     const methodUnitMap={amount:'金額(元)',quantity:'數量(件)',count:'筆數(單)'};
     const branches=[...new Set(rows.map(r=>r.branch))].sort();
@@ -587,81 +558,26 @@ async function loadSASalesView(view, matrixElId, tabKey) {
     const tdBase='padding:9px 14px;border-bottom:1px solid rgba(45,63,86,.4);font-size:13px;vertical-align:middle;',tdNum=tdBase+'text-align:right;font-variant-numeric:tabular-nums;';
     const stTd=(l,bg,e='')=>`position:sticky;left:${l}px;z-index:2;background:${bg};${e}`;
     const saCorner=(l,e='')=>`position:sticky;left:${l}px;z-index:3;background:#0f172a;${e}`;
-    const colLabel = view==='pickup_person' ? '技師' : '銷售人員';
-
+    const colLabel=view==='pickup_person'?'技師':'銷售人員';
     let html=`<table style="width:100%;border-collapse:separate;border-spacing:0;font-size:13px"><thead style="position:sticky;top:0;z-index:4"><tr>`;
     html+=`<th style="${thBase}${saCorner(0,'border-right:1px solid #2d3f56;width:40px')}" rowspan="2">#</th>`;
     html+=`<th style="${thBase}${saCorner(40,'border-right:1px solid #2d3f56;width:70px')}" rowspan="2">據點</th>`;
     html+=`<th style="${thBase}${saCorner(110,'border-right:2px solid #374151;min-width:130px')}" rowspan="2">${colLabel}</th>`;
-    configs.forEach((cfg,ci)=>{
-      const col=cfgColors[ci%cfgColors.length];
-      html+=`<th colspan="1" style="${thBase}background:#0f172a;text-align:center;color:${col};border-right:${ci<configs.length-1?'2px solid #2d3f56':'1px solid #2d3f56'};border-bottom:1px solid #1e293b">${cfg.config_name}</th>`;
-    });
-    html+=`</tr><tr>`;
-    configs.forEach((cfg,ci)=>{
-      html+=`<th style="${thNum}background:#0f172a;border-right:${ci<configs.length-1?'2px solid #2d3f56':'1px solid #2d3f56'};font-size:11px">${methodUnitMap[cfg.stat_method]||'金額(元)'}</th>`;
-    });
-    html+=`</tr></thead><tbody>`;
-    let rowIdx=0;
+    configs.forEach((cfg,ci)=>{const col=cfgColors[ci%cfgColors.length];html+=`<th colspan="1" style="${thBase}background:#0f172a;text-align:center;color:${col};border-right:${ci<configs.length-1?'2px solid #2d3f56':'1px solid #2d3f56'};border-bottom:1px solid #1e293b">${cfg.config_name}</th>`;});
+    html+=`</tr><tr>`;configs.forEach((cfg,ci)=>{html+=`<th style="${thNum}background:#0f172a;border-right:${ci<configs.length-1?'2px solid #2d3f56':'1px solid #2d3f56'};font-size:11px">${methodUnitMap[cfg.stat_method]||'金額(元)'}</th>`;});
+    html+=`</tr></thead><tbody>`;let rowIdx=0;
     for(const br of branches){
-      const brRows=rows.filter(r=>r.branch===br), brColor=branchColors[br]||'#64748b';
-      brRows.forEach(row=>{
-        rowIdx++;
-        const bg=rowIdx%2===0?'#0e1a29':'#111827';
-        html+=`<tr>`;
-        html+=`<td style="${tdBase}${stTd(0,bg,'color:#64748b;font-weight:700;border-right:1px solid #2d3f56;width:40px')}">${rowIdx}</td>`;
-        html+=`<td style="${tdBase}${stTd(40,bg,'border-right:1px solid #2d3f56;width:70px')}"><span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;background:${brColor}22;color:${brColor}">${br}</span></td>`;
-        html+=`<td style="${tdBase}${stTd(110,bg,'font-weight:600;border-right:2px solid #374151;min-width:130px')}">${row.sa_name}</td>`;
-        configs.forEach((cfg,ci)=>{
-          const c=row.configs[cfg.id], qty=c?c.qty:0, sales=c?c.sales:0, cnt=c?c.cnt:0;
-          const has=qty>0||sales>0||cnt>0;
-          const border=ci<configs.length-1?'2px solid #2d3f56':'';
-          let disp,style;
-          if(cfg.stat_method==='quantity'){disp=has?qty.toLocaleString(undefined,{maximumFractionDigits:1}):'—';style=has?'color:#e2e8f0;font-weight:600':'color:#334155';}
-          else if(cfg.stat_method==='count'){disp=has?cnt.toLocaleString():'—';style=has?'color:#e2e8f0;font-weight:600':'color:#334155';}
-          else{disp=has?fmt(sales):'—';style=has?'color:#10b981;font-weight:700':'color:#334155';}
-          html+=`<td style="${tdNum}${style};border-right:${border}">${disp}</td>`;
-        });
-        html+=`</tr>`;
-      });
-      // 據點小計列
+      const brRows=rows.filter(r=>r.branch===br),brColor=branchColors[br]||'#64748b';
+      brRows.forEach(row=>{rowIdx++;const bg=rowIdx%2===0?'#0e1a29':'#111827';html+=`<tr>`;html+=`<td style="${tdBase}${stTd(0,bg,'color:#64748b;font-weight:700;border-right:1px solid #2d3f56;width:40px')}">${rowIdx}</td>`;html+=`<td style="${tdBase}${stTd(40,bg,'border-right:1px solid #2d3f56;width:70px')}"><span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;background:${brColor}22;color:${brColor}">${br}</span></td>`;html+=`<td style="${tdBase}${stTd(110,bg,'font-weight:600;border-right:2px solid #374151;min-width:130px')}">${row.sa_name}</td>`;
+        configs.forEach((cfg,ci)=>{const c=row.configs[cfg.id],qty=c?c.qty:0,sales=c?c.sales:0,cnt=c?c.cnt:0;const has=qty>0||sales>0||cnt>0;const border=ci<configs.length-1?'2px solid #2d3f56':'';let disp,style;if(cfg.stat_method==='quantity'){disp=has?qty.toLocaleString(undefined,{maximumFractionDigits:1}):'—';style=has?'color:#e2e8f0;font-weight:600':'color:#334155';}else if(cfg.stat_method==='count'){disp=has?cnt.toLocaleString():'—';style=has?'color:#e2e8f0;font-weight:600':'color:#334155';}else{disp=has?fmt(sales):'—';style=has?'color:#10b981;font-weight:700':'color:#334155';}html+=`<td style="${tdNum}${style};border-right:${border}">${disp}</td>`;});
+        html+=`</tr>`;});
       const subBg=br==='AMA'?'rgba(59,130,246,.1)':br==='AMC'?'rgba(16,185,129,.1)':'rgba(245,158,11,.1)';
-      html+=`<tr style="background:${subBg}">`;
-      html+=`<td style="${tdBase}${stTd(0,'transparent','border-right:1px solid #2d3f56')}"></td>`;
-      html+=`<td style="${tdBase}${stTd(40,'transparent','border-right:1px solid #2d3f56')}"><span style="font-size:11px;font-weight:800;color:${brColor}">${br} 小計</span></td>`;
-      html+=`<td style="${tdBase}${stTd(110,'transparent','font-size:12px;color:#64748b;border-right:2px solid #374151')}">${brRows.length} 人</td>`;
-      configs.forEach((cfg,ci)=>{
-        const border=ci<configs.length-1?'2px solid #2d3f56':'';
-        const brQ=brRows.reduce((s,r)=>s+(r.configs[cfg.id]?.qty||0),0);
-        const brS=brRows.reduce((s,r)=>s+(r.configs[cfg.id]?.sales||0),0);
-        const brC=brRows.reduce((s,r)=>s+(r.configs[cfg.id]?.cnt||0),0);
-        const has=brQ>0||brS>0||brC>0;
-        let sv;
-        if(cfg.stat_method==='quantity')sv=has?brQ.toLocaleString(undefined,{maximumFractionDigits:1}):'—';
-        else if(cfg.stat_method==='count')sv=has?brC.toLocaleString():'—';
-        else sv=has?fmt(brS):'—';
-        html+=`<td style="${tdNum}color:${brColor};font-weight:800;font-size:12px;border-right:${border}">${sv}</td>`;
-      });
-      html+=`</tr>`;
+      html+=`<tr style="background:${subBg}"><td style="${tdBase}${stTd(0,'transparent','border-right:1px solid #2d3f56')}"></td><td style="${tdBase}${stTd(40,'transparent','border-right:1px solid #2d3f56')}"><span style="font-size:11px;font-weight:800;color:${brColor}">${br} 小計</span></td><td style="${tdBase}${stTd(110,'transparent','font-size:12px;color:#64748b;border-right:2px solid #374151')}">${brRows.length} 人</td>`;
+      configs.forEach((cfg,ci)=>{const border=ci<configs.length-1?'2px solid #2d3f56':'';const brQ=brRows.reduce((s,r)=>s+(r.configs[cfg.id]?.qty||0),0);const brS=brRows.reduce((s,r)=>s+(r.configs[cfg.id]?.sales||0),0);const brC=brRows.reduce((s,r)=>s+(r.configs[cfg.id]?.cnt||0),0);const has=brQ>0||brS>0||brC>0;let sv;if(cfg.stat_method==='quantity')sv=has?brQ.toLocaleString(undefined,{maximumFractionDigits:1}):'—';else if(cfg.stat_method==='count')sv=has?brC.toLocaleString():'—';else sv=has?fmt(brS):'—';html+=`<td style="${tdNum}color:${brColor};font-weight:800;font-size:12px;border-right:${border}">${sv}</td>`;});html+=`</tr>`;
     }
-    // 全廠合計列
-    html+=`<tr style="background:#1e293b;border-top:2px solid #3b82f6">`;
-    html+=`<td style="${tdBase}${stTd(0,'#1e293b','border-right:1px solid #2d3f56')}"></td>`;
-    html+=`<td style="${tdBase}${stTd(40,'#1e293b','border-right:1px solid #2d3f56')}"></td>`;
-    html+=`<td style="${tdBase}${stTd(110,'#1e293b','font-size:13px;font-weight:800;color:#fff;border-right:2px solid #374151')}">全廠合計</td>`;
-    configs.forEach((cfg,ci)=>{
-      const t=colTotals[cfg.id]||{qty:0,sales:0,cnt:0};
-      const border=ci<configs.length-1?'2px solid #2d3f56':'';
-      const has=t.qty>0||t.sales>0||t.cnt>0;
-      let tv;
-      if(cfg.stat_method==='quantity')tv=has?t.qty.toLocaleString(undefined,{maximumFractionDigits:1}):'—';
-      else if(cfg.stat_method==='count')tv=has?t.cnt.toLocaleString():'—';
-      else tv=has?fmt(t.sales):'—';
-      html+=`<td style="${tdNum}color:#10b981;font-weight:800;font-size:13px;border-right:${border}">${tv}</td>`;
-    });
-    html+=`</tr></tbody></table>`;
-    matrixEl.innerHTML=html;
-    saLoaded[tabKey]=true;
+    html+=`<tr style="background:#1e293b;border-top:2px solid #3b82f6"><td style="${tdBase}${stTd(0,'#1e293b','border-right:1px solid #2d3f56')}"></td><td style="${tdBase}${stTd(40,'#1e293b','border-right:1px solid #2d3f56')}"></td><td style="${tdBase}${stTd(110,'#1e293b','font-size:13px;font-weight:800;color:#fff;border-right:2px solid #374151')}">全廠合計</td>`;
+    configs.forEach((cfg,ci)=>{const t=colTotals[cfg.id]||{qty:0,sales:0,cnt:0};const border=ci<configs.length-1?'2px solid #2d3f56':'';const has=t.qty>0||t.sales>0||t.cnt>0;let tv;if(cfg.stat_method==='quantity')tv=has?t.qty.toLocaleString(undefined,{maximumFractionDigits:1}):'—';else if(cfg.stat_method==='count')tv=has?t.cnt.toLocaleString():'—';else tv=has?fmt(t.sales):'—';html+=`<td style="${tdNum}color:#10b981;font-weight:800;font-size:13px;border-right:${border}">${tv}</td>`;});
+    html+=`</tr></tbody></table>`;matrixEl.innerHTML=html;saLoaded[tabKey]=true;
   }catch(e){matrixEl.innerHTML=`<div style="padding:24px;color:#ef4444">${e.message}</div>`;}
 }
 
@@ -674,24 +590,160 @@ async function loadTrend(branch){
   }catch(e){document.getElementById('tbTrend').innerHTML=`<tr><td colspan="7" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;}
 }
 
+// ══ 每日進廠台數 ══ (MODIFIED)
 async function loadDaily(period,branch){
   try{
     const params=new URLSearchParams();if(period)params.set('period',period);if(branch)params.set('branch',branch);
     const data=await(await fetch(`/api/stats/daily?${params}`)).json();if(data.error)throw new Error(data.error);
     const summary=data.summary,daily=data.daily;
-    document.getElementById('dailyKPI').innerHTML=summary.map(r=>`<div class="kpi-card"><div class="kpi-label">${r.branch} 總台數</div><div class="kpi-value kpi-blue">${parseInt(r.total_cars||0).toLocaleString()}</div><div class="kpi-sub">台</div></div><div class="kpi-card"><div class="kpi-label">${r.branch} 工作天數</div><div class="kpi-value kpi-yellow">${parseInt(r.working_days||0)}</div><div class="kpi-sub">${r.configured_working_days!==null?'✅ 手動設定':'⚠️ 自動偵測'}</div></div><div class="kpi-card"><div class="kpi-label">${r.branch} 日均台數</div><div class="kpi-value kpi-green">${n(r.daily_avg).toFixed(1)}</div><div class="kpi-sub">最高${r.max_day}/最低${r.min_day}</div></div>`).join('');
-    const branchList=[...new Set(daily.map(r=>r.branch))].sort(),dateList=[...new Set(daily.map(r=>r.arrive_date?.slice(0,10)))].sort();
-    const colors={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'},maxCount=Math.max(...daily.map(r=>parseInt(r.car_count||0)),1);
-    const barW=Math.max(8,Math.min(24,Math.floor(560/(dateList.length*branchList.length+dateList.length)))),chartW=Math.max(700,dateList.length*(branchList.length*(barW+2)+10)+60),chartH=200;
+    const branchColors={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
+
+    // ── KPI ──
+    // 工作天數：一個合併卡片
+    const wdLines=summary.map(r=>{
+      const icon=r.configured_working_days!==null?'✅':'⚠️';
+      const col=branchColors[r.branch]||'#94a3b8';
+      return`<div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px">
+        <span style="font-size:12px;font-weight:700;color:${col}">${r.branch}</span>
+        <span style="font-size:14px;font-weight:800;color:#e2e8f0">${r.working_days}<span style="font-size:10px;color:#64748b;margin-left:2px">天</span></span>
+        <span style="font-size:11px">${icon}</span>
+      </div>`;
+    }).join('');
+    let kpiHtml=`<div class="kpi-card" style="min-width:160px">
+      <div class="kpi-label">📅 工作天數設定</div>
+      ${wdLines}
+      <div class="kpi-sub" style="margin-top:8px;font-size:10px">✅手動設定 ⚠️自動偵測</div>
+    </div>`;
+
+    // avgMap: 進度日均 = 總台數 ÷ 已有資料天數 (auto_working_days)
+    const avgMap={};
+    summary.forEach(r=>{
+      const progressDays=parseInt(r.auto_working_days||0);
+      avgMap[r.branch]=progressDays>0?parseFloat(r.total_cars)/progressDays:0;
+      const col=branchColors[r.branch]||'#94a3b8';
+      kpiHtml+=`<div class="kpi-card">
+        <div class="kpi-label" style="color:${col}">${r.branch} 總台數</div>
+        <div class="kpi-value" style="color:${col}">${parseInt(r.total_cars||0).toLocaleString()}</div>
+        <div class="kpi-sub">台</div>
+      </div><div class="kpi-card">
+        <div class="kpi-label" style="color:${col}">${r.branch} 日均台數</div>
+        <div class="kpi-value kpi-green">${avgMap[r.branch]>0?avgMap[r.branch].toFixed(1):'—'}</div>
+        <div class="kpi-sub">進度均值（已${r.auto_working_days}天）<br>最高${r.max_day} / 最低${r.min_day}</div>
+      </div>`;
+    });
+    document.getElementById('dailyKPI').innerHTML=kpiHtml;
+
+    // ── Chart ──
+    const branchList=[...new Set(daily.map(r=>r.branch))].sort();
+    const dateList=[...new Set(daily.map(r=>r.arrive_date?.slice(0,10)))].sort();
+    const maxCount=Math.max(...daily.map(r=>parseInt(r.car_count||0)),1);
+    const barW=Math.max(7,Math.min(22,Math.floor(540/(dateList.length*branchList.length+dateList.length))));
     const dayMap={};daily.forEach(r=>{const d=r.arrive_date?.slice(0,10);if(!dayMap[d])dayMap[d]={};dayMap[d][r.branch]=parseInt(r.car_count||0);});
-    let bars='',xLabels='';dateList.forEach((d,di)=>{const groupW=branchList.length*(barW+2),gx=50+di*(groupW+10);branchList.forEach((b,bi)=>{const val=dayMap[d]?.[b]||0,barH=val/maxCount*(chartH-40),x=gx+bi*(barW+2),y=chartH-20-barH;bars+=`<rect x="${x}" y="${y.toFixed(1)}" width="${barW}" height="${barH.toFixed(1)}" fill="${colors[b]||'#64748b'}" rx="2" opacity="0.85"><title>${b} ${d}: ${val}台</title></rect>`;if(val>0)bars+=`<text x="${(x+barW/2).toFixed(0)}" y="${(y-3).toFixed(0)}" text-anchor="middle" font-size="9" fill="#94a3b8">${val}</text>`;});xLabels+=`<text x="${(gx+(branchList.length*(barW+2))/2).toFixed(0)}" y="${chartH-4}" text-anchor="middle" font-size="9" fill="#64748b">${d.slice(8)}</text>`;});
-    let yAxis='';for(let i=0;i<=4;i++){const val=Math.round(maxCount*i/4),y=chartH-20-(i/4)*(chartH-40);yAxis+=`<line x1="45" y1="${y.toFixed(0)}" x2="${chartW}" y2="${y.toFixed(0)}" stroke="#2d3f56" stroke-width="1"/><text x="40" y="${(y+4).toFixed(0)}" text-anchor="end" font-size="9" fill="#64748b">${val}</text>`;}
-    const legend=branchList.map((b,i)=>`<rect x="${50+i*70}" y="8" width="10" height="10" fill="${colors[b]||'#64748b'}" rx="2"/><text x="${63+i*70}" y="17" font-size="11" fill="#94a3b8">${b}</text>`).join('');
-    document.getElementById('dailyChart').innerHTML=`<svg viewBox="0 0 ${chartW} ${chartH+10}" style="width:100%;height:auto;display:block">${yAxis}${bars}${xLabels}${legend}</svg>`;
-    const avgMap={};summary.forEach(r=>avgMap[r.branch]=n(r.daily_avg));
-    document.getElementById('tbDaily').innerHTML=daily.length?daily.map(r=>{const cnt=parseInt(r.car_count||0),avg=avgMap[r.branch]||0,diff=cnt-avg,pct=avg>0?(diff/avg*100):0;return`<tr><td>${r.arrive_date?.slice(0,10)}</td><td><span class="badge badge-blue">${r.branch}</span></td><td class="num" style="font-weight:700">${cnt}</td><td class="num ${diff>=0?'up':'down'}">${diff>=0?'▲':'▼'}${Math.abs(diff).toFixed(1)}<span style="font-size:11px;color:#64748b">(${pct>=0?'+':''}${pct.toFixed(0)}%)</span></td></tr>`;}).join(''):'<tr><td colspan="4" class="empty">無資料</td></tr>';
+
+    // Save state for toggle re-render
+    window._dailyState={
+      showAvg:Object.fromEntries(branchList.map(b=>[b,false])),
+      branchList,dateList,colors:branchColors,maxCount,barW,dayMap,avgMap
+    };
+
+    // Toggle buttons
+    const toggleBtns=branchList.map(b=>`<button id="avgToggle-${b}" onclick="window._toggleDailyAvg('${b}')"
+      style="padding:5px 14px;border:1.5px solid ${branchColors[b]||'#94a3b8'};border-radius:7px;background:transparent;color:${branchColors[b]||'#94a3b8'};font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap">
+      📈 ${b} 日均線
+    </button>`).join('');
+
+    document.getElementById('dailyChart').innerHTML=`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <span style="font-size:12px;color:#64748b;font-weight:700;letter-spacing:.04em">顯示日均線：</span>
+        ${toggleBtns}
+      </div>
+      <div id="dailyChartSvgWrap" style="overflow-x:auto"></div>`;
+
+    window._renderDailyChart();
+
+    // ── Detail table ──
+    document.getElementById('tbDaily').innerHTML=daily.length?daily.map(r=>{
+      const cnt=parseInt(r.car_count||0),avg=avgMap[r.branch]||0,diff=cnt-avg,pct=avg>0?(diff/avg*100):0;
+      return`<tr><td>${r.arrive_date?.slice(0,10)}</td><td><span class="badge badge-blue">${r.branch}</span></td><td class="num" style="font-weight:700">${cnt}</td><td class="num ${diff>=0?'up':'down'}">${diff>=0?'▲':'▼'}${Math.abs(diff).toFixed(1)}<span style="font-size:11px;color:#64748b">(${pct>=0?'+':''}${pct.toFixed(0)}%)</span></td></tr>`;
+    }).join(''):'<tr><td colspan="4" class="empty">無資料</td></tr>';
   }catch(e){document.getElementById('dailyKPI').innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;}
 }
+
+// Toggle avg line on/off
+window._toggleDailyAvg=function(branch){
+  const s=window._dailyState;if(!s)return;
+  s.showAvg[branch]=!s.showAvg[branch];
+  const col=s.colors[branch]||'#94a3b8';
+  const btn=document.getElementById(`avgToggle-${branch}`);
+  if(btn){
+    btn.style.background=s.showAvg[branch]?col+'28':'transparent';
+    btn.style.borderWidth=s.showAvg[branch]?'2px':'1.5px';
+    btn.style.fontWeight=s.showAvg[branch]?'800':'600';
+  }
+  window._renderDailyChart();
+};
+
+// Render SVG chart (called on load and on each toggle)
+window._renderDailyChart=function(){
+  const s=window._dailyState;if(!s)return;
+  const{branchList,dateList,colors,maxCount,barW,dayMap,avgMap,showAvg}=s;
+  const leftPad=50,chartH=200,xLabelH=20,legendH=26;
+  const groupW=branchList.length*(barW+2);
+  const chartW=Math.max(700,leftPad+dateList.length*(groupW+8)+50);
+  const totalH=chartH+xLabelH+legendH;
+
+  let bars='',xLabels='',avgLines='',yAxis='',legend='';
+
+  // Y-axis grid lines
+  for(let i=0;i<=4;i++){
+    const val=Math.round(maxCount*i/4);
+    const y=chartH-(i/4)*(chartH-30);
+    yAxis+=`<line x1="${leftPad-4}" y1="${y.toFixed(0)}" x2="${chartW-20}" y2="${y.toFixed(0)}" stroke="${i===0?'#374151':'#1e3050'}" stroke-width="1"/>`;
+    yAxis+=`<text x="${leftPad-7}" y="${(y+4).toFixed(0)}" text-anchor="end" font-size="9" fill="#475569">${val}</text>`;
+  }
+
+  // Bars and value labels
+  dateList.forEach((d,di)=>{
+    const gx=leftPad+di*(groupW+8);
+    branchList.forEach((b,bi)=>{
+      const val=dayMap[d]?.[b]||0;
+      const barH=val>0?Math.max(2,val/maxCount*(chartH-30)):0;
+      const x=gx+bi*(barW+2),y=chartH-barH;
+      bars+=`<rect x="${x}" y="${y.toFixed(1)}" width="${barW}" height="${barH.toFixed(1)}" fill="${colors[b]||'#64748b'}" rx="2" opacity="0.85"><title>${b} ${d}: ${val}台</title></rect>`;
+      // Number label above bar — only show if bar is tall enough
+      if(val>0){
+        const labelY=Math.max(11,(y-3));
+        bars+=`<text x="${(x+barW/2).toFixed(0)}" y="${labelY.toFixed(0)}" text-anchor="middle" font-size="9" fill="#94a3b8">${val}</text>`;
+      }
+    });
+    // Date label below bars
+    xLabels+=`<text x="${(gx+groupW/2).toFixed(0)}" y="${chartH+14}" text-anchor="middle" font-size="9" fill="#475569">${d.slice(8)}</text>`;
+  });
+
+  // Average dashed lines (only when toggled on)
+  branchList.forEach(b=>{
+    if(!showAvg[b])return;
+    const avg=avgMap[b];if(!avg)return;
+    const y=chartH-avg/maxCount*(chartH-30);
+    const col=colors[b]||'#94a3b8';
+    avgLines+=`<line x1="${leftPad}" y1="${y.toFixed(1)}" x2="${chartW-22}" y2="${y.toFixed(1)}" stroke="${col}" stroke-width="1.5" stroke-dasharray="7,4" opacity="0.9"/>`;
+    // Value badge at right end
+    avgLines+=`<rect x="${chartW-21}" y="${(y-8).toFixed(0)}" width="20" height="13" rx="3" fill="${col}" opacity="0.25"/>`;
+    avgLines+=`<text x="${chartW-11}" y="${(y+4).toFixed(0)}" text-anchor="middle" font-size="9" fill="${col}" font-weight="800">${avg.toFixed(1)}</text>`;
+  });
+
+  // Legend at bottom (below x-axis labels) — no overlap with bars
+  const legY=chartH+xLabelH+7;
+  branchList.forEach((b,i)=>{
+    const col=colors[b]||'#94a3b8';
+    legend+=`<rect x="${leftPad+i*72}" y="${legY}" width="11" height="11" fill="${col}" rx="2"/>`;
+    legend+=`<text x="${leftPad+14+i*72}" y="${legY+9}" font-size="11" fill="#94a3b8" font-weight="600">${b}</text>`;
+  });
+
+  const svg=`<svg viewBox="0 0 ${chartW} ${totalH}" style="width:100%;height:auto;display:block">${yAxis}${bars}${xLabels}${avgLines}${legend}</svg>`;
+  const wrap=document.getElementById('dailyChartSvgWrap');
+  if(wrap)wrap.innerHTML=svg;
+};
 
 (async()=>{ await loadPeriods(); await loadAll(); })();
 </script>
