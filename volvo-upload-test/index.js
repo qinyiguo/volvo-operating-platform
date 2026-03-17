@@ -1747,7 +1747,7 @@ app.get('/api/stats/income-breakdown', async (req, res) => {
       const external           = extMap[br] || 0;
 
       const general_total = general_no_bw + voucher + external;
-      const paid_total = general_total + bodywork_insurance + extended;
+      const paid_total = general_total + bodywork_total + extended;
 
       const OTHER_KWS = ['內結','保固','VSA','vsa','善意'];
       const other_rows = rows.filter(r => OTHER_KWS.some(k => r.account_type?.toLowerCase().includes(k.toLowerCase())));
