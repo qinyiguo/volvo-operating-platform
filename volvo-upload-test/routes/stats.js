@@ -148,8 +148,8 @@ router.get('/stats/daily', async (req, res) => {
     const where = 'WHERE '+conditions.join(' AND ');
 
     const [daily, autoSummary] = await Promise.all([
-      pool.query(`SELECT "${dateCol}"::date AS arrive_date,"${branchCol}" AS branch,COUNT(*) AS car_count FROM business_query ${where} GROUP BY "${dateCol}"::date,"${branchCol}" ORDER BY arrive_date,"${branchCol}"`,params),
-      pool.query(`SELECT "${branchCol}" AS branch,SUM(daily_cnt) AS total_cars,COUNT(DISTINCT "${dateCol}"::date) AS auto_working_days,MAX(daily_cnt) AS max_day,MIN(daily_cnt) AS min_day FROM (SELECT "${branchCol}","${dateCol}"::date,COUNT(*) AS daily_cnt FROM business_query ${where} GROUP BY "${branchCol}","${dateCol}"::date) sub GROUP BY "${branchCol}" ORDER BY "${branchCol}"`,params),
+      pool.query(`SELECT "${dateCol}"::date AS arrive_date,"${branchCol}" AS branch,COUNT(DISTINCT plate_no) AS car_count FROM business_query ${where} GROUP BY "${dateCol}"::date,"${branchCol}" ORDER BY arrive_date,"${branchCol}"`,params),
+      pool.query(`SELECT "${branchCol}" AS branch,SUM(daily_cnt) AS total_cars,COUNT(DISTINCT "${dateCol}"::date) AS auto_working_days,MAX(daily_cnt) AS max_day,MIN(daily_cnt) AS min_day FROM (SELECT "${branchCol}","${dateCol}"::date,COUNT(DISTINCT plate_no) AS daily_cnt FROM business_query ${where} GROUP BY "${branchCol}","${dateCol}"::date) sub GROUP BY "${branchCol}" ORDER BY "${branchCol}"`,params),
     ]);
 
     const wdMap = {};
