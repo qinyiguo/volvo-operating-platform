@@ -181,6 +181,7 @@ let _currentPeriod = '';
 let _allPeriods    = [];
 let _wdSummary     = null;   // from /api/stats/daily summary
 let _revRates      = null;   // { AMA: paidRate%, AMC: ..., AMD: ... }
+let _revData       = null;   // { AMA: {actual, target, est}, ... }  for group total
 
 function getPeriod() { return _currentPeriod; }
 
@@ -345,6 +346,94 @@ function renderWorkingDaysBar() {
     </div>`;
   }).join('');
 
+  // ── 集團合計卡 (只在顯示全部三廠時出現) ──
+  let groupCard = '';
+  if (BRANCHES.length === 3 && _revData) {
+    const ALL = ['AMA','AMC','AMD'];
+
+    // 工作天：各廠平均進度%（加權：分子加總 / 分母加總）
+    let gElapsed = 0, gTotal = 0;
+    ALL.forEach(br => {
+      const s = _wdSummary.find(r => r.branch === br);
+      if (s) {
+        gElapsed += parseInt(s.auto_working_days || 0);
+        gTotal   += parseInt(s.working_days || 0);
+      }
+    });
+    const gMonthPct = gTotal > 0 ? gElapsed / gTotal * 100 : null;
+    const gMonthBarW = gMonthPct !== null ? Math.min(100, gMonthPct).toFixed(1) : 0;
+
+    // 有費：三廠加總
+    const gActual = ALL.reduce((s, br) => s + (_revData[br]?.actual || 0), 0);
+    const gTarget = ALL.reduce((s, br) => s + (_revData[br]?.target || 0), 0);
+    const gEst    = ALL.reduce((s, br) => s + (_revData[br]?.est || 0), 0);
+    const gRevPct = gTarget > 0 ? gActual / gTarget * 100 : null;
+    const gEstPct = gTarget > 0 && gEst > 0 ? gEst / gTarget * 100 : null;
+    const gRevBarW = gRevPct !== null ? Math.min(100, gRevPct).toFixed(1) : 0;
+    const gEstBarW = gEstPct !== null ? Math.min(100, gEstPct).toFixed(1) : 0;
+
+    // 進度差
+    const gDelta = (gRevPct !== null && gMonthPct !== null) ? gRevPct - gMonthPct : null;
+    const gDeltaCol  = gDelta === null ? '#64748b' : gDelta >= 3 ? '#10b981' : gDelta <= -5 ? '#ef4444' : '#f59e0b';
+    const gDeltaIcon = gDelta === null ? '—' : gDelta >= 3 ? '🚀 超前' : gDelta <= -5 ? '⚠️ 落後' : '〜 符合';
+    const gDeltaText = gDelta !== null ? `${gDeltaIcon} ${gDelta >= 0 ? '+' : ''}${gDelta.toFixed(1)}%` : '—';
+
+    const gRevCol  = gRevPct === null ? '#64748b' : gRevPct >= 100 ? '#10b981' : gRevPct >= 80 ? '#f59e0b' : '#ef4444';
+    const gEstCol  = gEstPct === null ? '#64748b' : gEstPct >= 100 ? '#10b981' : gEstPct >= 80 ? '#f59e0b' : '#f97316';
+    const gFillCol = gMonthPct === null ? '#64748b' : gMonthPct >= 90 ? '#10b981' : gMonthPct >= 50 ? '#94a3b8' : '#f59e0b';
+
+    // 有費達成率標記線
+    const gMarker = gRevPct !== null
+      ? `<div class="wd-rev-marker" style="left:${Math.min(100, gRevPct).toFixed(1)}%" title="集團有費達成率 ${gRevPct.toFixed(1)}%"></div>`
+      : '';
+
+    groupCard = `<div class="wd-card" style="border:2px solid #f97316;background:linear-gradient(135deg,rgba(249,115,22,.06),rgba(249,115,22,.02))">
+      <!-- 標頭 -->
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
+        <span style="font-size:13px;font-weight:800;color:#f97316">🏢 集團合計</span>
+        <span style="font-size:11px;padding:2px 8px;border-radius:6px;font-weight:700;background:${gDeltaCol}18;color:${gDeltaCol}">${gDeltaText}</span>
+      </div>
+      <div style="font-size:10px;color:#475569;margin-bottom:10px">AMA + AMC + AMD 加總</div>
+
+      <!-- 工作天進度條 -->
+      <div style="font-size:10px;color:#64748b;margin-bottom:3px;display:flex;justify-content:space-between">
+        <span>📅 天數進度（加權平均）</span>
+        <span style="color:#94a3b8;font-weight:700">${gMonthPct !== null ? gMonthPct.toFixed(1)+'%' : '—'}</span>
+      </div>
+      <div class="wd-track" style="margin-bottom:10px">
+        <div class="wd-fill" style="width:${gMonthBarW}%;background:${gFillCol}"></div>
+        ${gMarker}
+      </div>
+
+      <!-- 數字 -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+        <div style="text-align:center">
+          <div style="font-size:22px;font-weight:900;color:${gFillCol};line-height:1">${gMonthPct !== null ? gMonthPct.toFixed(0)+'%' : '—'}</div>
+          <div style="font-size:10px;color:#475569;margin-top:1px">天數進度</div>
+        </div>
+        ${gRevPct !== null ? `
+        <div style="width:1px;height:30px;background:#2d3f56"></div>
+        <div style="text-align:center">
+          <div style="font-size:22px;font-weight:900;color:${gRevCol};line-height:1">${gRevPct.toFixed(0)}%</div>
+          <div style="font-size:10px;color:#475569;margin-top:1px">有費達成</div>
+        </div>` : ''}
+        ${gEstPct !== null ? `
+        <div style="width:1px;height:30px;background:#2d3f56"></div>
+        <div style="text-align:center">
+          <div style="font-size:22px;font-weight:900;color:${gEstCol};line-height:1">${gEstPct.toFixed(0)}%</div>
+          <div style="font-size:10px;color:#475569;margin-top:1px">預估達成</div>
+        </div>` : ''}
+      </div>
+
+      <!-- 金額明細 -->
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:11px;color:#64748b">
+        <span>實際</span><span style="color:#f97316;font-weight:800">${fmtK(gActual)}</span>
+        <span>目標</span><span style="color:#94a3b8;font-weight:600">${gTarget > 0 ? fmtK(gTarget) : '未設定'}</span>
+        ${gEst > 0 ? `<span style="color:${gEstCol}">預估</span><span style="color:${gEstCol};font-weight:700">${fmtK(gEst)}</span>` : ''}
+      </div>
+    </div>`;
+  }
+
   const legend = `<div class="wd-legend">
     <span>📅 天數進度 = 已有進廠資料天數 ÷ 本月工作天</span>
     <span style="display:inline-flex;align-items:center;gap:4px">
@@ -354,7 +443,7 @@ function renderWorkingDaysBar() {
     <span>超前 / 落後判斷：有費達成率 − 天數進度，差距 ≥3% 為超前，≤−5% 為落後</span>
   </div>`;
 
-  el.innerHTML = `<div class="wd-progress-wrap">${cards}</div>${legend}`;
+  el.innerHTML = `<div class="wd-progress-wrap">${cards}${groupCard}</div>${legend}`;
   el.style.display = '';
 }
 
@@ -366,6 +455,7 @@ async function doLoad() {
   document.getElementById('lastUpdate').textContent='更新中...';
   _wdSummary = null;
   _revRates  = null;
+  _revData   = null;
   await Promise.all([
     loadWorkingDaysProgress(period, branch),
     loadRevenueKPI(period, branch),
@@ -449,11 +539,13 @@ async function loadRevenueKPI(period,branch){
     const bdata=bkRes.branches||{};
 
     // ── 儲存有費達成率，供工作天進度條比較 ──
-    _revRates={};
+    _revRates={}; _revData={};
     BRANCHES.forEach(br=>{
       const actual=bdata[br]?.paid_total||0;
       const target=parseFloat(tMap[br]?.paid_target||0);
+      const est=parseFloat(eMap[br]?.paid_estimate||0);
       _revRates[br]=target>0?(actual/target*100):null;
+      _revData[br]={actual, target, est};
     });
     if(_wdSummary)renderWorkingDaysBar(); // 若工作天已載入，立刻更新狀態
 
