@@ -526,22 +526,28 @@ router.get('/stats/performance', async (req, res) => {
 });
 
 // ── WIP 未結工單 ──
-// 判斷邏輯：tech_performance 或 parts_sales 有紀錄，但 repair_income 無紀錄 = 未結
+// 邏輯：business_query（本期進廠） LEFT JOIN repair_income（已結算）
+//       on 據點 + 工單號，repair_income 無對應 = 尚未結算 = WIP
 router.get('/stats/wip', async (req, res) => {
   const { period, branch } = req.query;
   if (!period) return res.status(400).json({ error: 'period 為必填' });
   try {
     const params = [period]; let idx = 2;
-    const branchCond = branch ? ` AND branch=$${idx++}` : '';
+    const bqBranchCond = branch ? ` AND bq.branch=$${idx++}` : '';
     if (branch) params.push(branch);
+
+    // 額外 params 給 tp_agg / ps_agg（同 period + branch）
+    const subParams = [period];
+    const subBranchCond = branch ? ` AND branch=$${subParams.length + 1}` : '';
+    if (branch) subParams.push(branch);
 
     const r = await pool.query(`
       WITH tp_agg AS (
         SELECT work_order, branch,
-          SUM(wage)           AS wage,
-          MAX(account_type)   AS account_type
+          SUM(wage)         AS wage,
+          MAX(account_type) AS account_type
         FROM tech_performance
-        WHERE period=$1${branchCond}
+        WHERE period=$1${subBranchCond}
         GROUP BY work_order, branch
       ),
       ps_agg AS (
@@ -549,22 +555,12 @@ router.get('/stats/wip', async (req, res) => {
           SUM(sale_price_untaxed) AS sales_amt,
           SUM(cost_untaxed)       AS cost_amt
         FROM parts_sales
-        WHERE period=$1${branchCond}
+        WHERE period=$1${subBranchCond}
         GROUP BY work_order, branch
-      ),
-      settled AS (
-        SELECT DISTINCT work_order, branch
-        FROM repair_income
-        WHERE period=$1${branchCond}
-      ),
-      all_orders AS (
-        SELECT work_order, branch FROM tp_agg
-        UNION
-        SELECT work_order, branch FROM ps_agg
       )
       SELECT
-        ao.work_order,
-        ao.branch,
+        bq.work_order,
+        bq.branch,
         COALESCE(bq.plate_no, '')        AS plate_no,
         COALESCE(bq.repair_type, '')     AS repair_type,
         COALESCE(bq.repair_item, '')     AS repair_item,
@@ -574,11 +570,13 @@ router.get('/stats/wip', async (req, res) => {
         COALESCE(bq.service_advisor, '') AS service_advisor,
         COALESCE(bq.car_series, '')      AS car_series,
         COALESCE(tp.wage, 0)             AS wage,
-        COALESCE(tp.account_type, '')    AS account_type,
+        COALESCE(tp.account_type,
+          bq.repair_type, '')            AS account_type,
         COALESCE(ps.sales_amt, 0)        AS sales_amt,
         COALESCE(ps.cost_amt, 0)         AS cost_amt,
         COALESCE(
-          bq.repair_type ILIKE '%PDI%' OR bq.repair_item ILIKE '%PDI%',
+          bq.repair_type ILIKE '%PDI%'
+          OR bq.repair_item ILIKE '%PDI%',
           false
         )                                AS is_pdi,
         CASE
@@ -586,17 +584,20 @@ router.get('/stats/wip', async (req, res) => {
           THEN EXTRACT(DAY FROM (NOW() - bq.open_time))
           ELSE NULL
         END                              AS days_open
-      FROM all_orders ao
-      LEFT JOIN business_query bq
-        ON bq.work_order = ao.work_order AND bq.branch = ao.branch
+      FROM business_query bq
+      -- 不限 repair_income 的 period，確保跨期結算也能比對到
+      LEFT JOIN repair_income ri
+        ON ri.work_order = bq.work_order
+       AND ri.branch     = bq.branch
       LEFT JOIN tp_agg tp
-        ON tp.work_order = ao.work_order AND tp.branch = ao.branch
+        ON tp.work_order = bq.work_order
+       AND tp.branch     = bq.branch
       LEFT JOIN ps_agg ps
-        ON ps.work_order = ao.work_order AND ps.branch = ao.branch
-      LEFT JOIN settled s
-        ON s.work_order = ao.work_order AND s.branch = ao.branch
-      WHERE s.work_order IS NULL
-      ORDER BY ao.branch, bq.open_time NULLS LAST, ao.work_order
+        ON ps.work_order = bq.work_order
+       AND ps.branch     = bq.branch
+      WHERE bq.period = $1${bqBranchCond}
+        AND ri.work_order IS NULL          -- repair_income 無對應 = 未結
+      ORDER BY bq.branch, bq.open_time NULLS LAST, bq.work_order
     `, params);
 
     const rows = r.rows;
@@ -607,18 +608,19 @@ router.get('/stats/wip', async (req, res) => {
     let exclPdi = { count: 0, wage: 0, sales: 0, cost: 0, c30: 0, cOver30: 0 };
 
     for (const row of rows) {
-      const at  = row.account_type || '（未知）';
-      const rt  = row.repair_type  || '（未知）';
-      const w   = parseFloat(row.wage     || 0);
-      const s   = parseFloat(row.sales_amt|| 0);
-      const c   = parseFloat(row.cost_amt || 0);
+      const at   = row.account_type || '（未知）';
+      const rt   = row.repair_type  || '（未知）';
+      const w    = parseFloat(row.wage      || 0);
+      const s    = parseFloat(row.sales_amt || 0);
+      const c    = parseFloat(row.cost_amt  || 0);
       const days = row.days_open !== null ? parseFloat(row.days_open) : null;
       const isOver30 = days !== null ? days > 30 : false;
 
       const inc = (obj) => {
         obj.count++;
-        obj.wage += w;
-        obj.sales += s; obj.cost += c;
+        obj.wage  += w;
+        obj.sales += s;
+        obj.cost  += c;
         if (days !== null) {
           if (isOver30) obj.cOver30++; else obj.c30++;
         }
@@ -637,10 +639,11 @@ router.get('/stats/wip', async (req, res) => {
     res.json({
       rows,
       summary: {
-        total, exclPdi,
-        byAccountType: Object.values(byAccountType),
-        byRepairType:  Object.values(byRepairType),
-      }
+        total,
+        exclPdi,
+        byAccountType: Object.values(byAccountType).sort((a,b) => b.count - a.count),
+        byRepairType:  Object.values(byRepairType).sort((a,b) => b.count - a.count),
+      },
     });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
