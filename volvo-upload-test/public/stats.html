@@ -863,6 +863,43 @@ function renderWipSummary(summary){
       <td></td>
     </tr>`;
 
+    // 計算扣PDI小計
+    const pdiRows=_wipRows.filter(r=>r.is_pdi);
+    const pdiFiltered=filterType==='open_period'
+      ?pdiRows.filter(r=>(r.open_period||'（未知）')===items.find(i=>true)?.label||true)
+      :pdiRows;
+    // 從各 item 的 label 反查對應 pdi rows
+    const pdiInScope=_wipRows.filter(r=>{
+      if(!r.is_pdi)return false;
+      const val=filterType==='open_period'?(r.open_period||'（未知）'):filterType==='account_type'?(r.account_type||'（未知）'):(r.repair_type||'（未知）');
+      return items.some(i=>i.label===val);
+    });
+    const pdiSum=pdiInScope.reduce((s,r)=>({
+      count:s.count+1,
+      wage:s.wage+parseFloat(r.wage||0),
+      sales:s.sales+parseFloat(r.sales_amt||0),
+      cost:s.cost+parseFloat(r.cost_amt||0),
+    }),{count:0,wage:0,sales:0,cost:0});
+    const exPdi={
+      count:tot.count-pdiSum.count,
+      wage:tot.wage-pdiSum.wage,
+      sales:tot.sales-pdiSum.sales,
+      cost:tot.cost-pdiSum.cost,
+      c30:tot.c30-(pdiInScope.filter(r=>r.days_open!==null&&parseFloat(r.days_open)<=30).length),
+      cOver30:tot.cOver30-(pdiInScope.filter(r=>r.days_open!==null&&parseFloat(r.days_open)>30).length),
+    };
+    const exPdiRow=pdiSum.count>0?`<tr style="background:rgba(16,185,129,.06);border-top:1px dashed #2d3f56">
+      <td style="padding:8px 12px;font-size:12px;font-weight:700;color:#10b981">合計（扣 PDI ${pdiSum.count} 台）</td>
+      <td style="text-align:right;padding:8px 12px;font-size:12px;color:#f97316;font-weight:800">${exPdi.count}</td>
+      <td style="text-align:right;padding:8px 12px;font-size:12px;color:#10b981;font-weight:700">${fmtN(exPdi.wage)}</td>
+      <td style="text-align:right;padding:8px 12px;font-size:12px;color:#f59e0b;font-weight:700">${fmtN(exPdi.sales)}</td>
+      <td style="text-align:right;padding:8px 12px;font-size:12px;color:#64748b">${fmtN(exPdi.cost)}</td>
+      <td style="text-align:right;padding:8px 12px;font-size:12px;color:#10b981;font-weight:700;border-left:1px solid #2d3f56">${exPdi.c30}</td>
+      <td style="text-align:right;padding:8px 12px;font-size:12px;color:${exPdi.cOver30>0?'#ef4444':'#475569'};font-weight:700">${exPdi.cOver30>0?exPdi.cOver30:'—'}</td>
+      <td></td>
+    </tr>`:'';
+
+
     return `
       <div style="margin-bottom:24px">
         <div style="font-size:12px;font-weight:700;color:#475569;display:flex;align-items:center;gap:8px;margin-bottom:10px;letter-spacing:.04em">
@@ -884,6 +921,7 @@ function renderWipSummary(summary){
             <tbody>
               ${rowsHtml}
               ${totRow}
+              ${exPdiRow}
             </tbody>
           </table>
         </div>
