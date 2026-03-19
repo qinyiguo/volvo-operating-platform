@@ -776,9 +776,7 @@ async function loadWip(period,branch){
 function renderWipKPI(summary){
   const kpiEl=document.getElementById('wipKPI');
   const{total,exclPdi}=summary;
-  const fmtH=v=>parseFloat(v||0).toFixed(1);
   const fmtN=v=>Math.round(parseFloat(v||0)).toLocaleString();
-  // aging
   const over30=_wipRows.filter(r=>r.days_open!==null&&parseFloat(r.days_open)>30&&!r.is_pdi).length;
   const under30=exclPdi.count-over30;
   kpiEl.innerHTML=`
@@ -798,11 +796,6 @@ function renderWipKPI(summary){
       <div class="kpi-sub">台（扣PDI）</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label">⏱️ 工時合計</div>
-      <div class="kpi-value kpi-blue">${fmtH(total.hours)}</div>
-      <div class="kpi-sub">小時（扣PDI：${fmtH(exclPdi.hours)}）</div>
-    </div>
-    <div class="kpi-card">
       <div class="kpi-label">💰 工資合計</div>
       <div class="kpi-value kpi-green">${fmtN(total.wage)}</div>
       <div class="kpi-sub">元（扣PDI：${fmtN(exclPdi.wage)}）</div>
@@ -818,34 +811,32 @@ function renderWipKPI(summary){
       <div class="kpi-sub">元未稅（成本價）</div>
     </div>`;
 }
-
+ 
 function renderWipSummary(summary){
   const wrapEl=document.getElementById('wipSummaryWrap');
   const{byAccountType,byRepairType,total,exclPdi}=summary;
-  const fmtH=v=>parseFloat(v||0).toFixed(1);
   const fmtN=v=>Math.round(parseFloat(v||0)).toLocaleString();
-
+ 
   const pdiRows=_wipRows.filter(r=>r.is_pdi);
   const pdiSum={
     count:pdiRows.length,
-    hours:pdiRows.reduce((s,r)=>s+parseFloat(r.hours||0),0),
     wage:pdiRows.reduce((s,r)=>s+parseFloat(r.wage||0),0),
     sales:pdiRows.reduce((s,r)=>s+parseFloat(r.sales_amt||0),0),
     cost:pdiRows.reduce((s,r)=>s+parseFloat(r.cost_amt||0),0),
     c30:pdiRows.filter(r=>r.days_open!==null&&parseFloat(r.days_open)<=30).length,
     cOver30:pdiRows.filter(r=>r.days_open!==null&&parseFloat(r.days_open)>30).length,
   };
-
+ 
   const thStyle='background:#0f172a;color:#64748b;font-size:11px;font-weight:700;padding:9px 12px;border-bottom:1px solid #2d3f56;white-space:nowrap;';
   const thR=thStyle+'text-align:right;';
-
+ 
   const buildTable=(items,groupLabel,clickType)=>{
     if(!items.length)return'';
     const tot=items.reduce((s,i)=>({
-      count:s.count+i.count,hours:s.hours+i.hours,wage:s.wage+i.wage,
+      count:s.count+i.count,wage:s.wage+i.wage,
       sales:s.sales+i.sales,cost:s.cost+i.cost,c30:s.c30+i.c30,cOver30:s.cOver30+i.cOver30
-    }),{count:0,hours:0,wage:0,sales:0,cost:0,c30:0,cOver30:0});
-
+    }),{count:0,wage:0,sales:0,cost:0,c30:0,cOver30:0});
+ 
     const rowsHtml=items.map(item=>{
       const esc=item.label.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
       const c30Col=item.c30>0?'#10b981':'#475569';
@@ -858,7 +849,6 @@ function renderWipSummary(summary){
           <span style="font-weight:700;color:#e2e8f0">${item.label}</span>
         </td>
         <td style="text-align:right;padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);font-weight:800;color:#f97316">${item.count}</td>
-        <td style="text-align:right;padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:#3b82f6">${fmtH(item.hours)}</td>
         <td style="text-align:right;padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:#10b981;font-weight:700">${fmtN(item.wage)}</td>
         <td style="text-align:right;padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:#f59e0b;font-weight:700">${fmtN(item.sales)}</td>
         <td style="text-align:right;padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:#64748b">${fmtN(item.cost)}</td>
@@ -871,12 +861,10 @@ function renderWipSummary(summary){
         <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:#475569;font-size:11px">🔍</td>
       </tr>`;
     }).join('');
-
-    // 合計列（橘色）
+ 
     const totRow=`<tr style="background:rgba(249,115,22,.07)">
       <td style="padding:10px 12px;font-weight:800;color:#f97316">合計</td>
       <td style="text-align:right;padding:10px 12px;font-weight:800;color:#f97316">${tot.count}</td>
-      <td style="text-align:right;padding:10px 12px;color:#3b82f6">${fmtH(tot.hours)}</td>
       <td style="text-align:right;padding:10px 12px;color:#10b981;font-weight:800">${fmtN(tot.wage)}</td>
       <td style="text-align:right;padding:10px 12px;color:#f59e0b;font-weight:800">${fmtN(tot.sales)}</td>
       <td style="text-align:right;padding:10px 12px;color:#64748b">${fmtN(tot.cost)}</td>
@@ -884,12 +872,10 @@ function renderWipSummary(summary){
       <td style="text-align:right;padding:10px 12px;color:#ef4444;font-weight:800">${tot.cOver30}</td>
       <td></td>
     </tr>`;
-
-    // 扣PDI列（有顏色）
+ 
     const exPdi_c30=tot.c30-pdiSum.c30;
     const exPdi_cOver30=tot.cOver30-pdiSum.cOver30;
     const exPdi_count=tot.count-pdiSum.count;
-    const exPdi_hours=tot.hours-pdiSum.hours;
     const exPdi_wage=tot.wage-pdiSum.wage;
     const exPdi_sales=tot.sales-pdiSum.sales;
     const exPdi_cost=tot.cost-pdiSum.cost;
@@ -898,7 +884,6 @@ function renderWipSummary(summary){
         合計（扣 PDI ${pdiSum.count} 台）
       </td>
       <td style="text-align:right;padding:8px 12px;font-size:12px;color:#f97316;font-weight:800">${exPdi_count}</td>
-      <td style="text-align:right;padding:8px 12px;font-size:12px;color:#3b82f6">${fmtH(exPdi_hours)}</td>
       <td style="text-align:right;padding:8px 12px;font-size:12px;color:#10b981;font-weight:700">${fmtN(exPdi_wage)}</td>
       <td style="text-align:right;padding:8px 12px;font-size:12px;color:#f59e0b;font-weight:700">${fmtN(exPdi_sales)}</td>
       <td style="text-align:right;padding:8px 12px;font-size:12px;color:#64748b">${fmtN(exPdi_cost)}</td>
@@ -906,7 +891,7 @@ function renderWipSummary(summary){
       <td style="text-align:right;padding:8px 12px;font-size:12px;color:${exPdi_cOver30>0?'#ef4444':'#475569'};font-weight:700">${exPdi_cOver30>0?exPdi_cOver30:'—'}</td>
       <td></td>
     </tr>`;
-
+ 
     return `
       <div style="margin-bottom:24px">
         <div style="font-size:12px;font-weight:700;color:#475569;display:flex;align-items:center;gap:8px;margin-bottom:10px;letter-spacing:.04em">
@@ -918,7 +903,6 @@ function renderWipSummary(summary){
             <thead><tr>
               <th style="${thStyle}min-width:120px">${groupLabel}</th>
               <th style="${thR}">台數</th>
-              <th style="${thR}">工時(hr)</th>
               <th style="${thR}">工資(元)</th>
               <th style="${thR}">銷售材料費(元)</th>
               <th style="${thR}">維修材料成本(元)</th>
@@ -929,19 +913,19 @@ function renderWipSummary(summary){
             <tbody>
               ${rowsHtml}
               ${totRow}
-              ${totRow !== '' ? pdiRow : ''}
+              ${pdiRow}
             </tbody>
           </table>
         </div>
       </div>`;
   };
-
+ 
   const html=(buildTable(byAccountType,'帳類','account_type')||'')
             +(buildTable(byRepairType,'維修類型','repair_type')||'')
             ||'<div class="empty">此期間無未結工單</div>';
   wrapEl.innerHTML=html;
 }
-
+ 
 function openWipDetail(filterType,filterValue){
   const filtered=filterType==='account_type'
     ?_wipRows.filter(r=>(r.account_type||'（未知）')===filterValue)
@@ -951,14 +935,12 @@ function openWipDetail(filterType,filterValue){
   document.getElementById('wipModalTitle').textContent=`WIP 未結工單 — ${typeLabel}：${filterValue}`;
   document.getElementById('wipModalCount').textContent=`共 ${filtered.length} 筆`;
   const bCol={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
-  const fmtH=v=>parseFloat(v||0).toFixed(1);
   const fmtN=v=>Math.round(parseFloat(v||0)).toLocaleString();
   const fmtDate=v=>{if(!v)return'—';const s=String(v);return s.length>=10?s.slice(0,10):s;};
   const thS='background:#0f172a;color:#64748b;font-size:11px;font-weight:700;padding:8px 10px;border-bottom:1px solid #2d3f56;white-space:nowrap;position:sticky;top:0;z-index:2;';
   const thR=thS+'text-align:right;';
-  let totH=0,totW=0,totS=0,totC=0;
+  let totW=0,totS=0,totC=0;
   const bodyHtml=filtered
-    // 先依超過30天排序（超過30天的排前面），再依 open_time 排序
     .slice().sort((a,b)=>{
       const aOver=(a.days_open!==null&&parseFloat(a.days_open)>30)?1:0;
       const bOver=(b.days_open!==null&&parseFloat(b.days_open)>30)?1:0;
@@ -968,8 +950,8 @@ function openWipDetail(filterType,filterValue){
     })
     .map((row,i)=>{
       const col=bCol[row.branch]||'#94a3b8';
-      const h=parseFloat(row.hours||0),w=parseFloat(row.wage||0),s=parseFloat(row.sales_amt||0),c=parseFloat(row.cost_amt||0);
-      totH+=h;totW+=w;totS+=s;totC+=c;
+      const w=parseFloat(row.wage||0),s=parseFloat(row.sales_amt||0),c=parseFloat(row.cost_amt||0);
+      totW+=w;totS+=s;totC+=c;
       const days=row.days_open!==null?Math.round(parseFloat(row.days_open)):null;
       const isOver30=days!==null&&days>30;
       const daysCol=days===null?'#475569':isOver30?'#ef4444':'#10b981';
@@ -988,7 +970,6 @@ function openWipDetail(filterType,filterValue){
         <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;font-weight:800;color:${daysCol};border-left:1px solid #2d3f56">
           ${isOver30?'⚠️ ':''}${daysTxt}
         </td>
-        <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;color:#3b82f6">${fmtH(h)}</td>
         <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;color:#10b981;font-weight:700">${fmtN(w)}</td>
         <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;color:#f59e0b;font-weight:700">${fmtN(s)}</td>
         <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;color:#64748b">${fmtN(c)}</td>
@@ -1009,7 +990,6 @@ function openWipDetail(filterType,filterValue){
       <th style="${thS}">維修類型</th>
       <th style="${thS}">開單時間</th>
       <th style="${thR}border-left:1px solid #2d3f56">在廠天數</th>
-      <th style="${thR}">工時(hr)</th>
       <th style="${thR}">工資(元)</th>
       <th style="${thR}">銷售材料費(元)</th>
       <th style="${thR}">維修材料成本(元)</th>
@@ -1018,28 +998,25 @@ function openWipDetail(filterType,filterValue){
       <th style="${thS}">標記</th>
     </tr></thead>
     <tbody>
-      ${bodyHtml||'<tr><td colspan="15" class="empty">無資料</td></tr>'}
+      ${bodyHtml||'<tr><td colspan="14" class="empty">無資料</td></tr>'}
       <tr style="background:rgba(249,115,22,.08);font-weight:800;border-top:2px solid #374151">
         <td colspan="8" style="padding:9px 10px;color:#f97316">合計（${filtered.length} 筆）</td>
-        <td style="padding:9px 10px;text-align:right;color:#3b82f6">${totH.toFixed(1)}</td>
         <td style="padding:9px 10px;text-align:right;color:#10b981">${fmtN(totW)}</td>
         <td style="padding:9px 10px;text-align:right;color:#f59e0b">${fmtN(totS)}</td>
         <td style="padding:9px 10px;text-align:right;color:#64748b">${fmtN(totC)}</td>
         <td colspan="3"></td>
       </tr>
     </tbody>`;
-  document.getElementById('wipModalStats').textContent=`工時 ${totH.toFixed(1)} hr｜工資 ${fmtN(totW)} 元｜銷售材料費 ${fmtN(totS)} 元｜材料成本 ${fmtN(totC)} 元`;
+  document.getElementById('wipModalStats').textContent=`工資 ${fmtN(totW)} 元｜銷售材料費 ${fmtN(totS)} 元｜材料成本 ${fmtN(totC)} 元`;
   document.getElementById('wipDetailModal').style.display='flex';
 }
-
-function closeWipModal(){document.getElementById('wipDetailModal').style.display='none';}
-
+ 
 function exportWipModalCSV(){
   if(!_wipModalFiltered.length)return;
   const cols=[
     ['work_order','工單號'],['branch','據點'],['plate_no','車牌'],
     ['account_type','帳類'],['repair_type','維修類型'],['open_time','開單時間'],
-    ['days_open','在廠天數'],['hours','工時'],['wage','工資'],
+    ['days_open','在廠天數'],['wage','工資'],
     ['sales_amt','銷售材料費'],['cost_amt','維修材料成本'],
     ['service_advisor','SA'],['car_series','車系'],
   ];
@@ -1053,19 +1030,6 @@ function exportWipModalCSV(){
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download=`wip_detail_${Date.now()}.csv`;a.click();URL.revokeObjectURL(url);
 }
-
-function exportWipModalCSV(){
-  if(!_wipModalFiltered.length)return;
-  const cols=[['work_order','工單號'],['branch','據點'],['plate_no','車牌'],['account_type','帳類'],['repair_type','維修類型'],['open_time','開單時間'],['hours','工時'],['wage','工資'],['sales_amt','銷售材料費'],['cost_amt','維修材料成本'],['service_advisor','SA'],['car_series','車系']];
-  const header=cols.map(c=>c[1]).join(',');
-  const rows=_wipModalFiltered.map(r=>cols.map(([key])=>{const v=r[key]===null||r[key]===undefined?'':String(r[key]);return v.includes(',')||v.includes('"')?'"'+v.replace(/"/g,'""')+'"':v;}).join(','));
-  const csv='\uFEFF'+[header,...rows].join('\r\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`wip_detail_${Date.now()}.csv`;a.click();URL.revokeObjectURL(url);
-}
-
-(async()=>{ await loadPeriods(); await loadAll(); })();
 </script>
 </body>
 </html>
