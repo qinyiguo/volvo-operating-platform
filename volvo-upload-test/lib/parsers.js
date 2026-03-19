@@ -127,6 +127,10 @@ const parseBusinessQuery = (rows, branch, period) => rows
       is_ev:          String(pick(r, '電車', '油電', '動力') || '').trim(),
       mileage_in:     parseInt(pick(r, '進廠里程')) || null,
       mileage_out:    parseInt(pick(r, '出廠里程')) || null,
+      repair_amount:       num(pick(r, '維修金額', '修理金額')),
+      labor_fee:           num(pick(r, '工時費', '工資費', '工時收入')),
+      repair_material_fee: num(pick(r, '維修材料費', '修理材料費', '材料費')),
+      sales_material_fee:  num(pick(r, '銷售材料費', '零件銷售費', '材料銷售費')),
     };
   });
 
