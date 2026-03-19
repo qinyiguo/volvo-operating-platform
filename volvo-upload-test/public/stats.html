@@ -395,8 +395,8 @@
   <!-- ══ WIP 未結工單 ══ -->
   <div id="tab-wip" style="display:none">
     <div style="background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.25);border-radius:8px;padding:10px 14px;font-size:12px;color:#fb923c;margin-bottom:14px;line-height:1.8">
-      🔧 <strong>未結工單定義</strong>：截至選定月份月底，所有在 business_query 有進廠紀錄、但在 repair_income 尚未結算的工單（跨月累計，已排除 PDI、PV）。<br>
-      💡 依進廠月份分類可看出老 WIP 積壓情況。點選各列可查看明細工單清單。
+      🔧 <strong>未結工單定義</strong>：截至選定月份月底，所有在 business_query 有進廠紀錄、但在 repair_income 尚未結算的工單（跨月累計，已排除 PV 外賣訂單）。<br>
+      💡 PDI 工單包含在內並以 <span style="background:rgba(245,158,11,.15);color:#f59e0b;padding:1px 5px;border-radius:3px;font-size:11px;font-weight:700">PDI</span> 標記，KPI 卡片同時顯示含PDI與扣PDI數字。依進廠月份分類可看出老 WIP 積壓情況。
     </div>
     <div id="wipKPI" class="kpi-grid"></div>
     <div class="card">
@@ -774,39 +774,41 @@ async function loadWip(period,branch){
 
 function renderWipKPI(summary){
   const kpiEl=document.getElementById('wipKPI');
-  const{total}=summary;
+  const{total,exclPdi}=summary;
   const fmtN=v=>Math.round(parseFloat(v||0)).toLocaleString();
+  const pdiCount=total.count-exclPdi.count;
   const over30=_wipRows.filter(r=>r.days_open!==null&&parseFloat(r.days_open)>30).length;
-  const under30=total.count-over30;
+  const over30ExclPdi=_wipRows.filter(r=>!r.is_pdi&&r.days_open!==null&&parseFloat(r.days_open)>30).length;
+  const under30ExclPdi=exclPdi.count-over30ExclPdi;
   kpiEl.innerHTML=`
     <div class="kpi-card" style="border-color:#f97316">
-      <div class="kpi-label" style="color:#f97316">🔧 未結工單台數</div>
+      <div class="kpi-label" style="color:#f97316">🔧 未結工單（含PDI）</div>
       <div class="kpi-value kpi-orange">${total.count}</div>
-      <div class="kpi-sub">（PDI 已排除）</div>
+      <div class="kpi-sub">扣PDI ${pdiCount} 台 → 實際 ${exclPdi.count} 台</div>
     </div>
     <div class="kpi-card" style="border-color:#10b981">
-      <div class="kpi-label" style="color:#10b981">✅ 30天內</div>
-      <div class="kpi-value kpi-green">${under30}</div>
+      <div class="kpi-label" style="color:#10b981">✅ 30天內（扣PDI）</div>
+      <div class="kpi-value kpi-green">${under30ExclPdi}</div>
       <div class="kpi-sub">台</div>
     </div>
     <div class="kpi-card" style="border-color:#ef4444">
-      <div class="kpi-label" style="color:#ef4444">⚠️ 超過30天</div>
-      <div class="kpi-value kpi-red">${over30}</div>
-      <div class="kpi-sub">台</div>
+      <div class="kpi-label" style="color:#ef4444">⚠️ 超過30天（扣PDI）</div>
+      <div class="kpi-value kpi-red">${over30ExclPdi}</div>
+      <div class="kpi-sub">台（含PDI共${over30}台）</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label">💰 工時費合計</div>
-      <div class="kpi-value kpi-green">${fmtN(total.wage)}</div>
-      <div class="kpi-sub">元</div>
+      <div class="kpi-label">💰 工時費（扣PDI）</div>
+      <div class="kpi-value kpi-green">${fmtN(exclPdi.wage)}</div>
+      <div class="kpi-sub">元（含PDI ${fmtN(total.wage)}）</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label">📦 銷售材料費</div>
-      <div class="kpi-value kpi-yellow">${fmtN(total.sales)}</div>
+      <div class="kpi-label">📦 銷售材料費（扣PDI）</div>
+      <div class="kpi-value kpi-yellow">${fmtN(exclPdi.sales)}</div>
       <div class="kpi-sub">元未稅</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label">🏷️ 維修材料費</div>
-      <div class="kpi-value">${fmtN(total.cost)}</div>
+      <div class="kpi-label">🏷️ 維修材料費（扣PDI）</div>
+      <div class="kpi-value">${fmtN(exclPdi.cost)}</div>
       <div class="kpi-sub">元未稅</div>
     </div>`;
 }
@@ -948,6 +950,9 @@ function openWipDetail(filterType,filterValue){
         <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;color:#64748b">${fmtN(c)}</td>
         <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);font-size:11px">${row.service_advisor||'—'}</td>
         <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3)">${row.car_series||'—'}</td>
+        <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3)">
+          ${row.is_pdi?'<span style="background:rgba(245,158,11,.15);color:#f59e0b;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:700">PDI</span>':''}
+        </td>
       </tr>`;
     }).join('');
   document.getElementById('wipModalTable').innerHTML=`
@@ -965,15 +970,16 @@ function openWipDetail(filterType,filterValue){
       <th style="${thR}">維修材料費(元)</th>
       <th style="${thS}">SA</th>
       <th style="${thS}">車系</th>
+      <th style="${thS}">標記</th>
     </tr></thead>
     <tbody>
-      ${bodyHtml||'<tr><td colspan="13" class="empty">無資料</td></tr>'}
+      ${bodyHtml||'<tr><td colspan="14" class="empty">無資料</td></tr>'}
       <tr style="background:rgba(249,115,22,.08);font-weight:800;border-top:2px solid #374151">
         <td colspan="8" style="padding:9px 10px;color:#f97316">合計（${filtered.length} 筆）</td>
         <td style="padding:9px 10px;text-align:right;color:#10b981">${fmtN(totW)}</td>
         <td style="padding:9px 10px;text-align:right;color:#f59e0b">${fmtN(totS)}</td>
         <td style="padding:9px 10px;text-align:right;color:#64748b">${fmtN(totC)}</td>
-        <td colspan="2"></td>
+        <td colspan="3"></td>
       </tr>
     </tbody>`;
   document.getElementById('wipModalStats').textContent=`工時費 ${fmtN(totW)} 元｜銷售材料費 ${fmtN(totS)} 元｜維修材料費 ${fmtN(totC)} 元`;
