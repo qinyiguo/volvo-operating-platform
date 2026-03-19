@@ -159,20 +159,12 @@
   .mob-sec-btn:hover:not(.active) { color: #e2e8f0; background: #253347; }
  /* ════ MOBILE ════ */
 @media (max-width: 768px) {
-
-  /* Nav */
   .nav { padding: 0 16px; }
   .nav-brand { font-size: 13px; padding: 12px 0; margin-right: 16px; }
   .nav-link { padding: 12px 10px; font-size: 12px; }
-
-  /* 隱藏桌面 sidebar，改用上方橫向 tab bar */
   .sidebar { display: none !important; }
-
-  /* Layout 改直向 */
   .layout { flex-direction: column; height: auto; overflow: visible; }
   .main { padding: 14px 12px 32px; height: auto; overflow: visible; max-width: 100%; }
-
-  /* 手機 section nav */
   #mobileSectionNav {
     display: flex !important;
     overflow-x: auto;
@@ -183,60 +175,32 @@
     padding: 4px 12px;
     gap: 2px;
     position: sticky;
-    top: 53px;   /* nav 高度 */
+    top: 53px;
     z-index: 100;
   }
   #mobileSectionNav::-webkit-scrollbar { display: none; }
-
-  /* Card */
   .card { padding: 14px 12px; }
   .card-title { font-size: 13px; }
-
-  /* Table wrap */
   .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-
-  /* Upload zone */
   .upload-zone { padding: 22px 14px; }
-
-  /* Modal — bottom sheet */
   .modal-backdrop { padding: 0 !important; align-items: flex-end !important; }
-  .modal-window {
-    max-width: 100% !important;
-    width: 100% !important;
-    max-height: 92vh !important;
-    border-radius: 16px 16px 0 0 !important;
-  }
+  .modal-window { max-width: 100% !important; width: 100% !important; max-height: 92vh !important; border-radius: 16px 16px 0 0 !important; }
   .modal-body { padding: 14px 16px; }
   .modal-footer { padding: 12px 16px 24px; }
-
-  /* Stat radio — 2 欄 */
   .stat-method-options { flex-wrap: wrap; }
   .stat-radio-item { min-width: calc(50% - 4px); flex: 0 0 calc(50% - 4px); }
-
-  /* form row */
   .form-row { flex-direction: column; gap: 4px; }
   .form-row label { padding-top: 0; min-width: unset; }
-
-  /* add-filter row */
   .add-filter-row { flex-direction: column; }
-
-  /* Counts grid */
   .counts-grid { grid-template-columns: repeat(auto-fill, minmax(100px,1fr)); }
-
-  /* 按鈕縮小 */
   .btn { padding: 7px 12px; font-size: 12px; }
   .btn-sm { padding: 4px 8px; font-size: 11px; }
-
-  /* Working days */
   .wd-controls { gap: 6px; }
   .wd-existing-item { flex-wrap: wrap; }
   .wd-existing-item > .info { flex-basis: 100%; }
-
-  /* 目標表格需橫捲 */
   #revManualGrid .table-scroll { overflow-x: auto; }
   #revManualGrid table { min-width: 680px; }
 }
-
 @media (max-width: 480px) {
   .nav-brand { font-size: 12px; }
   .nav-link { font-size: 11px; padding: 12px 8px; }
@@ -435,13 +399,11 @@
           <option value="tech_wage">🚗 工資代碼統計（保養/洗車/美容等）</option>
         </select>
       </div>
-      <!-- 維修收入選項 -->
       <div id="perfRepairOptions">
         <div class="hint" style="margin:8px 0 10px">追蹤維修收入合計（未稅），可選擇性篩選特定帳類。<strong>留空 = 統計全部帳類。</strong></div>
         <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">帳類篩選（可多選，留空=全部）</div>
         <div class="part-type-grid" id="perfRepairAccountTypes"></div>
       </div>
-      <!-- 零件銷售選項 -->
       <div id="perfPartsOptions" style="display:none">
         <div class="logic-hint" style="margin-bottom:10px">
           <strong>不同類型之間 AND</strong>，<strong>同類型多個值 OR</strong>
@@ -485,7 +447,6 @@
           </div>
         </div>
       </div>
-      <!-- 精品配件選項 -->
       <div id="perfBoutiqueOptions" style="display:none">
         <div class="hint" style="margin:8px 0 10px">從 parts_sales JOIN parts_catalog 取得精品/配件銷售金額。需先上傳零件型錄。</div>
         <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">品項類型（精品 / 配件）</div>
@@ -493,7 +454,6 @@
         <div style="font-size:12px;font-weight:700;color:#64748b;margin:14px 0 8px">帳類篩選（Paycode，留空=全部）</div>
         <div class="part-type-grid" id="perfBoutiqueAccountChips"></div>
       </div>
-      <!-- 工資代碼統計選項 -->
       <div id="perfTechWageOptions" style="display:none">
         <div class="hint" style="margin:8px 0 12px">
           依 tech_performance 的 <strong>work_code</strong> 統計台數/工資金額/工時。<br>
@@ -526,7 +486,6 @@
           </div>
         </div>
       </div>
-      <!-- 維修收入子欄位選項 -->
       <div id="perfSubfieldOptions" style="display:none">
         <div class="hint" style="margin:8px 0 12px">
           選擇<strong>工單篩選模式</strong>和<strong>判斷欄位</strong>，搭配帳類篩選，可精確設定鈑烤、工資等分項指標。
@@ -573,8 +532,7 @@
 </div>
 
 <!-- ══ Main Layout ══ -->
- <!-- 手機版橫向 section nav（桌面隱藏） -->
- <div id="mobileSectionNav" style="display:none">
+<div id="mobileSectionNav" style="display:none">
   <button class="mob-sec-btn active" id="mob-menu-upload"           onclick="showSection('upload')">📤 上傳</button>
   <button class="mob-sec-btn"        id="mob-menu-dbstatus"         onclick="showSection('dbstatus')">🗄️ 資料庫</button>
   <button class="mob-sec-btn"        id="mob-menu-sa-config"        onclick="showSection('sa-config')">📋 指標銷售</button>
@@ -851,7 +809,7 @@
       </div>
     </div>
 
-    <!-- ── 零配精品銷售 ── ★ FIX: 指標定義 and 目標數值設定 are NOW inside this section ★ -->
+    <!-- ── 零配精品銷售 ── -->
     <div class="section-page" id="section-performance">
       <div class="page-title">🛒 零配精品銷售</div>
       <p class="page-sub">定義追蹤指標（零件/精品/配件等），設定各月目標與去年實績，用於統計頁業績進度</p>
@@ -885,8 +843,6 @@
           <div id="perfUpResult" style="margin-top:10px"></div>
         </div>
       </div>
-
-      <!-- ★ 指標定義 — now correctly INSIDE section-performance ★ -->
       <div class="card">
         <div class="card-title">
           📋 指標定義
@@ -896,8 +852,6 @@
           <div style="color:#64748b;font-size:13px;padding:8px 0"><span class="spinner"></span>載入中</div>
         </div>
       </div>
-
-      <!-- ★ 目標數值設定 — now correctly INSIDE section-performance ★ -->
       <div class="card">
         <div class="card-title">🎯 目標數值設定</div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
@@ -921,7 +875,7 @@
           </div>
         </div>
       </div>
-    </div><!-- end section-performance -->
+    </div>
 
     <!-- ── 管理員密碼 ── -->
     <div class="section-page" id="section-password">
@@ -973,15 +927,12 @@ function showSection(id){
     document.getElementById(`section-${s}`).classList.toggle('active',s===id);
     document.getElementById(`menu-${s}`)?.classList.toggle('active',s===id);
   });
-
   document.querySelectorAll('.mob-sec-btn').forEach(btn=>{
     btn.classList.toggle('active', btn.id===`mob-menu-${id}`);
   });
-
   const mobBtn=document.getElementById(`mob-menu-${id}`);
   if(mobBtn) mobBtn.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
   if(window.innerWidth<=768) window.scrollTo({top:0,behavior:'smooth'});
-
   if(id==='dbstatus')loadCounts();
   if(id==='sa-config')loadConfigs();
   if(id==='working-days'){loadWdPeriods();loadWdList();}
@@ -1042,10 +993,34 @@ const esc=s=>s.replace(/'/g,"\\'");
 let wdWorkDates=new Set();
 async function loadWdPeriods(){try{const periods=await(await fetch('/api/periods')).json();const sel=document.getElementById('wdPeriod');sel.innerHTML='<option value="">選擇期間...</option>';periods.forEach(p=>{const opt=document.createElement('option');opt.value=p;opt.textContent=`${p.slice(0,4)}年${p.slice(4)}月`;sel.appendChild(opt);});const _cp=`${new Date().getFullYear()}${String(new Date().getMonth()+1).padStart(2,'0')}`;sel.value=periods.includes(_cp)?_cp:(periods.length?periods[0]:'');}catch(e){}}
 async function loadWdList(){const el=document.getElementById('wdExistingList');try{const rows=await(await fetch('/api/working-days')).json();if(!rows.length){el.innerHTML='<div style="color:#64748b;font-size:13px;padding:12px 0">尚未設定任何月份，系統將使用自動偵測工作天數</div>';return;}const byPeriod={};rows.forEach(r=>{if(!byPeriod[r.period])byPeriod[r.period]={};byPeriod[r.period][r.branch]=r;});const periods=Object.keys(byPeriod).sort().reverse();const BRANCHES=['AMA','AMC','AMD'];el.innerHTML=`<div class="wd-existing-list">${periods.map(period=>{const pRows=byPeriod[period];const label=`${period.slice(0,4)}年${period.slice(4)}月`;const allPresent=BRANCHES.every(b=>pRows[b]);const dayCounts=BRANCHES.map(b=>pRows[b]?.work_dates?.length||0);const allSame=allPresent&&dayCounts.every(c=>c===dayCounts[0]);if(allSame){return`<div class="wd-existing-item"><div class="info"><div class="name"><span class="badge" style="background:rgba(16,185,129,.15);color:#10b981">三站同步</span>&nbsp;${label}</div><div class="sub">AMA / AMC / AMD 均為 ${dayCounts[0]} 個營業日</div></div><button class="btn btn-secondary btn-sm" onclick="quickEditWd('ALL','${period}')">編輯（同步）</button><button class="btn btn-danger btn-sm" onclick="quickDeleteWd('ALL','${period}')">刪除三站</button></div>`;}else{return BRANCHES.filter(b=>pRows[b]).map(b=>{const r=pRows[b];const days=r.work_dates?.length||0;return`<div class="wd-existing-item"><div class="info"><div class="name"><span class="badge badge-blue">${b}</span>&nbsp;${label}</div><div class="sub">${days} 個營業日${r.note?' · '+r.note:''}</div></div><button class="btn btn-secondary btn-sm" onclick="quickEditWd('${b}','${period}')">編輯</button><button class="btn btn-danger btn-sm" onclick="quickDeleteWd('${b}','${period}')">刪除</button></div>`;}).join('');}}).join('')}</div>`;}catch(e){el.innerHTML=`<div style="color:#ef4444;font-size:13px">${e.message}</div>`;}}
-function quickEditWd(branch,period){document.getElementById('wdBranch').value=branch;document.getElementById('wdPeriod').value=period;loadWdCalendar();document.getElementById('section-working-days').scrollTop=0;}
+
+// ── FIX 3: quickEditWd 捲動目標修正 ──
+function quickEditWd(branch,period){
+  document.getElementById('wdBranch').value=branch;
+  document.getElementById('wdPeriod').value=period;
+  loadWdCalendar();
+  // 捲動到主內容頂端（桌面用 .main，手機用 window）
+  const mainEl=document.querySelector('.main');
+  if(mainEl) mainEl.scrollTop=0;
+  if(window.innerWidth<=768) window.scrollTo({top:0,behavior:'smooth'});
+}
+
 async function quickDeleteWd(branch,period){const targets=branch==='ALL'?['AMA','AMC','AMD']:[branch];const label=branch==='ALL'?'三站':branch;if(!confirm(`確定刪除 ${label} ${period.slice(0,4)}年${period.slice(4)}月 的工作天數設定嗎？\n刪除後將回到自動偵測。`))return;await Promise.all(targets.map(br=>fetch(`/api/working-days?branch=${br}&period=${period}`,{method:'DELETE'})));loadWdList();}
-function onWdBranchChange(){const isAll=document.getElementById('wdBranch').value==='ALL';document.getElementById('btnWdDelete').style.display='none';document.getElementById('wdConfigStatus').textContent=isAll?'設定後將同步寫入 AMA、AMC、AMD':'';}
-async function loadWdCalendar(){const branch=document.getElementById('wdBranch').value,period=document.getElementById('wdPeriod').value,statusEl=document.getElementById('wdConfigStatus');if(!period){statusEl.textContent='請選擇期間';return;}const year=parseInt(period.slice(0,4)),month=parseInt(period.slice(4))-1;if(branch==='ALL'){try{const data=await(await fetch(`/api/working-days?branch=AMA&period=${period}`)).json();wdWorkDates=new Set(Array.isArray(data.work_dates)?data.work_dates:[]);const[amc,amd]=await Promise.all([(await fetch(`/api/working-days?branch=AMC&period=${period}`)).json(),(await fetch(`/api/working-days?branch=AMD&period=${period}`)).json()]);const amaDays=[...wdWorkDates].sort().join(','),amcDays=[...new Set(amc.work_dates||[])].sort().join(','),amdDays=[...new Set(amd.work_dates||[])].sort().join(',');if(wdWorkDates.size>0){if(amaDays===amcDays&&amaDays===amdDays)statusEl.textContent=`✅ 三站已同步設定 ${wdWorkDates.size} 天`;else statusEl.textContent=`⚠️ 三站設定不同（AMA:${[...wdWorkDates].length}天 AMC:${amc.work_dates?.length||0}天 AMD:${amd.work_dates?.length||0}天）`;}else statusEl.textContent='尚未設定，儲存後三站將套用相同工作天數';document.getElementById('btnWdDelete').style.display='none';}catch(e){wdWorkDates=new Set();}document.getElementById('wdMonthTitle').textContent=`${year}年${month+1}月 — AMA + AMC + AMD（同步）`;}else{try{const data=await(await fetch(`/api/working-days?branch=${branch}&period=${period}`)).json();wdWorkDates=new Set(Array.isArray(data.work_dates)?data.work_dates:[]);statusEl.textContent=wdWorkDates.size>0?`✅ 已設定 ${wdWorkDates.size} 天`:'⚠️ 尚未設定（將使用自動偵測）';document.getElementById('btnWdDelete').style.display=(data.work_dates!==undefined&&data.period===period)?'':'none';}catch(e){wdWorkDates=new Set();}document.getElementById('wdMonthTitle').textContent=`${year}年${month+1}月 — ${branch}`;}document.getElementById('wdCalendarWrap').style.display='';renderWdCalendar(year,month);}
+
+// ── FIX 2: 切換據點時隱藏舊日曆 ──
+function onWdBranchChange(){
+  const isAll=document.getElementById('wdBranch').value==='ALL';
+  // 隱藏日曆，避免顯示舊據點資料
+  document.getElementById('wdCalendarWrap').style.display='none';
+  document.getElementById('btnWdDelete').style.display='none';
+  document.getElementById('wdConfigStatus').textContent=isAll?'設定後將同步寫入 AMA、AMC、AMD':'';
+}
+
+async function loadWdCalendar(){const branch=document.getElementById('wdBranch').value,period=document.getElementById('wdPeriod').value,statusEl=document.getElementById('wdConfigStatus');if(!period){statusEl.textContent='請選擇期間';return;}const year=parseInt(period.slice(0,4)),month=parseInt(period.slice(4))-1;if(branch==='ALL'){try{const data=await(await fetch(`/api/working-days?branch=AMA&period=${period}`)).json();wdWorkDates=new Set(Array.isArray(data.work_dates)?data.work_dates:[]);const[amc,amd]=await Promise.all([(await fetch(`/api/working-days?branch=AMC&period=${period}`)).json(),(await fetch(`/api/working-days?branch=AMD&period=${period}`)).json()]);const amaDays=[...wdWorkDates].sort().join(','),amcDays=[...new Set(amc.work_dates||[])].sort().join(','),amdDays=[...new Set(amd.work_dates||[])].sort().join(',');if(wdWorkDates.size>0){if(amaDays===amcDays&&amaDays===amdDays)statusEl.textContent=`✅ 三站已同步設定 ${wdWorkDates.size} 天`;else statusEl.textContent=`⚠️ 三站設定不同（AMA:${[...wdWorkDates].length}天 AMC:${amc.work_dates?.length||0}天 AMD:${amd.work_dates?.length||0}天）`;}else statusEl.textContent='尚未設定，儲存後三站將套用相同工作天數';document.getElementById('btnWdDelete').style.display='none';}catch(e){wdWorkDates=new Set();}document.getElementById('wdMonthTitle').textContent=`${year}年${month+1}月 — AMA + AMC + AMD（同步）`;}else{try{const data=await(await fetch(`/api/working-days?branch=${branch}&period=${period}`)).json();wdWorkDates=new Set(Array.isArray(data.work_dates)?data.work_dates:[]);
+    // ── FIX 1: 用 updated_at 判斷是否有真實 DB 資料，避免 fallback 物件誤觸發刪除按鈕 ──
+    statusEl.textContent=wdWorkDates.size>0?`✅ 已設定 ${wdWorkDates.size} 天`:'⚠️ 尚未設定（將使用自動偵測）';
+    document.getElementById('btnWdDelete').style.display=data.updated_at?'':'none';
+  }catch(e){wdWorkDates=new Set();}document.getElementById('wdMonthTitle').textContent=`${year}年${month+1}月 — ${branch}`;}document.getElementById('wdCalendarWrap').style.display='';renderWdCalendar(year,month);}
 function renderWdCalendar(year,month){const cal=document.getElementById('wdCalendar');const firstDay=new Date(year,month,1).getDay(),daysInMonth=new Date(year,month+1,0).getDate();let html='';for(let i=0;i<firstDay;i++)html+=`<div class="wd-day-cell empty"></div>`;for(let d=1;d<=daysInMonth;d++){const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`,dow=(firstDay+d-1)%7,isWork=wdWorkDates.has(dateStr),cls=['wd-day-cell',isWork?'work':'',dow===0?'sun-col':'',dow===6?'sat-col':''].filter(Boolean).join(' ');html+=`<div class="${cls}" data-date="${dateStr}" onclick="toggleWdDay('${dateStr}')">${d}</div>`;}cal.innerHTML=html;updateWdCount();}
 function toggleWdDay(dateStr){if(wdWorkDates.has(dateStr))wdWorkDates.delete(dateStr);else wdWorkDates.add(dateStr);const cell=document.querySelector(`.wd-day-cell[data-date="${dateStr}"]`);if(cell)cell.classList.toggle('work',wdWorkDates.has(dateStr));updateWdCount();}
 function updateWdCount(){document.getElementById('wdWorkCount').textContent=wdWorkDates.size;}
