@@ -7,7 +7,9 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
-  .nav { background: #1e293b; border-bottom: 1px solid #2d3f56; padding: 0 24px; display: flex; align-items: center; position: sticky; top: 0; z-index: 200; box-shadow: 0 2px 16px rgba(0,0,0,.5); }
+  .nav { background: #1e293b; border-bottom: 1px solid #2d3f56; padding: 0 24px; display: flex; align-items: center; position: sticky; top: 0; z-index: 200; box-shadow: 0 2px 16px rgba(0,0,0,.5);   overflow-x: auto;
+  -webkit-overflow-scrolling: touch; scrollbar-width: none;} 
+  .nav::-webkit-scrollbar { display: none; }
   .nav-brand { font-size: 15px; font-weight: 700; color: #fff; padding: 16px 0; margin-right: 24px; }
   .nav-link { padding: 16px 16px; color: #64748b; font-size: 13px; font-weight: 600; text-decoration: none; border-bottom: 2px solid transparent; }
   .nav-link:hover { color: #e2e8f0; }
@@ -152,6 +154,93 @@
   .wd-existing-item .sub { font-size: 12px; color: #64748b; margin-top: 2px; }
   .modal-section-label { font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .05em; padding: 10px 0 6px; border-top: 1px solid #1e3050; margin-top: 4px; }
   .modal-section-label:first-child { border-top: none; padding-top: 0; }
+ /* ════ MOBILE ════ */
+@media (max-width: 768px) {
+
+  /* Nav */
+  .nav { padding: 0 16px; }
+  .nav-brand { font-size: 13px; padding: 12px 0; margin-right: 16px; }
+  .nav-link { padding: 12px 10px; font-size: 12px; }
+
+  /* 隱藏桌面 sidebar，改用上方橫向 tab bar */
+  .sidebar { display: none !important; }
+
+  /* Layout 改直向 */
+  .layout { flex-direction: column; height: auto; overflow: visible; }
+  .main { padding: 14px 12px 32px; height: auto; overflow: visible; max-width: 100%; }
+
+  /* 手機 section nav */
+  #mobileSectionNav {
+    display: flex !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    background: #1e293b;
+    border-bottom: 1px solid #2d3f56;
+    padding: 4px 12px;
+    gap: 2px;
+    position: sticky;
+    top: 53px;   /* nav 高度 */
+    z-index: 100;
+  }
+  #mobileSectionNav::-webkit-scrollbar { display: none; }
+
+  /* Card */
+  .card { padding: 14px 12px; }
+  .card-title { font-size: 13px; }
+
+  /* Table wrap */
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Upload zone */
+  .upload-zone { padding: 22px 14px; }
+
+  /* Modal — bottom sheet */
+  .modal-backdrop { padding: 0 !important; align-items: flex-end !important; }
+  .modal-window {
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: 92vh !important;
+    border-radius: 16px 16px 0 0 !important;
+  }
+  .modal-body { padding: 14px 16px; }
+  .modal-footer { padding: 12px 16px 24px; }
+
+  /* Stat radio — 2 欄 */
+  .stat-method-options { flex-wrap: wrap; }
+  .stat-radio-item { min-width: calc(50% - 4px); flex: 0 0 calc(50% - 4px); }
+
+  /* form row */
+  .form-row { flex-direction: column; gap: 4px; }
+  .form-row label { padding-top: 0; min-width: unset; }
+
+  /* add-filter row */
+  .add-filter-row { flex-direction: column; }
+
+  /* Counts grid */
+  .counts-grid { grid-template-columns: repeat(auto-fill, minmax(100px,1fr)); }
+
+  /* 按鈕縮小 */
+  .btn { padding: 7px 12px; font-size: 12px; }
+  .btn-sm { padding: 4px 8px; font-size: 11px; }
+
+  /* Working days */
+  .wd-controls { gap: 6px; }
+  .wd-existing-item { flex-wrap: wrap; }
+  .wd-existing-item > .info { flex-basis: 100%; }
+
+  /* 目標表格需橫捲 */
+  #revManualGrid .table-scroll { overflow-x: auto; }
+  #revManualGrid table { min-width: 680px; }
+}
+
+@media (max-width: 480px) {
+  .nav-brand { font-size: 12px; }
+  .nav-link { font-size: 11px; padding: 12px 8px; }
+  .main { padding: 10px 10px 24px; }
+  .mob-sec-btn { font-size: 11px; padding: 7px 9px; }
+  .stat-radio-item { min-width: 100%; flex: 0 0 100%; }
+}
 </style>
 </head>
 <body>
@@ -481,6 +570,17 @@
 </div>
 
 <!-- ══ Main Layout ══ -->
+ <!-- 手機版橫向 section nav（桌面隱藏） -->
+<div id="mobileSectionNav" style="display:none">
+  <button class="mob-sec-btn active" id="mob-menu-upload"           onclick="showSection('upload')">📤 上傳</button>
+  <button class="mob-sec-btn"        id="mob-menu-dbstatus"         onclick="showSection('dbstatus')">🗄️ 資料庫</button>
+  <button class="mob-sec-btn"        id="mob-menu-sa-config"        onclick="showSection('sa-config')">📋 指標銷售</button>
+  <button class="mob-sec-btn"        id="mob-menu-working-days"     onclick="showSection('working-days')">📅 工作天</button>
+  <button class="mob-sec-btn"        id="mob-menu-tech-wage-config" onclick="showSection('tech-wage-config')">🔧 工資碼</button>
+  <button class="mob-sec-btn"        id="mob-menu-revenue-targets"  onclick="showSection('revenue-targets')">📈 營收目標</button>
+  <button class="mob-sec-btn"        id="mob-menu-performance"      onclick="showSection('performance')">🛒 精品銷售</button>
+  <button class="mob-sec-btn"        id="mob-menu-password"         onclick="showSection('password')">🔑 密碼</button>
+</div>
 <div class="layout">
   <div class="sidebar">
     <div class="sidebar-section">
@@ -869,6 +969,14 @@ function showSection(id){
   sections.forEach(s=>{
     document.getElementById(`section-${s}`).classList.toggle('active',s===id);
     document.getElementById(`menu-${s}`)?.classList.toggle('active',s===id);
+     // ① 同步手機 nav 按鈕
+    document.querySelectorAll('.mob-sec-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.id === `mob-menu-${id}`);
+    // ② 手機：捲到對應按鈕 + 頁面回頂
+  const mobBtn = document.getElementById(`mob-menu-${id}`);
+  if (mobBtn) mobBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  if (window.innerWidth <= 768) window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
   });
   if(id==='dbstatus')loadCounts();
   if(id==='sa-config')loadConfigs();
