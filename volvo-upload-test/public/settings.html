@@ -154,6 +154,15 @@
   .wd-existing-item .sub { font-size: 12px; color: #64748b; margin-top: 2px; }
   .modal-section-label { font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .05em; padding: 10px 0 6px; border-top: 1px solid #1e3050; margin-top: 4px; }
   .modal-section-label:first-child { border-top: none; padding-top: 0; }
+  .mob-sec-btn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 8px 12px; border: none; border-radius: 7px;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  background: transparent; color: #64748b;
+  white-space: nowrap; flex-shrink: 0; transition: all .15s;
+}
+.mob-sec-btn.active { background: rgba(59,130,246,.15); color: #3b82f6; }
+.mob-sec-btn:hover:not(.active) { color: #e2e8f0; background: #253347; }
  /* ════ MOBILE ════ */
 @media (max-width: 768px) {
 
@@ -969,15 +978,18 @@ function showSection(id){
   sections.forEach(s=>{
     document.getElementById(`section-${s}`).classList.toggle('active',s===id);
     document.getElementById(`menu-${s}`)?.classList.toggle('active',s===id);
-     // ① 同步手機 nav 按鈕
-    document.querySelectorAll('.mob-sec-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.id === `mob-menu-${id}`);
-    // ② 手機：捲到對應按鈕 + 頁面回頂
-  const mobBtn = document.getElementById(`mob-menu-${id}`);
-  if (mobBtn) mobBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  if (window.innerWidth <= 768) window.scrollTo({ top: 0, behavior: 'smooth' });
   });
+
+  // ① 同步手機 nav 按鈕
+  document.querySelectorAll('.mob-sec-btn').forEach(btn=>{
+    btn.classList.toggle('active', btn.id===`mob-menu-${id}`);
   });
+
+  // ② 手機：捲到對應按鈕 + 頁面回頂
+  const mobBtn=document.getElementById(`mob-menu-${id}`);
+  if(mobBtn) mobBtn.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+  if(window.innerWidth<=768) window.scrollTo({top:0,behavior:'smooth'});
+
   if(id==='dbstatus')loadCounts();
   if(id==='sa-config')loadConfigs();
   if(id==='working-days'){loadWdPeriods();loadWdList();}
