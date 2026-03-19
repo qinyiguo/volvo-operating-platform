@@ -243,7 +243,7 @@
   #revManualGrid table { min-width: 680px; }
 }
 
-@media (max-width: 480px) {
+  .mob-sec-btn { font-size: 11px; padding: 7px 9px; } 
   .nav-brand { font-size: 12px; }
   .nav-link { font-size: 11px; padding: 12px 8px; }
   .main { padding: 10px 10px 24px; }
@@ -975,10 +975,10 @@ document.addEventListener('keydown',e=>{
 // ══ Sidebar ══
 const sections=['upload','dbstatus','sa-config','working-days','tech-wage-config','revenue-targets','performance','password'];
 function showSection(id){
-  sections.forEach(s=>{
-    document.getElementById(`section-${s}`).classList.toggle('active',s===id);
-    document.getElementById(`menu-${s}`)?.classList.toggle('active',s===id);
-  });
+  sections.forEach(s => { ... });
+document.querySelectorAll('.mob-sec-btn').forEach(...)  // ← 獨立，只跑一次
+const mobBtn = document.getElementById(...)
+mobBtn.scrollIntoView(...)
 
   // ① 同步手機 nav 按鈕
   document.querySelectorAll('.mob-sec-btn').forEach(btn=>{
