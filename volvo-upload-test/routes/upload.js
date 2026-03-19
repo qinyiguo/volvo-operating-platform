@@ -160,6 +160,7 @@ router.post('/upload', uploader.array('files', 8), async (req, res) => {
             'vin', 'status', 'repair_item', 'service_advisor', 'assigned_tech',
             'repair_tech', 'repair_type', 'car_series', 'car_model', 'model_year',
             'owner', 'is_ev', 'mileage_in', 'mileage_out',
+            'repair_amount', 'labor_fee', 'repair_material_fee', 'sales_material_fee',
           ], parseBusinessQuery(rawRows, branch, period));
 
         } else if (fileType === 'parts_catalog') {
