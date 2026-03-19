@@ -8,30 +8,22 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
   .sticky-header { position: sticky; top: 0; z-index: 200; background: #0f172a; box-shadow: 0 2px 20px rgba(0,0,0,.6); }
-
-  /* ── Nav ── */
   .nav { background: #1e293b; border-bottom: 1px solid #2d3f56; padding: 0 24px; display: flex; align-items: center; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .nav::-webkit-scrollbar { display: none; }
   .nav-brand { font-size: 15px; font-weight: 700; color: #fff; padding: 16px 0; margin-right: 24px; white-space: nowrap; flex-shrink: 0; }
   .nav-link { padding: 16px 16px; color: #64748b; font-size: 13px; font-weight: 600; text-decoration: none; border-bottom: 2px solid transparent; white-space: nowrap; flex-shrink: 0; }
   .nav-link:hover { color: #e2e8f0; }
   .nav-link.active { color: #3b82f6; border-bottom-color: #3b82f6; }
-
-  /* ── Header ── */
   .header-inner { padding: 10px 24px; background: #0f172a; border-bottom: 1px solid #2d3f56; }
   .filter-bar { display: flex; gap: 10px; align-items: center; background: #1e293b; border: 1px solid #2d3f56; border-radius: 10px; padding: 10px 16px; margin-bottom: 10px; flex-wrap: wrap; }
   .filter-bar label { font-size: 12px; color: #64748b; font-weight: 600; }
   .filter-bar select { background: #0f172a; border: 1px solid #2d3f56; color: #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 13px; }
-
-  /* Tab bar — scrollable on mobile */
   .tabs-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .tabs-wrap::-webkit-scrollbar { display: none; }
   .tabs { display: flex; gap: 2px; background: #1e293b; border-radius: 8px; padding: 3px; width: max-content; min-width: 100%; }
   .tab { padding: 8px 16px; border: none; background: transparent; color: #64748b; font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 6px; white-space: nowrap; }
   .tab:hover { color: #e2e8f0; background: #253347; }
   .tab.active { background: #3b82f6; color: #fff; }
-
-  /* ── Layout ── */
   .container { padding: 16px 24px 40px; max-width: 1400px; margin: 0 auto; }
   .btn { padding: 7px 16px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; }
   .btn-primary { background: #3b82f6; color: #fff; }
@@ -39,8 +31,6 @@
   .btn-secondary { background: #253347; color: #cbd5e1; border: 1px solid #2d3f56; }
   .btn-secondary:hover { background: #2d3f56; }
   .btn-sm { padding: 4px 10px; font-size: 12px; }
-
-  /* ── KPI ── */
   .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
   .kpi-card { background: #1e293b; border: 1px solid #2d3f56; border-radius: 10px; padding: 18px; }
   .kpi-label { font-size: 12px; color: #64748b; margin-bottom: 6px; }
@@ -48,21 +38,15 @@
   .kpi-sub { font-size: 12px; color: #64748b; margin-top: 4px; }
   .kpi-green  { color: #10b981; } .kpi-blue   { color: #3b82f6; } .kpi-yellow { color: #f59e0b; }
   .kpi-purple { color: #8b5cf6; } .kpi-red    { color: #ef4444; } .kpi-teal   { color: #14b8a6; } .kpi-orange { color: #f97316; }
-
-  /* ── Cards ── */
   .card { background: #1a2332; border: 1px solid #2d3f56; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
   .card-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .card-title-note { font-size: 11px; font-weight: 400; color: #64748b; margin-left: auto; }
-
-  /* ── Tables ── */
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   th { background: #0f172a; color: #64748b; font-size: 12px; font-weight: 600; text-align: left; padding: 10px 12px; border-bottom: 1px solid #2d3f56; white-space: nowrap; }
   td { padding: 9px 12px; border-bottom: 1px solid rgba(45,63,86,.4); vertical-align: middle; }
   tr:hover td { background: rgba(37,51,71,.5); }
   .num { text-align: right; font-variant-numeric: tabular-nums; }
   .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid #2d3f56; }
-
-  /* ── Badges ── */
   .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
   .badge-blue   { background: rgba(59,130,246,.15); color: #3b82f6; }
   .badge-green  { background: rgba(16,185,129,.15); color: #10b981; }
@@ -72,14 +56,10 @@
   .badge-teal   { background: rgba(20,184,166,.15); color: #14b8a6; }
   .badge-orange { background: rgba(249,115,22,.15); color: #f97316; }
   .badge-gray   { background: rgba(100,116,139,.15); color: #94a3b8; }
-
-  /* ── States ── */
   .empty { text-align: center; padding: 48px; color: #64748b; font-size: 14px; }
   .loading { text-align: center; padding: 48px; color: #64748b; }
   .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #2d3f56; border-top-color: #3b82f6; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 8px; vertical-align: middle; }
   @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* ── Misc ── */
   .rank-no { font-weight: 800; color: #64748b; width: 30px; }
   .rank-1 { color: #f59e0b; } .rank-2 { color: #94a3b8; } .rank-3 { color: #b45309; }
   .bar-wrap { display: flex; align-items: center; gap: 8px; }
@@ -124,8 +104,6 @@
   tr.subtotal-row:hover td { background: rgba(249,115,22,.1); }
   tr.total-row td { background: rgba(59,130,246,.08); font-weight: 800; }
   tr.total-row:hover td { background: rgba(59,130,246,.12); }
-
-  /* ── Period selector ── */
   .period-selector { position: relative; }
   .period-btn { display: flex; align-items: center; gap: 8px; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: 7px 12px 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .15s; user-select: none; min-width: 148px; justify-content: space-between; outline: none; }
   .period-btn:hover, .period-btn.open { border-color: #3b82f6; background: #141f33; }
@@ -155,93 +133,53 @@
   .period-dd-mo .mo-dot { width: 4px; height: 4px; border-radius: 50%; background: transparent; margin-top: 3px; }
   .period-dd-mo.has-data .mo-dot { background: #10b981; }
   .period-dd-mo.selected .mo-dot { background: #3b82f6; }
-
-  /* ── SA sub-tab ── */
   .sa-subtab-bar { display: flex; gap: 2px; background: #1e293b; border: 1px solid #2d3f56; border-radius: 8px; padding: 3px; width: fit-content; }
   .sa-subtab { padding: 7px 20px; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; background: transparent; color: #64748b; transition: all .15s; white-space: nowrap; }
   .sa-subtab.active { background: #3b82f6; color: #fff; }
   .sa-subtab:hover:not(.active) { color: #e2e8f0; background: #253347; }
-
-  /* ════════════════════════════
-     MOBILE RESPONSIVE
-  ════════════════════════════ */
   @media (max-width: 768px) {
-    /* Nav */
     .nav { padding: 0 16px; }
     .nav-brand { font-size: 13px; padding: 12px 0; margin-right: 16px; }
     .nav-link { padding: 12px 10px; font-size: 12px; }
-
-    /* Header */
     .header-inner { padding: 8px 12px 6px; }
     .filter-bar { padding: 8px 12px; gap: 6px; }
     .filter-bar label { font-size: 11px; }
     .filter-bar select { font-size: 12px; padding: 5px 8px; }
-
-    /* Period button */
     .period-btn { min-width: 120px; padding: 6px 10px; font-size: 12px; }
     .period-btn .pb-month { font-size: 13px; }
     .period-dropdown { width: calc(100vw - 32px); max-width: 300px; }
-
-    /* Tab bar */
     .tabs { gap: 1px; padding: 2px; }
     .tab { padding: 8px 12px; font-size: 12px; }
-
-    /* Container */
     .container { padding: 10px 12px 32px; }
-
-    /* Cards */
     .card { padding: 14px 12px; border-radius: 10px; }
     .card-title { font-size: 13px; margin-bottom: 10px; }
     .card-title-note { font-size: 10px; }
-
-    /* KPI grid — 2 col on mobile */
     .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px; }
     .kpi-card { padding: 14px 12px; }
     .kpi-value { font-size: 22px; }
     .kpi-label { font-size: 11px; }
     .kpi-sub { font-size: 11px; }
-
-    /* Grand KPI single card */
     #grandKPI .kpi-card { max-width: 100% !important; }
     #grandKPI .kpi-value { font-size: 26px !important; }
-
-    /* Income category grid — 2 col */
     .income-category-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
     .income-cat-card { padding: 12px 12px; }
     .income-cat-value { font-size: 18px; }
     .income-cat-card.type-paid .income-cat-value,
     .income-cat-card.type-grand .income-cat-value { font-size: 20px; }
-
-    /* Tables — horizontal scroll */
     .table-wrap { border-radius: 6px; }
     table { font-size: 12px; }
     th { padding: 8px 10px; font-size: 11px; }
     td { padding: 7px 10px; }
-
-    /* Bar wrap — shorter */
     .bar-bg { min-width: 30px; }
-
-    /* Divider label */
     .divider-label { font-size: 10px; margin: 14px 0 8px; }
-
-    /* Income section title */
     .income-section-title { font-size: 11px; }
-
-    /* Btn */
     .btn { padding: 6px 12px; font-size: 12px; }
     .btn-sm { padding: 3px 8px; font-size: 11px; }
-
-    /* SA subtab */
     .sa-subtab-bar { width: 100%; }
     .sa-subtab { flex: 1; text-align: center; padding: 8px 10px; font-size: 12px; }
-
-    /* Daily chart container */
     #dailyChart { min-width: unset; padding: 4px 0; }
-
-    /* KPI row for daily — allow wrap earlier */
     #dailyKPI { grid-template-columns: repeat(2,1fr); }
   }
-
   @media (max-width: 480px) {
     .nav-brand { font-size: 12px; }
     .nav-link { font-size: 11px; padding: 12px 8px; }
@@ -295,7 +233,8 @@
 </div>
 
 <div class="container">
-  <!-- 維修收入 -->
+
+  <!-- ══ 維修收入 ══ -->
   <div id="tab-repair">
     <div id="repairKPI" class="kpi-grid"></div>
     <div id="grandKPI"></div>
@@ -340,7 +279,7 @@
     </div>
   </div>
 
-  <!-- 技師工資 -->
+  <!-- ══ 技師工資 ══ -->
   <div id="tab-tech" style="display:none">
     <div id="techKPI" class="kpi-grid"></div>
     <div class="card">
@@ -354,7 +293,7 @@
     </div>
   </div>
 
-  <!-- 零件銷售 -->
+  <!-- ══ 零件銷售 ══ -->
   <div id="tab-parts" style="display:none">
     <div id="partsKPI" class="kpi-grid"></div>
     <div class="card">
@@ -377,7 +316,7 @@
     </div>
   </div>
 
-  <!-- 精品配件銷售 -->
+  <!-- ══ 精品配件銷售 ══ -->
   <div id="tab-boutique" style="display:none">
     <div style="background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.25);border-radius:8px;padding:10px 14px;font-size:12px;color:#a78bfa;margin-bottom:14px;line-height:1.8">
       💡 <strong>資料來源</strong>：零件銷售明細（parts_sales），品項類型透過<strong>零件型錄（parts_catalog）</strong>比對 part_number 判斷。
@@ -394,7 +333,7 @@
     </div>
   </div>
 
-  <!-- 指標銷售與施工 -->
+  <!-- ══ 指標銷售與施工 ══ -->
   <div id="tab-sa-sales" style="display:none">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
       <div class="sa-subtab-bar">
@@ -420,7 +359,7 @@
     </div>
   </div>
 
-  <!-- 月份趨勢 -->
+  <!-- ══ 月份趨勢 ══ -->
   <div id="tab-trend" style="display:none">
     <div class="card">
       <div class="card-title">📈 各月份維修收入趨勢</div>
@@ -433,7 +372,7 @@
     </div>
   </div>
 
-  <!-- 每日進廠台數 -->
+  <!-- ══ 每日進廠台數 ══ -->
   <div id="tab-daily" style="display:none">
     <div id="dailyKPI" class="kpi-grid"></div>
     <div class="card">
@@ -453,7 +392,7 @@
     </div>
   </div>
 
-  <!-- WIP 未結工單 -->
+  <!-- ══ WIP 未結工單 ══ -->
   <div id="tab-wip" style="display:none">
     <div style="background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.25);border-radius:8px;padding:10px 14px;font-size:12px;color:#fb923c;margin-bottom:14px;line-height:1.8">
       🔧 <strong>未結工單定義</strong>：本月 tech_performance／parts_sales 有工時或零件紀錄，
@@ -472,35 +411,37 @@
     </div>
   </div>
 
-  <!-- WIP 明細 Modal -->
-  <div id="wipDetailModal"
-    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;
-           align-items:center;justify-content:center;padding:16px"
-    onclick="if(event.target===this)closeWipModal()">
-    <div style="background:#1a2740;border:1px solid #2d4060;border-radius:14px;
-                width:100%;max-width:1150px;max-height:92vh;display:flex;flex-direction:column;
-                box-shadow:0 24px 64px rgba(0,0,0,.85)">
-      <div style="display:flex;align-items:center;gap:10px;padding:16px 20px 12px;border-bottom:1px solid #2d3f56;flex-shrink:0">
-        <div id="wipModalTitle" style="font-size:15px;font-weight:800;flex:1;color:#fff"></div>
-        <span id="wipModalCount" style="font-size:12px;color:#64748b"></span>
-        <button onclick="closeWipModal()"
-          style="width:30px;height:30px;border-radius:8px;border:1px solid #2d3f56;
-                 background:#0f172a;color:#64748b;font-size:18px;line-height:1;cursor:pointer;
-                 display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
-      </div>
-      <div style="overflow:auto;flex:1">
-        <table id="wipModalTable" style="width:100%;border-collapse:collapse;font-size:12px"></table>
-      </div>
-      <div style="padding:10px 20px 14px;border-top:1px solid #2d3f56;display:flex;gap:10px;
-                  align-items:center;flex-shrink:0;flex-wrap:wrap">
-        <span id="wipModalStats" style="font-size:12px;color:#64748b;flex:1"></span>
-        <button onclick="exportWipModalCSV()"
-          style="padding:6px 14px;background:rgba(16,185,129,.15);color:#10b981;
-                 border:1px solid rgba(16,185,129,.3);border-radius:6px;font-size:12px;
-                 font-weight:600;cursor:pointer">⬇️ 匯出 CSV</button>
-      </div>
+</div><!-- /.container -->
+
+<!-- ══ WIP 明細 Modal（position:fixed，放 container 外） ══ -->
+<div id="wipDetailModal"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;
+         align-items:center;justify-content:center;padding:16px"
+  onclick="if(event.target===this)closeWipModal()">
+  <div style="background:#1a2740;border:1px solid #2d4060;border-radius:14px;
+              width:100%;max-width:1150px;max-height:92vh;display:flex;flex-direction:column;
+              box-shadow:0 24px 64px rgba(0,0,0,.85)">
+    <div style="display:flex;align-items:center;gap:10px;padding:16px 20px 12px;border-bottom:1px solid #2d3f56;flex-shrink:0">
+      <div id="wipModalTitle" style="font-size:15px;font-weight:800;flex:1;color:#fff"></div>
+      <span id="wipModalCount" style="font-size:12px;color:#64748b"></span>
+      <button onclick="closeWipModal()"
+        style="width:30px;height:30px;border-radius:8px;border:1px solid #2d3f56;
+               background:#0f172a;color:#64748b;font-size:18px;line-height:1;cursor:pointer;
+               display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
+    </div>
+    <div style="overflow:auto;flex:1">
+      <table id="wipModalTable" style="width:100%;border-collapse:collapse;font-size:12px"></table>
+    </div>
+    <div style="padding:10px 20px 14px;border-top:1px solid #2d3f56;display:flex;gap:10px;
+                align-items:center;flex-shrink:0;flex-wrap:wrap">
+      <span id="wipModalStats" style="font-size:12px;color:#64748b;flex:1"></span>
+      <button onclick="exportWipModalCSV()"
+        style="padding:6px 14px;background:rgba(16,185,129,.15);color:#10b981;
+               border:1px solid rgba(16,185,129,.3);border-radius:6px;font-size:12px;
+               font-weight:600;cursor:pointer">⬇️ 匯出 CSV</button>
     </div>
   </div>
+</div>
 
 <script>
 let _currentPeriod='',_allPeriods=[];
@@ -576,8 +517,8 @@ async function loadAll(){
     loadBoutiqueAccessories(period,branch),
     loadTrend(branch),
     loadDaily(period,branch),
-    loadWip(period, branch),
-    loadSASales()
+    loadSASales(),
+    loadWip(period,branch),
   ]);
   document.getElementById('lastUpdate').textContent=`${new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})} 更新`;
 }
@@ -766,70 +707,21 @@ async function loadDaily(period,branch){
     const summary=data.summary,daily=data.daily;
     const branchColors={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
     const isMobile=window.innerWidth<=768;
-
-    // KPI
-    const wdLines=summary.map(r=>{
-      const icon=r.configured_working_days!==null?'✅':'⚠️';
-      const col=branchColors[r.branch]||'#94a3b8';
-      return`<div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px">
-        <span style="font-size:12px;font-weight:700;color:${col}">${r.branch}</span>
-        <span style="font-size:14px;font-weight:800;color:#e2e8f0">${r.working_days}<span style="font-size:10px;color:#64748b;margin-left:2px">天</span></span>
-        <span style="font-size:11px">${icon}</span>
-      </div>`;
-    }).join('');
-    let kpiHtml=`<div class="kpi-card" style="min-width:140px">
-      <div class="kpi-label">📅 工作天數設定</div>
-      ${wdLines}
-      <div class="kpi-sub" style="margin-top:8px;font-size:10px">✅手動設定 ⚠️自動偵測</div>
-    </div>`;
+    const wdLines=summary.map(r=>{const icon=r.configured_working_days!==null?'✅':'⚠️';const col=branchColors[r.branch]||'#94a3b8';return`<div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px"><span style="font-size:12px;font-weight:700;color:${col}">${r.branch}</span><span style="font-size:14px;font-weight:800;color:#e2e8f0">${r.working_days}<span style="font-size:10px;color:#64748b;margin-left:2px">天</span></span><span style="font-size:11px">${icon}</span></div>`;}).join('');
+    let kpiHtml=`<div class="kpi-card" style="min-width:140px"><div class="kpi-label">📅 工作天數設定</div>${wdLines}<div class="kpi-sub" style="margin-top:8px;font-size:10px">✅手動設定 ⚠️自動偵測</div></div>`;
     const avgMap={};
-    summary.forEach(r=>{
-      const progressDays=parseInt(r.auto_working_days||0);
-      avgMap[r.branch]=progressDays>0?parseFloat(r.total_cars)/progressDays:0;
-      const col=branchColors[r.branch]||'#94a3b8';
-      kpiHtml+=`<div class="kpi-card">
-        <div class="kpi-label" style="color:${col}">${r.branch} 總台數</div>
-        <div class="kpi-value" style="color:${col}">${parseInt(r.total_cars||0).toLocaleString()}</div>
-        <div class="kpi-sub">台</div>
-      </div><div class="kpi-card">
-        <div class="kpi-label" style="color:${col}">${r.branch} 日均</div>
-        <div class="kpi-value kpi-green">${avgMap[r.branch]>0?avgMap[r.branch].toFixed(1):'—'}</div>
-        <div class="kpi-sub">進度均值（已${r.auto_working_days}天）</div>
-      </div>`;
-    });
+    summary.forEach(r=>{const progressDays=parseInt(r.auto_working_days||0);avgMap[r.branch]=progressDays>0?parseFloat(r.total_cars)/progressDays:0;const col=branchColors[r.branch]||'#94a3b8';kpiHtml+=`<div class="kpi-card"><div class="kpi-label" style="color:${col}">${r.branch} 總台數</div><div class="kpi-value" style="color:${col}">${parseInt(r.total_cars||0).toLocaleString()}</div><div class="kpi-sub">台</div></div><div class="kpi-card"><div class="kpi-label" style="color:${col}">${r.branch} 日均</div><div class="kpi-value kpi-green">${avgMap[r.branch]>0?avgMap[r.branch].toFixed(1):'—'}</div><div class="kpi-sub">進度均值（已${r.auto_working_days}天）</div></div>`;});
     document.getElementById('dailyKPI').innerHTML=kpiHtml;
-
-    // Chart — responsive width
     const branchList=[...new Set(daily.map(r=>r.branch))].sort();
     const dateList=[...new Set(daily.map(r=>r.arrive_date?.slice(0,10)))].sort();
     const maxCount=Math.max(...daily.map(r=>parseInt(r.car_count||0)),1);
-    // On mobile use narrower bars
     const barW=isMobile?Math.max(4,Math.min(12,Math.floor(280/(dateList.length*branchList.length+dateList.length)))):Math.max(7,Math.min(22,Math.floor(540/(dateList.length*branchList.length+dateList.length))));
     const dayMap={};daily.forEach(r=>{const d=r.arrive_date?.slice(0,10);if(!dayMap[d])dayMap[d]={};dayMap[d][r.branch]=parseInt(r.car_count||0);});
-
-    window._dailyState={
-      showAvg:Object.fromEntries(branchList.map(b=>[b,false])),
-      branchList,dateList,colors:branchColors,maxCount,barW,dayMap,avgMap
-    };
-
-    const toggleBtns=branchList.map(b=>`<button id="avgToggle-${b}" onclick="window._toggleDailyAvg('${b}')"
-      style="padding:4px 10px;border:1.5px solid ${branchColors[b]||'#94a3b8'};border-radius:6px;background:transparent;color:${branchColors[b]||'#94a3b8'};font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap">
-      📈 ${b} 日均線
-    </button>`).join('');
-
-    document.getElementById('dailyChart').innerHTML=`
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
-        <span style="font-size:11px;color:#64748b;font-weight:700">顯示日均線：</span>
-        ${toggleBtns}
-      </div>
-      <div id="dailyChartSvgWrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch"></div>`;
-
+    window._dailyState={showAvg:Object.fromEntries(branchList.map(b=>[b,false])),branchList,dateList,colors:branchColors,maxCount,barW,dayMap,avgMap};
+    const toggleBtns=branchList.map(b=>`<button id="avgToggle-${b}" onclick="window._toggleDailyAvg('${b}')" style="padding:4px 10px;border:1.5px solid ${branchColors[b]||'#94a3b8'};border-radius:6px;background:transparent;color:${branchColors[b]||'#94a3b8'};font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap">📈 ${b} 日均線</button>`).join('');
+    document.getElementById('dailyChart').innerHTML=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap"><span style="font-size:11px;color:#64748b;font-weight:700">顯示日均線：</span>${toggleBtns}</div><div id="dailyChartSvgWrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch"></div>`;
     window._renderDailyChart();
-
-    document.getElementById('tbDaily').innerHTML=daily.length?daily.map(r=>{
-      const cnt=parseInt(r.car_count||0),avg=avgMap[r.branch]||0,diff=cnt-avg,pct=avg>0?(diff/avg*100):0;
-      return`<tr><td style="white-space:nowrap">${r.arrive_date?.slice(0,10)}</td><td><span class="badge badge-blue">${r.branch}</span></td><td class="num" style="font-weight:700">${cnt}</td><td class="num ${diff>=0?'up':'down'}">${diff>=0?'▲':'▼'}${Math.abs(diff).toFixed(1)}<span style="font-size:11px;color:#64748b">(${pct>=0?'+':''}${pct.toFixed(0)}%)</span></td></tr>`;
-    }).join(''):'<tr><td colspan="4" class="empty">無資料</td></tr>';
+    document.getElementById('tbDaily').innerHTML=daily.length?daily.map(r=>{const cnt=parseInt(r.car_count||0),avg=avgMap[r.branch]||0,diff=cnt-avg,pct=avg>0?(diff/avg*100):0;return`<tr><td style="white-space:nowrap">${r.arrive_date?.slice(0,10)}</td><td><span class="badge badge-blue">${r.branch}</span></td><td class="num" style="font-weight:700">${cnt}</td><td class="num ${diff>=0?'up':'down'}">${diff>=0?'▲':'▼'}${Math.abs(diff).toFixed(1)}<span style="font-size:11px;color:#64748b">(${pct>=0?'+':''}${pct.toFixed(0)}%)</span></td></tr>`;}).join(''):'<tr><td colspan="4" class="empty">無資料</td></tr>';
   }catch(e){document.getElementById('dailyKPI').innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;}
 }
 
@@ -838,11 +730,7 @@ window._toggleDailyAvg=function(branch){
   s.showAvg[branch]=!s.showAvg[branch];
   const col=s.colors[branch]||'#94a3b8';
   const btn=document.getElementById(`avgToggle-${branch}`);
-  if(btn){
-    btn.style.background=s.showAvg[branch]?col+'28':'transparent';
-    btn.style.borderWidth=s.showAvg[branch]?'2px':'1.5px';
-    btn.style.fontWeight=s.showAvg[branch]?'800':'600';
-  }
+  if(btn){btn.style.background=s.showAvg[branch]?col+'28':'transparent';btn.style.borderWidth=s.showAvg[branch]?'2px':'1.5px';btn.style.fontWeight=s.showAvg[branch]?'800':'600';}
   window._renderDailyChart();
 };
 
@@ -854,79 +742,42 @@ window._renderDailyChart=function(){
   const minW=leftPad+dateList.length*(groupW+6)+40;
   const chartW=Math.max(300,minW);
   const totalH=chartH+xLabelH+legendH;
-
   let bars='',xLabels='',avgLines='',yAxis='',legend='';
-  for(let i=0;i<=4;i++){
-    const val=Math.round(maxCount*i/4);
-    const y=chartH-(i/4)*(chartH-28);
-    yAxis+=`<line x1="${leftPad-4}" y1="${y.toFixed(0)}" x2="${chartW-16}" y2="${y.toFixed(0)}" stroke="${i===0?'#374151':'#1e3050'}" stroke-width="1"/>`;
-    yAxis+=`<text x="${leftPad-6}" y="${(y+4).toFixed(0)}" text-anchor="end" font-size="9" fill="#475569">${val}</text>`;
-  }
-  dateList.forEach((d,di)=>{
-    const gx=leftPad+di*(groupW+6);
-    branchList.forEach((b,bi)=>{
-      const val=dayMap[d]?.[b]||0;
-      const barH=val>0?Math.max(2,val/maxCount*(chartH-28)):0;
-      const x=gx+bi*(barW+2),y=chartH-barH;
-      bars+=`<rect x="${x}" y="${y.toFixed(1)}" width="${barW}" height="${barH.toFixed(1)}" fill="${colors[b]||'#64748b'}" rx="2" opacity="0.85"><title>${b} ${d}: ${val}台</title></rect>`;
-      if(val>0&&barW>=8){const labelY=Math.max(10,(y-2));bars+=`<text x="${(x+barW/2).toFixed(0)}" y="${labelY.toFixed(0)}" text-anchor="middle" font-size="8" fill="#94a3b8">${val}</text>`;}
-    });
-    xLabels+=`<text x="${(gx+groupW/2).toFixed(0)}" y="${chartH+13}" text-anchor="middle" font-size="8" fill="#475569">${d.slice(8)}</text>`;
-  });
-  branchList.forEach(b=>{
-    if(!showAvg[b])return;
-    const avg=avgMap[b];if(!avg)return;
-    const y=chartH-avg/maxCount*(chartH-28);
-    const col=colors[b]||'#94a3b8';
-    avgLines+=`<line x1="${leftPad}" y1="${y.toFixed(1)}" x2="${chartW-18}" y2="${y.toFixed(1)}" stroke="${col}" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.9"/>`;
-    avgLines+=`<rect x="${chartW-17}" y="${(y-7).toFixed(0)}" width="17" height="12" rx="2" fill="${col}" opacity="0.25"/>`;
-    avgLines+=`<text x="${chartW-8}" y="${(y+4).toFixed(0)}" text-anchor="middle" font-size="8" fill="${col}" font-weight="800">${avg.toFixed(1)}</text>`;
-  });
-  const legY=chartH+xLabelH+5;
-  branchList.forEach((b,i)=>{
-    const col=colors[b]||'#94a3b8';
-    legend+=`<rect x="${leftPad+i*60}" y="${legY}" width="10" height="10" fill="${col}" rx="2"/>`;
-    legend+=`<text x="${leftPad+13+i*60}" y="${legY+8}" font-size="10" fill="#94a3b8" font-weight="600">${b}</text>`;
-  });
+  for(let i=0;i<=4;i++){const val=Math.round(maxCount*i/4);const y=chartH-(i/4)*(chartH-28);yAxis+=`<line x1="${leftPad-4}" y1="${y.toFixed(0)}" x2="${chartW-16}" y2="${y.toFixed(0)}" stroke="${i===0?'#374151':'#1e3050'}" stroke-width="1"/>`;yAxis+=`<text x="${leftPad-6}" y="${(y+4).toFixed(0)}" text-anchor="end" font-size="9" fill="#475569">${val}</text>`;}
+  dateList.forEach((d,di)=>{const gx=leftPad+di*(groupW+6);branchList.forEach((b,bi)=>{const val=dayMap[d]?.[b]||0;const barH=val>0?Math.max(2,val/maxCount*(chartH-28)):0;const x=gx+bi*(barW+2),y=chartH-barH;bars+=`<rect x="${x}" y="${y.toFixed(1)}" width="${barW}" height="${barH.toFixed(1)}" fill="${colors[b]||'#64748b'}" rx="2" opacity="0.85"><title>${b} ${d}: ${val}台</title></rect>`;if(val>0&&barW>=8){const labelY=Math.max(10,(y-2));bars+=`<text x="${(x+barW/2).toFixed(0)}" y="${labelY.toFixed(0)}" text-anchor="middle" font-size="8" fill="#94a3b8">${val}</text>`;}});xLabels+=`<text x="${(gx+groupW/2).toFixed(0)}" y="${chartH+13}" text-anchor="middle" font-size="8" fill="#475569">${d.slice(8)}</text>`;});
+  branchList.forEach(b=>{if(!showAvg[b])return;const avg=avgMap[b];if(!avg)return;const y=chartH-avg/maxCount*(chartH-28);const col=colors[b]||'#94a3b8';avgLines+=`<line x1="${leftPad}" y1="${y.toFixed(1)}" x2="${chartW-18}" y2="${y.toFixed(1)}" stroke="${col}" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.9"/>`;avgLines+=`<rect x="${chartW-17}" y="${(y-7).toFixed(0)}" width="17" height="12" rx="2" fill="${col}" opacity="0.25"/>`;avgLines+=`<text x="${chartW-8}" y="${(y+4).toFixed(0)}" text-anchor="middle" font-size="8" fill="${col}" font-weight="800">${avg.toFixed(1)}</text>`;});
+  const legY=chartH+xLabelH+5;branchList.forEach((b,i)=>{const col=colors[b]||'#94a3b8';legend+=`<rect x="${leftPad+i*60}" y="${legY}" width="10" height="10" fill="${col}" rx="2"/>`;legend+=`<text x="${leftPad+13+i*60}" y="${legY+8}" font-size="10" fill="#94a3b8" font-weight="600">${b}</text>`;});
   const svg=`<svg viewBox="0 0 ${chartW} ${totalH}" style="width:100%;height:auto;display:block;min-width:${Math.min(300,chartW)}px">${yAxis}${bars}${xLabels}${avgLines}${legend}</svg>`;
-  const wrap=document.getElementById('dailyChartSvgWrap');
-  if(wrap)wrap.innerHTML=svg;
+  const wrap=document.getElementById('dailyChartSvgWrap');if(wrap)wrap.innerHTML=svg;
 };
 
 // ══ WIP 未結工單 ══
-let _wipRows = [];
-let _wipModalFiltered = [];
+let _wipRows=[];
+let _wipModalFiltered=[];
 
-async function loadWip(period, branch) {
-  const kpiEl  = document.getElementById('wipKPI');
-  const wrapEl = document.getElementById('wipSummaryWrap');
-  if (!kpiEl || !wrapEl) return;
-  kpiEl.innerHTML = '';
-  wrapEl.innerHTML = '<div class="loading"><span class="spinner"></span>載入中</div>';
-  if (!period) {
-    wrapEl.innerHTML = '<div class="empty">請選擇期間後按查詢</div>';
-    return;
-  }
-  try {
-    const p = new URLSearchParams({ period });
-    if (branch) p.set('branch', branch);
-    const data = await (await fetch(`/api/stats/wip?${p}`)).json();
-    if (data.error) throw new Error(data.error);
-    _wipRows = data.rows || [];
-    const { summary } = data;
-    renderWipKPI(summary);
-    renderWipSummary(summary);
-  } catch (e) {
-    wrapEl.innerHTML = `<div style="color:#ef4444;padding:16px">${e.message}</div>`;
-  }
+async function loadWip(period,branch){
+  const kpiEl=document.getElementById('wipKPI');
+  const wrapEl=document.getElementById('wipSummaryWrap');
+  if(!kpiEl||!wrapEl)return;
+  kpiEl.innerHTML='';
+  wrapEl.innerHTML='<div class="loading"><span class="spinner"></span>載入中</div>';
+  if(!period){wrapEl.innerHTML='<div class="empty">請選擇期間後按查詢</div>';return;}
+  try{
+    const p=new URLSearchParams({period});if(branch)p.set('branch',branch);
+    const data=await(await fetch(`/api/stats/wip?${p}`)).json();
+    if(data.error)throw new Error(data.error);
+    _wipRows=data.rows||[];
+    renderWipKPI(data.summary);
+    renderWipSummary(data.summary);
+  }catch(e){wrapEl.innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;}
 }
 
-function renderWipKPI(summary) {
-  const kpiEl = document.getElementById('wipKPI');
-  const { total, exclPdi } = summary;
-  const fmtH = v => parseFloat(v || 0).toFixed(1);
-  const fmtK = v => Math.round(parseFloat(v || 0)).toLocaleString();
-  kpiEl.innerHTML = `
+function renderWipKPI(summary){
+  const kpiEl=document.getElementById('wipKPI');
+  const{total,exclPdi}=summary;
+  const fmtH=v=>parseFloat(v||0).toFixed(1);
+  const fmtN=v=>Math.round(parseFloat(v||0)).toLocaleString();
+  kpiEl.innerHTML=`
     <div class="kpi-card" style="border-color:#f97316">
       <div class="kpi-label" style="color:#f97316">🔧 未結工單台數</div>
       <div class="kpi-value kpi-orange">${total.count}</div>
@@ -939,231 +790,71 @@ function renderWipKPI(summary) {
     </div>
     <div class="kpi-card">
       <div class="kpi-label">💰 工資合計</div>
-      <div class="kpi-value kpi-green">${fmtK(total.wage)}</div>
-      <div class="kpi-sub">元（扣PDI：${fmtK(exclPdi.wage)}）</div>
+      <div class="kpi-value kpi-green">${fmtN(total.wage)}</div>
+      <div class="kpi-sub">元（扣PDI：${fmtN(exclPdi.wage)}）</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">📦 銷售材料費</div>
-      <div class="kpi-value kpi-yellow">${fmtK(total.sales)}</div>
-      <div class="kpi-sub">元未稅（扣PDI：${fmtK(exclPdi.sales)}）</div>
+      <div class="kpi-value kpi-yellow">${fmtN(total.sales)}</div>
+      <div class="kpi-sub">元未稅（扣PDI：${fmtN(exclPdi.sales)}）</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">🏷️ 維修材料成本</div>
-      <div class="kpi-value">${fmtK(total.cost)}</div>
+      <div class="kpi-value">${fmtN(total.cost)}</div>
       <div class="kpi-sub">元未稅（成本價）</div>
     </div>`;
 }
 
-function renderWipSummary(summary) {
-  const wrapEl = document.getElementById('wipSummaryWrap');
-  const { byAccountType, byRepairType } = summary;
-  const fmtH = v => parseFloat(v || 0).toFixed(1);
-  const fmtN = v => Math.round(parseFloat(v || 0)).toLocaleString();
-
-  // PDI stats for total excl PDI row
-  const pdiRows = _wipRows.filter(r => r.is_pdi);
-  const pdiSum = {
-    count: pdiRows.length,
-    hours: pdiRows.reduce((s, r) => s + parseFloat(r.hours || 0), 0),
-    wage:  pdiRows.reduce((s, r) => s + parseFloat(r.wage  || 0), 0),
-    sales: pdiRows.reduce((s, r) => s + parseFloat(r.sales_amt || 0), 0),
-    cost:  pdiRows.reduce((s, r) => s + parseFloat(r.cost_amt  || 0), 0),
+function renderWipSummary(summary){
+  const wrapEl=document.getElementById('wipSummaryWrap');
+  const{byAccountType,byRepairType}=summary;
+  const fmtH=v=>parseFloat(v||0).toFixed(1);
+  const fmtN=v=>Math.round(parseFloat(v||0)).toLocaleString();
+  const pdiRows=_wipRows.filter(r=>r.is_pdi);
+  const pdiSum={count:pdiRows.length,hours:pdiRows.reduce((s,r)=>s+parseFloat(r.hours||0),0),wage:pdiRows.reduce((s,r)=>s+parseFloat(r.wage||0),0),sales:pdiRows.reduce((s,r)=>s+parseFloat(r.sales_amt||0),0),cost:pdiRows.reduce((s,r)=>s+parseFloat(r.cost_amt||0),0)};
+  const thStyle='background:#0f172a;color:#64748b;font-size:11px;font-weight:700;padding:9px 12px;border-bottom:1px solid #2d3f56;white-space:nowrap;';
+  const buildTable=(items,groupLabel,clickType)=>{
+    if(!items.length)return'';
+    const total=items.reduce((s,i)=>({count:s.count+i.count,hours:s.hours+i.hours,wage:s.wage+i.wage,sales:s.sales+i.sales,cost:s.cost+i.cost}),{count:0,hours:0,wage:0,sales:0,cost:0});
+    const rowsHtml=items.map(item=>{const esc=item.label.replace(/\\/g,'\\\\').replace(/'/g,"\\'");return`<tr style="cursor:pointer;transition:background .1s" onclick="openWipDetail('${clickType}','${esc}')" onmouseover="this.querySelectorAll('td').forEach(c=>c.style.background='rgba(59,130,246,.07)')" onmouseout="this.querySelectorAll('td').forEach(c=>c.style.background='')"><td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3)"><span style="font-weight:700;color:#e2e8f0">${item.label}</span></td><td style="text-align:right;padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);font-weight:800;color:#f97316">${item.count}</td><td style="text-align:right;padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:#3b82f6">${fmtH(item.hours)}</td><td style="text-align:right;padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:#10b981;font-weight:700">${fmtN(item.wage)}</td><td style="text-align:right;padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:#f59e0b;font-weight:700">${fmtN(item.sales)}</td><td style="text-align:right;padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:#64748b">${fmtN(item.cost)}</td><td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:#475569;font-size:11px">🔍</td></tr>`;}).join('');
+    return`<div style="margin-bottom:20px"><div style="font-size:12px;font-weight:700;color:#475569;display:flex;align-items:center;gap:8px;margin-bottom:10px;letter-spacing:.04em">依 ${groupLabel} 分組<div style="flex:1;height:1px;background:#2d3f56"></div></div><div class="table-wrap"><table><thead><tr><th style="${thStyle}min-width:120px">${groupLabel}</th><th style="${thStyle}text-align:right">台數</th><th style="${thStyle}text-align:right">工時(hr)</th><th style="${thStyle}text-align:right">工資(元)</th><th style="${thStyle}text-align:right">銷售材料費(元)</th><th style="${thStyle}text-align:right">維修材料成本(元)</th><th style="${thStyle}width:30px"></th></tr></thead><tbody>${rowsHtml}<tr style="background:rgba(249,115,22,.07)"><td style="padding:10px 12px;font-weight:800;color:#f97316">合計</td><td style="text-align:right;padding:10px 12px;font-weight:800;color:#f97316">${total.count}</td><td style="text-align:right;padding:10px 12px;color:#3b82f6">${fmtH(total.hours)}</td><td style="text-align:right;padding:10px 12px;color:#10b981;font-weight:800">${fmtN(total.wage)}</td><td style="text-align:right;padding:10px 12px;color:#f59e0b;font-weight:800">${fmtN(total.sales)}</td><td style="text-align:right;padding:10px 12px;color:#64748b">${fmtN(total.cost)}</td><td></td></tr><tr style="background:rgba(100,116,139,.05)"><td style="padding:8px 12px;font-size:12px;color:#64748b">合計（扣 PDI ${pdiSum.count} 台）</td><td style="text-align:right;padding:8px 12px;font-size:12px;color:#64748b">${total.count-pdiSum.count}</td><td style="text-align:right;padding:8px 12px;font-size:12px;color:#64748b">${fmtH(total.hours-pdiSum.hours)}</td><td style="text-align:right;padding:8px 12px;font-size:12px;color:#64748b">${fmtN(total.wage-pdiSum.wage)}</td><td style="text-align:right;padding:8px 12px;font-size:12px;color:#64748b">${fmtN(total.sales-pdiSum.sales)}</td><td style="text-align:right;padding:8px 12px;font-size:12px;color:#64748b">${fmtN(total.cost-pdiSum.cost)}</td><td></td></tr></tbody></table></div></div>`;
   };
-
-  const thStyle = 'background:#0f172a;color:#64748b;font-size:11px;font-weight:700;padding:9px 12px;border-bottom:1px solid #2d3f56;white-space:nowrap;';
-  const buildTable = (items, groupLabel, clickType) => {
-    if (!items.length) return '';
-    const total = items.reduce((s, i) => ({
-      count: s.count + i.count, hours: s.hours + i.hours,
-      wage:  s.wage  + i.wage,  sales: s.sales + i.sales, cost: s.cost + i.cost
-    }), { count: 0, hours: 0, wage: 0, sales: 0, cost: 0 });
-
-    const rowsHtml = items.map(item => {
-      const esc = item.label.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-      return `<tr style="cursor:pointer;transition:background .1s"
-        onclick="openWipDetail('${clickType}','${esc}')"
-        onmouseover="this.querySelectorAll('td').forEach(c=>c.style.background='rgba(59,130,246,.07)')"
-        onmouseout="this.querySelectorAll('td').forEach(c=>c.style.background='')">
-        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3)">
-          <span style="font-weight:700;color:#e2e8f0">${item.label}</span>
-        </td>
-        <td style="text-align:right;padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);font-weight:800;color:#f97316">${item.count}</td>
-        <td style="text-align:right;padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:#3b82f6">${fmtH(item.hours)}</td>
-        <td style="text-align:right;padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:#10b981;font-weight:700">${fmtN(item.wage)}</td>
-        <td style="text-align:right;padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:#f59e0b;font-weight:700">${fmtN(item.sales)}</td>
-        <td style="text-align:right;padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:#64748b">${fmtN(item.cost)}</td>
-        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:#475569;font-size:11px">🔍</td>
-      </tr>`;
-    }).join('');
-
-    return `
-      <div style="margin-bottom:20px">
-        <div style="font-size:12px;font-weight:700;color:#475569;display:flex;align-items:center;gap:8px;margin-bottom:10px;letter-spacing:.04em">
-          依 ${groupLabel} 分組
-          <div style="flex:1;height:1px;background:#2d3f56"></div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr>
-              <th style="${thStyle}min-width:120px">${groupLabel}</th>
-              <th style="${thStyle}text-align:right">台數</th>
-              <th style="${thStyle}text-align:right">工時(hr)</th>
-              <th style="${thStyle}text-align:right">工資(元)</th>
-              <th style="${thStyle}text-align:right">銷售材料費(元)</th>
-              <th style="${thStyle}text-align:right">維修材料成本(元)</th>
-              <th style="${thStyle}width:30px"></th>
-            </tr></thead>
-            <tbody>
-              ${rowsHtml}
-              <tr style="background:rgba(249,115,22,.07)">
-                <td style="padding:10px 12px;font-weight:800;color:#f97316">合計</td>
-                <td style="text-align:right;padding:10px 12px;font-weight:800;color:#f97316">${total.count}</td>
-                <td style="text-align:right;padding:10px 12px;color:#3b82f6">${fmtH(total.hours)}</td>
-                <td style="text-align:right;padding:10px 12px;color:#10b981;font-weight:800">${fmtN(total.wage)}</td>
-                <td style="text-align:right;padding:10px 12px;color:#f59e0b;font-weight:800">${fmtN(total.sales)}</td>
-                <td style="text-align:right;padding:10px 12px;color:#64748b">${fmtN(total.cost)}</td>
-                <td></td>
-              </tr>
-              <tr style="background:rgba(100,116,139,.05)">
-                <td style="padding:8px 12px;font-size:12px;color:#64748b">合計（扣 PDI ${pdiSum.count} 台）</td>
-                <td style="text-align:right;padding:8px 12px;font-size:12px;color:#64748b">${total.count - pdiSum.count}</td>
-                <td style="text-align:right;padding:8px 12px;font-size:12px;color:#64748b">${fmtH(total.hours - pdiSum.hours)}</td>
-                <td style="text-align:right;padding:8px 12px;font-size:12px;color:#64748b">${fmtN(total.wage - pdiSum.wage)}</td>
-                <td style="text-align:right;padding:8px 12px;font-size:12px;color:#64748b">${fmtN(total.sales - pdiSum.sales)}</td>
-                <td style="text-align:right;padding:8px 12px;font-size:12px;color:#64748b">${fmtN(total.cost - pdiSum.cost)}</td>
-                <td></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>`;
-  };
-
-  const html = (buildTable(byAccountType, '帳類', 'account_type') || '') +
-               (buildTable(byRepairType,  '維修類型', 'repair_type') || '') ||
-               '<div class="empty">此期間無未結工單</div>';
-  wrapEl.innerHTML = html;
+  const html=(buildTable(byAccountType,'帳類','account_type')||'')+(buildTable(byRepairType,'維修類型','repair_type')||'')||'<div class="empty">此期間無未結工單</div>';
+  wrapEl.innerHTML=html;
 }
 
-function openWipDetail(filterType, filterValue) {
-  let filtered;
-  if (filterType === 'account_type') {
-    filtered = _wipRows.filter(r => (r.account_type || '（未知）') === filterValue);
-  } else {
-    filtered = _wipRows.filter(r => (r.repair_type || '（未知）') === filterValue);
-  }
-  _wipModalFiltered = filtered;
-
-  const typeLabel = filterType === 'account_type' ? '帳類' : '維修類型';
-  document.getElementById('wipModalTitle').textContent = `WIP 未結工單 — ${typeLabel}：${filterValue}`;
-  document.getElementById('wipModalCount').textContent = `共 ${filtered.length} 筆`;
-
-  const bCol = { AMA: '#3b82f6', AMC: '#10b981', AMD: '#f59e0b' };
-  const fmtH = v => parseFloat(v || 0).toFixed(1);
-  const fmtN = v => Math.round(parseFloat(v || 0)).toLocaleString();
-  const fmtDate = v => {
-    if (!v) return '—';
-    const s = String(v);
-    return s.length >= 10 ? s.slice(0, 10) : s;
-  };
-
-  const thS = 'background:#0f172a;color:#64748b;font-size:11px;font-weight:700;padding:8px 10px;border-bottom:1px solid #2d3f56;white-space:nowrap;position:sticky;top:0;z-index:2;';
-  const thR = thS + 'text-align:right;';
-
-  let totH = 0, totW = 0, totS = 0, totC = 0;
-  const bodyHtml = filtered.map((row, i) => {
-    const col = bCol[row.branch] || '#94a3b8';
-    const h = parseFloat(row.hours    || 0);
-    const w = parseFloat(row.wage     || 0);
-    const s = parseFloat(row.sales_amt|| 0);
-    const c = parseFloat(row.cost_amt || 0);
-    totH += h; totW += w; totS += s; totC += c;
-    return `<tr>
-      <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);color:#475569;font-size:11px">${i+1}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);font-family:monospace;font-size:11px;white-space:nowrap">${row.work_order}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3)">
-        <span style="background:${col}22;color:${col};padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">${row.branch}</span>
-      </td>
-      <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);white-space:nowrap">${row.plate_no || '—'}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3)">${row.account_type || '—'}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3)">${row.repair_type || '—'}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);white-space:nowrap;font-size:11px">${fmtDate(row.open_time)}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;color:#3b82f6">${fmtH(h)}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;color:#10b981;font-weight:700">${fmtN(w)}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;color:#f59e0b;font-weight:700">${fmtN(s)}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;color:#64748b">${fmtN(c)}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);font-size:11px">${row.service_advisor || '—'}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3)">${row.car_series || '—'}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3)">
-        ${row.is_pdi ? '<span style="background:rgba(245,158,11,.15);color:#f59e0b;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:700">PDI</span>' : ''}
-      </td>
-    </tr>`;
-  }).join('');
-
-  document.getElementById('wipModalTable').innerHTML = `
-    <thead><tr>
-      <th style="${thS}width:28px">#</th>
-      <th style="${thS}">工單號</th>
-      <th style="${thS}">據點</th>
-      <th style="${thS}">車牌</th>
-      <th style="${thS}">帳類</th>
-      <th style="${thS}">維修類型</th>
-      <th style="${thS}">開單時間</th>
-      <th style="${thR}">工時(hr)</th>
-      <th style="${thR}">工資(元)</th>
-      <th style="${thR}">銷售材料費(元)</th>
-      <th style="${thR}">維修材料成本(元)</th>
-      <th style="${thS}">SA</th>
-      <th style="${thS}">車系</th>
-      <th style="${thS}">標記</th>
-    </tr></thead>
-    <tbody>
-      ${bodyHtml || '<tr><td colspan="14" class="empty">無資料</td></tr>'}
-      <tr style="background:rgba(249,115,22,.08);font-weight:800;border-top:2px solid #374151">
-        <td colspan="7" style="padding:9px 10px;color:#f97316">合計（${filtered.length} 筆）</td>
-        <td style="padding:9px 10px;text-align:right;color:#3b82f6">${totH.toFixed(1)}</td>
-        <td style="padding:9px 10px;text-align:right;color:#10b981">${fmtN(totW)}</td>
-        <td style="padding:9px 10px;text-align:right;color:#f59e0b">${fmtN(totS)}</td>
-        <td style="padding:9px 10px;text-align:right;color:#64748b">${fmtN(totC)}</td>
-        <td colspan="3"></td>
-      </tr>
-    </tbody>`;
-
-  document.getElementById('wipModalStats').textContent =
-    `工時 ${totH.toFixed(1)} hr｜工資 ${fmtN(totW)} 元｜銷售材料費 ${fmtN(totS)} 元｜材料成本 ${fmtN(totC)} 元`;
-
-  document.getElementById('wipDetailModal').style.display = 'flex';
+function openWipDetail(filterType,filterValue){
+  const filtered=filterType==='account_type'?_wipRows.filter(r=>(r.account_type||'（未知）')===filterValue):_wipRows.filter(r=>(r.repair_type||'（未知）')===filterValue);
+  _wipModalFiltered=filtered;
+  const typeLabel=filterType==='account_type'?'帳類':'維修類型';
+  document.getElementById('wipModalTitle').textContent=`WIP 未結工單 — ${typeLabel}：${filterValue}`;
+  document.getElementById('wipModalCount').textContent=`共 ${filtered.length} 筆`;
+  const bCol={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
+  const fmtH=v=>parseFloat(v||0).toFixed(1);
+  const fmtN=v=>Math.round(parseFloat(v||0)).toLocaleString();
+  const fmtDate=v=>{if(!v)return'—';const s=String(v);return s.length>=10?s.slice(0,10):s;};
+  const thS='background:#0f172a;color:#64748b;font-size:11px;font-weight:700;padding:8px 10px;border-bottom:1px solid #2d3f56;white-space:nowrap;position:sticky;top:0;z-index:2;';
+  const thR=thS+'text-align:right;';
+  let totH=0,totW=0,totS=0,totC=0;
+  const bodyHtml=filtered.map((row,i)=>{const col=bCol[row.branch]||'#94a3b8';const h=parseFloat(row.hours||0),w=parseFloat(row.wage||0),s=parseFloat(row.sales_amt||0),c=parseFloat(row.cost_amt||0);totH+=h;totW+=w;totS+=s;totC+=c;return`<tr><td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);color:#475569;font-size:11px">${i+1}</td><td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);font-family:monospace;font-size:11px;white-space:nowrap">${row.work_order}</td><td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3)"><span style="background:${col}22;color:${col};padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">${row.branch}</span></td><td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);white-space:nowrap">${row.plate_no||'—'}</td><td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3)">${row.account_type||'—'}</td><td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3)">${row.repair_type||'—'}</td><td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);white-space:nowrap;font-size:11px">${fmtDate(row.open_time)}</td><td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;color:#3b82f6">${fmtH(h)}</td><td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;color:#10b981;font-weight:700">${fmtN(w)}</td><td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;color:#f59e0b;font-weight:700">${fmtN(s)}</td><td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;color:#64748b">${fmtN(c)}</td><td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);font-size:11px">${row.service_advisor||'—'}</td><td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3)">${row.car_series||'—'}</td><td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3)">${row.is_pdi?'<span style="background:rgba(245,158,11,.15);color:#f59e0b;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:700">PDI</span>':''}</td></tr>`;}).join('');
+  document.getElementById('wipModalTable').innerHTML=`<thead><tr><th style="${thS}width:28px">#</th><th style="${thS}">工單號</th><th style="${thS}">據點</th><th style="${thS}">車牌</th><th style="${thS}">帳類</th><th style="${thS}">維修類型</th><th style="${thS}">開單時間</th><th style="${thR}">工時(hr)</th><th style="${thR}">工資(元)</th><th style="${thR}">銷售材料費(元)</th><th style="${thR}">維修材料成本(元)</th><th style="${thS}">SA</th><th style="${thS}">車系</th><th style="${thS}">標記</th></tr></thead><tbody>${bodyHtml||'<tr><td colspan="14" class="empty">無資料</td></tr>'}<tr style="background:rgba(249,115,22,.08);font-weight:800;border-top:2px solid #374151"><td colspan="7" style="padding:9px 10px;color:#f97316">合計（${filtered.length} 筆）</td><td style="padding:9px 10px;text-align:right;color:#3b82f6">${totH.toFixed(1)}</td><td style="padding:9px 10px;text-align:right;color:#10b981">${fmtN(totW)}</td><td style="padding:9px 10px;text-align:right;color:#f59e0b">${fmtN(totS)}</td><td style="padding:9px 10px;text-align:right;color:#64748b">${fmtN(totC)}</td><td colspan="3"></td></tr></tbody>`;
+  document.getElementById('wipModalStats').textContent=`工時 ${totH.toFixed(1)} hr｜工資 ${fmtN(totW)} 元｜銷售材料費 ${fmtN(totS)} 元｜材料成本 ${fmtN(totC)} 元`;
+  document.getElementById('wipDetailModal').style.display='flex';
 }
 
-function closeWipModal() {
-  document.getElementById('wipDetailModal').style.display = 'none';
+function closeWipModal(){document.getElementById('wipDetailModal').style.display='none';}
+
+function exportWipModalCSV(){
+  if(!_wipModalFiltered.length)return;
+  const cols=[['work_order','工單號'],['branch','據點'],['plate_no','車牌'],['account_type','帳類'],['repair_type','維修類型'],['open_time','開單時間'],['hours','工時'],['wage','工資'],['sales_amt','銷售材料費'],['cost_amt','維修材料成本'],['service_advisor','SA'],['car_series','車系']];
+  const header=cols.map(c=>c[1]).join(',');
+  const rows=_wipModalFiltered.map(r=>cols.map(([key])=>{const v=r[key]===null||r[key]===undefined?'':String(r[key]);return v.includes(',')||v.includes('"')?'"'+v.replace(/"/g,'""')+'"':v;}).join(','));
+  const csv='\uFEFF'+[header,...rows].join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`wip_detail_${Date.now()}.csv`;a.click();URL.revokeObjectURL(url);
 }
 
-function exportWipModalCSV() {
-  if (!_wipModalFiltered.length) return;
-  const cols = [
-    ['work_order','工單號'],['branch','據點'],['plate_no','車牌'],
-    ['account_type','帳類'],['repair_type','維修類型'],['open_time','開單時間'],
-    ['hours','工時'],['wage','工資'],['sales_amt','銷售材料費'],
-    ['cost_amt','維修材料成本'],['service_advisor','SA'],['car_series','車系'],
-  ];
-  const header = cols.map(c => c[1]).join(',');
-  const rows = _wipModalFiltered.map(r =>
-    cols.map(([key]) => {
-      const v = r[key] === null || r[key] === undefined ? '' : String(r[key]);
-      return v.includes(',') || v.includes('"') ? `"${v.replace(/"/g,'""')}"` : v;
-    }).join(',')
-  );
-  const csv = '\uFEFF' + [header, ...rows].join('\r\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `wip_detail_${Date.now()}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
- 
 (async()=>{ await loadPeriods(); await loadAll(); })();
 </script>
 </body>
