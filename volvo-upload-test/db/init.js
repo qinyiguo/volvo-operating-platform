@@ -57,8 +57,19 @@ const initDatabase = async () => {
         service_advisor VARCHAR(50), assigned_tech VARCHAR(50), repair_tech VARCHAR(50),
         repair_type VARCHAR(50), car_series VARCHAR(50), car_model VARCHAR(50),
         model_year VARCHAR(10), owner VARCHAR(100), is_ev VARCHAR(10),
-        mileage_in INTEGER, mileage_out INTEGER, created_at TIMESTAMPTZ DEFAULT NOW()
+        mileage_in INTEGER, mileage_out INTEGER,
+        repair_amount NUMERIC(12,2) DEFAULT 0,
+        labor_fee NUMERIC(12,2) DEFAULT 0,
+        repair_material_fee NUMERIC(12,2) DEFAULT 0,
+        sales_material_fee NUMERIC(12,2) DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT NOW()
       )`);
+
+    // 舊資料庫補欄位
+    await client.query(`ALTER TABLE business_query ADD COLUMN IF NOT EXISTS repair_amount NUMERIC(12,2) DEFAULT 0`);
+    await client.query(`ALTER TABLE business_query ADD COLUMN IF NOT EXISTS labor_fee NUMERIC(12,2) DEFAULT 0`);
+    await client.query(`ALTER TABLE business_query ADD COLUMN IF NOT EXISTS repair_material_fee NUMERIC(12,2) DEFAULT 0`);
+    await client.query(`ALTER TABLE business_query ADD COLUMN IF NOT EXISTS sales_material_fee NUMERIC(12,2) DEFAULT 0`);
 
     const bqCheck = await client.query(
       `SELECT column_name FROM information_schema.columns
