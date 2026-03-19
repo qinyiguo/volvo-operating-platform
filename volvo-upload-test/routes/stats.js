@@ -570,9 +570,7 @@ router.get('/stats/wip', async (req, res) => {
         -- 累計：open_time 在選定月份月底之前（含當月整月）
         bq.open_time < (to_date($1 || '01', 'YYYYMMDD') + interval '1 month')
         ${branchCond}
-        -- 排除 PDI / PV
-        AND COALESCE(bq.repair_type, '') NOT ILIKE '%PDI%'
-        AND COALESCE(bq.repair_item,  '') NOT ILIKE '%PDI%'
+        -- 只排除外賣 PV，PDI 保留（在前端標記顯示）
         AND COALESCE(bq.repair_type, '') NOT ILIKE '%PV%'
         -- 未結：repair_income 無對應工單（不限 period）
         AND NOT EXISTS (
@@ -587,16 +585,19 @@ router.get('/stats/wip', async (req, res) => {
 
     const byRepairType = {};
     const byPeriod     = {};
-    let total = { count: 0, wage: 0, sales: 0, cost: 0, c30: 0, cOver30: 0 };
+    let total   = { count: 0, wage: 0, sales: 0, cost: 0, c30: 0, cOver30: 0 };
+    let exclPdi = { count: 0, wage: 0, sales: 0, cost: 0, c30: 0, cOver30: 0 };
 
     for (const row of rows) {
-      const rt   = row.repair_type  || '（未知）';
-      const per  = row.open_period  || '（未知）';
-      const w    = parseFloat(row.wage      || 0);
-      const s    = parseFloat(row.sales_amt || 0);
-      const c    = parseFloat(row.cost_amt  || 0);
-      const days = row.days_open !== null ? parseFloat(row.days_open) : null;
+      const rt      = row.repair_type || '（未知）';
+      const per     = row.open_period || '（未知）';
+      const w       = parseFloat(row.wage      || 0);
+      const s       = parseFloat(row.sales_amt || 0);
+      const c       = parseFloat(row.cost_amt  || 0);
+      const days    = row.days_open !== null ? parseFloat(row.days_open) : null;
       const isOver30 = days !== null && days > 30;
+      // is_pdi: repair_type 或 repair_item 含 PDI
+      const isPdi   = /PDI/i.test(row.repair_type || '') || /PDI/i.test(row.repair_item || '');
 
       const inc = (obj) => {
         obj.count++;
@@ -613,14 +614,18 @@ router.get('/stats/wip', async (req, res) => {
       inc(byPeriod[per]);
 
       inc(total);
+      if (!isPdi) inc(exclPdi);
+
+      // 在 row 上標記，供前端用
+      row.is_pdi = isPdi;
     }
 
     res.json({
       rows,
       summary: {
         total,
-        exclPdi: total,   // PDI 已在 SQL 排除，exclPdi = total
-        byAccountType: Object.values(byPeriod).sort((a,b) => b.label < a.label ? 1 : -1), // 用「進廠月份」替代帳類
+        exclPdi,
+        byAccountType: Object.values(byPeriod).sort((a,b) => a.label < b.label ? -1 : 1), // 用「進廠月份」替代帳類，升序
         byRepairType:  Object.values(byRepairType).sort((a,b) => b.count - a.count),
       },
     });
