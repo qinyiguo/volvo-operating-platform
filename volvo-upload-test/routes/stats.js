@@ -526,19 +526,15 @@ router.get('/stats/performance', async (req, res) => {
 });
 
 // ── WIP 未結工單 ──
+// ── WIP 未結工單 ── (取代 stats.js 中原有的 /stats/wip 路由)
 router.get('/stats/wip', async (req, res) => {
   const { period, branch } = req.query;
   if (!period) return res.status(400).json({ error: 'period 為必填' });
   try {
-    // tp / ps 以 period 篩選，bq JOIN 不加 period（跨月未結也能抓到）
     const params = [period]; let idx = 2;
     const branchCond = branch ? ` AND branch=$${idx++}` : '';
     if (branch) params.push(branch);
-    // ps 也用同一批 params（period 再 push 一次）
-    const psParams = [...params]; psParams[0] = period; // 確保 period 在 $1
 
-    // 用一個統一的 params array：$1=period, [$2=branch 若有]
-    // tp 和 ps 都共用同一段 where，CTE 直接帶入
     const r = await pool.query(`
       WITH tp_agg AS (
         SELECT work_order, branch,
@@ -581,7 +577,12 @@ router.get('/stats/wip', async (req, res) => {
         COALESCE(
           bq.repair_type ILIKE '%PDI%' OR bq.repair_item ILIKE '%PDI%',
           false
-        )                                AS is_pdi
+        )                                AS is_pdi,
+        CASE
+          WHEN bq.open_time IS NOT NULL
+          THEN EXTRACT(DAY FROM (NOW() - bq.open_time))
+          ELSE NULL
+        END                              AS days_open
       FROM all_orders ao
       LEFT JOIN business_query bq
         ON bq.work_order = ao.work_order AND bq.branch = ao.branch
@@ -597,32 +598,36 @@ router.get('/stats/wip', async (req, res) => {
 
     const byAccountType = {};
     const byRepairType  = {};
-    let total   = { count: 0, hours: 0, wage: 0, sales: 0, cost: 0 };
-    let exclPdi = { count: 0, hours: 0, wage: 0, sales: 0, cost: 0 };
+    let total   = { count: 0, hours: 0, wage: 0, sales: 0, cost: 0, c30: 0, cOver30: 0 };
+    let exclPdi = { count: 0, hours: 0, wage: 0, sales: 0, cost: 0, c30: 0, cOver30: 0 };
 
     for (const row of rows) {
-      const at = row.account_type || '（未知）';
-      const rt = row.repair_type  || '（未知）';
-      const h  = parseFloat(row.hours    || 0);
-      const w  = parseFloat(row.wage     || 0);
-      const s  = parseFloat(row.sales_amt|| 0);
-      const c  = parseFloat(row.cost_amt || 0);
+      const at  = row.account_type || '（未知）';
+      const rt  = row.repair_type  || '（未知）';
+      const h   = parseFloat(row.hours    || 0);
+      const w   = parseFloat(row.wage     || 0);
+      const s   = parseFloat(row.sales_amt|| 0);
+      const c   = parseFloat(row.cost_amt || 0);
+      const days = row.days_open !== null ? parseFloat(row.days_open) : null;
+      const isOver30 = days !== null ? days > 30 : false;
 
-      if (!byAccountType[at]) byAccountType[at] = { label: at, count: 0, hours: 0, wage: 0, sales: 0, cost: 0 };
-      byAccountType[at].count++;
-      byAccountType[at].hours += h; byAccountType[at].wage  += w;
-      byAccountType[at].sales += s; byAccountType[at].cost  += c;
+      const inc = (obj) => {
+        obj.count++;
+        obj.hours += h; obj.wage += w;
+        obj.sales += s; obj.cost += c;
+        if (days !== null) {
+          if (isOver30) obj.cOver30++; else obj.c30++;
+        }
+      };
 
-      if (!byRepairType[rt]) byRepairType[rt] = { label: rt, count: 0, hours: 0, wage: 0, sales: 0, cost: 0 };
-      byRepairType[rt].count++;
-      byRepairType[rt].hours += h; byRepairType[rt].wage  += w;
-      byRepairType[rt].sales += s; byRepairType[rt].cost  += c;
+      if (!byAccountType[at]) byAccountType[at] = { label: at, count: 0, hours: 0, wage: 0, sales: 0, cost: 0, c30: 0, cOver30: 0 };
+      inc(byAccountType[at]);
 
-      total.count++; total.hours += h; total.wage += w; total.sales += s; total.cost += c;
-      if (!row.is_pdi) {
-        exclPdi.count++; exclPdi.hours += h; exclPdi.wage += w;
-        exclPdi.sales += s; exclPdi.cost += c;
-      }
+      if (!byRepairType[rt]) byRepairType[rt] = { label: rt, count: 0, hours: 0, wage: 0, sales: 0, cost: 0, c30: 0, cOver30: 0 };
+      inc(byRepairType[rt]);
+
+      inc(total);
+      if (!row.is_pdi) inc(exclPdi);
     }
 
     res.json({
