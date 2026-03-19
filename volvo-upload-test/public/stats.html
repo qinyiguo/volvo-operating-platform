@@ -2,25 +2,36 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-<title>Volvo 營運統計</title> 
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Volvo 營運統計</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
   .sticky-header { position: sticky; top: 0; z-index: 200; background: #0f172a; box-shadow: 0 2px 20px rgba(0,0,0,.6); }
-  .nav { background: #1e293b; border-bottom: 1px solid #2d3f56; padding: 0 24px; display: flex; align-items: center; }
-  .nav-brand { font-size: 15px; font-weight: 700; color: #fff; padding: 16px 0; margin-right: 24px; }
-  .nav-link { padding: 16px 16px; color: #64748b; font-size: 13px; font-weight: 600; text-decoration: none; border-bottom: 2px solid transparent; }
+
+  /* ── Nav ── */
+  .nav { background: #1e293b; border-bottom: 1px solid #2d3f56; padding: 0 24px; display: flex; align-items: center; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav-brand { font-size: 15px; font-weight: 700; color: #fff; padding: 16px 0; margin-right: 24px; white-space: nowrap; flex-shrink: 0; }
+  .nav-link { padding: 16px 16px; color: #64748b; font-size: 13px; font-weight: 600; text-decoration: none; border-bottom: 2px solid transparent; white-space: nowrap; flex-shrink: 0; }
   .nav-link:hover { color: #e2e8f0; }
   .nav-link.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+
+  /* ── Header ── */
   .header-inner { padding: 10px 24px; background: #0f172a; border-bottom: 1px solid #2d3f56; }
   .filter-bar { display: flex; gap: 10px; align-items: center; background: #1e293b; border: 1px solid #2d3f56; border-radius: 10px; padding: 10px 16px; margin-bottom: 10px; flex-wrap: wrap; }
   .filter-bar label { font-size: 12px; color: #64748b; font-weight: 600; }
   .filter-bar select { background: #0f172a; border: 1px solid #2d3f56; color: #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 13px; }
-  .tabs { display: flex; gap: 2px; background: #1e293b; border-radius: 8px; padding: 3px; flex-wrap: wrap; }
+
+  /* Tab bar — scrollable on mobile */
+  .tabs-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .tabs-wrap::-webkit-scrollbar { display: none; }
+  .tabs { display: flex; gap: 2px; background: #1e293b; border-radius: 8px; padding: 3px; width: max-content; min-width: 100%; }
   .tab { padding: 8px 16px; border: none; background: transparent; color: #64748b; font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 6px; white-space: nowrap; }
   .tab:hover { color: #e2e8f0; background: #253347; }
   .tab.active { background: #3b82f6; color: #fff; }
+
+  /* ── Layout ── */
   .container { padding: 16px 24px 40px; max-width: 1400px; margin: 0 auto; }
   .btn { padding: 7px 16px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; }
   .btn-primary { background: #3b82f6; color: #fff; }
@@ -28,22 +39,30 @@
   .btn-secondary { background: #253347; color: #cbd5e1; border: 1px solid #2d3f56; }
   .btn-secondary:hover { background: #2d3f56; }
   .btn-sm { padding: 4px 10px; font-size: 12px; }
-  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+
+  /* ── KPI ── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
   .kpi-card { background: #1e293b; border: 1px solid #2d3f56; border-radius: 10px; padding: 18px; }
   .kpi-label { font-size: 12px; color: #64748b; margin-bottom: 6px; }
   .kpi-value { font-size: 26px; font-weight: 800; color: #fff; }
   .kpi-sub { font-size: 12px; color: #64748b; margin-top: 4px; }
   .kpi-green  { color: #10b981; } .kpi-blue   { color: #3b82f6; } .kpi-yellow { color: #f59e0b; }
   .kpi-purple { color: #8b5cf6; } .kpi-red    { color: #ef4444; } .kpi-teal   { color: #14b8a6; } .kpi-orange { color: #f97316; }
+
+  /* ── Cards ── */
   .card { background: #1a2332; border: 1px solid #2d3f56; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
-  .card-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .card-title-note { font-size: 11px; font-weight: 400; color: #64748b; margin-left: auto; }
+
+  /* ── Tables ── */
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   th { background: #0f172a; color: #64748b; font-size: 12px; font-weight: 600; text-align: left; padding: 10px 12px; border-bottom: 1px solid #2d3f56; white-space: nowrap; }
   td { padding: 9px 12px; border-bottom: 1px solid rgba(45,63,86,.4); vertical-align: middle; }
   tr:hover td { background: rgba(37,51,71,.5); }
   .num { text-align: right; font-variant-numeric: tabular-nums; }
-  .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #2d3f56; }
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid #2d3f56; }
+
+  /* ── Badges ── */
   .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
   .badge-blue   { background: rgba(59,130,246,.15); color: #3b82f6; }
   .badge-green  { background: rgba(16,185,129,.15); color: #10b981; }
@@ -53,19 +72,23 @@
   .badge-teal   { background: rgba(20,184,166,.15); color: #14b8a6; }
   .badge-orange { background: rgba(249,115,22,.15); color: #f97316; }
   .badge-gray   { background: rgba(100,116,139,.15); color: #94a3b8; }
+
+  /* ── States ── */
   .empty { text-align: center; padding: 48px; color: #64748b; font-size: 14px; }
   .loading { text-align: center; padding: 48px; color: #64748b; }
   .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #2d3f56; border-top-color: #3b82f6; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 8px; vertical-align: middle; }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Misc ── */
   .rank-no { font-weight: 800; color: #64748b; width: 30px; }
   .rank-1 { color: #f59e0b; } .rank-2 { color: #94a3b8; } .rank-3 { color: #b45309; }
   .bar-wrap { display: flex; align-items: center; gap: 8px; }
-  .bar-bg { flex: 1; background: #0f172a; border-radius: 4px; height: 6px; min-width: 60px; }
+  .bar-bg { flex: 1; background: #0f172a; border-radius: 4px; height: 6px; min-width: 40px; }
   .bar-fill { height: 6px; border-radius: 4px; background: #3b82f6; }
   .bar-fill.green { background: #10b981; }
   .up { color: #10b981; } .down { color: #ef4444; }
   .income-section-title { font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .06em; padding: 0 0 10px; margin-bottom: 12px; border-bottom: 1px solid #2d3f56; display: flex; align-items: center; gap: 8px; }
-  .income-category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 20px; }
+  .income-category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
   .income-cat-card { background: #0f172a; border: 1px solid #2d3f56; border-radius: 10px; padding: 14px 16px; position: relative; overflow: hidden; }
   .income-cat-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 3px 0 0 3px; }
   .income-cat-card.type-general::before   { background: #3b82f6; }
@@ -80,15 +103,15 @@
   .income-cat-card.type-vsa::before       { background: #ec4899; }
   .income-cat-card.type-goodwill::before  { background: #06b6d4; }
   .income-cat-label { font-size: 11px; color: #64748b; margin-bottom: 5px; font-weight: 600; }
-  .income-cat-value { font-size: 22px; font-weight: 800; }
+  .income-cat-value { font-size: 20px; font-weight: 800; }
   .income-cat-sub   { font-size: 11px; color: #64748b; margin-top: 3px; }
   .income-cat-card.type-general .income-cat-value   { color: #3b82f6; }
   .income-cat-card.type-insurance .income-cat-value { color: #10b981; }
   .income-cat-card.type-extended .income-cat-value  { color: #8b5cf6; }
   .income-cat-card.type-voucher .income-cat-value   { color: #f59e0b; }
   .income-cat-card.type-external .income-cat-value  { color: #14b8a6; }
-  .income-cat-card.type-paid .income-cat-value      { color: #f97316; font-size: 26px; }
-  .income-cat-card.type-grand .income-cat-value     { color: #e2e8f0; font-size: 26px; }
+  .income-cat-card.type-paid .income-cat-value      { color: #f97316; font-size: 24px; }
+  .income-cat-card.type-grand .income-cat-value     { color: #e2e8f0; font-size: 24px; }
   .income-cat-card.type-internal .income-cat-value  { color: #94a3b8; }
   .income-cat-card.type-warranty .income-cat-value  { color: #818cf8; }
   .income-cat-card.type-vsa .income-cat-value       { color: #f472b6; }
@@ -102,7 +125,7 @@
   tr.total-row td { background: rgba(59,130,246,.08); font-weight: 800; }
   tr.total-row:hover td { background: rgba(59,130,246,.12); }
 
-  /* ══ Custom Period Selector ══ */
+  /* ── Period selector ── */
   .period-selector { position: relative; }
   .period-btn { display: flex; align-items: center; gap: 8px; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: 7px 12px 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .15s; user-select: none; min-width: 148px; justify-content: space-between; outline: none; }
   .period-btn:hover, .period-btn.open { border-color: #3b82f6; background: #141f33; }
@@ -113,7 +136,7 @@
   .period-dropdown { position: absolute; top: calc(100% + 6px); left: 0; background: #1a2740; border: 1px solid #334155; border-radius: 12px; box-shadow: 0 16px 48px rgba(0,0,0,.8); z-index: 9999; width: 260px; overflow: hidden; display: none; flex-direction: column; }
   .period-dropdown.open { display: flex; }
   .period-dd-header { padding: 12px 14px 10px; border-bottom: 1px solid #2d3f56; flex-shrink: 0; }
-  .period-dd-search input { width: 100%; background: #0f172a; border: 1px solid #2d3f56; color: #e2e8f0; padding: 7px 12px; border-radius: 7px; font-size: 12px; outline: none; transition: border-color .15s; }
+  .period-dd-search input { width: 100%; background: #0f172a; border: 1px solid #2d3f56; color: #e2e8f0; padding: 7px 12px; border-radius: 7px; font-size: 12px; outline: none; }
   .period-dd-search input:focus { border-color: #3b82f6; }
   .period-dd-list { overflow-y: auto; max-height: 340px; padding: 6px 0; }
   .period-dd-list::-webkit-scrollbar { width: 4px; }
@@ -133,11 +156,103 @@
   .period-dd-mo.has-data .mo-dot { background: #10b981; }
   .period-dd-mo.selected .mo-dot { background: #3b82f6; }
 
-  /* ══ SA sub-tab ══ */
+  /* ── SA sub-tab ── */
   .sa-subtab-bar { display: flex; gap: 2px; background: #1e293b; border: 1px solid #2d3f56; border-radius: 8px; padding: 3px; width: fit-content; }
-  .sa-subtab { padding: 7px 20px; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; background: transparent; color: #64748b; transition: all .15s; }
+  .sa-subtab { padding: 7px 20px; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; background: transparent; color: #64748b; transition: all .15s; white-space: nowrap; }
   .sa-subtab.active { background: #3b82f6; color: #fff; }
   .sa-subtab:hover:not(.active) { color: #e2e8f0; background: #253347; }
+
+  /* ════════════════════════════
+     MOBILE RESPONSIVE
+  ════════════════════════════ */
+  @media (max-width: 768px) {
+    /* Nav */
+    .nav { padding: 0 16px; }
+    .nav-brand { font-size: 13px; padding: 12px 0; margin-right: 16px; }
+    .nav-link { padding: 12px 10px; font-size: 12px; }
+
+    /* Header */
+    .header-inner { padding: 8px 12px 6px; }
+    .filter-bar { padding: 8px 12px; gap: 6px; }
+    .filter-bar label { font-size: 11px; }
+    .filter-bar select { font-size: 12px; padding: 5px 8px; }
+
+    /* Period button */
+    .period-btn { min-width: 120px; padding: 6px 10px; font-size: 12px; }
+    .period-btn .pb-month { font-size: 13px; }
+    .period-dropdown { width: calc(100vw - 32px); max-width: 300px; }
+
+    /* Tab bar */
+    .tabs { gap: 1px; padding: 2px; }
+    .tab { padding: 8px 12px; font-size: 12px; }
+
+    /* Container */
+    .container { padding: 10px 12px 32px; }
+
+    /* Cards */
+    .card { padding: 14px 12px; border-radius: 10px; }
+    .card-title { font-size: 13px; margin-bottom: 10px; }
+    .card-title-note { font-size: 10px; }
+
+    /* KPI grid — 2 col on mobile */
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px; }
+    .kpi-card { padding: 14px 12px; }
+    .kpi-value { font-size: 22px; }
+    .kpi-label { font-size: 11px; }
+    .kpi-sub { font-size: 11px; }
+
+    /* Grand KPI single card */
+    #grandKPI .kpi-card { max-width: 100% !important; }
+    #grandKPI .kpi-value { font-size: 26px !important; }
+
+    /* Income category grid — 2 col */
+    .income-category-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .income-cat-card { padding: 12px 12px; }
+    .income-cat-value { font-size: 18px; }
+    .income-cat-card.type-paid .income-cat-value,
+    .income-cat-card.type-grand .income-cat-value { font-size: 20px; }
+
+    /* Tables — horizontal scroll */
+    .table-wrap { border-radius: 6px; }
+    table { font-size: 12px; }
+    th { padding: 8px 10px; font-size: 11px; }
+    td { padding: 7px 10px; }
+
+    /* Bar wrap — shorter */
+    .bar-bg { min-width: 30px; }
+
+    /* Divider label */
+    .divider-label { font-size: 10px; margin: 14px 0 8px; }
+
+    /* Income section title */
+    .income-section-title { font-size: 11px; }
+
+    /* Btn */
+    .btn { padding: 6px 12px; font-size: 12px; }
+    .btn-sm { padding: 3px 8px; font-size: 11px; }
+
+    /* SA subtab */
+    .sa-subtab-bar { width: 100%; }
+    .sa-subtab { flex: 1; text-align: center; padding: 8px 10px; font-size: 12px; }
+
+    /* Daily chart container */
+    #dailyChart { min-width: unset; padding: 4px 0; }
+
+    /* KPI row for daily — allow wrap earlier */
+    #dailyKPI { grid-template-columns: repeat(2,1fr); }
+  }
+
+  @media (max-width: 480px) {
+    .nav-brand { font-size: 12px; }
+    .nav-link { font-size: 11px; padding: 12px 8px; }
+    .container { padding: 8px 10px 24px; }
+    .card { padding: 12px 10px; }
+    .kpi-grid { grid-template-columns: repeat(2,1fr); gap: 6px; }
+    .kpi-card { padding: 12px 10px; }
+    .kpi-value { font-size: 20px; }
+    .income-category-grid { grid-template-columns: repeat(2,1fr); gap: 6px; }
+    .tab { padding: 7px 10px; font-size: 11px; }
+  }
 </style>
 </head>
 <body>
@@ -145,7 +260,7 @@
 <div class="sticky-header">
   <nav class="nav">
     <span class="nav-brand">🚗 Volvo 營運統計</span>
-    <a href="/performance.html" class="nav-link">🎯 業績指標與預估</a>
+    <a href="/performance.html" class="nav-link">🎯 業績指標</a>
     <a href="/stats.html" class="nav-link active">📊 各廠明細</a>
     <a href="/query.html" class="nav-link">🔍 資料查詢</a>
     <a href="/settings.html" class="nav-link">⚙️ 設定</a>
@@ -162,16 +277,18 @@
         <option value="AMD">AMD</option>
       </select>
       <button class="btn btn-primary" onclick="loadAll()">查詢</button>
-      <span id="lastUpdate" style="margin-left:auto;font-size:12px;color:#64748b"></span>
+      <span id="lastUpdate" style="margin-left:auto;font-size:11px;color:#64748b;white-space:nowrap"></span>
     </div>
-    <div class="tabs">
-      <button class="tab active" onclick="switchTab('repair')">🔧 維修收入</button>
-      <button class="tab" onclick="switchTab('tech')">👨‍🔧 技師工資</button>
-      <button class="tab" onclick="switchTab('parts')">🔩 零件銷售</button>
-      <button class="tab" onclick="switchTab('boutique')">💎 精品配件銷售</button>
-      <button class="tab" onclick="switchTab('sa-sales')">📋 指標銷售與施工</button>
-      <button class="tab" onclick="switchTab('trend')">📈 月份趨勢</button>
-      <button class="tab" onclick="switchTab('daily')">📅 每日進廠台數</button>
+    <div class="tabs-wrap">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('repair')">🔧 維修收入</button>
+        <button class="tab" onclick="switchTab('tech')">👨‍🔧 技師工資</button>
+        <button class="tab" onclick="switchTab('parts')">🔩 零件銷售</button>
+        <button class="tab" onclick="switchTab('boutique')">💎 精品配件</button>
+        <button class="tab" onclick="switchTab('sa-sales')">📋 指標銷售</button>
+        <button class="tab" onclick="switchTab('trend')">📈 月份趨勢</button>
+        <button class="tab" onclick="switchTab('daily')">📅 每日進廠</button>
+      </div>
     </div>
   </div>
 </div>
@@ -182,22 +299,22 @@
     <div id="repairKPI" class="kpi-grid"></div>
     <div id="grandKPI"></div>
     <div class="card">
-      <div class="card-title">💰 收入分類分析（未稅）<span class="card-title-note">各收入欄位÷1.05換算未稅｜零件成本已為未稅｜外賣來自零件銷售</span></div>
+      <div class="card-title">💰 收入分類分析（未稅）<span class="card-title-note">各收入÷1.05換算未稅｜零件成本已為未稅</span></div>
       <div class="income-section-title">📊 有費收入摘要</div>
       <div id="incomeCategoryCards" class="income-category-grid"><div style="color:#64748b;font-size:13px;grid-column:1/-1"><span class="spinner"></span>載入中</div></div>
       <div class="divider-label">有費收入明細（未稅）</div>
       <div class="table-wrap" style="margin-bottom:16px">
         <table>
-          <thead><tr><th>據點</th><th>帳類</th><th class="num">台數</th><th class="num">引擎工資</th><th class="num">零件</th><th class="num">配件</th><th class="num">精品</th><th class="num">鈑金</th><th class="num">烤漆</th><th class="num">洗車美容</th><th class="num">外包</th><th class="num">附加服務</th><th class="num" style="color:#10b981">合計(未稅)</th></tr></thead>
+          <thead><tr><th>據點</th><th>帳類</th><th class="num">台數</th><th class="num">引擎工資</th><th class="num">零件</th><th class="num">配件</th><th class="num">精品</th><th class="num">鈑金</th><th class="num">烤漆</th><th class="num">洗車</th><th class="num">外包</th><th class="num">附加</th><th class="num" style="color:#10b981">合計(未稅)</th></tr></thead>
           <tbody id="tbIncomeRevenue"><tr><td colspan="13" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
         </table>
       </div>
-      <div class="divider-label">無費工單成本（內結 / 保固 / VSA / 善意維修）</div>
+      <div class="divider-label">無費工單成本</div>
       <div class="income-section-title" style="margin-top:4px">📋 無費工單成本摘要</div>
       <div id="incomeCostCards" class="income-category-grid"><div style="color:#64748b;font-size:13px;grid-column:1/-1"><span class="spinner"></span>載入中</div></div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>據點</th><th>帳類</th><th class="num">台數</th><th class="num" style="color:#3b82f6">零件銷售</th><th class="num" style="color:#10b981">配件銷售</th><th class="num" style="color:#f59e0b">精品銷售</th><th class="num">引擎工資</th><th class="num">鈑金</th><th class="num">烤漆</th><th class="num">洗車美容</th><th class="num">外包</th><th class="num">附加服務</th><th class="num">工資小計</th><th class="num">零件成本(未稅)</th><th class="num" style="color:#f59e0b">合計成本</th><th>附註</th></tr></thead>
+          <thead><tr><th>據點</th><th>帳類</th><th class="num">台數</th><th class="num" style="color:#3b82f6">零件銷售</th><th class="num" style="color:#10b981">配件銷售</th><th class="num" style="color:#f59e0b">精品銷售</th><th class="num">引擎工資</th><th class="num">鈑金</th><th class="num">烤漆</th><th class="num">洗車</th><th class="num">外包</th><th class="num">附加</th><th class="num">工資小計</th><th class="num">零件成本</th><th class="num" style="color:#f59e0b">合計成本</th><th>附註</th></tr></thead>
           <tbody id="tbIncomeCost"><tr><td colspan="16" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
         </table>
       </div>
@@ -206,7 +323,7 @@
       <div class="card-title">📋 SA 業績排名</div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>#</th><th>據點</th><th>服務顧問</th><th class="num">出廠台數</th><th class="num">總營收(未稅)</th><th class="num">引擎工資</th><th class="num">零件收入</th><th class="num">佔比</th></tr></thead>
+          <thead><tr><th>#</th><th>據點</th><th>服務顧問</th><th class="num">台數</th><th class="num">總營收(未稅)</th><th class="num">引擎工資</th><th class="num">零件收入</th><th class="num">佔比</th></tr></thead>
           <tbody id="tbSA"><tr><td colspan="8" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
         </table>
       </div>
@@ -270,8 +387,8 @@
         <div style="font-size:14px;font-weight:700">💎 精品 &amp; 配件銷售矩陣</div>
         <div style="font-size:12px;color:#64748b">金額單位：元（未稅）</div>
       </div>
-      <div style="overflow-x:auto;overflow-y:auto;max-height:70vh;padding:0 0 4px">
-        <div id="boutiqueMatrix" style="min-width:700px"><div style="padding:48px;text-align:center;color:#64748b"><span class="spinner"></span>載入中...</div></div>
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;overflow-y:auto;max-height:70vh;padding:0 0 4px">
+        <div id="boutiqueMatrix" style="min-width:600px"><div style="padding:48px;text-align:center;color:#64748b"><span class="spinner"></span>載入中...</div></div>
       </div>
     </div>
   </div>
@@ -283,19 +400,19 @@
         <button id="saSubBtn-sales" class="sa-subtab active" onclick="switchSaSubTab('sales')">👤 銷售人員</button>
         <button id="saSubBtn-tech"  class="sa-subtab"        onclick="switchSaSubTab('tech')">🔧 技師施工</button>
       </div>
-      <div id="saMatrixMeta" style="font-size:13px;color:#64748b"></div>
-      <a href="/settings.html" style="font-size:12px;color:#64748b;text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border:1px solid #2d3f56;border-radius:6px;background:#1e293b;margin-left:auto">⚙️ 管理設定</a>
+      <div id="saMatrixMeta" style="font-size:12px;color:#64748b"></div>
+      <a href="/settings.html" style="font-size:12px;color:#64748b;text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border:1px solid #2d3f56;border-radius:6px;background:#1e293b;margin-left:auto">⚙️ 設定</a>
     </div>
     <div id="saView-sales">
       <div class="card" style="padding:0">
-        <div style="overflow-x:auto;overflow-y:auto;max-height:70vh">
+        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;overflow-y:auto;max-height:70vh">
           <div id="saMatrix-sales"><div style="padding:48px;text-align:center;color:#64748b"><span class="spinner"></span>載入中...</div></div>
         </div>
       </div>
     </div>
     <div id="saView-tech" style="display:none">
       <div class="card" style="padding:0">
-        <div style="overflow-x:auto;overflow-y:auto;max-height:70vh">
+        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;overflow-y:auto;max-height:70vh">
           <div id="saMatrix-tech"><div style="padding:48px;text-align:center;color:#64748b"><span class="spinner"></span>載入中...</div></div>
         </div>
       </div>
@@ -320,9 +437,9 @@
     <div id="dailyKPI" class="kpi-grid"></div>
     <div class="card">
       <div class="card-title">📅 每日進廠台數（已排除 PDI）
-        <span class="card-title-note">日均台數 = 本月總台數 ÷ 已有資料工作天（進度均值）</span>
+        <span class="card-title-note">日均 = 總台數 ÷ 已有資料天（進度均值）</span>
       </div>
-      <div id="dailyChart" style="min-width:700px;padding:8px 0"></div>
+      <div id="dailyChart" style="padding:8px 0;overflow-x:auto;-webkit-overflow-scrolling:touch"></div>
     </div>
     <div class="card">
       <div class="card-title">📋 每日明細</div>
@@ -337,9 +454,9 @@
 </div>
 
 <script>
-
 let _currentPeriod='',_allPeriods=[];
 function getPeriod(){return _currentPeriod;}
+
 function renderPeriodSelectorStats(filterQ){
   const wrap=document.getElementById('periodSelectorWrap');if(!wrap)return;
   const now=new Date(),thisMonth=String(now.getFullYear())+String(now.getMonth()+1).padStart(2,'0');
@@ -412,7 +529,7 @@ async function loadAll(){
     loadDaily(period,branch),
     loadSASales()
   ]);
-  document.getElementById('lastUpdate').textContent=`更新於 ${new Date().toLocaleTimeString('zh-TW')}`;
+  document.getElementById('lastUpdate').textContent=`${new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})} 更新`;
 }
 
 // ══ 維修收入 ══
@@ -423,9 +540,9 @@ async function loadRepair(period,branch){
     if(data.error)throw new Error(data.error);
     const totals=data.totals;
     const totalRevenue=totals.reduce((s,r)=>s+n(r.total_untaxed),0),totalCars=totals.reduce((s,r)=>s+parseInt(r.car_count||0),0),totalEngine=totals.reduce((s,r)=>s+n(r.engine_wage),0),totalParts=totals.reduce((s,r)=>s+n(r.parts_income),0),totalCost=totals.reduce((s,r)=>s+n(r.parts_cost),0);
-    document.getElementById('repairKPI').innerHTML=`<div class="kpi-card"><div class="kpi-label">總營收（未稅）</div><div class="kpi-value kpi-green">${fmtK(totalRevenue)}</div><div class="kpi-sub">元（千）</div></div><div class="kpi-card"><div class="kpi-label">出廠台數</div><div class="kpi-value kpi-blue">${totalCars.toLocaleString()}</div><div class="kpi-sub">台</div></div><div class="kpi-card"><div class="kpi-label">引擎工資</div><div class="kpi-value">${fmtK(totalEngine)}</div><div class="kpi-sub">K</div></div><div class="kpi-card"><div class="kpi-label">零件收入</div><div class="kpi-value">${fmtK(totalParts)}</div><div class="kpi-sub">K</div></div><div class="kpi-card"><div class="kpi-label">零件成本</div><div class="kpi-value kpi-yellow">${fmtK(totalCost)}</div><div class="kpi-sub">K</div></div>${totals.map(t=>`<div class="kpi-card"><div class="kpi-label">${t.branch} 營收</div><div class="kpi-value">${fmtK(t.total_untaxed)}</div><div class="kpi-sub">${parseInt(t.car_count||0)}台 | 引擎${fmtK(t.engine_wage)}</div></div>`).join('')}`;
+    document.getElementById('repairKPI').innerHTML=`<div class="kpi-card"><div class="kpi-label">總營收（未稅）</div><div class="kpi-value kpi-green">${fmtK(totalRevenue)}</div><div class="kpi-sub">元（千）</div></div><div class="kpi-card"><div class="kpi-label">出廠台數</div><div class="kpi-value kpi-blue">${totalCars.toLocaleString()}</div><div class="kpi-sub">台</div></div><div class="kpi-card"><div class="kpi-label">引擎工資</div><div class="kpi-value">${fmtK(totalEngine)}</div><div class="kpi-sub">K</div></div><div class="kpi-card"><div class="kpi-label">零件收入</div><div class="kpi-value">${fmtK(totalParts)}</div><div class="kpi-sub">K</div></div><div class="kpi-card"><div class="kpi-label">零件成本</div><div class="kpi-value kpi-yellow">${fmtK(totalCost)}</div><div class="kpi-sub">K</div></div>${totals.map(t=>`<div class="kpi-card"><div class="kpi-label">${t.branch} 營收</div><div class="kpi-value">${fmtK(t.total_untaxed)}</div><div class="kpi-sub">${parseInt(t.car_count||0)}台｜引擎${fmtK(t.engine_wage)}</div></div>`).join('')}`;
     const saRows=data.bySA,maxRev=Math.max(...saRows.map(r=>n(r.total_untaxed)),1);
-    document.getElementById('tbSA').innerHTML=saRows.length?saRows.map((r,i)=>`<tr><td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td><td><span class="badge badge-blue">${r.branch}</span></td><td style="font-weight:600">${r.service_advisor}</td><td class="num">${parseInt(r.car_count||0)}</td><td class="num" style="font-weight:700;color:#10b981">${fmt(r.total_untaxed)}</td><td class="num">${fmt(r.engine_wage)}</td><td class="num">${fmt(r.parts_income)}</td><td style="min-width:120px"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${(n(r.total_untaxed)/maxRev*100).toFixed(0)}%"></div></div><span style="font-size:11px;color:#64748b">${(n(r.total_untaxed)/maxRev*100).toFixed(0)}%</span></div></td></tr>`).join(''):'<tr><td colspan="8" class="empty">無資料</td></tr>';
+    document.getElementById('tbSA').innerHTML=saRows.length?saRows.map((r,i)=>`<tr><td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td><td><span class="badge badge-blue">${r.branch}</span></td><td style="font-weight:600">${r.service_advisor}</td><td class="num">${parseInt(r.car_count||0)}</td><td class="num" style="font-weight:700;color:#10b981">${fmt(r.total_untaxed)}</td><td class="num">${fmt(r.engine_wage)}</td><td class="num">${fmt(r.parts_income)}</td><td style="min-width:80px"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${(n(r.total_untaxed)/maxRev*100).toFixed(0)}%"></div></div><span style="font-size:11px;color:#64748b">${(n(r.total_untaxed)/maxRev*100).toFixed(0)}%</span></div></td></tr>`).join(''):'<tr><td colspan="8" class="empty">無資料</td></tr>';
     document.getElementById('tbAccount').innerHTML=data.summary.length?data.summary.map(r=>`<tr><td><span class="badge badge-blue">${r.branch}</span></td><td><span class="badge ${badgeType(r.account_type)}">${r.account_type||'-'}</span></td><td class="num">${parseInt(r.work_order_count||0).toLocaleString()}</td><td class="num" style="font-weight:700">${fmt(r.total_untaxed)}</td><td class="num">${fmt(r.parts_income)}</td><td class="num">${fmt(r.engine_wage)}</td><td class="num">${fmt(r.bodywork_income)}</td><td class="num" style="color:#f59e0b">${fmt(r.parts_cost)}</td></tr>`).join(''):'<tr><td colspan="8" class="empty">無資料</td></tr>';
   }catch(e){document.getElementById('tbSA').innerHTML=`<tr><td colspan="8" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;}
 }
@@ -444,13 +561,13 @@ async function loadIncomeSummary(period,branch){
     const preCost={total:0,cars:0,partsCost:0,engine:0,bodywork:0,paint:0,carwash:0,outsource:0,addon:0,wage:0,parts_sales:0,acc_sales:0,boutique_sales:0};
     byType.forEach(r=>{const gk=ACCOUNT_GROUP(r.account_type);if(!COST_GROUPS.has(gk))return;const partsCost=n(r.parts_cost_nt),engineWage=n(r.engine_wage_nt),bodywork=n(r.bodywork_income_nt),paint=n(r.paint_income_nt),carwash=n(r.carwash_income_nt),outsource=n(r.outsource_income_nt),addon=n(r.addon_income_nt),wageTotal=engineWage+bodywork+paint+carwash+outsource+addon;preCost.cars+=n(r.car_count);preCost.partsCost+=partsCost;preCost.engine+=engineWage;preCost.bodywork+=bodywork;preCost.paint+=paint;preCost.carwash+=carwash;preCost.outsource+=outsource;preCost.addon+=addon;preCost.wage+=wageTotal;preCost.total+=partsCost+wageTotal;preCost.parts_sales+=n(r.parts_income_nt);preCost.acc_sales+=n(r.accessories_income_nt);preCost.boutique_sales+=n(r.boutique_income_nt);});
     const grandRevenue=paidTotal+preCost.total;
-    document.getElementById('grandKPI').innerHTML=`<div class="kpi-grid" style="margin-bottom:20px"><div class="kpi-card" style="border-color:#475569;background:#1e293b;grid-column:1/-1;max-width:320px"><div class="kpi-label" style="color:#94a3b8">📌 總計（有費收入＋無費成本）</div><div class="kpi-value" style="color:#e2e8f0;font-size:32px">${fmtK(grandRevenue)}</div><div class="kpi-sub">有費 ${fmtK(paidTotal)} ＋ 無費成本 ${fmtK(preCost.total)}</div></div></div>`;
+    document.getElementById('grandKPI').innerHTML=`<div class="kpi-grid" style="margin-bottom:20px"><div class="kpi-card" style="border-color:#475569;background:#1e293b;grid-column:1/-1;max-width:380px"><div class="kpi-label" style="color:#94a3b8">📌 總計（有費收入＋無費成本）</div><div class="kpi-value" style="color:#e2e8f0;font-size:28px">${fmtK(grandRevenue)}</div><div class="kpi-sub">有費 ${fmtK(paidTotal)} ＋ 無費成本 ${fmtK(preCost.total)}</div></div></div>`;
     let cardsHtml='';
-    ['general','insurance','extended','voucher','external','paid'].forEach(gk=>{const meta=GROUP_META[gk]||GROUP_META.other;if(gk==='external'){cardsHtml+=`<div class="income-cat-card ${meta.cls}"><div class="income-cat-label">${meta.icon} ${meta.label}</div><div class="income-cat-value">${fmtK(extTotal)}</div><div class="income-cat-sub">${extOrders} 筆 · 來源: ${externalCategory}</div></div>`;}else if(gk==='paid'){cardsHtml+=`<div class="income-cat-card ${meta.cls}"><div class="income-cat-label">${meta.icon} ${meta.label}</div><div class="income-cat-value">${fmtK(paidTotal)}</div><div class="income-cat-sub">一般+保險+延保+外賣</div></div>`;}else{const g=grouped[gk];if(!g&&gk!=='voucher')return;cardsHtml+=`<div class="income-cat-card ${meta.cls}"><div class="income-cat-label">${meta.icon} ${meta.label}</div><div class="income-cat-value">${fmtK(g?.total_untaxed||0)}</div><div class="income-cat-sub">${g?.car_count||0} 台</div></div>`;}});
+    ['general','insurance','extended','voucher','external','paid'].forEach(gk=>{const meta=GROUP_META[gk]||GROUP_META.other;if(gk==='external'){cardsHtml+=`<div class="income-cat-card ${meta.cls}"><div class="income-cat-label">${meta.icon} ${meta.label}</div><div class="income-cat-value">${fmtK(extTotal)}</div><div class="income-cat-sub">${extOrders} 筆 · ${externalCategory}</div></div>`;}else if(gk==='paid'){cardsHtml+=`<div class="income-cat-card ${meta.cls}"><div class="income-cat-label">${meta.icon} ${meta.label}</div><div class="income-cat-value">${fmtK(paidTotal)}</div><div class="income-cat-sub">一般+保險+延保+外賣</div></div>`;}else{const g=grouped[gk];if(!g&&gk!=='voucher')return;cardsHtml+=`<div class="income-cat-card ${meta.cls}"><div class="income-cat-label">${meta.icon} ${meta.label}</div><div class="income-cat-value">${fmtK(g?.total_untaxed||0)}</div><div class="income-cat-sub">${g?.car_count||0} 台</div></div>`;}});
     cardsEl.innerHTML=cardsHtml||'<div style="color:#64748b;font-size:13px;grid-column:1/-1">無資料</div>';
     const COST_GROUP_ORDER=['internal','warranty','vsa','goodwill'];let costCardsHtml='';
-    COST_GROUP_ORDER.forEach(gk=>{const meta=GROUP_META[gk],g=grouped[gk];if(!g)return;const gPartsCost=g.parts_cost,gWage=g.engine_wage+g.bodywork_income+g.paint_income+g.carwash_income+g.outsource_income+g.addon_income,gTotal=gPartsCost+gWage;costCardsHtml+=`<div class="income-cat-card ${meta.cls}"><div class="income-cat-label">${meta.icon} ${meta.label}</div><div class="income-cat-value">${fmtK(gTotal)}</div><div class="income-cat-sub">${parseInt(g.car_count)} 台 · 零件成本 ${fmtK(gPartsCost)} · 工資 ${fmtK(gWage)}</div></div>`;});
-    costCardsHtml+=`<div class="income-cat-card" style="background:#0f172a;border:1px solid #f59e0b;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:#f59e0b"></div><div class="income-cat-label" style="color:#f59e0b">⚠️ 無費工單成本合計</div><div class="income-cat-value" style="color:#f59e0b;font-size:26px">${fmtK(preCost.total)}</div><div class="income-cat-sub">${parseInt(preCost.cars)} 台 · 零件成本 ${fmtK(preCost.partsCost)} · 工資 ${fmtK(preCost.wage)}</div></div>`;
+    COST_GROUP_ORDER.forEach(gk=>{const meta=GROUP_META[gk],g=grouped[gk];if(!g)return;const gPartsCost=g.parts_cost,gWage=g.engine_wage+g.bodywork_income+g.paint_income+g.carwash_income+g.outsource_income+g.addon_income,gTotal=gPartsCost+gWage;costCardsHtml+=`<div class="income-cat-card ${meta.cls}"><div class="income-cat-label">${meta.icon} ${meta.label}</div><div class="income-cat-value">${fmtK(gTotal)}</div><div class="income-cat-sub">${parseInt(g.car_count)} 台</div></div>`;});
+    costCardsHtml+=`<div class="income-cat-card" style="background:#0f172a;border:1px solid #f59e0b;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:#f59e0b"></div><div class="income-cat-label" style="color:#f59e0b">⚠️ 無費工單成本合計</div><div class="income-cat-value" style="color:#f59e0b;font-size:20px">${fmtK(preCost.total)}</div><div class="income-cat-sub">${parseInt(preCost.cars)} 台 · 零件${fmtK(preCost.partsCost)}</div></div>`;
     costCardsEl.innerHTML=costCardsHtml||'<div style="color:#64748b;font-size:13px;grid-column:1/-1">無無費工單資料</div>';
     const REVENUE_GROUPS=['general','insurance','extended','voucher'];let revRows='',revSub={cars:0,engine:0,parts:0,acc:0,boutique:0,bodywork:0,paint:0,carwash:0,out:0,addon:0,total:0};
     byType.forEach(r=>{const gk=ACCOUNT_GROUP(r.account_type);if(!REVENUE_GROUPS.includes(gk))return;const meta=GROUP_META[gk]||GROUP_META.other,total=n(r.total_untaxed);revSub.cars+=n(r.car_count);revSub.engine+=n(r.engine_wage_nt);revSub.parts+=n(r.parts_income_nt);revSub.acc+=n(r.accessories_income_nt);revSub.boutique+=n(r.boutique_income_nt);revSub.bodywork+=n(r.bodywork_income_nt);revSub.paint+=n(r.paint_income_nt);revSub.carwash+=n(r.carwash_income_nt);revSub.out+=n(r.outsource_income_nt);revSub.addon+=n(r.addon_income_nt);revSub.total+=total;revRows+=`<tr><td><span class="badge badge-blue">${r.branch}</span></td><td><span class="badge ${meta.badge}">${r.account_type}</span></td><td class="num">${parseInt(r.car_count||0)}</td><td class="num">${fmt(r.engine_wage_nt)}</td><td class="num">${fmt(r.parts_income_nt)}</td><td class="num">${fmt(r.accessories_income_nt)}</td><td class="num">${fmt(r.boutique_income_nt)}</td><td class="num">${fmt(r.bodywork_income_nt)}</td><td class="num">${fmt(r.paint_income_nt)}</td><td class="num">${fmt(r.carwash_income_nt)}</td><td class="num">${fmt(r.outsource_income_nt)}</td><td class="num">${fmt(r.addon_income_nt)}</td><td class="num" style="color:#10b981;font-weight:700">${fmt(total)}</td></tr>`;});
@@ -458,7 +575,7 @@ async function loadIncomeSummary(period,branch){
     revRows+=`<tr class="subtotal-row"><td></td><td style="color:#f97316">有費小計</td><td class="num">${parseInt(revSub.cars)}</td><td class="num">${fmt(revSub.engine)}</td><td class="num">${fmt(revSub.parts)}</td><td class="num">${fmt(revSub.acc)}</td><td class="num">${fmt(revSub.boutique)}</td><td class="num">${fmt(revSub.bodywork)}</td><td class="num">${fmt(revSub.paint)}</td><td class="num">${fmt(revSub.carwash)}</td><td class="num">${fmt(revSub.out)}</td><td class="num">${fmt(revSub.addon)}</td><td class="num" style="color:#f97316;font-size:14px">${fmt(paidTotal)}</td></tr>`;
     revenueEl.innerHTML=revRows||'<tr><td colspan="13" class="empty">無資料</td></tr>';
     let costRows='',costTotal={cars:0,partsCost:0,engine:0,bodywork:0,paint:0,carwash:0,outsource:0,addon:0,wage:0,total:0,parts_sales:0,acc_sales:0,boutique_sales:0};
-    byType.forEach(r=>{const gk=ACCOUNT_GROUP(r.account_type);if(!COST_GROUPS.has(gk))return;const meta=GROUP_META[gk]||GROUP_META.other,partsSales=n(r.parts_income_nt),accSales=n(r.accessories_income_nt),boutiqueSales=n(r.boutique_income_nt),partsCost=n(r.parts_cost_nt),engineWage=n(r.engine_wage_nt),bodywork=n(r.bodywork_income_nt),paint=n(r.paint_income_nt),carwash=n(r.carwash_income_nt),outsource=n(r.outsource_income_nt),addon=n(r.addon_income_nt),wageTotal=engineWage+bodywork+paint+carwash+outsource+addon,rowTotal=partsCost+wageTotal;costTotal.cars+=n(r.car_count);costTotal.parts_sales+=partsSales;costTotal.acc_sales+=accSales;costTotal.boutique_sales+=boutiqueSales;costTotal.partsCost+=partsCost;costTotal.engine+=engineWage;costTotal.bodywork+=bodywork;costTotal.paint+=paint;costTotal.carwash+=carwash;costTotal.outsource+=outsource;costTotal.addon+=addon;costTotal.wage+=wageTotal;costTotal.total+=rowTotal;costRows+=`<tr class="cost-row"><td><span class="badge badge-blue">${r.branch||'—'}</span></td><td><span class="badge ${meta.badge}">${r.account_type}</span></td><td class="num">${parseInt(r.car_count||0)}</td><td class="num" style="color:#3b82f6">${partsSales>0?fmt(partsSales):'—'}</td><td class="num" style="color:#10b981">${accSales>0?fmt(accSales):'—'}</td><td class="num" style="color:#f59e0b">${boutiqueSales>0?fmt(boutiqueSales):'—'}</td><td class="num">${engineWage>0?fmt(engineWage):'—'}</td><td class="num">${bodywork>0?fmt(bodywork):'—'}</td><td class="num">${paint>0?fmt(paint):'—'}</td><td class="num">${carwash>0?fmt(carwash):'—'}</td><td class="num">${outsource>0?fmt(outsource):'—'}</td><td class="num">${addon>0?fmt(addon):'—'}</td><td class="num" style="color:#94a3b8;font-weight:600">${fmt(wageTotal)}</td><td class="num" style="color:#f59e0b">${fmt(partsCost)}</td><td class="num" style="color:#f59e0b;font-weight:700">${fmt(rowTotal)}</td><td style="font-size:11px;color:#475569">成本+工資（無收入認列）</td></tr>`;});
+    byType.forEach(r=>{const gk=ACCOUNT_GROUP(r.account_type);if(!COST_GROUPS.has(gk))return;const meta=GROUP_META[gk]||GROUP_META.other,partsSales=n(r.parts_income_nt),accSales=n(r.accessories_income_nt),boutiqueSales=n(r.boutique_income_nt),partsCost=n(r.parts_cost_nt),engineWage=n(r.engine_wage_nt),bodywork=n(r.bodywork_income_nt),paint=n(r.paint_income_nt),carwash=n(r.carwash_income_nt),outsource=n(r.outsource_income_nt),addon=n(r.addon_income_nt),wageTotal=engineWage+bodywork+paint+carwash+outsource+addon,rowTotal=partsCost+wageTotal;costTotal.cars+=n(r.car_count);costTotal.parts_sales+=partsSales;costTotal.acc_sales+=accSales;costTotal.boutique_sales+=boutiqueSales;costTotal.partsCost+=partsCost;costTotal.engine+=engineWage;costTotal.bodywork+=bodywork;costTotal.paint+=paint;costTotal.carwash+=carwash;costTotal.outsource+=outsource;costTotal.addon+=addon;costTotal.wage+=wageTotal;costTotal.total+=rowTotal;costRows+=`<tr class="cost-row"><td><span class="badge badge-blue">${r.branch||'—'}</span></td><td><span class="badge ${meta.badge}">${r.account_type}</span></td><td class="num">${parseInt(r.car_count||0)}</td><td class="num" style="color:#3b82f6">${partsSales>0?fmt(partsSales):'—'}</td><td class="num" style="color:#10b981">${accSales>0?fmt(accSales):'—'}</td><td class="num" style="color:#f59e0b">${boutiqueSales>0?fmt(boutiqueSales):'—'}</td><td class="num">${engineWage>0?fmt(engineWage):'—'}</td><td class="num">${bodywork>0?fmt(bodywork):'—'}</td><td class="num">${paint>0?fmt(paint):'—'}</td><td class="num">${carwash>0?fmt(carwash):'—'}</td><td class="num">${outsource>0?fmt(outsource):'—'}</td><td class="num">${addon>0?fmt(addon):'—'}</td><td class="num" style="color:#94a3b8;font-weight:600">${fmt(wageTotal)}</td><td class="num" style="color:#f59e0b">${fmt(partsCost)}</td><td class="num" style="color:#f59e0b;font-weight:700">${fmt(rowTotal)}</td><td style="font-size:11px;color:#475569;white-space:nowrap">成本+工資</td></tr>`;});
     if(costRows){costRows+=`<tr class="total-row"><td></td><td style="color:#3b82f6">無費合計</td><td class="num">${parseInt(costTotal.cars)}</td><td class="num" style="color:#3b82f6">${fmt(costTotal.parts_sales)}</td><td class="num" style="color:#10b981">${fmt(costTotal.acc_sales)}</td><td class="num" style="color:#f59e0b">${fmt(costTotal.boutique_sales)}</td><td class="num">${fmt(costTotal.engine)}</td><td class="num">${fmt(costTotal.bodywork)}</td><td class="num">${fmt(costTotal.paint)}</td><td class="num">${fmt(costTotal.carwash)}</td><td class="num">${fmt(costTotal.outsource)}</td><td class="num">${fmt(costTotal.addon)}</td><td class="num" style="color:#94a3b8;font-weight:700">${fmt(costTotal.wage)}</td><td class="num" style="color:#f59e0b">${fmt(costTotal.partsCost)}</td><td class="num" style="color:#f59e0b;font-size:14px">${fmt(costTotal.total)}</td><td></td></tr>`;}
     costEl.innerHTML=costRows||'<tr><td colspan="16" class="empty">無無費工單資料</td></tr>';
   }catch(e){cardsEl.innerHTML=`<div style="color:#ef4444;grid-column:1/-1">${e.message}</div>`;}
@@ -471,7 +588,7 @@ async function loadTech(period,branch){
     if(data.error)throw new Error(data.error);
     const rows=data.ranking,totalWage=rows.reduce((s,r)=>s+n(r.total_wage),0),maxWage=Math.max(...rows.map(r=>n(r.total_wage)),1);
     document.getElementById('techKPI').innerHTML=`<div class="kpi-card"><div class="kpi-label">技師人數</div><div class="kpi-value kpi-blue">${rows.length}</div><div class="kpi-sub">人</div></div><div class="kpi-card"><div class="kpi-label">工資總額</div><div class="kpi-value kpi-green">${fmtK(totalWage)}</div><div class="kpi-sub">K</div></div><div class="kpi-card"><div class="kpi-label">平均工資</div><div class="kpi-value">${rows.length?fmt(totalWage/rows.length):0}</div><div class="kpi-sub">元/人</div></div>`;
-    document.getElementById('tbTech').innerHTML=rows.length?rows.map((r,i)=>`<tr><td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td><td><span class="badge badge-blue">${r.branch}</span></td><td style="font-weight:600">${r.tech_name_clean}</td><td class="num">${parseInt(r.car_count||0)}</td><td class="num">${n(r.total_hours).toFixed(1)}</td><td class="num" style="font-weight:700;color:#10b981">${fmt(r.total_wage)}</td><td class="num" style="color:#f59e0b">${fmt(r.beauty_wage)}</td><td class="num" style="color:#3b82f6">${fmt(r.net_wage)}</td><td style="min-width:120px"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill green" style="width:${(n(r.total_wage)/maxWage*100).toFixed(0)}%"></div></div><span style="font-size:11px;color:#64748b">${totalWage>0?(n(r.total_wage)/totalWage*100).toFixed(1):0}%</span></div></td></tr>`).join(''):'<tr><td colspan="9" class="empty">無資料</td></tr>';
+    document.getElementById('tbTech').innerHTML=rows.length?rows.map((r,i)=>`<tr><td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td><td><span class="badge badge-blue">${r.branch}</span></td><td style="font-weight:600">${r.tech_name_clean}</td><td class="num">${parseInt(r.car_count||0)}</td><td class="num">${n(r.total_hours).toFixed(1)}</td><td class="num" style="font-weight:700;color:#10b981">${fmt(r.total_wage)}</td><td class="num" style="color:#f59e0b">${fmt(r.beauty_wage)}</td><td class="num" style="color:#3b82f6">${fmt(r.net_wage)}</td><td style="min-width:80px"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill green" style="width:${(n(r.total_wage)/maxWage*100).toFixed(0)}%"></div></div><span style="font-size:11px;color:#64748b">${totalWage>0?(n(r.total_wage)/totalWage*100).toFixed(1):0}%</span></div></td></tr>`).join(''):'<tr><td colspan="9" class="empty">無資料</td></tr>';
   }catch(e){document.getElementById('tbTech').innerHTML=`<tr><td colspan="9" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;}
 }
 
@@ -483,13 +600,13 @@ async function loadParts(period,branch){
     const byType=data.byType,totalSales=byType.reduce((s,r)=>s+n(r.total_sales),0),totalCost=byType.reduce((s,r)=>s+n(r.total_cost),0);
     document.getElementById('partsKPI').innerHTML=`<div class="kpi-card"><div class="kpi-label">銷售總額</div><div class="kpi-value kpi-green">${fmtK(totalSales)}</div><div class="kpi-sub">K</div></div><div class="kpi-card"><div class="kpi-label">成本總額</div><div class="kpi-value kpi-yellow">${fmtK(totalCost)}</div><div class="kpi-sub">K</div></div><div class="kpi-card"><div class="kpi-label">毛利</div><div class="kpi-value kpi-blue">${fmtK(totalSales-totalCost)}</div><div class="kpi-sub">K</div></div><div class="kpi-card"><div class="kpi-label">毛利率</div><div class="kpi-value">${totalSales>0?((totalSales-totalCost)/totalSales*100).toFixed(1):0}%</div></div>`;
     document.getElementById('tbPartsType').innerHTML=byType.length?byType.map(r=>{const s=n(r.total_sales),c=n(r.total_cost),m=s>0?((s-c)/s*100):0;return`<tr><td><span class="badge badge-blue">${r.branch}</span></td><td><span class="badge ${badgeType(r.part_type)}">${r.part_type||'-'}</span></td><td class="num">${parseInt(r.count||0).toLocaleString()}</td><td class="num">${n(r.total_qty).toLocaleString()}</td><td class="num" style="font-weight:700">${fmt(s)}</td><td class="num">${fmt(c)}</td><td class="num" style="color:#10b981">${fmt(s-c)}</td><td class="num" style="color:${m>20?'#10b981':m>10?'#f59e0b':'#ef4444'}">${m.toFixed(1)}%</td></tr>`;}).join(''):'<tr><td colspan="8" class="empty">無資料</td></tr>';
-    document.getElementById('tbTopParts').innerHTML=data.topParts.length?data.topParts.map((r,i)=>`<tr><td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td><td style="font-family:monospace;font-size:12px">${r.part_number}</td><td>${r.part_name||'-'}</td><td><span class="badge ${badgeType(r.part_type)}">${r.part_type||'-'}</span></td><td class="num">${n(r.total_qty).toLocaleString()}</td><td class="num" style="font-weight:700;color:#10b981">${fmt(r.total_sales)}</td></tr>`).join(''):'<tr><td colspan="6" class="empty">無資料</td></tr>';
+    document.getElementById('tbTopParts').innerHTML=data.topParts.length?data.topParts.map((r,i)=>`<tr><td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td><td style="font-family:monospace;font-size:11px">${r.part_number}</td><td>${r.part_name||'-'}</td><td><span class="badge ${badgeType(r.part_type)}">${r.part_type||'-'}</span></td><td class="num">${n(r.total_qty).toLocaleString()}</td><td class="num" style="font-weight:700;color:#10b981">${fmt(r.total_sales)}</td></tr>`).join(''):'<tr><td colspan="6" class="empty">無資料</td></tr>';
   }catch(e){document.getElementById('tbPartsType').innerHTML=`<tr><td colspan="8" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;}
 }
 
 async function loadBoutiqueAccessories(period,branch){
   const kpiEl=document.getElementById('boutiqueKPI'),matrixEl=document.getElementById('boutiqueMatrix');
-  kpiEl.innerHTML='<div style="padding:12px;color:#64748b;font-size:13px"><span class="spinner"></span>載入中</div>';
+  kpiEl.innerHTML='<div style="padding:12px;color:#64748b;font-size:13px;grid-column:1/-1"><span class="spinner"></span>載入中</div>';
   matrixEl.innerHTML='<div style="padding:40px;text-align:center;color:#64748b"><span class="spinner"></span>載入中...</div>';
   try{
     const params=new URLSearchParams();if(period)params.set('period',period);if(branch)params.set('branch',branch);
@@ -510,26 +627,26 @@ async function loadBoutiqueAccessories(period,branch){
     const pivotMap={};rows.forEach(r=>{const key=`${r.branch}|||${r.sales_person}`;if(!pivotMap[key])pivotMap[key]={branch:r.branch,sales_person:r.sales_person,cells:{}};pivotMap[key].cells[`${r.part_type}|||${r.account_type}`]={sales:n(r.total_sales),qty:n(r.total_qty),cnt:parseInt(r.cnt||0)};});
     const getRowTotal=row=>PART_TYPES.reduce((s,pt)=>s+depts.reduce((ss,d)=>ss+(row.cells[`${pt}|||${d}`]?.sales||0),0),0);
     const pivotRows=Object.values(pivotMap).sort((a,b)=>{if(a.branch!==b.branch)return a.branch<b.branch?-1:1;return getRowTotal(b)-getRowTotal(a);});
-    const thB='padding:8px 10px;text-align:left;font-size:11px;font-weight:700;color:#64748b;background:#0f172a;border-bottom:1px solid #2d3f56;white-space:nowrap;',thN=thB+'text-align:right;',tdB='padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.4);font-size:12px;vertical-align:middle;',tdN=tdB+'text-align:right;font-variant-numeric:tabular-nums;';
+    const thB='padding:7px 8px;text-align:left;font-size:11px;font-weight:700;color:#64748b;background:#0f172a;border-bottom:1px solid #2d3f56;white-space:nowrap;',thN=thB+'text-align:right;',tdB='padding:6px 8px;border-bottom:1px solid rgba(45,63,86,.4);font-size:11px;vertical-align:middle;',tdN=tdB+'text-align:right;font-variant-numeric:tabular-nums;';
     const sTd=(l,bg,e='')=>`position:sticky;left:${l}px;z-index:2;background:${bg};${e}`,sThC=(l,e='')=>`position:sticky;left:${l}px;z-index:3;background:#0f172a;${e}`;
-    let html=`<table style="width:100%;border-collapse:separate;border-spacing:0;font-size:12px"><thead style="position:sticky;top:0;z-index:4"><tr>`;
-    html+=`<th rowspan="2" style="${thB}${sThC(0,'border-right:1px solid #2d3f56;width:36px')}">#</th>`;
-    html+=`<th rowspan="2" style="${thB}${sThC(36,'border-right:1px solid #2d3f56;width:60px')}">據點</th>`;
-    html+=`<th rowspan="2" style="${thB}${sThC(96,'border-right:2px solid #374151;min-width:110px')}">銷售人員</th>`;
+    let html=`<table style="width:100%;border-collapse:separate;border-spacing:0;font-size:11px"><thead style="position:sticky;top:0;z-index:4"><tr>`;
+    html+=`<th rowspan="2" style="${thB}${sThC(0,'border-right:1px solid #2d3f56;width:30px')}">#</th>`;
+    html+=`<th rowspan="2" style="${thB}${sThC(30,'border-right:1px solid #2d3f56;width:50px')}">據點</th>`;
+    html+=`<th rowspan="2" style="${thB}${sThC(80,'border-right:2px solid #374151;min-width:90px')}">銷售人員</th>`;
     PART_TYPES.forEach((pt,pi)=>{const col=typeColors[pt]||'#94a3b8',span=depts.length+1,bdr=pi<PART_TYPES.length-1?'2px solid #374151':'1px solid #2d3f56';html+=`<th colspan="${span}" style="${thB}background:#0f172a;text-align:center;color:${col};border-right:${bdr};border-bottom:1px solid #1e293b">${pt}</th>`;});
-    html+=`<th rowspan="2" style="${thN}background:#0f172a;color:#10b981;border-left:2px solid #374151">總計(元)</th></tr><tr>`;
+    html+=`<th rowspan="2" style="${thN}background:#0f172a;color:#10b981;border-left:2px solid #374151">總計</th></tr><tr>`;
     PART_TYPES.forEach((pt,pi)=>{depts.forEach(d=>{html+=`<th style="${thN}background:#0f172a;font-size:10px;color:#475569;border-right:1px solid #2d3f56">${d}</th>`;});const bdr=pi<PART_TYPES.length-1?'2px solid #374151':'1px solid #2d3f56';html+=`<th style="${thN}background:#0f172a;color:${typeColors[pt]||'#94a3b8'};font-size:10px;border-right:${bdr}">小計</th>`;});
     html+=`</tr></thead><tbody>`;let rowIdx=0,grandTotal=0;const colGT={};
     branches.forEach(br=>{const bCol=branchColors[br]||'#64748b',brRows=pivotRows.filter(r=>r.branch===br),brSub={};let brTotal=0;
-      brRows.forEach(row=>{rowIdx++;const bg=rowIdx%2===0?'#0e1a29':'#111827';html+=`<tr>`;html+=`<td style="${tdB}${sTd(0,bg,'color:#64748b;font-weight:700;border-right:1px solid #2d3f56;width:36px')}">${rowIdx}</td>`;html+=`<td style="${tdB}${sTd(36,bg,'border-right:1px solid #2d3f56;width:60px')}"><span style="display:inline-block;padding:2px 6px;border-radius:5px;font-size:10px;font-weight:700;background:${bCol}22;color:${bCol}">${br}</span></td>`;html+=`<td style="${tdB}${sTd(96,bg,'font-weight:600;border-right:2px solid #374151;min-width:110px')}">${row.sales_person}</td>`;
+      brRows.forEach(row=>{rowIdx++;const bg=rowIdx%2===0?'#0e1a29':'#111827';html+=`<tr>`;html+=`<td style="${tdB}${sTd(0,bg,'color:#64748b;font-weight:700;border-right:1px solid #2d3f56;width:30px')}">${rowIdx}</td>`;html+=`<td style="${tdB}${sTd(30,bg,'border-right:1px solid #2d3f56;width:50px')}"><span style="display:inline-block;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:700;background:${bCol}22;color:${bCol}">${br}</span></td>`;html+=`<td style="${tdB}${sTd(80,bg,'font-weight:600;border-right:2px solid #374151;min-width:90px')}">${row.sales_person}</td>`;
         let rowTotal=0;PART_TYPES.forEach((pt,pi)=>{let ptSub=0;const col=typeColors[pt]||'#94a3b8';depts.forEach(d=>{const v=row.cells[`${pt}|||${d}`]?.sales||0;const ck=`${pt}|||${d}`;ptSub+=v;colGT[ck]=(colGT[ck]||0)+v;brSub[ck]=(brSub[ck]||0)+v;html+=`<td style="${tdN}${v>0?'':'color:#334155;'}border-right:1px solid #2d3f56">${v>0?fmt(v):'—'}</td>`;});rowTotal+=ptSub;const bdr=pi<PART_TYPES.length-1?'2px solid #374151':'1px solid #2d3f56';const stk=`${pt}|||TOTAL`;brSub[stk]=(brSub[stk]||0)+ptSub;colGT[stk]=(colGT[stk]||0)+ptSub;html+=`<td style="${tdN}color:${col};font-weight:700;border-right:${bdr}">${ptSub>0?fmt(ptSub):'—'}</td>`;});
         grandTotal+=rowTotal;brTotal+=rowTotal;html+=`<td style="${tdN}color:#10b981;font-weight:800;border-left:2px solid #374151">${rowTotal>0?fmt(rowTotal):'—'}</td></tr>`;});
-      const subAlpha=br==='AMA'?'59,130,246':br==='AMC'?'16,185,129':'245,158,11';html+=`<tr style="background:rgba(${subAlpha},.07)">`;html+=`<td style="${tdB}${sTd(0,'transparent','border-right:1px solid #2d3f56')}"></td>`;html+=`<td style="${tdB}${sTd(36,'transparent','border-right:1px solid #2d3f56')}"><span style="font-size:10px;font-weight:800;color:${bCol}">${br}</span></td>`;html+=`<td style="${tdB}${sTd(96,'transparent','font-size:11px;color:#64748b;border-right:2px solid #374151')}">${brRows.length} 人</td>`;
-      PART_TYPES.forEach((pt,pi)=>{const col=typeColors[pt]||'#94a3b8';let ptBrT=0;depts.forEach(d=>{const v=brSub[`${pt}|||${d}`]||0;ptBrT+=v;html+=`<td style="${tdN}color:${col};font-weight:600;font-size:11px;border-right:1px solid #2d3f56">${v>0?fmt(v):'—'}</td>`;});const bdr=pi<PART_TYPES.length-1?'2px solid #374151':'1px solid #2d3f56';html+=`<td style="${tdN}color:${col};font-weight:800;font-size:12px;border-right:${bdr}">${ptBrT>0?fmt(ptBrT):'—'}</td>`;});
+      const subAlpha=br==='AMA'?'59,130,246':br==='AMC'?'16,185,129':'245,158,11';html+=`<tr style="background:rgba(${subAlpha},.07)">`;html+=`<td style="${tdB}${sTd(0,'transparent','border-right:1px solid #2d3f56')}"></td>`;html+=`<td style="${tdB}${sTd(30,'transparent','border-right:1px solid #2d3f56')}"><span style="font-size:10px;font-weight:800;color:${bCol}">${br}</span></td>`;html+=`<td style="${tdB}${sTd(80,'transparent','font-size:11px;color:#64748b;border-right:2px solid #374151')}">${brRows.length} 人</td>`;
+      PART_TYPES.forEach((pt,pi)=>{const col=typeColors[pt]||'#94a3b8';let ptBrT=0;depts.forEach(d=>{const v=brSub[`${pt}|||${d}`]||0;ptBrT+=v;html+=`<td style="${tdN}color:${col};font-weight:600;font-size:11px;border-right:1px solid #2d3f56">${v>0?fmt(v):'—'}</td>`;});const bdr=pi<PART_TYPES.length-1?'2px solid #374151':'1px solid #2d3f56';html+=`<td style="${tdN}color:${col};font-weight:800;font-size:11px;border-right:${bdr}">${ptBrT>0?fmt(ptBrT):'—'}</td>`;});
       html+=`<td style="${tdN}color:${bCol};font-weight:800;border-left:2px solid #374151">${brTotal>0?fmt(brTotal):'—'}</td></tr>`;});
-    html+=`<tr style="background:#1e293b;border-top:2px solid #3b82f6">`;html+=`<td style="${tdB}${sTd(0,'#1e293b','border-right:1px solid #2d3f56')}"></td>`;html+=`<td style="${tdB}${sTd(36,'#1e293b','border-right:1px solid #2d3f56')}"></td>`;html+=`<td style="${tdB}${sTd(96,'#1e293b','font-size:13px;font-weight:800;color:#fff;border-right:2px solid #374151')}">全廠合計</td>`;
-    PART_TYPES.forEach((pt,pi)=>{const col=typeColors[pt]||'#94a3b8';let ptGT=0;depts.forEach(d=>{const v=colGT[`${pt}|||${d}`]||0;ptGT+=v;html+=`<td style="${tdN}color:${col};font-weight:700;border-right:1px solid #2d3f56">${v>0?fmt(v):'—'}</td>`;});const bdr=pi<PART_TYPES.length-1?'2px solid #374151':'1px solid #2d3f56';html+=`<td style="${tdN}color:${col};font-weight:800;font-size:13px;border-right:${bdr}">${ptGT>0?fmt(ptGT):'—'}</td>`;});
-    html+=`<td style="${tdN}color:#10b981;font-weight:800;font-size:13px;border-left:2px solid #374151">${grandTotal>0?fmt(grandTotal):'—'}</td></tr>`;
+    html+=`<tr style="background:#1e293b;border-top:2px solid #3b82f6">`;html+=`<td style="${tdB}${sTd(0,'#1e293b','border-right:1px solid #2d3f56')}"></td>`;html+=`<td style="${tdB}${sTd(30,'#1e293b','border-right:1px solid #2d3f56')}"></td>`;html+=`<td style="${tdB}${sTd(80,'#1e293b','font-size:12px;font-weight:800;color:#fff;border-right:2px solid #374151')}">全廠合計</td>`;
+    PART_TYPES.forEach((pt,pi)=>{const col=typeColors[pt]||'#94a3b8';let ptGT=0;depts.forEach(d=>{const v=colGT[`${pt}|||${d}`]||0;ptGT+=v;html+=`<td style="${tdN}color:${col};font-weight:700;border-right:1px solid #2d3f56">${v>0?fmt(v):'—'}</td>`;});const bdr=pi<PART_TYPES.length-1?'2px solid #374151':'1px solid #2d3f56';html+=`<td style="${tdN}color:${col};font-weight:800;font-size:12px;border-right:${bdr}">${ptGT>0?fmt(ptGT):'—'}</td>`;});
+    html+=`<td style="${tdN}color:#10b981;font-weight:800;font-size:12px;border-left:2px solid #374151">${grandTotal>0?fmt(grandTotal):'—'}</td></tr>`;
     html+=`</tbody></table>`;matrixEl.innerHTML=html;
   }catch(e){kpiEl.innerHTML=`<div style="color:#ef4444;padding:12px;grid-column:1/-1">${e.message}</div>`;matrixEl.innerHTML='';}
 }
@@ -555,29 +672,29 @@ async function loadSASalesView(view,matrixElId,tabKey){
     const branches=[...new Set(rows.map(r=>r.branch))].sort();
     const branchColors={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
     const cfgColors=['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#f97316','#84cc16'];
-    const thBase='padding:10px 14px;text-align:left;font-size:12px;font-weight:700;color:#64748b;background:#0f172a;border-bottom:1px solid #2d3f56;white-space:nowrap;',thNum=thBase+'text-align:right;';
-    const tdBase='padding:9px 14px;border-bottom:1px solid rgba(45,63,86,.4);font-size:13px;vertical-align:middle;',tdNum=tdBase+'text-align:right;font-variant-numeric:tabular-nums;';
+    const thBase='padding:8px 10px;text-align:left;font-size:11px;font-weight:700;color:#64748b;background:#0f172a;border-bottom:1px solid #2d3f56;white-space:nowrap;',thNum=thBase+'text-align:right;';
+    const tdBase='padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.4);font-size:12px;vertical-align:middle;',tdNum=tdBase+'text-align:right;font-variant-numeric:tabular-nums;';
     const stTd=(l,bg,e='')=>`position:sticky;left:${l}px;z-index:2;background:${bg};${e}`;
     const saCorner=(l,e='')=>`position:sticky;left:${l}px;z-index:3;background:#0f172a;${e}`;
     const colLabel=view==='pickup_person'?'技師':'銷售人員';
-    let html=`<table style="width:100%;border-collapse:separate;border-spacing:0;font-size:13px"><thead style="position:sticky;top:0;z-index:4"><tr>`;
-    html+=`<th style="${thBase}${saCorner(0,'border-right:1px solid #2d3f56;width:40px')}" rowspan="2">#</th>`;
-    html+=`<th style="${thBase}${saCorner(40,'border-right:1px solid #2d3f56;width:70px')}" rowspan="2">據點</th>`;
-    html+=`<th style="${thBase}${saCorner(110,'border-right:2px solid #374151;min-width:130px')}" rowspan="2">${colLabel}</th>`;
+    let html=`<table style="width:100%;border-collapse:separate;border-spacing:0;font-size:12px"><thead style="position:sticky;top:0;z-index:4"><tr>`;
+    html+=`<th style="${thBase}${saCorner(0,'border-right:1px solid #2d3f56;width:35px')}" rowspan="2">#</th>`;
+    html+=`<th style="${thBase}${saCorner(35,'border-right:1px solid #2d3f56;width:55px')}" rowspan="2">據點</th>`;
+    html+=`<th style="${thBase}${saCorner(90,'border-right:2px solid #374151;min-width:100px')}" rowspan="2">${colLabel}</th>`;
     configs.forEach((cfg,ci)=>{const col=cfgColors[ci%cfgColors.length];html+=`<th colspan="1" style="${thBase}background:#0f172a;text-align:center;color:${col};border-right:${ci<configs.length-1?'2px solid #2d3f56':'1px solid #2d3f56'};border-bottom:1px solid #1e293b">${cfg.config_name}</th>`;});
-    html+=`</tr><tr>`;configs.forEach((cfg,ci)=>{html+=`<th style="${thNum}background:#0f172a;border-right:${ci<configs.length-1?'2px solid #2d3f56':'1px solid #2d3f56'};font-size:11px">${methodUnitMap[cfg.stat_method]||'金額(元)'}</th>`;});
+    html+=`</tr><tr>`;configs.forEach((cfg,ci)=>{html+=`<th style="${thNum}background:#0f172a;border-right:${ci<configs.length-1?'2px solid #2d3f56':'1px solid #2d3f56'};font-size:10px">${methodUnitMap[cfg.stat_method]||'金額(元)'}</th>`;});
     html+=`</tr></thead><tbody>`;let rowIdx=0;
     for(const br of branches){
       const brRows=rows.filter(r=>r.branch===br),brColor=branchColors[br]||'#64748b';
-      brRows.forEach(row=>{rowIdx++;const bg=rowIdx%2===0?'#0e1a29':'#111827';html+=`<tr>`;html+=`<td style="${tdBase}${stTd(0,bg,'color:#64748b;font-weight:700;border-right:1px solid #2d3f56;width:40px')}">${rowIdx}</td>`;html+=`<td style="${tdBase}${stTd(40,bg,'border-right:1px solid #2d3f56;width:70px')}"><span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;background:${brColor}22;color:${brColor}">${br}</span></td>`;html+=`<td style="${tdBase}${stTd(110,bg,'font-weight:600;border-right:2px solid #374151;min-width:130px')}">${row.sa_name}</td>`;
+      brRows.forEach(row=>{rowIdx++;const bg=rowIdx%2===0?'#0e1a29':'#111827';html+=`<tr>`;html+=`<td style="${tdBase}${stTd(0,bg,'color:#64748b;font-weight:700;border-right:1px solid #2d3f56;width:35px')}">${rowIdx}</td>`;html+=`<td style="${tdBase}${stTd(35,bg,'border-right:1px solid #2d3f56;width:55px')}"><span style="display:inline-block;padding:2px 6px;border-radius:5px;font-size:10px;font-weight:700;background:${brColor}22;color:${brColor}">${br}</span></td>`;html+=`<td style="${tdBase}${stTd(90,bg,'font-weight:600;border-right:2px solid #374151;min-width:100px')}">${row.sa_name}</td>`;
         configs.forEach((cfg,ci)=>{const c=row.configs[cfg.id],qty=c?c.qty:0,sales=c?c.sales:0,cnt=c?c.cnt:0;const has=qty>0||sales>0||cnt>0;const border=ci<configs.length-1?'2px solid #2d3f56':'';let disp,style;if(cfg.stat_method==='quantity'){disp=has?qty.toLocaleString(undefined,{maximumFractionDigits:1}):'—';style=has?'color:#e2e8f0;font-weight:600':'color:#334155';}else if(cfg.stat_method==='count'){disp=has?cnt.toLocaleString():'—';style=has?'color:#e2e8f0;font-weight:600':'color:#334155';}else{disp=has?fmt(sales):'—';style=has?'color:#10b981;font-weight:700':'color:#334155';}html+=`<td style="${tdNum}${style};border-right:${border}">${disp}</td>`;});
         html+=`</tr>`;});
       const subBg=br==='AMA'?'rgba(59,130,246,.1)':br==='AMC'?'rgba(16,185,129,.1)':'rgba(245,158,11,.1)';
-      html+=`<tr style="background:${subBg}"><td style="${tdBase}${stTd(0,'transparent','border-right:1px solid #2d3f56')}"></td><td style="${tdBase}${stTd(40,'transparent','border-right:1px solid #2d3f56')}"><span style="font-size:11px;font-weight:800;color:${brColor}">${br} 小計</span></td><td style="${tdBase}${stTd(110,'transparent','font-size:12px;color:#64748b;border-right:2px solid #374151')}">${brRows.length} 人</td>`;
+      html+=`<tr style="background:${subBg}"><td style="${tdBase}${stTd(0,'transparent','border-right:1px solid #2d3f56')}"></td><td style="${tdBase}${stTd(35,'transparent','border-right:1px solid #2d3f56')}"><span style="font-size:11px;font-weight:800;color:${brColor}">${br}</span></td><td style="${tdBase}${stTd(90,'transparent','font-size:11px;color:#64748b;border-right:2px solid #374151')}">${brRows.length} 人</td>`;
       configs.forEach((cfg,ci)=>{const border=ci<configs.length-1?'2px solid #2d3f56':'';const brQ=brRows.reduce((s,r)=>s+(r.configs[cfg.id]?.qty||0),0);const brS=brRows.reduce((s,r)=>s+(r.configs[cfg.id]?.sales||0),0);const brC=brRows.reduce((s,r)=>s+(r.configs[cfg.id]?.cnt||0),0);const has=brQ>0||brS>0||brC>0;let sv;if(cfg.stat_method==='quantity')sv=has?brQ.toLocaleString(undefined,{maximumFractionDigits:1}):'—';else if(cfg.stat_method==='count')sv=has?brC.toLocaleString():'—';else sv=has?fmt(brS):'—';html+=`<td style="${tdNum}color:${brColor};font-weight:800;font-size:12px;border-right:${border}">${sv}</td>`;});html+=`</tr>`;
     }
-    html+=`<tr style="background:#1e293b;border-top:2px solid #3b82f6"><td style="${tdBase}${stTd(0,'#1e293b','border-right:1px solid #2d3f56')}"></td><td style="${tdBase}${stTd(40,'#1e293b','border-right:1px solid #2d3f56')}"></td><td style="${tdBase}${stTd(110,'#1e293b','font-size:13px;font-weight:800;color:#fff;border-right:2px solid #374151')}">全廠合計</td>`;
-    configs.forEach((cfg,ci)=>{const t=colTotals[cfg.id]||{qty:0,sales:0,cnt:0};const border=ci<configs.length-1?'2px solid #2d3f56':'';const has=t.qty>0||t.sales>0||t.cnt>0;let tv;if(cfg.stat_method==='quantity')tv=has?t.qty.toLocaleString(undefined,{maximumFractionDigits:1}):'—';else if(cfg.stat_method==='count')tv=has?t.cnt.toLocaleString():'—';else tv=has?fmt(t.sales):'—';html+=`<td style="${tdNum}color:#10b981;font-weight:800;font-size:13px;border-right:${border}">${tv}</td>`;});
+    html+=`<tr style="background:#1e293b;border-top:2px solid #3b82f6"><td style="${tdBase}${stTd(0,'#1e293b','border-right:1px solid #2d3f56')}"></td><td style="${tdBase}${stTd(35,'#1e293b','border-right:1px solid #2d3f56')}"></td><td style="${tdBase}${stTd(90,'#1e293b','font-size:12px;font-weight:800;color:#fff;border-right:2px solid #374151')}">全廠合計</td>`;
+    configs.forEach((cfg,ci)=>{const t=colTotals[cfg.id]||{qty:0,sales:0,cnt:0};const border=ci<configs.length-1?'2px solid #2d3f56':'';const has=t.qty>0||t.sales>0||t.cnt>0;let tv;if(cfg.stat_method==='quantity')tv=has?t.qty.toLocaleString(undefined,{maximumFractionDigits:1}):'—';else if(cfg.stat_method==='count')tv=has?t.cnt.toLocaleString():'—';else tv=has?fmt(t.sales):'—';html+=`<td style="${tdNum}color:#10b981;font-weight:800;font-size:12px;border-right:${border}">${tv}</td>`;});
     html+=`</tr></tbody></table>`;matrixEl.innerHTML=html;saLoaded[tabKey]=true;
   }catch(e){matrixEl.innerHTML=`<div style="padding:24px;color:#ef4444">${e.message}</div>`;}
 }
@@ -587,20 +704,20 @@ async function loadTrend(branch){
     const params=new URLSearchParams();if(branch)params.set('branch',branch);
     const data=await(await fetch(`/api/stats/trend?${params}`)).json();if(data.error)throw new Error(data.error);
     const rows=data.trend,prevMap={};
-    document.getElementById('tbTrend').innerHTML=rows.length?rows.map(r=>{const key=r.branch,cur=n(r.total_untaxed),prev=prevMap[key];const pct=prev?((cur-prev)/prev*100):null;prevMap[key]=cur;return`<tr><td>${r.period.slice(0,4)}年${r.period.slice(4)}月</td><td><span class="badge badge-blue">${r.branch}</span></td><td class="num">${parseInt(r.car_count||0)}</td><td class="num" style="font-weight:700">${fmt(r.total_untaxed)}</td><td class="num">${fmt(r.engine_wage)}</td><td class="num">${fmt(r.parts_income)}</td><td class="num ${pct===null?'':pct>=0?'up':'down'}">${pct===null?'-':(pct>=0?'▲':'▼')+Math.abs(pct).toFixed(1)+'%'}</td></tr>`;}).join(''):'<tr><td colspan="7" class="empty">無資料</td></tr>';
+    document.getElementById('tbTrend').innerHTML=rows.length?rows.map(r=>{const key=r.branch,cur=n(r.total_untaxed),prev=prevMap[key];const pct=prev?((cur-prev)/prev*100):null;prevMap[key]=cur;return`<tr><td style="white-space:nowrap">${r.period.slice(0,4)}年${r.period.slice(4)}月</td><td><span class="badge badge-blue">${r.branch}</span></td><td class="num">${parseInt(r.car_count||0)}</td><td class="num" style="font-weight:700">${fmt(r.total_untaxed)}</td><td class="num">${fmt(r.engine_wage)}</td><td class="num">${fmt(r.parts_income)}</td><td class="num ${pct===null?'':pct>=0?'up':'down'}">${pct===null?'-':(pct>=0?'▲':'▼')+Math.abs(pct).toFixed(1)+'%'}</td></tr>`;}).join(''):'<tr><td colspan="7" class="empty">無資料</td></tr>';
   }catch(e){document.getElementById('tbTrend').innerHTML=`<tr><td colspan="7" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;}
 }
 
-// ══ 每日進廠台數 ══ (MODIFIED)
+// ══ 每日進廠台數 ══
 async function loadDaily(period,branch){
   try{
     const params=new URLSearchParams();if(period)params.set('period',period);if(branch)params.set('branch',branch);
     const data=await(await fetch(`/api/stats/daily?${params}`)).json();if(data.error)throw new Error(data.error);
     const summary=data.summary,daily=data.daily;
     const branchColors={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
+    const isMobile=window.innerWidth<=768;
 
-    // ── KPI ──
-    // 工作天數：一個合併卡片
+    // KPI
     const wdLines=summary.map(r=>{
       const icon=r.configured_working_days!==null?'✅':'⚠️';
       const col=branchColors[r.branch]||'#94a3b8';
@@ -610,13 +727,11 @@ async function loadDaily(period,branch){
         <span style="font-size:11px">${icon}</span>
       </div>`;
     }).join('');
-    let kpiHtml=`<div class="kpi-card" style="min-width:160px">
+    let kpiHtml=`<div class="kpi-card" style="min-width:140px">
       <div class="kpi-label">📅 工作天數設定</div>
       ${wdLines}
       <div class="kpi-sub" style="margin-top:8px;font-size:10px">✅手動設定 ⚠️自動偵測</div>
     </div>`;
-
-    // avgMap: 進度日均 = 總台數 ÷ 已有資料天數 (auto_working_days)
     const avgMap={};
     summary.forEach(r=>{
       const progressDays=parseInt(r.auto_working_days||0);
@@ -627,50 +742,47 @@ async function loadDaily(period,branch){
         <div class="kpi-value" style="color:${col}">${parseInt(r.total_cars||0).toLocaleString()}</div>
         <div class="kpi-sub">台</div>
       </div><div class="kpi-card">
-        <div class="kpi-label" style="color:${col}">${r.branch} 日均台數</div>
+        <div class="kpi-label" style="color:${col}">${r.branch} 日均</div>
         <div class="kpi-value kpi-green">${avgMap[r.branch]>0?avgMap[r.branch].toFixed(1):'—'}</div>
-        <div class="kpi-sub">進度均值（已${r.auto_working_days}天）<br>最高${r.max_day} / 最低${r.min_day}</div>
+        <div class="kpi-sub">進度均值（已${r.auto_working_days}天）</div>
       </div>`;
     });
     document.getElementById('dailyKPI').innerHTML=kpiHtml;
 
-    // ── Chart ──
+    // Chart — responsive width
     const branchList=[...new Set(daily.map(r=>r.branch))].sort();
     const dateList=[...new Set(daily.map(r=>r.arrive_date?.slice(0,10)))].sort();
     const maxCount=Math.max(...daily.map(r=>parseInt(r.car_count||0)),1);
-    const barW=Math.max(7,Math.min(22,Math.floor(540/(dateList.length*branchList.length+dateList.length))));
+    // On mobile use narrower bars
+    const barW=isMobile?Math.max(4,Math.min(12,Math.floor(280/(dateList.length*branchList.length+dateList.length)))):Math.max(7,Math.min(22,Math.floor(540/(dateList.length*branchList.length+dateList.length))));
     const dayMap={};daily.forEach(r=>{const d=r.arrive_date?.slice(0,10);if(!dayMap[d])dayMap[d]={};dayMap[d][r.branch]=parseInt(r.car_count||0);});
 
-    // Save state for toggle re-render
     window._dailyState={
       showAvg:Object.fromEntries(branchList.map(b=>[b,false])),
       branchList,dateList,colors:branchColors,maxCount,barW,dayMap,avgMap
     };
 
-    // Toggle buttons
     const toggleBtns=branchList.map(b=>`<button id="avgToggle-${b}" onclick="window._toggleDailyAvg('${b}')"
-      style="padding:5px 14px;border:1.5px solid ${branchColors[b]||'#94a3b8'};border-radius:7px;background:transparent;color:${branchColors[b]||'#94a3b8'};font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap">
+      style="padding:4px 10px;border:1.5px solid ${branchColors[b]||'#94a3b8'};border-radius:6px;background:transparent;color:${branchColors[b]||'#94a3b8'};font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap">
       📈 ${b} 日均線
     </button>`).join('');
 
     document.getElementById('dailyChart').innerHTML=`
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-        <span style="font-size:12px;color:#64748b;font-weight:700;letter-spacing:.04em">顯示日均線：</span>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+        <span style="font-size:11px;color:#64748b;font-weight:700">顯示日均線：</span>
         ${toggleBtns}
       </div>
-      <div id="dailyChartSvgWrap" style="overflow-x:auto"></div>`;
+      <div id="dailyChartSvgWrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch"></div>`;
 
     window._renderDailyChart();
 
-    // ── Detail table ──
     document.getElementById('tbDaily').innerHTML=daily.length?daily.map(r=>{
       const cnt=parseInt(r.car_count||0),avg=avgMap[r.branch]||0,diff=cnt-avg,pct=avg>0?(diff/avg*100):0;
-      return`<tr><td>${r.arrive_date?.slice(0,10)}</td><td><span class="badge badge-blue">${r.branch}</span></td><td class="num" style="font-weight:700">${cnt}</td><td class="num ${diff>=0?'up':'down'}">${diff>=0?'▲':'▼'}${Math.abs(diff).toFixed(1)}<span style="font-size:11px;color:#64748b">(${pct>=0?'+':''}${pct.toFixed(0)}%)</span></td></tr>`;
+      return`<tr><td style="white-space:nowrap">${r.arrive_date?.slice(0,10)}</td><td><span class="badge badge-blue">${r.branch}</span></td><td class="num" style="font-weight:700">${cnt}</td><td class="num ${diff>=0?'up':'down'}">${diff>=0?'▲':'▼'}${Math.abs(diff).toFixed(1)}<span style="font-size:11px;color:#64748b">(${pct>=0?'+':''}${pct.toFixed(0)}%)</span></td></tr>`;
     }).join(''):'<tr><td colspan="4" class="empty">無資料</td></tr>';
   }catch(e){document.getElementById('dailyKPI').innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;}
 }
 
-// Toggle avg line on/off
 window._toggleDailyAvg=function(branch){
   const s=window._dailyState;if(!s)return;
   s.showAvg[branch]=!s.showAvg[branch];
@@ -684,64 +796,49 @@ window._toggleDailyAvg=function(branch){
   window._renderDailyChart();
 };
 
-// Render SVG chart (called on load and on each toggle)
 window._renderDailyChart=function(){
   const s=window._dailyState;if(!s)return;
   const{branchList,dateList,colors,maxCount,barW,dayMap,avgMap,showAvg}=s;
-  const leftPad=50,chartH=200,xLabelH=20,legendH=26;
+  const leftPad=44,chartH=180,xLabelH=18,legendH=24;
   const groupW=branchList.length*(barW+2);
-  const chartW=Math.max(700,leftPad+dateList.length*(groupW+8)+50);
+  const minW=leftPad+dateList.length*(groupW+6)+40;
+  const chartW=Math.max(300,minW);
   const totalH=chartH+xLabelH+legendH;
 
   let bars='',xLabels='',avgLines='',yAxis='',legend='';
-
-  // Y-axis grid lines
   for(let i=0;i<=4;i++){
     const val=Math.round(maxCount*i/4);
-    const y=chartH-(i/4)*(chartH-30);
-    yAxis+=`<line x1="${leftPad-4}" y1="${y.toFixed(0)}" x2="${chartW-20}" y2="${y.toFixed(0)}" stroke="${i===0?'#374151':'#1e3050'}" stroke-width="1"/>`;
-    yAxis+=`<text x="${leftPad-7}" y="${(y+4).toFixed(0)}" text-anchor="end" font-size="9" fill="#475569">${val}</text>`;
+    const y=chartH-(i/4)*(chartH-28);
+    yAxis+=`<line x1="${leftPad-4}" y1="${y.toFixed(0)}" x2="${chartW-16}" y2="${y.toFixed(0)}" stroke="${i===0?'#374151':'#1e3050'}" stroke-width="1"/>`;
+    yAxis+=`<text x="${leftPad-6}" y="${(y+4).toFixed(0)}" text-anchor="end" font-size="9" fill="#475569">${val}</text>`;
   }
-
-  // Bars and value labels
   dateList.forEach((d,di)=>{
-    const gx=leftPad+di*(groupW+8);
+    const gx=leftPad+di*(groupW+6);
     branchList.forEach((b,bi)=>{
       const val=dayMap[d]?.[b]||0;
-      const barH=val>0?Math.max(2,val/maxCount*(chartH-30)):0;
+      const barH=val>0?Math.max(2,val/maxCount*(chartH-28)):0;
       const x=gx+bi*(barW+2),y=chartH-barH;
       bars+=`<rect x="${x}" y="${y.toFixed(1)}" width="${barW}" height="${barH.toFixed(1)}" fill="${colors[b]||'#64748b'}" rx="2" opacity="0.85"><title>${b} ${d}: ${val}台</title></rect>`;
-      // Number label above bar — only show if bar is tall enough
-      if(val>0){
-        const labelY=Math.max(11,(y-3));
-        bars+=`<text x="${(x+barW/2).toFixed(0)}" y="${labelY.toFixed(0)}" text-anchor="middle" font-size="9" fill="#94a3b8">${val}</text>`;
-      }
+      if(val>0&&barW>=8){const labelY=Math.max(10,(y-2));bars+=`<text x="${(x+barW/2).toFixed(0)}" y="${labelY.toFixed(0)}" text-anchor="middle" font-size="8" fill="#94a3b8">${val}</text>`;}
     });
-    // Date label below bars
-    xLabels+=`<text x="${(gx+groupW/2).toFixed(0)}" y="${chartH+14}" text-anchor="middle" font-size="9" fill="#475569">${d.slice(8)}</text>`;
+    xLabels+=`<text x="${(gx+groupW/2).toFixed(0)}" y="${chartH+13}" text-anchor="middle" font-size="8" fill="#475569">${d.slice(8)}</text>`;
   });
-
-  // Average dashed lines (only when toggled on)
   branchList.forEach(b=>{
     if(!showAvg[b])return;
     const avg=avgMap[b];if(!avg)return;
-    const y=chartH-avg/maxCount*(chartH-30);
+    const y=chartH-avg/maxCount*(chartH-28);
     const col=colors[b]||'#94a3b8';
-    avgLines+=`<line x1="${leftPad}" y1="${y.toFixed(1)}" x2="${chartW-22}" y2="${y.toFixed(1)}" stroke="${col}" stroke-width="1.5" stroke-dasharray="7,4" opacity="0.9"/>`;
-    // Value badge at right end
-    avgLines+=`<rect x="${chartW-21}" y="${(y-8).toFixed(0)}" width="20" height="13" rx="3" fill="${col}" opacity="0.25"/>`;
-    avgLines+=`<text x="${chartW-11}" y="${(y+4).toFixed(0)}" text-anchor="middle" font-size="9" fill="${col}" font-weight="800">${avg.toFixed(1)}</text>`;
+    avgLines+=`<line x1="${leftPad}" y1="${y.toFixed(1)}" x2="${chartW-18}" y2="${y.toFixed(1)}" stroke="${col}" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.9"/>`;
+    avgLines+=`<rect x="${chartW-17}" y="${(y-7).toFixed(0)}" width="17" height="12" rx="2" fill="${col}" opacity="0.25"/>`;
+    avgLines+=`<text x="${chartW-8}" y="${(y+4).toFixed(0)}" text-anchor="middle" font-size="8" fill="${col}" font-weight="800">${avg.toFixed(1)}</text>`;
   });
-
-  // Legend at bottom (below x-axis labels) — no overlap with bars
-  const legY=chartH+xLabelH+7;
+  const legY=chartH+xLabelH+5;
   branchList.forEach((b,i)=>{
     const col=colors[b]||'#94a3b8';
-    legend+=`<rect x="${leftPad+i*72}" y="${legY}" width="11" height="11" fill="${col}" rx="2"/>`;
-    legend+=`<text x="${leftPad+14+i*72}" y="${legY+9}" font-size="11" fill="#94a3b8" font-weight="600">${b}</text>`;
+    legend+=`<rect x="${leftPad+i*60}" y="${legY}" width="10" height="10" fill="${col}" rx="2"/>`;
+    legend+=`<text x="${leftPad+13+i*60}" y="${legY+8}" font-size="10" fill="#94a3b8" font-weight="600">${b}</text>`;
   });
-
-  const svg=`<svg viewBox="0 0 ${chartW} ${totalH}" style="width:100%;height:auto;display:block">${yAxis}${bars}${xLabels}${avgLines}${legend}</svg>`;
+  const svg=`<svg viewBox="0 0 ${chartW} ${totalH}" style="width:100%;height:auto;display:block;min-width:${Math.min(300,chartW)}px">${yAxis}${bars}${xLabels}${avgLines}${legend}</svg>`;
   const wrap=document.getElementById('dailyChartSvgWrap');
   if(wrap)wrap.innerHTML=svg;
 };
