@@ -452,9 +452,8 @@
       </div>
     </div>
   </div>
-</div>
 
- <!-- WIP 未結工單 -->
+  <!-- WIP 未結工單 -->
   <div id="tab-wip" style="display:none">
     <div style="background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.25);border-radius:8px;padding:10px 14px;font-size:12px;color:#fb923c;margin-bottom:14px;line-height:1.8">
       🔧 <strong>未結工單定義</strong>：本月 tech_performance／parts_sales 有工時或零件紀錄，
@@ -577,6 +576,7 @@ async function loadAll(){
     loadBoutiqueAccessories(period,branch),
     loadTrend(branch),
     loadDaily(period,branch),
+    loadWip(period, branch),
     loadSASales()
   ]);
   document.getElementById('lastUpdate').textContent=`${new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})} 更新`;
