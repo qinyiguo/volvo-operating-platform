@@ -5,12 +5,36 @@ const pool   = require('../db/pool');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
-// ── Helper: 計算上個月 YYYYMM ──
+// ══════════════════════════════════════════════
+// Helpers
+// ══════════════════════════════════════════════
 function lastMonth(period) {
   const y = parseInt(period.slice(0, 4));
   const m = parseInt(period.slice(4));
   if (m === 1) return `${y - 1}12`;
   return `${y}${String(m - 1).padStart(2, '0')}`;
+}
+
+// 'YYYYMM' → '2026-03-01'
+function periodStart(period) {
+  return `${period.slice(0,4)}-${period.slice(4,6)}-01`;
+}
+
+// 標準過濾：排除「本月前離職」與「計時人員」
+// 回傳 { cond, param, nextIdx }，cond 以 AND 開頭
+function activeFilter(period, startIdx) {
+  return {
+    cond: `
+      AND (
+        status != '離職'
+        OR (resign_date IS NOT NULL AND resign_date >= $${startIdx}::date)
+      )
+      AND COALESCE(job_category, '') NOT ILIKE '%計時%'
+      AND COALESCE(job_title,    '') NOT ILIKE '%計時%'
+    `,
+    param: periodStart(period),
+    nextIdx: startIdx + 1,
+  };
 }
 
 // ══════════════════════════════════════════════
@@ -28,6 +52,13 @@ function parseRosterExcel(buffer) {
   const headers = raw[headerIdx].map(c => String(c || '').trim());
   const col = name => headers.indexOf(name);
 
+  const fmtDate = v => {
+    if (!v) return null;
+    const s = String(v).trim();
+    const m = s.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+    return m ? `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}` : null;
+  };
+
   const rows = [];
   for (let i = headerIdx + 1; i < raw.length; i++) {
     const r = raw[i];
@@ -35,14 +66,6 @@ function parseRosterExcel(buffer) {
     if (!empId) continue;
     const status = String(r[col('在職狀態')] || '').trim();
     if (!status) continue;
-
-    const fmtDate = v => {
-      if (!v) return null;
-      const s = String(v).trim();
-      const m = s.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
-      return m ? `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}` : null;
-    };
-
     rows.push({
       emp_id:             empId,
       emp_name:           String(r[col('中文姓名')]     || '').trim(),
@@ -79,25 +102,22 @@ router.post('/bonus/upload-roster', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '請選擇檔案' });
   const period = String(req.body.period || '').trim();
   if (!period.match(/^\d{6}$/)) return res.status(400).json({ error: '請指定期間（YYYYMM）' });
-
   try {
     const rows = parseRosterExcel(req.file.buffer);
     if (!rows.length) return res.status(400).json({ error: '找不到有效資料列' });
-
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       await client.query('DELETE FROM staff_roster WHERE period=$1', [period]);
-
       let count = 0;
       for (const r of rows) {
         await client.query(`
           INSERT INTO staff_roster
-            (period, emp_id, emp_name, dept_code, dept_name, job_title, status,
-             hire_date, resign_date, unpaid_leave_date, mgr1, mgr2,
-             factory, job_category, job_class)
+            (period,emp_id,emp_name,dept_code,dept_name,job_title,status,
+             hire_date,resign_date,unpaid_leave_date,mgr1,mgr2,
+             factory,job_category,job_class)
           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
-          ON CONFLICT (period, emp_id) DO UPDATE SET
+          ON CONFLICT (period,emp_id) DO UPDATE SET
             emp_name=EXCLUDED.emp_name, dept_code=EXCLUDED.dept_code,
             dept_name=EXCLUDED.dept_name, job_title=EXCLUDED.job_title,
             status=EXCLUDED.status, hire_date=EXCLUDED.hire_date,
@@ -119,18 +139,19 @@ router.post('/bonus/upload-roster', upload.single('file'), async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── 取得人員名冊 ──
+// ── 取得人員名冊（已過濾：排除本月前離職、排除計時）──
 router.get('/bonus/roster', async (req, res) => {
   const { period, factory, status, dept_code } = req.query;
+  if (!period) return res.status(400).json({ error: 'period 為必填' });
   try {
-    const conds = []; const params = []; let idx = 1;
-    if (period)    { conds.push(`period=$${idx++}`);    params.push(period); }
-    if (factory)   { conds.push(`factory=$${idx++}`);   params.push(factory); }
-    if (status)    { conds.push(`status=$${idx++}`);    params.push(status); }
-    if (dept_code) { conds.push(`dept_code=$${idx++}`); params.push(dept_code); }
-    const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
+    const f = activeFilter(period, 2);
+    const p = [period, f.param]; let idx = f.nextIdx;
+    let extra = '';
+    if (factory)   { extra += ` AND factory=$${idx++}`;   p.push(factory); }
+    if (status)    { extra += ` AND status=$${idx++}`;    p.push(status); }
+    if (dept_code) { extra += ` AND dept_code=$${idx++}`; p.push(dept_code); }
     const r = await pool.query(
-      `SELECT * FROM staff_roster ${where} ORDER BY dept_code, emp_id`, params
+      `SELECT * FROM staff_roster WHERE period=$1 ${f.cond} ${extra} ORDER BY dept_code, emp_id`, p
     );
     res.json(r.rows);
   } catch(err) { res.status(500).json({ error: err.message }); }
@@ -141,11 +162,8 @@ router.patch('/bonus/roster/:period/:emp_id', async (req, res) => {
   const { period, emp_id } = req.params;
   const { factory } = req.body;
   try {
-    await pool.query(
-      `UPDATE staff_roster SET factory=$1, updated_at=NOW()
-       WHERE period=$2 AND emp_id=$3`,
-      [factory || null, period, emp_id]
-    );
+    await pool.query(`UPDATE staff_roster SET factory=$1, updated_at=NOW() WHERE period=$2 AND emp_id=$3`,
+      [factory || null, period, emp_id]);
     res.json({ ok: true });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
@@ -162,43 +180,38 @@ router.get('/bonus/roster-periods', async (req, res) => {
 router.get('/bonus/roster-summary', async (req, res) => {
   const { period } = req.query;
   if (!period) return res.status(400).json({ error: 'period 為必填' });
-
   const prevPeriod = lastMonth(period);
-
+  const f = activeFilter(period, 2);
   try {
-    // 各廠在職/離職人數
     const summary = await pool.query(`
       SELECT dept_code, dept_name, factory, status, COUNT(*) AS cnt
-      FROM staff_roster WHERE period=$1
-      GROUP BY dept_code, dept_name, factory, status
-      ORDER BY dept_code, status
-    `, [period]);
+      FROM staff_roster WHERE period=$1 ${f.cond}
+      GROUP BY dept_code, dept_name, factory, status ORDER BY dept_code, status
+    `, [period, f.param]);
 
-    // 上個月離職（resign_date 落在上個月）
     const resignLastMonth = await pool.query(`
       SELECT emp_id, emp_name, dept_name, factory, resign_date, mgr1
       FROM staff_roster
-      WHERE period=$1
-        AND status='離職'
-        AND resign_date IS NOT NULL
-        AND TO_CHAR(resign_date, 'YYYYMM') = $2
+      WHERE period=$1 AND status='離職' AND resign_date IS NOT NULL
+        AND TO_CHAR(resign_date,'YYYYMM')=$2
       ORDER BY dept_code, resign_date
     `, [period, prevPeriod]);
 
-    // 上個月新進（hire_date 落在上個月）
     const newHiresLastMonth = await pool.query(`
       SELECT emp_id, emp_name, dept_name, factory, hire_date, job_title, mgr1
       FROM staff_roster
-      WHERE period=$1
-        AND hire_date IS NOT NULL
-        AND TO_CHAR(hire_date, 'YYYYMM') = $2
+      WHERE period=$1 AND hire_date IS NOT NULL
+        AND TO_CHAR(hire_date,'YYYYMM')=$2
+        AND COALESCE(job_category,'') NOT ILIKE '%計時%'
+        AND COALESCE(job_title,'') NOT ILIKE '%計時%'
       ORDER BY dept_code, hire_date
     `, [period, prevPeriod]);
 
-    // 留職停薪
     const unpaid = await pool.query(`
       SELECT emp_id, emp_name, dept_name, factory, unpaid_leave_date, mgr1
       FROM staff_roster WHERE period=$1 AND status='留職停薪'
+        AND COALESCE(job_category,'') NOT ILIKE '%計時%'
+        AND COALESCE(job_title,'') NOT ILIKE '%計時%'
       ORDER BY dept_code
     `, [period]);
 
@@ -213,7 +226,7 @@ router.get('/bonus/roster-summary', async (req, res) => {
 });
 
 // ══════════════════════════════════════════════
-// 獎金指標設定 CRUD
+// 獎金指標設定 CRUD（含 target_dept_codes）
 // ══════════════════════════════════════════════
 router.get('/bonus/metrics', async (req, res) => {
   try {
@@ -223,33 +236,39 @@ router.get('/bonus/metrics', async (req, res) => {
 
 router.post('/bonus/metrics', async (req, res) => {
   const { metric_name, description, scope_type, scope_value,
-          metric_source, filters, stat_field, unit, sort_order, bonus_rule } = req.body;
+          metric_source, filters, stat_field, unit, sort_order,
+          bonus_rule, target_dept_codes } = req.body;
   if (!metric_name) return res.status(400).json({ error: '名稱為必填' });
   try {
     const r = await pool.query(`
       INSERT INTO bonus_metrics
-        (metric_name, description, scope_type, scope_value, metric_source, filters, stat_field, unit, sort_order)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *
+        (metric_name,description,scope_type,scope_value,metric_source,
+         filters,stat_field,unit,sort_order,target_dept_codes)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *
     `, [metric_name.trim(), description||'', scope_type||'person', scope_value||'',
-        metric_source||'manual', JSON.stringify(filters||[]), stat_field||'amount', unit||'', sort_order||0]);
+        metric_source||'manual', JSON.stringify(filters||[]),
+        stat_field||'amount', unit||'', sort_order||0,
+        JSON.stringify(target_dept_codes||[])]);
     res.json(r.rows[0]);
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
 router.put('/bonus/metrics/:id', async (req, res) => {
   const { metric_name, description, scope_type, scope_value,
-          metric_source, filters, stat_field, unit, sort_order, bonus_rule } = req.body;
+          metric_source, filters, stat_field, unit, sort_order,
+          bonus_rule, target_dept_codes } = req.body;
   if (!metric_name) return res.status(400).json({ error: '名稱為必填' });
   try {
     const r = await pool.query(`
       UPDATE bonus_metrics SET
         metric_name=$1, description=$2, scope_type=$3, scope_value=$4,
         metric_source=$5, filters=$6, stat_field=$7, unit=$8, sort_order=$9,
-        updated_at=NOW()
-      WHERE id=$10 RETURNING *
+        target_dept_codes=$10, updated_at=NOW()
+      WHERE id=$11 RETURNING *
     `, [metric_name.trim(), description||'', scope_type||'person', scope_value||'',
-        metric_source||'manual', JSON.stringify(filters||[]), stat_field||'amount', unit||'', sort_order||0,
-        req.params.id]);
+        metric_source||'manual', JSON.stringify(filters||[]),
+        stat_field||'amount', unit||'', sort_order||0,
+        JSON.stringify(target_dept_codes||[]), req.params.id]);
     if (!r.rows.length) return res.status(404).json({ error: '找不到指標' });
     res.json(r.rows[0]);
   } catch(err) { res.status(500).json({ error: err.message }); }
@@ -294,7 +313,7 @@ router.put('/bonus/targets/batch', async (req, res) => {
       if (!e.metric_id || !e.period) continue;
       await client.query(`
         INSERT INTO bonus_targets
-          (metric_id, emp_id, dept_code, period, target_value, last_year_value, bonus_rule, note, updated_at)
+          (metric_id,emp_id,dept_code,period,target_value,last_year_value,bonus_rule,note,updated_at)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW())
         ON CONFLICT (metric_id, COALESCE(emp_id,''), COALESCE(dept_code,''), period) DO UPDATE SET
           target_value=$5, last_year_value=$6, bonus_rule=$7, note=$8, updated_at=NOW()
@@ -324,35 +343,31 @@ router.get('/bonus/progress', async (req, res) => {
   try {
     const metrics = (await pool.query(`SELECT * FROM bonus_metrics ORDER BY sort_order, id`)).rows;
     const targets = (await pool.query(`SELECT * FROM bonus_targets WHERE period=$1`, [period])).rows;
-
     const results = [];
     for (const m of metrics) {
       let actual = null;
-
       if (m.metric_source !== 'manual') {
         const filters = m.filters || [];
         try {
           if (m.metric_source === 'repair_income') {
-            const acTypes = filters.filter(f => f.type==='account_type').map(f => f.value);
+            const acTypes = filters.filter(f=>f.type==='account_type').map(f=>f.value);
             const branchF = factory && ['AMA','AMC','AMD'].includes(factory) ? factory : null;
             const conds = [`period=$1`]; const p = [period]; let idx=2;
             if (branchF) { conds.push(`branch=$${idx++}`); p.push(branchF); }
             if (acTypes.length) { conds.push(`account_type=ANY($${idx++})`); p.push(acTypes); }
             const fld = m.stat_field==='count' ? 'COUNT(DISTINCT work_order)' : 'SUM(total_untaxed)';
-            const r = await pool.query(`SELECT COALESCE(${fld},0) AS v FROM repair_income WHERE ${conds.join(' AND ')}`, p);
-            actual = parseFloat(r.rows[0]?.v || 0);
+            actual = parseFloat((await pool.query(`SELECT COALESCE(${fld},0) AS v FROM repair_income WHERE ${conds.join(' AND ')}`, p)).rows[0]?.v || 0);
           } else if (m.metric_source === 'tech_wage') {
             const branchF = factory && ['AMA','AMC','AMD'].includes(factory) ? factory : null;
             const conds = [`period=$1`]; const p = [period]; let idx=2;
             if (branchF) { conds.push(`branch=$${idx++}`); p.push(branchF); }
-            const workCodes = filters.filter(f => f.type==='work_code').map(f => f.value);
+            const workCodes = filters.filter(f=>f.type==='work_code').map(f=>f.value);
             for (const wc of workCodes) {
               if (wc.includes('-')) { const [fr,to]=wc.split('-'); conds.push(`work_code BETWEEN $${idx++} AND $${idx++}`); p.push(fr.trim(),to.trim()); }
               else { conds.push(`work_code=$${idx++}`); p.push(wc); }
             }
             const fld = m.stat_field==='amount' ? 'SUM(wage)' : m.stat_field==='hours' ? 'SUM(standard_hours)' : 'COUNT(DISTINCT work_order)';
-            const r = await pool.query(`SELECT COALESCE(${fld},0) AS v FROM tech_performance WHERE ${conds.join(' AND ')}`, p);
-            actual = parseFloat(r.rows[0]?.v || 0);
+            actual = parseFloat((await pool.query(`SELECT COALESCE(${fld},0) AS v FROM tech_performance WHERE ${conds.join(' AND ')}`, p)).rows[0]?.v || 0);
           } else if (m.metric_source === 'parts_sales') {
             const branchF = factory && ['AMA','AMC','AMD'].includes(factory) ? factory : null;
             const conds = [`period=$1`]; const p = [period]; let idx=2;
@@ -362,12 +377,10 @@ router.get('/bonus/progress', async (req, res) => {
             if (cc.length) { conds.push(`category_code=ANY($${idx++})`); p.push(cc); }
             if (pt.length) { conds.push(`part_type=ANY($${idx++})`); p.push(pt); }
             const fld = m.stat_field==='qty' ? 'SUM(sale_qty)' : m.stat_field==='count' ? 'COUNT(*)' : 'SUM(sale_price_untaxed)';
-            const r = await pool.query(`SELECT COALESCE(${fld},0) AS v FROM parts_sales WHERE ${conds.join(' AND ')}`, p);
-            actual = parseFloat(r.rows[0]?.v || 0);
+            actual = parseFloat((await pool.query(`SELECT COALESCE(${fld},0) AS v FROM parts_sales WHERE ${conds.join(' AND ')}`, p)).rows[0]?.v || 0);
           }
         } catch(e) { actual = null; }
       }
-
       const myTargets = targets.filter(t => t.metric_id === m.id);
       results.push({ metric: m, targets: myTargets, actual });
     }
@@ -375,28 +388,50 @@ router.get('/bonus/progress', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── 取得可設定目標的人員清單 ──
+// ── 可設定目標的人員/部門清單（已過濾計時+舊離職，支援 dept_codes 篩選）──
 router.get('/bonus/scope-members', async (req, res) => {
-  const { period, scope_type, factory } = req.query;
+  const { period, scope_type, factory, dept_codes } = req.query;
+  if (!period) return res.status(400).json({ error: 'period 為必填' });
+  const deptCodesArr = dept_codes
+    ? dept_codes.split(',').map(s=>s.trim()).filter(Boolean)
+    : [];
+  const f = activeFilter(period, 2);
   try {
+    const p = [period, f.param]; let idx = f.nextIdx;
+    let extra = '';
+    if (factory)             { extra += ` AND factory=$${idx++}`;           p.push(factory); }
+    if (deptCodesArr.length) { extra += ` AND dept_code=ANY($${idx++})`;    p.push(deptCodesArr); }
+
     if (scope_type === 'dept') {
-      const conds = [`period=$1`, `status='在職'`]; const p = [period]; let idx = 2;
-      if (factory) { conds.push(`factory=$${idx++}`); p.push(factory); }
       const r = await pool.query(`
         SELECT DISTINCT dept_code, dept_name, factory
-        FROM staff_roster WHERE ${conds.join(' AND ')} ORDER BY dept_code
+        FROM staff_roster WHERE period=$1 ${f.cond} ${extra}
+        ORDER BY dept_code
       `, p);
       res.json(r.rows);
     } else {
-      const conds = [`period=$1`, `status='在職'`]; const p = [period]; let idx = 2;
-      if (factory) { conds.push(`factory=$${idx++}`); p.push(factory); }
       const r = await pool.query(`
         SELECT emp_id, emp_name, dept_code, dept_name, factory, job_title, mgr1
-        FROM staff_roster WHERE ${conds.join(' AND ')}
+        FROM staff_roster WHERE period=$1 ${f.cond} ${extra}
         ORDER BY dept_code, emp_id
       `, p);
       res.json(r.rows);
     }
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── 取得部門清單（供指標設定 Modal 選擇套用對象）──
+router.get('/bonus/departments', async (req, res) => {
+  const { period } = req.query;
+  if (!period) return res.status(400).json({ error: 'period 為必填' });
+  const f = activeFilter(period, 2);
+  try {
+    const r = await pool.query(`
+      SELECT DISTINCT dept_code, dept_name, factory
+      FROM staff_roster WHERE period=$1 ${f.cond}
+      ORDER BY factory NULLS LAST, dept_code
+    `, [period, f.param]);
+    res.json(r.rows);
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
