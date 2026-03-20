@@ -72,6 +72,12 @@ const initDatabase = async () => {
     await client.query(`ALTER TABLE business_query ADD COLUMN IF NOT EXISTS sales_material_fee NUMERIC(12,2) DEFAULT 0`);
     await client.query(`ALTER TABLE repair_income ALTER COLUMN account_type TYPE VARCHAR(50)`);
     await client.query(`ALTER TABLE repair_income ALTER COLUMN account_type_code TYPE VARCHAR(50)`);
+    await client.query(`ALTER TABLE repair_income ALTER COLUMN account_type TYPE VARCHAR(100)`);
+    await client.query(`ALTER TABLE repair_income ALTER COLUMN work_order TYPE VARCHAR(50)`);
+    await client.query(`ALTER TABLE repair_income ALTER COLUMN customer TYPE VARCHAR(200)`);
+    await client.query(`ALTER TABLE tech_performance ALTER COLUMN account_type TYPE VARCHAR(100)`);
+    await client.query(`ALTER TABLE tech_performance ALTER COLUMN work_code TYPE VARCHAR(50)`);
+    await client.query(`ALTER TABLE tech_performance ALTER COLUMN work_order TYPE VARCHAR(50)`);
 
     const bqCheck = await client.query(
       `SELECT column_name FROM information_schema.columns
