@@ -157,13 +157,27 @@ router.get('/bonus/roster', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── 手動調整員工廠別 ──
+// ── 手動調整員工廠別 ＋ 部門 ──
 router.patch('/bonus/roster/:period/:emp_id', async (req, res) => {
   const { period, emp_id } = req.params;
-  const { factory } = req.body;
+  const { factory, dept_code, dept_name } = req.body;
   try {
-    await pool.query(`UPDATE staff_roster SET factory=$1, updated_at=NOW() WHERE period=$2 AND emp_id=$3`,
-      [factory || null, period, emp_id]);
+    const sets = ['factory=$1', 'updated_at=NOW()'];
+    const params = [factory || null, period, emp_id];
+    let idx = 4;
+    if (dept_code !== undefined) { sets.push(`dept_code=$${idx++}`); params.splice(idx - 2, 0, dept_code || null); }
+    if (dept_name !== undefined) { sets.push(`dept_name=$${idx++}`); params.splice(idx - 2, 0, dept_name || null); }
+    // rebuild properly
+    const p = [factory || null];
+    const setClauses = ['factory=$1', 'updated_at=NOW()'];
+    let n = 2;
+    if (dept_code !== undefined) { setClauses.push(`dept_code=$${n++}`); p.push(dept_code || null); }
+    if (dept_name !== undefined) { setClauses.push(`dept_name=$${n++}`); p.push(dept_name || null); }
+    p.push(period, emp_id);
+    await pool.query(
+      `UPDATE staff_roster SET ${setClauses.join(',')} WHERE period=$${n++} AND emp_id=$${n}`,
+      p
+    );
     res.json({ ok: true });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
