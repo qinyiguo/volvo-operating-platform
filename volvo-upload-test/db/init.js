@@ -210,59 +210,63 @@ const initDatabase = async () => {
         UNIQUE(branch, period)
       )`);
 
-// ── 獎金表模組 ──
-await client.query(`
-  CREATE TABLE IF NOT EXISTS staff_roster (
-    id                SERIAL PRIMARY KEY,
-    period            VARCHAR(6)  NOT NULL,
-    emp_id            VARCHAR(20) NOT NULL,
-    emp_name          VARCHAR(50),
-    dept_code         VARCHAR(20),
-    dept_name         VARCHAR(100),
-    job_title         VARCHAR(100),
-    status            VARCHAR(20),           -- 在職 / 留職停薪 / 離職
-    hire_date         DATE,
-    resign_date       DATE,
-    unpaid_leave_date DATE,
-    mgr1              VARCHAR(100),
-    mgr2              VARCHAR(100),
-    factory           VARCHAR(20),           -- AMA / AMC / AMD / 聯合 / 鈑烤 / 零件
-    job_category      VARCHAR(50),
-    job_class         VARCHAR(50),
-    updated_at        TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE (period, emp_id)
-  )`);
+    // ── 獎金表模組 ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS staff_roster (
+        id                SERIAL PRIMARY KEY,
+        period            VARCHAR(6)  NOT NULL,
+        emp_id            VARCHAR(20) NOT NULL,
+        emp_name          VARCHAR(50),
+        dept_code         VARCHAR(20),
+        dept_name         VARCHAR(100),
+        job_title         VARCHAR(100),
+        status            VARCHAR(20),
+        hire_date         DATE,
+        resign_date       DATE,
+        unpaid_leave_date DATE,
+        mgr1              VARCHAR(100),
+        mgr2              VARCHAR(100),
+        factory           VARCHAR(20),
+        job_category      VARCHAR(50),
+        job_class         VARCHAR(50),
+        updated_at        TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE (period, emp_id)
+      )`);
 
-await client.query(`
-  CREATE TABLE IF NOT EXISTS bonus_metrics (
-    id            SERIAL PRIMARY KEY,
-    metric_name   VARCHAR(100) NOT NULL,
-    description   TEXT DEFAULT '',
-    scope_type    VARCHAR(20) NOT NULL DEFAULT 'person',  -- person / dept / factory
-    scope_value   VARCHAR(100) DEFAULT '',
-    metric_source VARCHAR(30)  NOT NULL DEFAULT 'manual', -- manual / repair_income / tech_wage / parts_sales
-    filters       JSONB NOT NULL DEFAULT '[]',
-    stat_field    VARCHAR(30) DEFAULT 'amount',
-    unit          VARCHAR(20) DEFAULT '',
-    sort_order    INTEGER DEFAULT 0,
-    updated_at    TIMESTAMPTZ DEFAULT NOW(),
-    created_at    TIMESTAMPTZ DEFAULT NOW()
-  )`);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS bonus_metrics (
+        id            SERIAL PRIMARY KEY,
+        metric_name   VARCHAR(100) NOT NULL,
+        description   TEXT DEFAULT '',
+        scope_type    VARCHAR(20) NOT NULL DEFAULT 'person',
+        scope_value   VARCHAR(100) DEFAULT '',
+        metric_source VARCHAR(30)  NOT NULL DEFAULT 'manual',
+        filters       JSONB NOT NULL DEFAULT '[]',
+        stat_field    VARCHAR(30) DEFAULT 'amount',
+        unit          VARCHAR(20) DEFAULT '',
+        sort_order    INTEGER DEFAULT 0,
+        updated_at    TIMESTAMPTZ DEFAULT NOW(),
+        created_at    TIMESTAMPTZ DEFAULT NOW()
+      )`);
 
-await client.query(`
-  CREATE TABLE IF NOT EXISTS bonus_targets (
-    id               SERIAL PRIMARY KEY,
-    metric_id        INTEGER NOT NULL,
-    emp_id           VARCHAR(20),
-    dept_code        VARCHAR(20),
-    period           VARCHAR(6) NOT NULL,
-    target_value     NUMERIC(15,2),
-    last_year_value  NUMERIC(15,2),
-    bonus_rule       JSONB DEFAULT '{}',     -- 達成條件與獎金計算規則
-    note             TEXT DEFAULT '',
-    updated_at       TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE (metric_id, COALESCE(emp_id,''), COALESCE(dept_code,''), period)
-  )`);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS bonus_targets (
+        id               SERIAL PRIMARY KEY,
+        metric_id        INTEGER NOT NULL,
+        emp_id           VARCHAR(20),
+        dept_code        VARCHAR(20),
+        period           VARCHAR(6) NOT NULL,
+        target_value     NUMERIC(15,2),
+        last_year_value  NUMERIC(15,2),
+        bonus_rule       JSONB DEFAULT '{}',
+        note             TEXT DEFAULT '',
+        updated_at       TIMESTAMPTZ DEFAULT NOW()
+      )`);
+
+    await client.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS bonus_targets_unique_idx
+      ON bonus_targets (metric_id, COALESCE(emp_id,''), COALESCE(dept_code,''), period)
+    `);
 
     console.log('[initDB] ✅ 所有表格建立完成');
   } catch (err) {
