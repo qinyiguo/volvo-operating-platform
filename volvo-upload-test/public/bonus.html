@@ -558,10 +558,11 @@ function renderAlerts(s) {
 function renderRosterTree(rows,factoryFilter) {
   const el=document.getElementById('rosterTree');
   if (!rows.length){ el.innerHTML='<div class="empty">此期間無人員資料（已排除計時人員與本月前離職人員）</div>'; return; }
+  // null 和 '售後服務處' 合為同一組，避免重複顯示
   const byFactory={};
-  rows.forEach(r=>{ const f=r.factory||null; if(!byFactory[f])byFactory[f]={}; const d=r.dept_code||'—'; if(!byFactory[f][d])byFactory[f][d]={dept_name:r.dept_name,employees:[]}; byFactory[f][d].employees.push(r); });
-  const FACTORY_ORDER=['售後服務處',null,'AMA','AMD','AMC','聯合','鈑烤','零件'];
-  const factories=[...new Set(rows.map(r=>r.factory||null))].sort((a,b)=>(FACTORY_ORDER.indexOf(a)+99)-(FACTORY_ORDER.indexOf(b)+99));
+  rows.forEach(r=>{ const f=r.factory||'售後服務處'; if(!byFactory[f])byFactory[f]={}; const d=r.dept_code||'—'; if(!byFactory[f][d])byFactory[f][d]={dept_name:r.dept_name,employees:[]}; byFactory[f][d].employees.push(r); });
+  const FACTORY_ORDER=['售後服務處','AMA','AMD','AMC','聯合','鈑烤','零件'];
+  const factories=[...new Set(rows.map(r=>r.factory||'售後服務處'))].sort((a,b)=>(FACTORY_ORDER.indexOf(a)+99)-(FACTORY_ORDER.indexOf(b)+99));
   let html='';
   factories.forEach((f,fi)=>{
     const meta=FACTORY_META[f]||{label:'其他',color:'#64748b',icon:'🏢'};
