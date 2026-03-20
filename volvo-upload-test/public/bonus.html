@@ -340,8 +340,9 @@
       </div>
       <div class="form-group">
         <label>調整至廠別</label>
-        <select id="empEditFactory" class="form-select">
+        <select id="empEditFactory" class="form-select" onchange="onEmpEditFactoryChange()">
           <option value="">— 依部門代碼自動判斷 —</option>
+          <option value="售後服務處">🏢 售後服務處（總部）</option>
           <option value="AMA">AMA 內湖廠</option>
           <option value="AMC">AMC 仁愛廠</option>
           <option value="AMD">AMD 士林廠</option>
@@ -349,6 +350,13 @@
           <option value="鈑烤">鈑烤廠</option>
           <option value="零件">零件部</option>
         </select>
+      </div>
+      <div class="form-group" id="empEditDeptGroup" style="display:none">
+        <label>調整至部門（選填）</label>
+        <select id="empEditDeptCode" class="form-select" onchange="onEmpEditDeptChange()">
+          <option value="">— 不變更部門 —</option>
+        </select>
+        <div style="font-size:11px;color:#64748b;margin-top:4px">選擇後，此人員將顯示在指定廠別的指定部門下</div>
       </div>
       <div id="empEditMsg" style="font-size:12px;min-height:16px"></div>
     </div>
@@ -399,13 +407,14 @@ async function doLogin() {
 let _period='', _rosterPeriods=[], _metrics=[], _editingMetricId=null, _tgtMetricId=null, _rosterData=[];
 
 const FACTORY_META = {
+  '售後服務處':{label:'售後服務處',color:'#e2e8f0',icon:'🏢'},
   AMA:  {label:'內湖廠',color:'#3b82f6',icon:'🏭'},
   AMC:  {label:'仁愛廠',color:'#10b981',icon:'🏭'},
   AMD:  {label:'士林廠',color:'#f59e0b',icon:'🏭'},
   '聯合':{label:'聯合服務中心',color:'#8b5cf6',icon:'🏢'},
   '鈑烤':{label:'鈑烤廠',color:'#f97316',icon:'🏭'},
   '零件':{label:'零件部',color:'#14b8a6',icon:'📦'},
-  null: {label:'售後服務處',color:'#64748b',icon:'🏢'},
+  null: {label:'售後服務處',color:'#e2e8f0',icon:'🏢'},
 };
 const STATUS_BADGE={
   '在職':'<span class="badge badge-green">在職</span>',
@@ -551,7 +560,7 @@ function renderRosterTree(rows,factoryFilter) {
   if (!rows.length){ el.innerHTML='<div class="empty">此期間無人員資料（已排除計時人員與本月前離職人員）</div>'; return; }
   const byFactory={};
   rows.forEach(r=>{ const f=r.factory||null; if(!byFactory[f])byFactory[f]={}; const d=r.dept_code||'—'; if(!byFactory[f][d])byFactory[f][d]={dept_name:r.dept_name,employees:[]}; byFactory[f][d].employees.push(r); });
-  const FACTORY_ORDER=[null,'AMA','AMD','AMC','聯合','鈑烤','零件'];
+  const FACTORY_ORDER=['售後服務處',null,'AMA','AMD','AMC','聯合','鈑烤','零件'];
   const factories=[...new Set(rows.map(r=>r.factory||null))].sort((a,b)=>(FACTORY_ORDER.indexOf(a)+99)-(FACTORY_ORDER.indexOf(b)+99));
   let html='';
   factories.forEach((f,fi)=>{
@@ -627,28 +636,70 @@ function toggleSection(id) {
 }
 
 // ════════════════════════════════════════════
-// 員工廠別調整
+// 員工廠別＋部門調整
 // ════════════════════════════════════════════
-function openEmpEditModal(period,empId,currentFactory,empName,deptName) {
-  document.getElementById('empEditPeriod').value=period;
-  document.getElementById('empEditId').value=empId;
-  document.getElementById('empEditName').textContent=empName;
-  document.getElementById('empEditDept').textContent=deptName||'—';
-  document.getElementById('empEditFactory').value=currentFactory||'';
-  document.getElementById('empEditMsg').textContent='';
+let _allDepts = []; // 所有部門快取
+
+function openEmpEditModal(period, empId, currentFactory, empName, deptName) {
+  document.getElementById('empEditPeriod').value = period;
+  document.getElementById('empEditId').value = empId;
+  document.getElementById('empEditName').textContent = empName;
+  document.getElementById('empEditDept').textContent = deptName || '—';
+  document.getElementById('empEditFactory').value = currentFactory || '';
+  document.getElementById('empEditDeptGroup').style.display = 'none';
+  document.getElementById('empEditDeptCode').innerHTML = '<option value="">— 不變更部門 —</option>';
+  document.getElementById('empEditMsg').textContent = '';
   openModal('empEditModal');
+  // 預先載入部門清單
+  loadEmpEditDepts(period, currentFactory || '');
 }
-async function saveEmpEdit() {
-  const period=document.getElementById('empEditPeriod').value, empId=document.getElementById('empEditId').value;
-  const factory=document.getElementById('empEditFactory').value;
-  const btn=document.getElementById('btnSaveEmpEdit'), msgEl=document.getElementById('empEditMsg');
-  btn.disabled=true;
+
+async function loadEmpEditDepts(period, factory) {
+  if (!factory) { document.getElementById('empEditDeptGroup').style.display = 'none'; return; }
   try {
-    const r=await fetch(`/api/bonus/roster/${period}/${empId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({factory:factory||null})}).then(r=>r.json());
+    if (!_allDepts.length || _allDepts[0]?._period !== period) {
+      const data = await fetch(`/api/bonus/departments?period=${period}`).then(r => r.json());
+      _allDepts = data.map(d => ({ ...d, _period: period }));
+    }
+    const filtered = _allDepts.filter(d => (d.factory || '售後服務處') === factory || d.factory === factory);
+    const sel = document.getElementById('empEditDeptCode');
+    sel.innerHTML = '<option value="">— 不變更部門 —</option>' +
+      filtered.map(d => `<option value="${d.dept_code}" data-name="${d.dept_name}">${d.dept_name} (${d.dept_code})</option>`).join('');
+    document.getElementById('empEditDeptGroup').style.display = filtered.length ? '' : 'none';
+  } catch(e) { document.getElementById('empEditDeptGroup').style.display = 'none'; }
+}
+
+function onEmpEditFactoryChange() {
+  const factory = document.getElementById('empEditFactory').value;
+  const period  = document.getElementById('empEditPeriod').value;
+  document.getElementById('empEditDeptCode').innerHTML = '<option value="">— 不變更部門 —</option>';
+  if (factory) loadEmpEditDepts(period, factory);
+  else document.getElementById('empEditDeptGroup').style.display = 'none';
+}
+
+function onEmpEditDeptChange() {}
+
+async function saveEmpEdit() {
+  const period   = document.getElementById('empEditPeriod').value;
+  const empId    = document.getElementById('empEditId').value;
+  const factory  = document.getElementById('empEditFactory').value;
+  const deptSel  = document.getElementById('empEditDeptCode');
+  const deptCode = deptSel.value || null;
+  const deptName = deptCode ? deptSel.options[deptSel.selectedIndex]?.getAttribute('data-name') : null;
+  const btn = document.getElementById('btnSaveEmpEdit');
+  const msgEl = document.getElementById('empEditMsg');
+  btn.disabled = true;
+  try {
+    const body = { factory: factory || null };
+    if (deptCode) { body.dept_code = deptCode; body.dept_name = deptName; }
+    const r = await fetch(`/api/bonus/roster/${period}/${empId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    }).then(r => r.json());
     if (r.error) throw new Error(r.error);
-    closeModal('empEditModal'); await loadRoster();
-  } catch(e){ msgEl.style.color='#ef4444'; msgEl.textContent='失敗：'+e.message; }
-  finally { btn.disabled=false; }
+    closeModal('empEditModal');
+    await loadRoster();
+  } catch(e) { msgEl.style.color = '#ef4444'; msgEl.textContent = '失敗：' + e.message; }
+  finally { btn.disabled = false; }
 }
 
 // ════════════════════════════════════════════
