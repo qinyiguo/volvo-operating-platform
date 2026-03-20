@@ -210,11 +210,7 @@ const initDatabase = async () => {
         UNIQUE(branch, period)
       )`);
 
-============================================================
-獎金表模組 — 新增三張資料表
-加入 db/init.js 的最後一個 console.log 之前
-============================================================
-
+// ── 獎金表模組 ──
 await client.query(`
   CREATE TABLE IF NOT EXISTS staff_roster (
     id                SERIAL PRIMARY KEY,
