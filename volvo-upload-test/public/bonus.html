@@ -261,6 +261,23 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
         </div>
       </div>
 
+      <!-- ★ 計算據點（用來解決零件/技師等各廠同名部門的跨廠問題）-->
+      <div id="mBranchOverrideArea" style="display:none">
+        <div class="form-group" style="background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:10px 12px">
+          <label style="margin-bottom:6px">🏭 計算據點 <span style="color:#f59e0b;font-size:10px">（零件/技師跨廠必填）</span></label>
+          <select id="mBranchOverride" class="form-select">
+            <option value="">自動判斷（依部門代碼推算）</option>
+            <option value="AMA">AMA 內湖</option>
+            <option value="AMC">AMC 仁愛</option>
+            <option value="AMD">AMD 士林</option>
+          </select>
+          <div style="font-size:11px;color:#64748b;margin-top:6px;line-height:1.6">
+            💡 若各廠有同名部門（如零件部、美容技師），請明確選擇此指標要抓哪個廠的實績與目標。<br>
+            不選 = 自動依部門代碼推算，零件/聯合等部門可能推算失敗而變成集團合計。
+          </div>
+        </div>
+      </div>
+
       <div class="section-label">📌 套用對象（部門篩選）</div>
       <div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.25);border-radius:7px;padding:8px 12px;font-size:11px;color:#f59e0b;line-height:1.7;margin-bottom:8px">
         ⚠️ <strong>重要</strong>：若各廠有同名部門（如「零件部」），請確認選擇的是正確廠的部門代碼。<strong>留空 = 全廠所有在職正職人員都適用</strong>
@@ -833,6 +850,8 @@ function onMSourceChange() {
   document.getElementById('mStatFieldArea').style.display=(src!=='manual'&&src!=='performance'&&src!=='revenue')?'':'none';
   document.getElementById('mPerfArea').style.display=src==='performance'?'':'none';
   document.getElementById('mRevenueArea').style.display=src==='revenue'?'':'none';
+  // 顯示計算據點：非手動且非連結revenue(revenue有自己的branch選擇)
+  document.getElementById('mBranchOverrideArea').style.display=(src!=='manual'&&src!=='revenue')?'':'none';
   if (src!=='manual'&&src!=='performance'&&src!=='revenue') {
     const m=_editingMetricId?(_metrics.find(x=>x.id===_editingMetricId)||{}):{};
     document.getElementById('mStatField').value=m.stat_field||'amount';
@@ -870,6 +889,9 @@ async function openMetricModal(id) {
     document.getElementById('mRevBranch').value=revBranch;
     document.getElementById('mRevType').value=revType;
   }
+  // 載入計算據點 override
+  const branchOvEl=document.getElementById('mBranchOverride');
+  if(branchOvEl){ const brOv=(m.filters||[]).find(f=>f.type==='branch_override')?.value||''; branchOvEl.value=brOv; }
   const sugDiv=document.getElementById('mJobTitleSuggestions');
   if (sugDiv) sugDiv.style.display='none';
   onMSourceChange();
@@ -898,6 +920,11 @@ async function saveMetric() {
     const revType=document.getElementById('mRevType').value||'paid';
     if (revBranch) filters.push({type:'branch',value:revBranch});
     filters.push({type:'revenue_type',value:revType});
+  }
+  // 計算據點 override（用於零件/技師等各廠同名部門）
+  if (src!=='manual'&&src!=='revenue') {
+    const brOv=document.getElementById('mBranchOverride')?.value||'';
+    if (brOv) filters.push({type:'branch_override',value:brOv});
   }
   const target_dept_codes=getSelectedDeptCodes();
   const tiersData=getTiersData();
@@ -959,15 +986,15 @@ async function loadProgress() {
         <button onclick="applyActualPeriod()" style="background:#3b82f6;color:#fff;border:none;padding:6px 16px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">套用</button>
       </div>
     </div>
-    <!-- 指標管理面板 -->
+    <!-- 指標管理面板（預設展開）-->
     <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:10px;margin-bottom:12px;overflow:hidden">
       <div style="padding:10px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;border-bottom:1px solid #2d3f56" onclick="toggleBonusMgmt()">
-        <span id="bonusMgmtArrow" style="font-size:11px;color:#64748b;transition:transform .2s;display:inline-block">▶</span>
+        <span id="bonusMgmtArrow" style="font-size:11px;color:#64748b;transition:transform .2s;display:inline-block;transform:rotate(90deg)">▶</span>
         <span style="font-size:13px;font-weight:700;color:#e2e8f0">⚙️ 獎金指標管理</span>
         <span style="font-size:11px;color:#64748b;background:#0f172a;padding:1px 8px;border-radius:10px">${_metrics.length} 個</span>
         <button onclick="event.stopPropagation();openMetricModal()" style="margin-left:auto;background:#3b82f6;color:#fff;border:none;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">＋ 新增指標</button>
       </div>
-      <div id="bonusMgmtPanel" style="display:none;padding:12px 16px">
+      <div id="bonusMgmtPanel" style="padding:12px 16px">
         <div id="metricMgmtList">${renderMetricManagementPanel()}</div>
       </div>
     </div>
@@ -980,9 +1007,9 @@ function toggleBonusMgmt() {
   const panel=document.getElementById('bonusMgmtPanel');
   const arrow=document.getElementById('bonusMgmtArrow');
   if (!panel) return;
-  const open=panel.style.display==='none';
-  panel.style.display=open?'':'none';
-  if (arrow) arrow.style.transform=open?'rotate(90deg)':'rotate(0deg)';
+  const open=panel.style.display!=='none';
+  panel.style.display=open?'none':'';
+  if (arrow) arrow.style.transform=open?'rotate(0deg)':'rotate(90deg)';
 }
 
 async function applyActualPeriod() {
