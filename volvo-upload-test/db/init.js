@@ -71,6 +71,7 @@ const initDatabase = async () => {
     await client.query(`ALTER TABLE business_query ADD COLUMN IF NOT EXISTS repair_material_fee NUMERIC(12,2) DEFAULT 0`);
     await client.query(`ALTER TABLE business_query ADD COLUMN IF NOT EXISTS sales_material_fee NUMERIC(12,2) DEFAULT 0`);
     await client.query(`ALTER TABLE bonus_metrics ADD COLUMN IF NOT EXISTS target_dept_codes JSONB DEFAULT '[]'`);
+    await client.query(`ALTER TABLE bonus_metrics ADD COLUMN IF NOT EXISTS bonus_rule JSONB DEFAULT '{}'`);
     await client.query(`ALTER TABLE repair_income ALTER COLUMN account_type TYPE VARCHAR(50)`);
     await client.query(`ALTER TABLE repair_income ALTER COLUMN account_type_code TYPE VARCHAR(50)`);
     await client.query(`ALTER TABLE repair_income ALTER COLUMN account_type TYPE VARCHAR(100)`);
