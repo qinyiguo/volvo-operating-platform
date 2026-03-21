@@ -229,12 +229,10 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
         </div>
       </div>
 
-      <!-- DMS 篩選 -->
       <div id="mFiltersArea" style="display:none">
         <div class="section-label">DMS 篩選條件</div>
         <div id="mFiltersContent"></div>
       </div>
-      <!-- 統計方式 -->
       <div id="mStatFieldArea" style="display:none">
         <div class="form-group">
           <label>統計方式</label>
@@ -246,7 +244,6 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
           </select>
         </div>
       </div>
-      <!-- 連結業績指標 -->
       <div id="mPerfArea" style="display:none">
         <div class="section-label">連結業績指標（業績指標頁的指標）</div>
         <div class="form-group">
@@ -256,11 +253,9 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
           </select>
         </div>
         <div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:7px;padding:10px 12px;font-size:12px;color:#94a3b8;line-height:1.7">
-          📡 系統將直接從業績指標的實際計算數值取得達成率，目標數值從業績指標的目標設定取得。<br>
-          適用於：廠長看全廠有費營收、承保理賠科看鈑烤達成率等。
+          📡 系統將直接從業績指標的實際計算數值取得達成率，目標數值從業績指標的目標設定取得。
         </div>
       </div>
-      <!-- 連結營收目標 -->
       <div id="mRevenueArea" style="display:none">
         <div class="section-label">連結營收目標</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -283,13 +278,8 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
             </select>
           </div>
         </div>
-        <div style="background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.2);border-radius:7px;padding:10px 12px;font-size:12px;color:#94a3b8;line-height:1.7;margin-bottom:4px">
-          📊 系統從維修收入+零件銷售實際計算，並與 revenue_targets 目標對比達成率。<br>
-          留空據點 = 集團三站（AMA+AMC+AMD）合計。
-        </div>
       </div>
 
-      <!-- 套用對象 -->
       <div class="section-label">📌 套用對象（部門篩選）</div>
       <div style="font-size:12px;color:#64748b;margin-bottom:8px;line-height:1.7">
         選擇此指標要設定目標的部門。<strong style="color:#94a3b8">留空 = 全廠所有在職正職人員</strong>
@@ -302,16 +292,12 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
         <button class="btn btn-secondary btn-sm" onclick="clearAllDepts()">全部清除</button>
         <span id="mDeptCountLabel" style="font-size:12px;color:#64748b;align-self:center"></span>
       </div>
-      <!-- 職稱快速選取 -->
       <div id="mJobTitleSuggestions" style="display:none;margin-top:10px">
         <div style="font-size:11px;color:#475569;margin-bottom:6px">此部門常見職稱（點擊快速加入）</div>
         <div id="mJobTitleChips" style="display:flex;flex-wrap:wrap;gap:5px"></div>
       </div>
 
-      <!-- 獎金規則 -->
       <div class="section-label">🏆 獎金規則（階梯設定）</div>
-
-      <!-- 職稱角色 -->
       <div style="margin-bottom:10px">
         <div style="font-size:12px;color:#64748b;margin-bottom:6px">
           設定職稱欄位（不同職稱可有不同獎金金額）。<strong style="color:#94a3b8">不設定 = 所有人同一金額</strong>
@@ -332,7 +318,6 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
         </div>
       </div>
 
-      <!-- 階梯表格 -->
       <div style="font-size:12px;color:#64748b;margin-bottom:6px">設定達成率對應的獎金金額（由高到低排列）</div>
       <div style="overflow-x:auto;margin-bottom:8px">
         <table id="mTierTable" style="width:100%;border-collapse:collapse;font-size:12px">
@@ -450,7 +435,7 @@ async function doLogin() {
 }
 
 // ══ State ══
-let _period='', _rosterPeriods=[], _metrics=[], _editingMetricId=null, _tgtMetricId=null, _rosterData=[];
+let _period='', _actualPeriod='', _rosterPeriods=[], _metrics=[], _editingMetricId=null, _tgtMetricId=null, _rosterData=[];
 let _tierRoles=[], _tiers=[], _allDepts=[], _perfMetricsList=[];
 
 const FACTORY_META = {
@@ -465,7 +450,6 @@ const FACTORY_META = {
 };
 const STATUS_BADGE={'在職':'<span class="badge badge-green">在職</span>','留職停薪':'<span class="badge badge-yellow">留職停薪</span>','離職':'<span class="badge badge-red">離職</span>'};
 const FC_COLORS={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b','聯合':'#8b5cf6','鈑烤':'#f97316','零件':'#14b8a6','售後服務處':'#e2e8f0','其他':'#64748b'};
-// ── 【修改7】SOURCE_LABEL 加入 revenue ──
 const SOURCE_LABEL={manual:'✏️ 手動',repair_income:'🔧 維修收入',tech_wage:'👨‍🔧 技師工資',parts_sales:'🔩 零件銷售',performance:'🎯 業績指標',revenue:'💰 連結營收'};
 const fmtK=v=>Math.round(parseFloat(v||0)/1000).toLocaleString()+'K';
 
@@ -487,13 +471,12 @@ function switchTab(tab) {
   if (tab==='progress') loadProgress();
 }
 
-// ══ 期間（【修改1】預設上個月）══
+// ══ 期間（預設上個月）══
 async function loadPeriods() {
   try {
     const periods=await fetch('/api/bonus/roster-periods').then(r=>r.json());
     _rosterPeriods=periods;
     const now=new Date(), cur=now.getFullYear()+String(now.getMonth()+1).padStart(2,'0');
-    // 【修改1】計算上個月
     const prev=now.getMonth()===0?`${now.getFullYear()-1}12`:`${now.getFullYear()}${String(now.getMonth()).padStart(2,'0')}`;
     _period=periods.includes(prev)?prev:(periods.includes(cur)?cur:(periods[0]||''));
     const sel=document.getElementById('selPeriod');
@@ -504,7 +487,11 @@ async function loadPeriods() {
     upSel.innerHTML='<option value="">選擇期間...</option>'+allMonths.map(p=>'<option value="'+p+'" '+(p===cur?'selected':'')+'>'+p.slice(0,4)+'年'+parseInt(p.slice(4))+'月</option>').join('');
   } catch(e){}
 }
-function onPeriodChange() { _period=document.getElementById('selPeriod').value; }
+function onPeriodChange() {
+  _period=document.getElementById('selPeriod').value;
+  // 重置實績期間，讓它在下次載入時重新計算
+  _actualPeriod='';
+}
 
 // ══ 業績指標清單（用於連結）══
 async function loadPerfMetricsList() {
@@ -519,6 +506,7 @@ async function loadPerfMetricsList() {
 async function doLoad() {
   _period=document.getElementById('selPeriod').value;
   if (!_period){ alert('請先選擇期間'); return; }
+  _actualPeriod=''; // 重置，讓進度頁重新計算
   document.getElementById('lastUpdate').textContent='更新中...';
   await Promise.all([loadRoster(), loadMetrics()]);
   document.getElementById('lastUpdate').textContent=new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})+' 更新';
@@ -705,7 +693,6 @@ function renderMetricList() {
     const rule=m.bonus_rule||{};
     const tiers=rule.tiers||[];
     const ruleTag=tiers.length?'<span class="badge badge-purple">🏆 '+tiers.length+' 階梯</span>':'';
-    // 顯示 revenue 額外標籤
     let revTag='';
     if (m.metric_source==='revenue') {
       const revBranch=(m.filters||[]).find(f=>f.type==='branch')?.value||'';
@@ -910,10 +897,9 @@ function buildTierPreview(rule) {
   }).join('；');
 }
 
-// ══ 【修改4】onMSourceChange() ══
+// ══ onMSourceChange() ══
 function onMSourceChange() {
   const src=document.getElementById('mSource').value;
-  // filters/statField: 顯示於 DMS 來源（非 manual/performance/revenue）
   document.getElementById('mFiltersArea').style.display=(src!=='manual'&&src!=='performance'&&src!=='revenue')?'':'none';
   document.getElementById('mStatFieldArea').style.display=(src!=='manual'&&src!=='performance'&&src!=='revenue')?'':'none';
   document.getElementById('mPerfArea').style.display=src==='performance'?'':'none';
@@ -931,7 +917,7 @@ function onMSourceChange() {
   }
 }
 
-// ══ 【修改5】openMetricModal() ══
+// ══ openMetricModal() ══
 async function openMetricModal(id) {
   _editingMetricId=id||null;
   document.getElementById('metricModalTitle').textContent=id?'編輯指標':'新增指標';
@@ -946,12 +932,10 @@ async function openMetricModal(id) {
   document.getElementById('mRuleNote').value=rule.note||'';
   _tierRoles=[...(rule.roles||[])];
   _tiers=(rule.tiers||[]).map(t=>({...t}));
-  // performance
   if (m.metric_source==='performance') {
     const perfId=(m.filters||[]).find(f=>f.type==='perf_metric_id')?.value;
     if (perfId) document.getElementById('mPerfMetricId').value=perfId;
   }
-  // 【修改5】revenue
   if (m.metric_source==='revenue') {
     const revBranch=(m.filters||[]).find(f=>f.type==='branch')?.value||'';
     const revType=(m.filters||[]).find(f=>f.type==='revenue_type')?.value||'paid';
@@ -969,7 +953,7 @@ async function openMetricModal(id) {
   setTimeout(()=>document.getElementById('mName').focus(),80);
 }
 
-// ══ 【修改6】saveMetric() ══
+// ══ saveMetric() ══
 async function saveMetric() {
   const metric_name=document.getElementById('mName').value.trim();
   if (!metric_name){ alert('請輸入指標名稱'); return; }
@@ -982,7 +966,6 @@ async function saveMetric() {
     const perfId=document.getElementById('mPerfMetricId').value;
     if (perfId) filters.push({type:'perf_metric_id',value:perfId});
   }
-  // 【修改6】revenue
   if (src==='revenue') {
     const revBranch=document.getElementById('mRevBranch').value;
     const revType=document.getElementById('mRevType').value||'paid';
@@ -1025,8 +1008,14 @@ async function deleteMetric(id,name) {
 async function openTargetModal(metricId) {
   if (!_period){ alert('請先選擇期間後按查詢'); return; }
   _tgtMetricId=metricId;
+
+  // 使用實績期間（進度頁設定的）作為目標設定期間
+  const tgtPeriod = window._bonusProgressPrevPeriod || _actualPeriod || _period;
+  const tgtLabel  = `${tgtPeriod.slice(0,4)}年${parseInt(tgtPeriod.slice(4))}月`;
+  window._tgtActivePeriod = tgtPeriod;
+
   const m=_metrics.find(x=>x.id===metricId);
-  document.getElementById('targetModalTitle').textContent='🎯 目標設定 — '+(m?.metric_name||'');
+  document.getElementById('targetModalTitle').textContent='🎯 目標設定 — '+(m?.metric_name||'')+'（'+tgtLabel+'）';
   document.getElementById('targetFormContent').innerHTML='<div class="loading"><span class="spinner"></span>載入中</div>';
   openModal('targetModal');
   try {
@@ -1034,32 +1023,32 @@ async function openTargetModal(metricId) {
     const deptParam=deptCodes.length?'&dept_codes='+encodeURIComponent(deptCodes.join(',')):'';
     const [membersRes,existingTgtsRes]=await Promise.all([
       fetch('/api/bonus/scope-members?period='+_period+'&scope_type='+(m?.scope_type||'person')+deptParam).then(r=>r.json()),
-      fetch('/api/bonus/targets?metric_id='+metricId+'&period='+_period).then(r=>r.json()),
+      fetch('/api/bonus/targets?metric_id='+metricId+'&period='+tgtPeriod).then(r=>r.json()),
     ]);
     const existing={};
-    existingTgtsRes.forEach(t=>{ existing[t.emp_id||t.dept_code||'']=t; });
+    existingTgtsRes.forEach(t=>{existing[t.emp_id||t.dept_code||'']=t;});
     const unit=m?.unit||(m?.stat_field==='amount'?'元':m?.stat_field==='qty'?'件':'台');
     const rule=m?.bonus_rule||{};
     const roles=rule.roles||[];
-    let html='<div style="font-size:12px;color:#64748b;margin-bottom:12px;line-height:1.7">';
-    html+='期間：<strong style="color:#e2e8f0">'+_period.slice(0,4)+'年'+parseInt(_period.slice(4))+'月</strong>　';
-    html+='範圍：<strong style="color:#e2e8f0">'+(m?.scope_type==='dept'?'部門目標':'個人目標')+'</strong>　';
-    html+='人數：<strong style="color:#e2e8f0">'+membersRes.length+'</strong>　單位：'+unit;
-    if (rule.tiers?.length) html+='<br>🏆 規則：'+buildTierPreview(rule);
-    html+='</div>';
-    if (m?.scope_type==='dept') {
-      html+=buildTargetTable(membersRes, existing, unit, roles);
+    let html=`<div style="font-size:12px;color:#64748b;margin-bottom:12px;background:#0f172a;border-radius:7px;padding:10px 14px;line-height:1.8">
+      👥 名冊期間：<strong style="color:#e2e8f0">${_period.slice(0,4)}年${parseInt(_period.slice(4))}月</strong>　
+      🎯 目標期間：<strong style="color:#f59e0b">${tgtLabel}</strong>　
+      範圍：<strong style="color:#e2e8f0">${m?.scope_type==='dept'?'部門目標':'個人目標'}</strong>（${membersRes.length}筆）
+      ${rule.tiers?.length?'<br>🏆 '+buildTierPreview(rule):''}
+    </div>`;
+    if(m?.scope_type==='dept'){
+      html+=buildTargetTable(membersRes,existing,unit,roles);
       window._tgtMembers=membersRes.map(d=>({key:d.dept_code,dept_code:d.dept_code,emp_id:null}));
-    } else {
-      html+=buildPersonTargetTable(membersRes, existing, unit, roles);
+    }else{
+      html+=buildPersonTargetTable(membersRes,existing,unit,roles);
       window._tgtMembers=membersRes.map(e=>({key:e.emp_id,emp_id:e.emp_id,dept_code:null}));
     }
     document.getElementById('targetFormContent').innerHTML=html;
-  } catch(e){ document.getElementById('targetFormContent').innerHTML='<div style="color:#ef4444">'+e.message+'</div>'; }
+  }catch(e){document.getElementById('targetFormContent').innerHTML='<div style="color:#ef4444">'+e.message+'</div>';}
 }
 
 function buildTargetTable(depts, existing, unit, roles) {
-  const thSt='text-align:left;padding:8px 12px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56';
+  const thSt='text-align:left;padding:8px 12px;background:#0f172a;color:#64748b;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56';
   let html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>';
   html+='<th style="'+thSt+'">部門</th><th style="'+thSt+';text-align:right">月目標（'+unit+'）</th><th style="'+thSt+';text-align:right">去年同期</th><th style="'+thSt+'">備註</th></tr></thead><tbody>';
   depts.forEach(d=>{
@@ -1098,42 +1087,88 @@ function buildPersonTargetTable(members, existing, unit, roles) {
 
 async function saveTargets() {
   const members=window._tgtMembers||[];
+  const savePeriod=window._tgtActivePeriod||_actualPeriod||_period;
   const entries=members.map(mb=>({
-    metric_id:_tgtMetricId, period:_period,
-    emp_id:mb.emp_id, dept_code:mb.dept_code,
+    metric_id:_tgtMetricId,period:savePeriod,
+    emp_id:mb.emp_id,dept_code:mb.dept_code,
     target_value:parseFloat(document.getElementById('tgt-'+mb.key)?.value)||null,
     last_year_value:parseFloat(document.getElementById('ly-'+mb.key)?.value)||null,
     note:document.getElementById('note-'+mb.key)?.value?.trim()||'',
   }));
-  const btn=document.getElementById('btnSaveTargets'); btn.disabled=true;
-  try {
+  const btn=document.getElementById('btnSaveTargets');btn.disabled=true;
+  try{
     const r=await fetch('/api/bonus/targets/batch',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({entries})}).then(r=>r.json());
-    if (r.error) throw new Error(r.error);
+    if(r.error)throw new Error(r.error);
     closeModal('targetModal');
-  } catch(e){ alert('儲存失敗：'+e.message); }
-  finally { btn.disabled=false; }
+    // 若在進度頁則重新渲染
+    if(document.getElementById('tab-progress')?.style?.display!=='none') await renderProgressContent();
+  }catch(e){alert('儲存失敗：'+e.message);}
+  finally{btn.disabled=false;}
 }
 
-// ══ 獎金進度（修正版：實績取上個月，顯示部門/個人獎金）══
+// ══ 獎金進度 ══
 async function loadProgress() {
   const el = document.getElementById('progressContent');
   if (!_period) { el.innerHTML = '<div class="empty">請先選擇期間後按查詢</div>'; return; }
-  el.innerHTML = '<div class="loading"><span class="spinner"></span>計算中</div>';
 
-  // 獎金期間 = _period（目標、名冊），實績期間 = 上個月
-  const py = parseInt(_period.slice(0, 4)), pm = parseInt(_period.slice(4));
-  const prevPeriod = pm === 1 ? `${py - 1}12` : `${py}${String(pm - 1).padStart(2, '0')}`;
-  const curLabel  = `${_period.slice(0,4)}年${pm}月`;
-  const prevLabel = `${prevPeriod.slice(0,4)}年${parseInt(prevPeriod.slice(4))}月`;
+  // 若 _actualPeriod 尚未設定，預設為上個月
+  if (!_actualPeriod) {
+    const py = parseInt(_period.slice(0,4)), pm = parseInt(_period.slice(4));
+    _actualPeriod = pm === 1 ? `${py-1}12` : `${py}${String(pm-1).padStart(2,'0')}`;
+  }
+  window._bonusProgressPrevPeriod = _actualPeriod;
 
+  const curLabel = `${_period.slice(0,4)}年${parseInt(_period.slice(4))}月`;
+
+  // 期間選項（近24個月 + 名冊期間）
+  const periodOptions = (() => {
+    const now = new Date();
+    const all  = new Set([..._rosterPeriods]);
+    for (let i = 0; i < 24; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      all.add(`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}`);
+    }
+    return [...all].sort().reverse();
+  })();
+
+  el.innerHTML = `
+    <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:10px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:12px;color:#64748b;font-weight:600;white-space:nowrap">👥 名冊期間</span>
+        <span style="font-size:13px;font-weight:800;color:#e2e8f0;background:#0f172a;padding:4px 12px;border-radius:6px">${curLabel}</span>
+      </div>
+      <span style="color:#374151;font-size:16px">→</span>
+      <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:200px">
+        <span style="font-size:12px;color:#64748b;font-weight:600;white-space:nowrap">📊 實績 ＆ 目標期間</span>
+        <select id="actualPeriodSel" style="background:#0f172a;border:1px solid #3b82f6;color:#60a5fa;padding:6px 12px;border-radius:6px;font-size:13px;font-weight:700;outline:none;cursor:pointer;flex:1;min-width:0">
+          ${periodOptions.map(p=>`<option value="${p}" ${p===_actualPeriod?'selected':''}>${p.slice(0,4)}年${parseInt(p.slice(4))}月</option>`).join('')}
+        </select>
+        <button onclick="applyActualPeriod()" style="background:#3b82f6;color:#fff;border:none;padding:6px 16px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">套用</button>
+      </div>
+      <div style="font-size:11px;color:#475569;width:100%">💡 DMS 實績與獎金目標設定均取自「實績 ＆ 目標期間」；人員名冊取自「名冊期間」</div>
+    </div>
+    <div id="progressInner"><div class="loading"><span class="spinner"></span>計算中</div></div>`;
+
+  await renderProgressContent();
+}
+
+async function applyActualPeriod() {
+  const sel = document.getElementById('actualPeriodSel');
+  if (sel) { _actualPeriod = sel.value; window._bonusProgressPrevPeriod = _actualPeriod; }
+  const inner = document.getElementById('progressInner');
+  if (inner) inner.innerHTML = '<div class="loading"><span class="spinner"></span>計算中</div>';
+  await renderProgressContent();
+}
+
+async function renderProgressContent() {
+  const el = document.getElementById('progressInner');
+  if (!el) return;
+  const actLabel = `${_actualPeriod.slice(0,4)}年${parseInt(_actualPeriod.slice(4))}月`;
   try {
     const factory = document.getElementById('selFactory').value;
-    const params  = new URLSearchParams({ period: _period, data_period: prevPeriod });
+    const params  = new URLSearchParams({ period: _period, data_period: _actualPeriod });
     if (factory) params.set('factory', factory);
-
-    // 確保名冊已載入（用於查找員工姓名/職稱/部門）
     if (!_rosterData.length && _period) await loadRoster();
-
     const data = await fetch('/api/bonus/progress?' + params).then(r => r.json());
     if (data.error) throw new Error(data.error);
     if (!data.results.length) { el.innerHTML = '<div class="empty">尚未設定任何指標</div>'; return; }
@@ -1141,243 +1176,205 @@ async function loadProgress() {
     const REV_TYPE_LABEL = { paid:'有費', bodywork:'鈑烤', general:'一般', extended:'延保' };
     const SCOPE_LABEL    = { person:'👤 個人', dept:'🏢 部門', factory:'🏭 廠別' };
     const FC_ORDER       = ['售後服務處','AMA','AMD','AMC','聯合','鈑烤','零件','其他'];
-    const FC_COLORS      = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b', '聯合':'#8b5cf6', '鈑烤':'#f97316', '零件':'#14b8a6', '售後服務處':'#e2e8f0', '其他':'#64748b' };
-    const fmtK = v => Math.round(parseFloat(v || 0) / 1000).toLocaleString() + 'K';
-    const isAmtSource = m => m.stat_field === 'amount' || m.metric_source === 'revenue' || m.metric_source === 'performance';
 
-    const periodNote = `
-      <div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:10px 16px;font-size:12px;color:#94a3b8;margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span>📅 <strong style="color:#60a5fa">${curLabel}</strong> 獎金表</span>
-        <span style="color:#374151">｜</span>
-        <span>依 <strong style="color:#10b981">${prevLabel}</strong> DMS 實績計算達成率</span>
-        <span style="color:#374151">｜</span>
-        <span>目標設定期間：<strong style="color:#e2e8f0">${curLabel}</strong></span>
-      </div>`;
-
-    let html = '';
-
-    for (const item of data.results) {
-      const m       = item.metric;
-      const targets = item.targets;
-      const actual  = item.actual;
-      const autoTarget = (m.metric_source === 'revenue' || m.metric_source === 'performance') ? item.perfTarget : null;
-      const isAmt   = isAmtSource(m);
-      const unit    = m.unit || (isAmt ? '元' : '台');
-      const fmtV    = v => v === null || v === undefined ? '—' : isAmt ? fmtK(v) : Math.round(parseFloat(v)).toLocaleString();
-      const rule    = m.bonus_rule || {};
-      const tiers   = rule.tiers || [];
-      const roles   = rule.roles || [];
-
-      // 來源標籤
-      let srcBadge = '';
-      if (m.metric_source === 'revenue') {
-        const revBranch = (m.filters || []).find(f => f.type === 'branch')?.value || '';
-        const revType   = (m.filters || []).find(f => f.type === 'revenue_type')?.value || 'paid';
-        srcBadge = `<span style="font-size:11px;padding:2px 8px;border-radius:6px;background:rgba(249,115,22,.15);color:#f97316;margin-left:6px">${revBranch || '集團'} ${REV_TYPE_LABEL[revType] || revType}</span>`;
+    function calcBonus(rate, jobTitle, tiers, roles) {
+      if (rate===null || !tiers.length) return 0;
+      const match = [...tiers].sort((a,b)=>b.gte-a.gte).find(t => rate>=t.gte && (t.lt===null||rate<t.lt));
+      if (!match) return 0;
+      if (roles.length && match.amounts) {
+        const hit = roles.find(r => jobTitle && (jobTitle===r||jobTitle.includes(r)||r.includes(jobTitle)));
+        return hit ? (match.amounts[hit]||0) : (match.amount||0);
       }
-
-      // 整體達成率（revenue/performance 用整體；其他用個人目標）
-      const useAuto     = (m.metric_source === 'revenue' || m.metric_source === 'performance') && autoTarget !== null;
-      const overallRate = useAuto && autoTarget > 0 && actual !== null ? actual / autoTarget * 100 : null;
-
-      // ── 規則預覽 ──
-      let ruleHtml = '';
-      if (tiers.length) {
-        const tierRows = [...tiers].sort((a, b) => b.gte - a.gte).map(t => {
-          const range = t.lt !== null ? `≥${t.gte}%,<${t.lt}%` : `≥${t.gte}%`;
-          if (roles.length && t.amounts) {
-            return `<span style="white-space:nowrap"><strong style="color:#3b82f6">${range}</strong> → <span style="color:#10b981">${roles.map(r => `${r}:${(t.amounts[r]||0).toLocaleString()}元`).join(' / ')}</span></span>`;
-          }
-          return `<span style="white-space:nowrap"><strong style="color:#3b82f6">${range}</strong> → <strong style="color:#10b981">${(t.amount||0).toLocaleString()}元</strong></span>`;
-        }).join('<span style="color:#2d3f56;margin:0 4px">|</span>');
-        const noteHtml = rule.note ? `<div style="color:#64748b;font-size:11px;margin-top:4px">📌 ${rule.note}</div>` : '';
-        ruleHtml = `<div style="font-size:12px;background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.2);border-radius:7px;padding:8px 12px;margin-bottom:12px;line-height:2.2">🏆 ${tierRows}${noteHtml}</div>`;
-      }
-
-      // ── 整體達成卡片（revenue/performance 來源）──
-      let achHtml = '';
-      if (useAuto && actual !== null) {
-        const rateC = overallRate === null ? '#64748b' : overallRate >= 100 ? '#10b981' : overallRate >= 80 ? '#f59e0b' : '#ef4444';
-        const barW  = overallRate !== null ? Math.min(100, overallRate).toFixed(1) : 0;
-        achHtml = `
-          <div style="background:#0f172a;border:1px solid #2d3f56;border-radius:10px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
-            <div>
-              <div style="font-size:11px;color:#64748b;margin-bottom:3px">${prevLabel} 整體目標</div>
-              <div style="font-size:20px;font-weight:800;color:#e2e8f0">${fmtV(autoTarget)}</div>
-            </div>
-            <div>
-              <div style="font-size:11px;color:#64748b;margin-bottom:3px">${prevLabel} 實際</div>
-              <div style="font-size:20px;font-weight:800;color:#10b981">${fmtV(actual)}</div>
-            </div>
-            <div style="flex:1;min-width:140px">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-                <span style="font-size:11px;color:#64748b">達成率</span>
-                <span style="font-size:22px;font-weight:900;color:${rateC}">${overallRate !== null ? overallRate.toFixed(1) + '%' : '—'}</span>
-              </div>
-              <div style="background:#1e293b;border-radius:4px;height:8px">
-                <div style="width:${barW}%;height:8px;border-radius:4px;background:${rateC};transition:width .4s"></div>
-              </div>
-            </div>
-          </div>`;
-      }
-
-      // ── 人員獎金表（部門分組）──
-      let tableHtml = '';
-      if (!targets.length) {
-        tableHtml = `<div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:12px 16px;font-size:13px;color:#f59e0b">⚠️ 尚未設定目標，請點擊「🎯 目標」按鈕設定人員目標</div>`;
-      } else {
-        // 計算每個 target 的達成率和獎金
-        function calcBonus(t, emp) {
-          let rate;
-          if (useAuto) {
-            rate = overallRate;
-          } else {
-            const tv = parseFloat(t.target_value || 0);
-            rate = tv > 0 && actual !== null ? actual / tv * 100 : null;
-          }
-          let bonusAmt = 0;
-          if (tiers.length && rate !== null) {
-            const sortedTiers = [...tiers].sort((a, b) => b.gte - a.gte);
-            const matchTier = sortedTiers.find(tier => rate >= tier.gte && (tier.lt === null || rate < tier.lt));
-            if (matchTier) {
-              const jobTitle = emp?.job_title || '';
-              if (roles.length && matchTier.amounts) {
-                const roleMatch = roles.find(r => jobTitle.includes(r) || r.includes(jobTitle));
-                bonusAmt = roleMatch ? (matchTier.amounts[roleMatch] || 0) : (matchTier.amount || 0);
-              } else {
-                bonusAmt = matchTier.amount || 0;
-              }
-            }
-          }
-          return { rate, bonusAmt };
-        }
-
-        // 按廠別/部門分組
-        const byDept = {};
-        for (const t of targets) {
-          const emp = _rosterData.find(r => r.emp_id === t.emp_id);
-          const fc  = emp?.factory || '其他';
-          const dn  = emp?.dept_name || t.dept_code || '—';
-          const key = `${fc}|||${dn}`;
-          if (!byDept[key]) byDept[key] = { factory: fc, dept_name: dn, rows: [] };
-          const { rate, bonusAmt } = calcBonus(t, emp);
-          byDept[key].rows.push({ t, emp, rate, bonusAmt });
-        }
-
-        // 廠別排序
-        const sortedDepts = Object.values(byDept).sort((a, b) => {
-          const ai = FC_ORDER.indexOf(a.factory);
-          const bi = FC_ORDER.indexOf(b.factory);
-          return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
-        });
-
-        const thSt = 'text-align:left;padding:7px 10px;background:#0f172a;color:#64748b;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;white-space:nowrap;';
-
-        tableHtml = '<div>';
-        for (const dept of sortedDepts) {
-          const col      = FC_COLORS[dept.factory] || '#94a3b8';
-          const deptTotal = dept.rows.reduce((s, r) => s + r.bonusAmt, 0);
-          const highRate  = dept.rows.filter(r => r.rate !== null && r.rate >= 100).length;
-
-          tableHtml += `
-            <div style="margin-bottom:14px;border:1px solid ${col}33;border-radius:8px;overflow:hidden">
-              <div style="background:${col}18;padding:9px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                <span style="font-size:12px;font-weight:800;color:${col}">${dept.factory}</span>
-                <span style="font-size:12px;color:#94a3b8">${dept.dept_name}</span>
-                <span style="font-size:11px;color:#64748b">${dept.rows.length} 人</span>
-                ${highRate > 0 ? `<span style="font-size:11px;color:#10b981;background:rgba(16,185,129,.1);padding:1px 7px;border-radius:10px">🎉 ${highRate} 人達標</span>` : ''}
-                ${deptTotal > 0 ? `<span style="margin-left:auto;font-size:13px;font-weight:800;color:#f59e0b">部門合計 ${deptTotal.toLocaleString()} 元</span>` : '<span style="margin-left:auto;font-size:12px;color:#475569">—</span>'}
-              </div>
-              <div style="overflow-x:auto">
-                <table style="width:100%;border-collapse:collapse;font-size:12px">
-                  <thead><tr>
-                    <th style="${thSt}min-width:80px">姓名</th>
-                    <th style="${thSt}">職務</th>
-                    <th style="${thSt}text-align:right">月目標（${unit}）</th>
-                    ${!useAuto ? `<th style="${thSt}text-align:right">去年同期</th>` : ''}
-                    <th style="${thSt}min-width:130px">達成率</th>
-                    <th style="${thSt}text-align:center;min-width:110px;background:rgba(245,158,11,.08)">🏆 應得獎金</th>
-                    <th style="${thSt}">備註</th>
-                  </tr></thead>
-                  <tbody>`;
-
-          for (const { t, emp, rate, bonusAmt } of dept.rows) {
-            const rateC   = rate === null ? '#64748b' : rate >= 100 ? '#10b981' : rate >= 80 ? '#f59e0b' : '#ef4444';
-            const barW    = rate !== null ? Math.min(100, rate).toFixed(0) : 0;
-            const name    = emp?.emp_name || t.emp_id || t.dept_code || '—';
-            const title   = emp?.job_title || '—';
-            const tv      = parseFloat(t.target_value || 0);
-            const ly      = parseFloat(t.last_year_value || 0);
-
-            tableHtml += `<tr>
-              <td style="padding:9px 10px;border-bottom:1px solid rgba(45,63,86,.3);font-weight:700;color:#e2e8f0">${name}</td>
-              <td style="padding:9px 10px;border-bottom:1px solid rgba(45,63,86,.3);color:#64748b">${title}</td>
-              <td style="padding:9px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;color:#94a3b8;font-weight:600">${tv > 0 ? fmtV(tv) : '—'}</td>
-              ${!useAuto ? `<td style="padding:9px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;color:#475569">${ly > 0 ? fmtV(ly) : '—'}</td>` : ''}
-              <td style="padding:9px 10px;border-bottom:1px solid rgba(45,63,86,.3)">
-                ${rate !== null ? `
-                  <div style="display:flex;align-items:center;gap:6px">
-                    <div style="width:60px;background:#0f172a;border-radius:3px;height:5px;flex-shrink:0">
-                      <div style="width:${barW}%;height:5px;background:${rateC};border-radius:3px"></div>
-                    </div>
-                    <span style="color:${rateC};font-weight:800;font-size:13px">${rate.toFixed(1)}%</span>
-                  </div>` : '<span style="color:#475569;font-size:12px">手動填入</span>'}
-              </td>
-              <td style="padding:9px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center;background:rgba(245,158,11,.04)">
-                ${bonusAmt > 0
-                  ? `<span style="color:#f59e0b;font-weight:900;font-size:15px">${bonusAmt.toLocaleString()}<span style="font-size:10px;font-weight:600;margin-left:2px">元</span></span>`
-                  : `<span style="color:#334155;font-size:12px">—</span>`}
-              </td>
-              <td style="padding:9px 10px;border-bottom:1px solid rgba(45,63,86,.3);font-size:11px;color:#64748b">${t.note || '—'}</td>
-            </tr>`;
-          }
-
-          // 部門小計列
-          const deptTotalCount = dept.rows.filter(r => r.bonusAmt > 0).length;
-          tableHtml += `
-            <tr style="background:${col}0d">
-              <td colspan="${useAuto ? 4 : 5}" style="padding:7px 10px;font-size:12px;font-weight:700;color:${col}">
-                ${dept.dept_name} 小計（${dept.rows.length} 人，${deptTotalCount} 人有獎金）
-              </td>
-              <td style="padding:7px 10px;text-align:center;background:rgba(245,158,11,.08)">
-                ${deptTotal > 0 ? `<span style="color:#f59e0b;font-weight:900;font-size:14px">${deptTotal.toLocaleString()} 元</span>` : '<span style="color:#334155">—</span>'}
-              </td>
-              <td></td>
-            </tr>`;
-
-          tableHtml += `</tbody></table></div></div>`;
-        }
-
-        // 全部合計
-        const grandTotal = Object.values(byDept).reduce((s, d) => s + d.rows.reduce((ss, r) => ss + r.bonusAmt, 0), 0);
-        const grandPeople = Object.values(byDept).reduce((s, d) => s + d.rows.filter(r => r.bonusAmt > 0).length, 0);
-        if (grandTotal > 0) {
-          tableHtml += `
-            <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:12px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-              <span style="font-size:13px;font-weight:700;color:#f59e0b">🏆 ${m.metric_name} 全員獎金合計</span>
-              <span style="font-size:12px;color:#64748b">${grandPeople} 人有獎金</span>
-              <span style="margin-left:auto;font-size:22px;font-weight:900;color:#f59e0b">${grandTotal.toLocaleString()} 元</span>
-            </div>`;
-        }
-        tableHtml += '</div>';
-      }
-
-      html += `
-        <div class="card">
-          <div class="card-title">
-            ${m.metric_name}${srcBadge}
-            <span class="badge badge-purple" style="margin-left:4px">${SCOPE_LABEL[m.scope_type] || m.scope_type}</span>
-            ${actual !== null ? `<span style="font-size:11px;color:#64748b;margin-left:auto">DMS(${prevLabel})：<strong style="color:#10b981">${fmtV(actual)}</strong></span>` : ''}
-          </div>
-          ${ruleHtml}
-          ${achHtml}
-          ${tableHtml}
-        </div>`;
+      return match.amount||0;
     }
 
-    el.innerHTML = periodNote + html;
+    function buildRuleHtml(tiers, roles, note) {
+      if (!tiers.length) return '';
+      const rows = [...tiers].sort((a,b)=>b.gte-a.gte).map(t => {
+        const range = `≥${t.gte}%${t.lt!==null?` <${t.lt}%`:''}`;
+        if (roles.length && t.amounts) {
+          const amts = roles.map(r=>`<span style="color:#94a3b8">${r}:</span><strong style="color:#10b981">${(t.amounts[r]||0).toLocaleString()}</strong>`).join(' / ');
+          return `<span style="white-space:nowrap"><strong style="color:#3b82f6">${range}</strong> → ${amts}元</span>`;
+        }
+        return `<span style="white-space:nowrap"><strong style="color:#3b82f6">${range}</strong> → <strong style="color:#10b981">${(t.amount||0).toLocaleString()}元</strong></span>`;
+      });
+      return `<div style="font-size:12px;background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.2);border-radius:7px;padding:9px 14px;margin-bottom:12px;line-height:2.4;display:flex;flex-wrap:wrap;gap:4px;align-items:center">
+        <span style="color:#8b5cf6;font-weight:700">🏆</span>
+        ${rows.join('<span style="color:#2d3f56;margin:0 3px">|</span>')}
+        ${note?`<div style="color:#64748b;font-size:11px;width:100%;margin-top:2px">📌 ${note}</div>`:''}
+      </div>`;
+    }
+
+    let html = '';
+    for (const item of data.results) {
+      const m      = item.metric;
+      const targets= item.targets;
+      const actual = item.actual;
+      const autoPT = (m.metric_source==='revenue'||m.metric_source==='performance') ? item.perfTarget : null;
+      const isAmt  = m.stat_field==='amount'||m.metric_source==='revenue'||m.metric_source==='performance';
+      const unit   = m.unit||(isAmt?'元':'台');
+      const fmtV   = v => v===null||v===undefined?'—':isAmt?fmtK(v):Math.round(parseFloat(v)).toLocaleString();
+      const rule   = m.bonus_rule||{};
+      const tiers  = rule.tiers||[];
+      const roles  = rule.roles||[];
+
+      let srcBadge = '';
+      if (m.metric_source==='revenue') {
+        const rb=(m.filters||[]).find(f=>f.type==='branch')?.value||'';
+        const rt=(m.filters||[]).find(f=>f.type==='revenue_type')?.value||'paid';
+        srcBadge=`<span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(249,115,22,.15);color:#f97316;margin-left:4px">${rb||'集團'} ${REV_TYPE_LABEL[rt]||rt}</span>`;
+      }
+
+      const useAuto  = (m.metric_source==='revenue'||m.metric_source==='performance') && autoPT!==null;
+      const autoRate = useAuto && autoPT>0 && actual!==null ? actual/autoPT*100 : null;
+      const rc0      = autoRate===null?'#64748b':autoRate>=100?'#10b981':autoRate>=80?'#f59e0b':'#ef4444';
+      const ruleHtml = buildRuleHtml(tiers, roles, rule.note||'');
+
+      // 整體達成卡
+      let achHtml = '';
+      if (useAuto && actual!==null) {
+        const bw = autoRate!==null?Math.min(100,autoRate).toFixed(1):0;
+        achHtml=`<div style="background:#0f172a;border:1px solid #2d3f56;border-radius:10px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+          <div><div style="font-size:11px;color:#64748b;margin-bottom:2px">${actLabel} 目標</div><div style="font-size:18px;font-weight:800;color:#e2e8f0">${fmtV(autoPT)}</div></div>
+          <div><div style="font-size:11px;color:#64748b;margin-bottom:2px">${actLabel} 實際</div><div style="font-size:18px;font-weight:800;color:#10b981">${fmtV(actual)}</div></div>
+          <div style="flex:1;min-width:130px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <span style="font-size:11px;color:#64748b">達成率</span>
+              <span style="font-size:22px;font-weight:900;color:${rc0}">${autoRate!==null?autoRate.toFixed(1)+'%':'—'}</span>
+            </div>
+            <div style="background:#1e293b;border-radius:4px;height:8px"><div style="width:${bw}%;height:8px;border-radius:4px;background:${rc0};transition:width .4s"></div></div>
+          </div>
+        </div>`;
+      }
+
+      // 人員獎金明細
+      let tableHtml = '';
+      const isDepth = m.scope_type==='dept';
+
+      if (!targets.length) {
+        tableHtml=`<div style="background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:14px 18px">
+          <div style="font-size:13px;font-weight:700;color:#f59e0b;margin-bottom:6px">⚠️ 尚未在 ${actLabel} 設定人員目標</div>
+          <div style="font-size:12px;color:#64748b;line-height:1.9">
+            請至「⚙️ 獎金設定」頁籤 → 找到此指標 → 點擊「🎯 目標」→ 選擇期間
+            <strong style="color:#e2e8f0"> ${actLabel}（${_actualPeriod}）</strong> → 填入目標後儲存。
+          </div>
+        </div>`;
+      } else {
+        const byDept = {};
+        for (const t of targets) {
+          let members=[], deptRate=null, deptTgt=null;
+          if (isDepth) {
+            members  = _rosterData.filter(r=>r.dept_code===t.dept_code);
+            deptTgt  = useAuto ? autoPT : parseFloat(t.target_value||0);
+            deptRate = useAuto ? autoRate : (deptTgt>0&&actual!==null?actual/deptTgt*100:null);
+          } else {
+            const emp=_rosterData.find(r=>r.emp_id===t.emp_id);
+            members  = emp?[emp]:[{emp_id:t.emp_id,emp_name:t.emp_id||'—',job_title:'',dept_name:'',factory:'其他'}];
+            deptTgt  = useAuto ? autoPT : parseFloat(t.target_value||0);
+            deptRate = useAuto ? autoRate : (deptTgt>0&&actual!==null?actual/deptTgt*100:null);
+          }
+          const fc  = members[0]?.factory||'其他';
+          const dn  = members[0]?.dept_name||t.dept_code||'—';
+          const key = `${fc}|||${t.dept_code||t.emp_id}`;
+          if (!byDept[key]) byDept[key]={factory:fc,dept_name:dn,rate:deptRate,tgt:deptTgt,note:t.note||'',members:[]};
+          for (const emp of members) {
+            byDept[key].members.push({emp, bonus:calcBonus(deptRate,emp.job_title||'',tiers,roles), rate:deptRate});
+          }
+        }
+
+        const sortedDepts=Object.values(byDept).sort((a,b)=>{
+          const ai=FC_ORDER.indexOf(a.factory),bi=FC_ORDER.indexOf(b.factory);
+          return (ai<0?99:ai)-(bi<0?99:bi);
+        });
+
+        const thSt='text-align:left;padding:8px 10px;background:#0f172a;color:#64748b;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;white-space:nowrap;';
+        const thR=thSt+'text-align:right;';
+        let grandBonus=0,grandPpl=0,totalPpl=0;
+        tableHtml='<div>';
+
+        for (const dept of sortedDepts) {
+          const col    = FC_COLORS[dept.factory]||'#94a3b8';
+          const deptB  = dept.members.reduce((s,r)=>s+r.bonus,0);
+          const deptPpl= dept.members.filter(r=>r.bonus>0).length;
+          const rate   = dept.rate;
+          const rc     = rate===null?'#64748b':rate>=100?'#10b981':rate>=80?'#f59e0b':'#ef4444';
+          grandBonus+=deptB; grandPpl+=deptPpl; totalPpl+=dept.members.length;
+
+          tableHtml+=`<div style="margin-bottom:10px;border:1px solid ${col}33;border-radius:8px;overflow:hidden">
+            <div style="background:${col}14;padding:9px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <span style="font-size:13px;font-weight:800;color:${col}">${dept.factory}</span>
+              <span style="font-size:12px;color:#94a3b8">${dept.dept_name}</span>
+              <span style="font-size:11px;color:#64748b">${dept.members.length}人</span>
+              ${rate!==null?`<div style="display:flex;align-items:center;gap:5px">
+                <div style="width:50px;background:#0f172a;border-radius:3px;height:4px"><div style="width:${Math.min(100,rate).toFixed(0)}%;height:4px;background:${rc};border-radius:3px"></div></div>
+                <span style="font-size:12px;font-weight:800;color:${rc}">${rate.toFixed(1)}%</span>
+                ${isDepth&&dept.tgt>0?`<span style="font-size:11px;color:#475569">目標 ${fmtV(dept.tgt)}</span>`:''}
+              </div>`:''}
+              ${deptPpl>0?`<span style="font-size:11px;color:#10b981;background:rgba(16,185,129,.1);padding:1px 7px;border-radius:10px">${deptPpl}人有獎金</span>`:''}
+              <span style="margin-left:auto;font-size:14px;font-weight:800;color:${deptB>0?'#f59e0b':'#475569'}">${deptB>0?deptB.toLocaleString()+' 元':'—'}</span>
+            </div>
+            <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
+              <thead><tr>
+                <th style="${thSt}min-width:75px">姓名</th>
+                <th style="${thSt}">職務</th>
+                ${!isDepth&&!useAuto?`<th style="${thR}min-width:85px">目標(${unit})</th>`:''}
+                <th style="${thSt}min-width:120px">達成率</th>
+                <th style="${thR}min-width:100px;background:rgba(245,158,11,.05)">🏆 應得獎金</th>
+              </tr></thead>
+              <tbody>`;
+
+          const sorted=[...dept.members].sort((a,b)=>b.bonus-a.bonus);
+          for (const {emp,bonus,rate:r} of sorted) {
+            const rc2=r===null?'#64748b':r>=100?'#10b981':r>=80?'#f59e0b':'#ef4444';
+            const bw2=r!==null?Math.min(100,r).toFixed(0):0;
+            tableHtml+=`<tr>
+              <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.25);font-weight:700;color:#e2e8f0">${emp.emp_name||'—'}</td>
+              <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.25);color:#64748b">${emp.job_title||'—'}</td>
+              ${!isDepth&&!useAuto?`<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.25);text-align:right;color:#94a3b8">${fmtV(dept.tgt)}</td>`:''}
+              <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.25)">
+                ${r!==null?`<div style="display:flex;align-items:center;gap:6px"><div style="width:55px;background:#0f172a;border-radius:3px;height:5px;flex-shrink:0"><div style="width:${bw2}%;height:5px;background:${rc2};border-radius:3px"></div></div><span style="color:${rc2};font-weight:800">${r.toFixed(1)}%</span></div>`:'<span style="color:#475569">—</span>'}
+              </td>
+              <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.25);text-align:right;background:rgba(245,158,11,.03)">
+                ${bonus>0?`<span style="color:#f59e0b;font-weight:900;font-size:15px">${bonus.toLocaleString()}<span style="font-size:10px;margin-left:1px">元</span></span>`:'<span style="color:#334155">0 元</span>'}
+              </td>
+            </tr>`;
+          }
+
+          tableHtml+=`<tr style="background:${col}0d">
+            <td colspan="${!isDepth&&!useAuto?4:3}" style="padding:7px 10px;font-size:12px;font-weight:700;color:${col}">
+              ${dept.dept_name} 小計（${dept.members.length}人 / ${deptPpl}人有獎金）
+            </td>
+            <td style="padding:7px 10px;text-align:right;background:rgba(245,158,11,.07)">
+              <span style="color:#f59e0b;font-weight:900;font-size:14px">${deptB>0?deptB.toLocaleString()+' 元':'—'}</span>
+            </td>
+          </tr></tbody></table></div></div>`;
+        }
+
+        if (grandBonus>0) {
+          tableHtml+=`<div style="background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(245,158,11,.05));border:1px solid rgba(245,158,11,.35);border-radius:10px;padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:6px">
+            <div>
+              <div style="font-size:11px;color:#94a3b8;margin-bottom:2px">🏆 ${m.metric_name}　${actLabel} 獎金合計</div>
+              <div style="font-size:12px;color:#64748b">${grandPpl} / ${totalPpl} 人有獎金</div>
+            </div>
+            <div style="font-size:30px;font-weight:900;color:#f59e0b;margin-left:auto">${grandBonus.toLocaleString()}<span style="font-size:15px;font-weight:600;margin-left:3px">元</span></div>
+          </div>`;
+        }
+        tableHtml+='</div>';
+      }
+
+      html+=`<div class="card" style="margin-bottom:14px">
+        <div class="card-title" style="margin-bottom:12px">
+          ${m.metric_name}${srcBadge}
+          <span class="badge badge-purple" style="margin-left:6px">${SCOPE_LABEL[m.scope_type]||m.scope_type}</span>
+          ${actual!==null?`<span style="font-size:11px;color:#64748b;margin-left:auto">DMS(${actLabel})：<strong style="color:#10b981">${fmtV(actual)}</strong></span>`:''}
+        </div>
+        ${ruleHtml}${achHtml}${tableHtml}
+      </div>`;
+    }
+
+    el.innerHTML=html||'<div class="empty">無資料</div>';
   } catch(e) {
-    el.innerHTML = `<div style="color:#ef4444;padding:16px">${e.message}</div>`;
+    el.innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;
   }
 }
 
