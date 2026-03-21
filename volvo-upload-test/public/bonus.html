@@ -850,7 +850,7 @@ function onMSourceChange() {
   document.getElementById('mStatFieldArea').style.display=(src!=='manual'&&src!=='performance'&&src!=='revenue')?'':'none';
   document.getElementById('mPerfArea').style.display=src==='performance'?'':'none';
   document.getElementById('mRevenueArea').style.display=src==='revenue'?'':'none';
-  // 顯示計算據點：非手動且非連結revenue(revenue有自己的branch選擇)
+  // 計算據點：DMS來源 或 連結業績指標 時顯示（revenue有自己的branch選擇所以不需要）
   document.getElementById('mBranchOverrideArea').style.display=(src!=='manual'&&src!=='revenue')?'':'none';
   if (src!=='manual'&&src!=='performance'&&src!=='revenue') {
     const m=_editingMetricId?(_metrics.find(x=>x.id===_editingMetricId)||{}):{};
@@ -937,10 +937,7 @@ async function saveMetric() {
     if (data.error) throw new Error(data.error);
     closeModal('metricModal');
     await loadMetrics();
-    // 重新渲染指標管理面板
-    const panelEl=document.getElementById('metricMgmtList');
-    if (panelEl) panelEl.innerHTML=renderMetricManagementPanel();
-    // 重新渲染進度
+    // 重新渲染進度頁
     const progressInner=document.getElementById('progressInner');
     if (progressInner) { progressInner.innerHTML='<div class="loading"><span class="spinner"></span>重新計算中</div>'; await renderProgressContent(); }
   } catch(e){ alert('儲存失敗：'+e.message); }
@@ -948,13 +945,26 @@ async function saveMetric() {
 }
 
 async function deleteMetric(id,name) {
-  if (!confirm('確定刪除指標「'+name+'」及所有目標？')) return;
+  if (!confirm('確定刪除指標「'+name+'」？')) return;
   await fetch('/api/bonus/metrics/'+id,{method:'DELETE'});
   await loadMetrics();
-  const panelEl=document.getElementById('metricMgmtList');
-  if (panelEl) panelEl.innerHTML=renderMetricManagementPanel();
   const progressInner=document.getElementById('progressInner');
   if (progressInner) { progressInner.innerHTML='<div class="loading"><span class="spinner"></span>重新計算中</div>'; await renderProgressContent(); }
+}
+
+// ══ 新增部門指標（從部門按鈕觸發，自動帶入部門+廠別）══
+async function openNewMetricForDept(deptCode, deptName, factory, autoBranch) {
+  await openMetricModal(null);
+  const nameEl=document.getElementById('mName');
+  if (nameEl&&!nameEl.value) nameEl.value=(deptName?deptName.replace(/廠|部門|科/g,'').trim()+' 獎金':'');
+  // ★ 自動設定計算據點（解決零件/技師跨廠問題）
+  const brEl=document.getElementById('mBranchOverride');
+  if (brEl&&autoBranch) { brEl.value=autoBranch; document.getElementById('mBranchOverrideArea').style.display=''; }
+  // 等 checkbox 載入後預選此部門
+  await new Promise(r=>setTimeout(r,300));
+  document.querySelectorAll('#mDeptCheckboxWrap input[type=checkbox]').forEach(cb=>{
+    if (cb.value===deptCode&&!cb.checked) toggleDeptChip(cb.closest('label'), FC_COLORS[factory]||'#3b82f6');
+  });
 }
 
 // ══ 獎金進度 ══
@@ -984,18 +994,6 @@ async function loadProgress() {
           ${periodOptions.map(p=>'<option value="'+p+'" '+(p===_actualPeriod?'selected':'')+'>'+p.slice(0,4)+'年'+parseInt(p.slice(4))+'月</option>').join('')}
         </select>
         <button onclick="applyActualPeriod()" style="background:#3b82f6;color:#fff;border:none;padding:6px 16px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">套用</button>
-      </div>
-    </div>
-    <!-- 指標管理面板（預設展開）-->
-    <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:10px;margin-bottom:12px;overflow:hidden">
-      <div style="padding:10px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;border-bottom:1px solid #2d3f56" onclick="toggleBonusMgmt()">
-        <span id="bonusMgmtArrow" style="font-size:11px;color:#64748b;transition:transform .2s;display:inline-block;transform:rotate(90deg)">▶</span>
-        <span style="font-size:13px;font-weight:700;color:#e2e8f0">⚙️ 獎金指標管理</span>
-        <span style="font-size:11px;color:#64748b;background:#0f172a;padding:1px 8px;border-radius:10px">${_metrics.length} 個</span>
-        <button onclick="event.stopPropagation();openMetricModal()" style="margin-left:auto;background:#3b82f6;color:#fff;border:none;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">＋ 新增指標</button>
-      </div>
-      <div id="bonusMgmtPanel" style="padding:12px 16px">
-        <div id="metricMgmtList">${renderMetricManagementPanel()}</div>
       </div>
     </div>
     <div id="progressInner"><div class="loading"><span class="spinner"></span>計算中</div></div>`;
@@ -1185,14 +1183,24 @@ async function renderProgressContent() {
 
         var thBase='text-align:left;padding:8px 10px;background:#090f1a;color:#475569;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;white-space:nowrap;border-right:1px solid #1a2535;';
 
-        // 部門 header：只顯示指標資訊，無設定按鈕
-        var deptTagsHtml=deptHasMetrics?'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-left:6px">'+deptMetricIds.map(function(mId7){
-          var meta7=metaById[mId7], rc7=meta7.autoRate===null?'#64748b':meta7.autoRate>=100?'#10b981':meta7.autoRate>=80?'#f59e0b':'#ef4444';
-          return '<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:6px;padding:3px 8px">'
-            +'<span style="font-size:10px;color:#60a5fa;font-weight:700">'+meta7.metric.metric_name+'</span>'
-            +(meta7.autoRate!==null?'<span style="font-size:10px;color:'+rc7+';font-weight:700">'+meta7.autoRate.toFixed(0)+'%</span>':'')
-          +'</span>';
-        }).join('')+'</div>':'';
+        // 部門 header：指標標籤 + 每個指標的編輯/刪除 + 新增按鈕
+        // 自動從 factory 推算 branch_override
+        var autoBranch = ['AMA','AMC','AMD'].includes(fc) ? fc : '';
+
+        var deptTagsHtml = deptHasMetrics
+          ? '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-left:6px">'
+            + deptMetricIds.map(function(mId7){
+              var meta7=metaById[mId7], rc7=meta7.autoRate===null?'#64748b':meta7.autoRate>=100?'#10b981':meta7.autoRate>=80?'#f59e0b':'#ef4444';
+              var safeN7=meta7.metric.metric_name.replace(/'/g,"\\'");
+              return '<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:6px;padding:3px 8px">'
+                +'<span style="font-size:10px;color:#60a5fa;font-weight:700">'+meta7.metric.metric_name+'</span>'
+                +(meta7.autoRate!==null?'<span style="font-size:10px;color:'+rc7+';font-weight:700">'+meta7.autoRate.toFixed(0)+'%</span>':'')
+                +'<button onclick="event.stopPropagation();openMetricModal('+mId7+')" title="編輯指標" style="background:rgba(59,130,246,.2);color:#60a5fa;border:none;padding:1px 5px;border-radius:3px;font-size:10px;cursor:pointer">✏️</button>'
+                +'<button onclick="event.stopPropagation();deleteMetric('+mId7+',\''+safeN7+'\')" title="刪除指標" style="background:rgba(239,68,68,.15);color:#ef4444;border:none;padding:1px 5px;border-radius:3px;font-size:10px;cursor:pointer">🗑</button>'
+              +'</span>';
+            }).join('')
+          +'</div>'
+          : '';
 
         html+='<div style="border-top:1px solid '+fcColor+'22">'
           +'<div style="background:#0b1422;padding:8px 18px 8px 28px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
@@ -1200,7 +1208,9 @@ async function renderProgressContent() {
             +'<span style="font-size:11px;color:#475569;background:#0f172a;padding:1px 7px;border-radius:6px">'+dept.members.length+' 人</span>'
             +(deptBonusPpl>0?'<span style="font-size:11px;color:#10b981">'+deptBonusPpl+' 人有獎金</span>':'')
             +deptTagsHtml
-            +(deptHasMetrics&&deptTotalBonus>0?'<span style="font-size:13px;font-weight:800;color:#f59e0b;margin-left:auto">'+deptTotalBonus.toLocaleString()+' 元</span>':'')
+            +'<button onclick="event.stopPropagation();openNewMetricForDept(\''+dkey+'\',\''+dept.dept_name.replace(/'/g,"\\'")+'\',\''+fc+'\',\''+autoBranch+'\')" '
+              +'style="margin-left:auto;background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3);padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">＋ 新增獎金規則</button>'
+            +(deptHasMetrics&&deptTotalBonus>0?'<span style="font-size:13px;font-weight:800;color:#f59e0b">'+deptTotalBonus.toLocaleString()+' 元</span>':'')
           +'</div>'
           +'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>'
             +'<th style="'+thBase+'min-width:80px">姓名</th>'
