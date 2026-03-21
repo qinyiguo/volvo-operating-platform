@@ -18,6 +18,12 @@ function periodStart(period) {
   return `${period.slice(0,4)}-${period.slice(4,6)}-01`;
 }
 function activeFilter(period, startIdx) {
+  // 包含範圍：在職、留職停薪、以及「本月或上個月離職」的人員
+  // 計算上個月第一天
+  const y = parseInt(period.slice(0,4)), m = parseInt(period.slice(4));
+  const prevMonthStart = m === 1
+    ? `${y-1}-12-01`
+    : `${y}-${String(m-1).padStart(2,'0')}-01`;
   return {
     cond: `
       AND (
@@ -27,7 +33,7 @@ function activeFilter(period, startIdx) {
       AND COALESCE(job_category, '') NOT ILIKE '%計時%'
       AND COALESCE(job_title,    '') NOT ILIKE '%計時%'
     `,
-    param: periodStart(period),
+    param: prevMonthStart,   // ← 改為上個月1日，包含上個月離職者
     nextIdx: startIdx + 1,
   };
 }
