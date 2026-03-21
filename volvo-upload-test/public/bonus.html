@@ -31,7 +31,6 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
 .btn-danger { background: rgba(239,68,68,.12); color: #ef4444; border: 1px solid rgba(239,68,68,.25); }
 .btn-sm { padding: 4px 10px; font-size: 12px; }
 .card { background: #1a2332; border: 1px solid #2d3f56; border-radius: 12px; padding: 18px; margin-bottom: 14px; }
-.card-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .badge { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 600; }
 .badge-green  { background: rgba(16,185,129,.15); color: #10b981; }
 .badge-red    { background: rgba(239,68,68,.15); color: #ef4444; }
@@ -86,9 +85,6 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
 .sc { background: #1e293b; border: 1px solid #2d3f56; border-radius: 10px; padding: 14px; }
 .sc-label { font-size: 11px; color: #64748b; margin-bottom: 4px; }
 .sc-val { font-size: 22px; font-weight: 800; }
-.achieve-row { display: flex; align-items: center; gap: 10px; }
-.progress-bar { flex: 1; background: #0f172a; border-radius: 4px; height: 6px; min-width: 60px; }
-.progress-fill { height: 6px; border-radius: 4px; transition: width .4s; }
 .dept-chip { display:inline-flex; align-items:center; gap:4px; background:#1e293b; border:1px solid #2d3f56; border-radius:6px; padding:4px 8px; cursor:pointer; font-size:11px; color:#94a3b8; transition:all .12s; user-select:none; }
 .dept-chip.checked { font-weight:700; }
 .dept-chip input[type=checkbox] { display:none; }
@@ -155,14 +151,6 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
     <div id="rosterAlerts"></div>
     <div id="rosterTree"><div class="loading"><span class="spinner"></span>載入中</div></div>
   </div>
-  <div id="tab-metrics" style="display:none">
-    <div class="card">
-      <div class="card-title">📋 獎金指標定義
-        <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openMetricModal()">＋ 新增指標</button>
-      </div>
-      <div id="metricList"><div class="loading"><span class="spinner"></span>載入中</div></div>
-    </div>
-  </div>
   <div id="tab-progress" style="display:none">
     <div id="progressContent"><div class="empty">請先選擇期間後按查詢</div></div>
   </div>
@@ -212,7 +200,6 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
           <select id="mScope" class="form-select">
             <option value="person">👤 個人目標</option>
             <option value="dept">🏢 部門整體目標</option>
-            <option value="factory">🏭 廠別整體目標</option>
           </select>
         </div>
         <div class="form-group">
@@ -223,7 +210,7 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
             <option value="tech_wage">👨‍🔧 技師工資</option>
             <option value="parts_sales">🔩 零件銷售</option>
             <option value="performance">🎯 連結業績指標</option>
-            <option value="revenue">💰 連結營收目標（有費/鈑烤/一般/延保）</option>
+            <option value="revenue">💰 連結營收目標</option>
           </select>
         </div>
       </div>
@@ -244,15 +231,10 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
         </div>
       </div>
       <div id="mPerfArea" style="display:none">
-        <div class="section-label">連結業績指標（業績指標頁的指標）</div>
+        <div class="section-label">連結業績指標</div>
         <div class="form-group">
-          <label>選擇要連結的業績指標</label>
-          <select id="mPerfMetricId" class="form-select">
-            <option value="">選擇指標...</option>
-          </select>
-        </div>
-        <div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:7px;padding:10px 12px;font-size:12px;color:#94a3b8;line-height:1.7">
-          📡 系統將直接從業績指標的實際計算數值取得達成率，目標數值從業績指標的目標設定取得。
+          <label>選擇業績指標</label>
+          <select id="mPerfMetricId" class="form-select"><option value="">選擇指標...</option></select>
         </div>
       </div>
       <div id="mRevenueArea" style="display:none">
@@ -261,7 +243,7 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
           <div class="form-group">
             <label>據點</label>
             <select id="mRevBranch" class="form-select">
-              <option value="">集團（AMA+AMC+AMD 合計）</option>
+              <option value="">集團合計</option>
               <option value="AMA">AMA 內湖</option>
               <option value="AMC">AMC 仁愛</option>
               <option value="AMD">AMD 士林</option>
@@ -280,10 +262,10 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
       </div>
 
       <div class="section-label">📌 套用對象（部門篩選）</div>
-      <div style="font-size:12px;color:#64748b;margin-bottom:8px;line-height:1.7">
-        選擇此指標要設定目標的部門。<strong style="color:#94a3b8">留空 = 全廠所有在職正職人員</strong>
+      <div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.25);border-radius:7px;padding:8px 12px;font-size:11px;color:#f59e0b;line-height:1.7;margin-bottom:8px">
+        ⚠️ <strong>重要</strong>：若各廠有同名部門（如「零件部」），請確認選擇的是正確廠的部門代碼。<strong>留空 = 全廠所有在職正職人員都適用</strong>
       </div>
-      <div id="mDeptCheckboxWrap" style="background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:10px 12px;max-height:200px;overflow-y:auto">
+      <div id="mDeptCheckboxWrap" style="background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:10px 12px;max-height:220px;overflow-y:auto">
         <span style="color:#475569;font-size:12px"><span class="spinner"></span>載入部門清單...</span>
       </div>
       <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
@@ -330,7 +312,6 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
         <label>補充說明（選填）</label>
         <input type="text" id="mRuleNote" class="form-input" placeholder="例：需同時達成服務滿意度 ≥ 90 分">
       </div>
-
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div class="form-group"><label>單位（留空自動）</label><input type="text" id="mUnit" class="form-input" placeholder="元 / 台 / 件 / K"></div>
         <div class="form-group"><label>排列順序</label><input type="number" id="mOrder" class="form-input" value="0" min="0"></div>
@@ -343,26 +324,11 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
   </div>
 </div>
 
-<!-- 目標設定 Modal -->
-<div class="modal-bd" id="targetModal">
-  <div class="modal-win" style="max-width:800px">
-    <div class="modal-head"><div class="modal-title" id="targetModalTitle">設定目標</div><button class="modal-close" onclick="closeModal('targetModal')">×</button></div>
-    <div class="modal-body"><div id="targetFormContent"><div class="loading"><span class="spinner"></span>載入中</div></div></div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('targetModal')">取消</button>
-      <button class="btn btn-primary" id="btnSaveTargets" onclick="saveTargets()">💾 儲存目標</button>
-    </div>
-  </div>
-</div>
-
 <!-- 員工廠別調整 Modal -->
 <div class="modal-bd" id="empEditModal">
   <div class="modal-win" style="max-width:380px">
     <div class="modal-head"><div class="modal-title">✏️ 調整廠別</div><button class="modal-close" onclick="closeModal('empEditModal')">×</button></div>
     <div class="modal-body">
-      <div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:11px 14px;font-size:12px;color:#94a3b8;line-height:1.8;margin-bottom:14px">
-        ⚠️ 手動調整所屬廠別。適用於跨廠支援、零件人員分配等特殊情況。僅影響本期間顯示分類。
-      </div>
       <input type="hidden" id="empEditPeriod"><input type="hidden" id="empEditId">
       <div class="form-group"><label>員工</label><div id="empEditName" style="font-size:14px;font-weight:700;color:#e2e8f0;padding:8px 0"></div></div>
       <div class="form-group"><label>目前部門</label><div id="empEditDept" style="font-size:12px;color:#64748b;padding:4px 0"></div></div>
@@ -381,9 +347,7 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
       </div>
       <div class="form-group" id="empEditDeptGroup" style="display:none">
         <label>調整至部門（選填）</label>
-        <select id="empEditDeptCode" class="form-select">
-          <option value="">— 不變更部門 —</option>
-        </select>
+        <select id="empEditDeptCode" class="form-select"><option value="">— 不變更部門 —</option></select>
       </div>
       <div id="empEditMsg" style="font-size:12px;min-height:16px"></div>
     </div>
@@ -427,7 +391,7 @@ async function doLogin() {
 }
 
 // ══ State ══
-let _period='', _actualPeriod='', _rosterPeriods=[], _metrics=[], _editingMetricId=null, _tgtMetricId=null, _rosterData=[];
+let _period='', _actualPeriod='', _rosterPeriods=[], _metrics=[], _editingMetricId=null, _rosterData=[];
 let _rosterLoadedPeriod='';
 let _tierRoles=[], _tiers=[], _allDepts=[], _perfMetricsList=[];
 
@@ -450,20 +414,19 @@ function openModal(id) { document.getElementById(id).classList.add('open'); docu
 function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
 document.addEventListener('keydown', e => {
   if (e.key!=='Escape') return;
-  ['uploadModal','metricModal','targetModal','empEditModal'].forEach(id=>{
-    if(document.getElementById(id).classList.contains('open')) closeModal(id);
+  ['uploadModal','metricModal','empEditModal'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&el.classList.contains('open')) closeModal(id);
   });
 });
 
-// ★ 修正：加 null 判斷，避免找不到 tab-btn-metrics 時炸掉
 function switchTab(tab) {
-  ['roster','metrics','progress'].forEach(t=>{
+  ['roster','progress'].forEach(t=>{
     const el=document.getElementById('tab-'+t);
     if(el) el.style.display=t===tab?'':'none';
     const btn=document.getElementById('tab-btn-'+t);
     if(btn) btn.classList.toggle('active',t===tab);
   });
-  if (tab==='metrics')  loadMetrics();
   if (tab==='progress') loadProgress();
 }
 
@@ -483,12 +446,8 @@ async function loadPeriods() {
     upSel.innerHTML='<option value="">選擇期間...</option>'+allMonths.map(p=>'<option value="'+p+'" '+(p===cur?'selected':'')+'>'+p.slice(0,4)+'年'+parseInt(p.slice(4))+'月</option>').join('');
   } catch(e){}
 }
-function onPeriodChange() {
-  _period=document.getElementById('selPeriod').value;
-  _actualPeriod='';
-}
+function onPeriodChange() { _period=document.getElementById('selPeriod').value; _actualPeriod=''; }
 
-// ══ 業績指標清單 ══
 async function loadPerfMetricsList() {
   try {
     _perfMetricsList=await fetch('/api/performance-metrics').then(r=>r.json());
@@ -501,21 +460,17 @@ async function loadPerfMetricsList() {
 async function doLoad() {
   _period=document.getElementById('selPeriod').value;
   if (!_period){ alert('請先選擇期間'); return; }
-  _actualPeriod='';
-  _rosterData=[];
-  _rosterLoadedPeriod='';
+  _actualPeriod=''; _rosterData=[]; _rosterLoadedPeriod='';
   document.getElementById('lastUpdate').textContent='更新中...';
   await Promise.all([loadRoster(), loadMetrics()]);
-  const progressTab = document.getElementById('tab-progress');
-  if (progressTab && progressTab.style.display !== 'none') {
-    await loadProgress();
-  }
+  const progressTab=document.getElementById('tab-progress');
+  if (progressTab&&progressTab.style.display!=='none') await loadProgress();
   document.getElementById('lastUpdate').textContent=new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})+' 更新';
 }
 
 // ══ 人員名單 ══
 async function loadRoster() {
-  const rosterPeriod = _rosterPeriods[0];
+  const rosterPeriod=_rosterPeriods[0];
   if (!rosterPeriod){ document.getElementById('rosterTree').innerHTML='<div class="empty">尚無人員名冊，請先上傳人員資料</div>'; return; }
   document.getElementById('rosterTree').innerHTML='<div class="loading"><span class="spinner"></span>載入中</div>';
   try {
@@ -526,11 +481,8 @@ async function loadRoster() {
       fetch('/api/bonus/roster?'+params).then(r=>r.json()),
       fetch('/api/bonus/roster-summary?period='+rosterPeriod).then(r=>r.json()),
     ]);
-    _rosterData=rows;
-    _rosterLoadedPeriod=rosterPeriod;
-    renderSummaryCards(summary);
-    renderAlerts(summary);
-    renderRosterTree(rows);
+    _rosterData=rows; _rosterLoadedPeriod=rosterPeriod;
+    renderSummaryCards(summary); renderAlerts(summary); renderRosterTree(rows);
   } catch(e){ document.getElementById('rosterTree').innerHTML='<div class="empty" style="color:#ef4444">'+e.message+'</div>'; }
 }
 
@@ -545,7 +497,7 @@ function renderSummaryCards(s) {
     '<div class="sc"><div class="sc-label">🆕 '+pL+'新進</div><div class="sc-val" style="color:'+(nH>0?'#3b82f6':'#64748b')+'">'+nH+'</div></div>'+
     '<div class="sc"><div class="sc-label">🚨 '+pL+'離職</div><div class="sc-val" style="color:'+(rL>0?'#ef4444':'#64748b')+'">'+rL+'</div></div>'+
     '<div class="sc"><div class="sc-label">⏸️ 留職停薪</div><div class="sc-val" style="color:'+(unpaid>0?'#f59e0b':'#64748b')+'">'+unpaid+'</div></div>'+
-    '<div class="sc"><div class="sc-label">📊 本月合計（含離）</div><div class="sc-val">'+(active+resigned+unpaid)+'</div></div>';
+    '<div class="sc"><div class="sc-label">📊 本月合計</div><div class="sc-val">'+(active+resigned+unpaid)+'</div></div>';
 }
 
 function renderAlerts(s) {
@@ -555,19 +507,19 @@ function renderAlerts(s) {
   let html='';
   if (nHL.length) {
     html+='<div style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);border-radius:10px;padding:14px 18px;margin-bottom:10px">';
-    html+='<div style="font-size:13px;font-weight:700;color:#3b82f6;margin-bottom:8px">🆕 '+pL+'新進人員（'+nHL.length+' 人）</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
-    nHL.forEach(r=>{ html+='<div style="background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.2);border-radius:7px;padding:6px 12px;font-size:12px"><span style="font-weight:700;color:#e2e8f0">'+r.emp_name+'</span><span style="color:#64748b;margin-left:6px">'+(r.dept_name||'')+'</span><span style="color:#3b82f6;margin-left:6px">'+(r.hire_date?.slice(0,10)||'')+'</span></div>'; });
+    html+='<div style="font-size:13px;font-weight:700;color:#3b82f6;margin-bottom:8px">🆕 '+pL+'新進（'+nHL.length+' 人）</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
+    nHL.forEach(r=>{ html+='<div style="background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.2);border-radius:7px;padding:6px 12px;font-size:12px"><span style="font-weight:700;color:#e2e8f0">'+r.emp_name+'</span><span style="color:#64748b;margin-left:6px">'+(r.dept_name||'')+'</span></div>'; });
     html+='</div></div>';
   }
   if (rL.length) {
     html+='<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:10px;padding:14px 18px;margin-bottom:10px">';
-    html+='<div style="font-size:13px;font-weight:700;color:#ef4444;margin-bottom:8px">🚨 '+pL+'離職人員（'+rL.length+' 人）</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
+    html+='<div style="font-size:13px;font-weight:700;color:#ef4444;margin-bottom:8px">🚨 '+pL+'離職（'+rL.length+' 人）</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
     rL.forEach(r=>{ html+='<div style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2);border-radius:7px;padding:6px 12px;font-size:12px"><span style="font-weight:700;color:#e2e8f0">'+r.emp_name+'</span><span style="color:#64748b;margin-left:6px">'+(r.dept_name||'')+'</span><span style="color:#ef4444;margin-left:6px">'+(r.resign_date?.slice(0,10)||'')+'</span></div>'; });
     html+='</div></div>';
   }
   if (uL.length) {
     html+='<div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:14px 18px;margin-bottom:10px">';
-    html+='<div style="font-size:13px;font-weight:700;color:#f59e0b;margin-bottom:8px">⏸️ 留職停薪人員（'+uL.length+' 人）</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
+    html+='<div style="font-size:13px;font-weight:700;color:#f59e0b;margin-bottom:8px">⏸️ 留職停薪（'+uL.length+' 人）</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
     uL.forEach(r=>{ html+='<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:7px;padding:6px 12px;font-size:12px"><span style="font-weight:700;color:#e2e8f0">'+r.emp_name+'</span><span style="color:#64748b;margin-left:6px">'+(r.dept_name||'')+'</span></div>'; });
     html+='</div></div>';
   }
@@ -576,7 +528,7 @@ function renderAlerts(s) {
 
 function renderRosterTree(rows) {
   const el=document.getElementById('rosterTree');
-  if (!rows.length){ el.innerHTML='<div class="empty">此期間無人員資料（已排除計時及本月前離職）</div>'; return; }
+  if (!rows.length){ el.innerHTML='<div class="empty">此期間無人員資料</div>'; return; }
   const byFactory={};
   rows.forEach(r=>{ const f=r.factory||'售後服務處'; if(!byFactory[f])byFactory[f]={}; const d=r.dept_code||'—'; if(!byFactory[f][d])byFactory[f][d]={dept_name:r.dept_name,employees:[]}; byFactory[f][d].employees.push(r); });
   const FACTORY_ORDER=['售後服務處','AMA','AMD','AMC','聯合','鈑烤','零件'];
@@ -592,8 +544,7 @@ function renderRosterTree(rows) {
     html+='<div class="factory-header" onclick="toggleSection(\''+fcId+'\')">';
     html+='<span id="'+fcId+'-arrow" style="font-size:11px;color:#64748b;transition:transform .2s;display:inline-block;transform:rotate(90deg)">▶</span>';
     html+='<span style="font-size:15px;font-weight:800;color:'+meta.color+'">'+meta.icon+' '+meta.label+'</span>';
-    html+='<span style="font-size:12px;color:#64748b;margin-left:4px">('+f+')</span>';
-    html+='<div style="margin-left:auto;display:flex;gap:6px;align-items:center"><span class="badge badge-green">'+activeC+' 在職</span>';
+    html+='<div style="margin-left:auto;display:flex;gap:6px"><span class="badge badge-green">'+activeC+' 在職</span>';
     if(unpaidC) html+='<span class="badge badge-yellow">'+unpaidC+' 停薪</span>';
     if(resignC) html+='<span class="badge badge-red">'+resignC+' 本月離</span>';
     html+='</div></div><div class="factory-body open" id="'+fcId+'-body">';
@@ -607,13 +558,13 @@ function renderRosterTree(rows) {
       if(uE) html+='<span style="font-size:11px;color:#f59e0b;font-weight:700">'+uE+'停</span>';
       if(rE) html+='<span style="font-size:11px;color:#ef4444">'+rE+'離</span>';
       html+='</div></div><div class="dept-body" id="'+dId+'-body">';
-      html+='<table class="emp-table"><thead><tr><th>員工編號</th><th>姓名</th><th>職務</th><th>狀態</th><th>一階主管</th><th>到職日期</th><th>離職日期</th><th>備註</th><th>調整</th></tr></thead><tbody>';
+      html+='<table class="emp-table"><thead><tr><th>員工編號</th><th>姓名</th><th>職務</th><th>狀態</th><th>一階主管</th><th>到職日期</th><th>離職日期</th><th>調整</th></tr></thead><tbody>';
       emps.forEach(e=>{
         const rc=e.status==='離職'?'emp-row-resign':e.status==='留職停薪'?'emp-row-unpaid':'';
         const eName=e.emp_name.replace(/'/g,"\\'"), eFact=(e.factory||'').replace(/'/g,"\\'");
-        html+='<tr class="'+rc+'"><td style="font-family:monospace;font-size:11px;color:#94a3b8">'+e.emp_id+'</td><td style="font-weight:700">'+e.emp_name+'</td><td style="font-size:12px;color:#94a3b8">'+(e.job_title||'—')+'</td><td>'+(STATUS_BADGE[e.status]||e.status)+'</td><td style="font-size:12px;color:#64748b">'+(e.mgr1||'—')+'</td><td style="font-size:11px;white-space:nowrap">'+(e.hire_date?.slice(0,10)||'—')+'</td><td style="font-size:11px;white-space:nowrap;color:'+(e.resign_date?'#ef4444':'#475569')+'">'+(e.resign_date?.slice(0,10)||'—')+'</td><td style="font-size:11px;color:#64748b">'+(e.unpaid_leave_date?'停薪:'+e.unpaid_leave_date.slice(0,10):'')+'</td>';
-        var _dA = e.dept_name ? "'" + e.dept_name.replace(/'/g,"\\'") + "'" : "''";
-        html += '<td><button class="btn btn-secondary btn-sm" onclick="openEmpEditModal(\'' + _period + '\',\'' + e.emp_id + '\',\'' + eFact + '\',\'' + eName + '\',' + _dA + ')">✏️</button></td></tr>';
+        const _dA=e.dept_name?"'"+e.dept_name.replace(/'/g,"\\'")+"'":"''";
+        html+='<tr class="'+rc+'"><td style="font-family:monospace;font-size:11px;color:#94a3b8">'+e.emp_id+'</td><td style="font-weight:700">'+e.emp_name+'</td><td style="font-size:12px;color:#94a3b8">'+(e.job_title||'—')+'</td><td>'+(STATUS_BADGE[e.status]||e.status)+'</td><td style="font-size:12px;color:#64748b">'+(e.mgr1||'—')+'</td><td style="font-size:11px">'+(e.hire_date?.slice(0,10)||'—')+'</td><td style="font-size:11px;color:'+(e.resign_date?'#ef4444':'#475569')+'">'+(e.resign_date?.slice(0,10)||'—')+'</td>';
+        html+='<td><button class="btn btn-secondary btn-sm" onclick="openEmpEditModal(\''+_period+'\',\''+e.emp_id+'\',\''+eFact+'\',\''+eName+'\','+_dA+')">✏️</button></td></tr>';
       });
       html+='</tbody></table></div></div>';
     });
@@ -627,15 +578,6 @@ function toggleSection(id) {
   if (!body) return;
   const isOpen=body.classList.toggle('open');
   if (arrow) arrow.style.transform=isOpen?'rotate(90deg)':'rotate(0deg)';
-}
-
-function toggleBonusSection(id) {
-  const body  = document.getElementById(id + '-body');
-  const arrow = document.getElementById(id + '-arrow');
-  if (!body) return;
-  const isOpen = body.style.display !== 'none';
-  body.style.display = isOpen ? 'none' : 'block';
-  if (arrow) arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
 }
 
 // ══ 員工廠別調整 ══
@@ -685,35 +627,52 @@ async function saveEmpEdit() {
   finally { btn.disabled=false; }
 }
 
-// ══ 指標設定 ══
+// ══ 指標管理 ══
 async function loadMetrics() {
-  try {
-    _metrics=await fetch('/api/bonus/metrics').then(r=>r.json());
-    renderMetricList();
-  } catch(e){ document.getElementById('metricList').innerHTML='<div style="color:#ef4444">'+e.message+'</div>'; }
+  try { _metrics=await fetch('/api/bonus/metrics').then(r=>r.json()); }
+  catch(e){}
 }
 
-function renderMetricList() {
-  const el=document.getElementById('metricList');
-  if (!_metrics.length){ el.innerHTML='<div class="empty">尚未建立任何指標</div>'; return; }
-  const SCOPE_LABEL={person:'👤 個人',dept:'🏢 部門',factory:'🏭 廠別'};
+function renderMetricManagementPanel() {
+  const SCOPE_LABEL={person:'👤 個人',dept:'🏢 部門'};
   const REV_TYPE_LABEL={paid:'有費',bodywork:'鈑烤',general:'一般',extended:'延保'};
   const BRANCH_LABEL={'':'集團',AMA:'AMA',AMC:'AMC',AMD:'AMD'};
-  el.innerHTML=_metrics.map(m=>{
+  if (!_metrics.length) {
+    return '<div style="padding:12px 0;color:#475569;font-size:12px">尚未建立任何指標</div>';
+  }
+  return _metrics.map(m=>{
     const deptCodes=m.target_dept_codes||[];
-    const deptTag=deptCodes.length?'<span class="badge badge-gray">📌 '+deptCodes.length+' 部門</span>':'<span class="badge badge-gray">📌 全廠</span>';
-    const rule=m.bonus_rule||{};
-    const tiers=rule.tiers||[];
-    const ruleTag=tiers.length?'<span class="badge badge-purple">🏆 '+tiers.length+' 階梯</span>':'';
+    const rule=m.bonus_rule||{}, tiers=rule.tiers||[], roles=rule.roles||[];
+    let tierPreview='';
+    if (tiers.length) {
+      tierPreview=tiers.sort((a,b)=>b.gte-a.gte).slice(0,2).map(t=>{
+        const range='≥'+t.gte+'%'+(t.lt!==null?'<'+t.lt+'%':'');
+        if (roles.length&&t.amounts) return range+' → '+roles.map(r=>r+':'+(t.amounts[r]||0).toLocaleString()).join('/');
+        return range+' → '+(t.amount||0).toLocaleString()+'元';
+      }).join('；')+(tiers.length>2?'…':'');
+    }
     let revTag='';
     if (m.metric_source==='revenue') {
       const revBranch=(m.filters||[]).find(f=>f.type==='branch')?.value||'';
       const revType=(m.filters||[]).find(f=>f.type==='revenue_type')?.value||'paid';
-      revTag='<span class="badge" style="background:rgba(249,115,22,.15);color:#f97316">'+(BRANCH_LABEL[revBranch]||revBranch||'集團')+' '+(REV_TYPE_LABEL[revType]||revType)+'</span>';
+      revTag='<span style="font-size:10px;background:rgba(249,115,22,.15);color:#f97316;padding:1px 6px;border-radius:4px;margin-left:4px">'+(BRANCH_LABEL[revBranch]||'集團')+' '+(REV_TYPE_LABEL[revType]||revType)+'</span>';
     }
-    return '<div class="metric-card"><div class="metric-info"><div class="metric-name">'+m.metric_name+'</div>'+(m.description?'<div style="font-size:12px;color:#64748b;margin-top:2px">'+m.description+'</div>':'')+
-      '<div class="metric-tags"><span class="badge badge-blue">'+(SCOPE_LABEL[m.scope_type]||m.scope_type)+'</span><span class="badge badge-purple">'+(SOURCE_LABEL[m.metric_source]||m.metric_source)+'</span>'+revTag+deptTag+ruleTag+(m.unit?'<span class="badge badge-gray">單位：'+m.unit+'</span>':'')+'</div></div>'+
-      '<div style="display:flex;gap:6px;flex-shrink:0"><button class="btn btn-secondary btn-sm" onclick="openTargetModal('+m.id+')">🎯 目標</button><button class="btn btn-secondary btn-sm" onclick="openMetricModal('+m.id+')">編輯</button><button class="btn btn-danger btn-sm" onclick="deleteMetric('+m.id+',\''+m.metric_name.replace(/'/g,"\\'")+'\')">刪除</button></div></div>';
+    return '<div style="background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px;margin-bottom:7px">'
+      +'<div style="flex:1;min-width:0">'
+        +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">'
+          +'<span style="font-weight:700;font-size:13px;color:#e2e8f0">'+m.metric_name+'</span>'
+          +'<span style="font-size:10px;background:rgba(59,130,246,.15);color:#3b82f6;padding:1px 6px;border-radius:4px">'+(SCOPE_LABEL[m.scope_type]||m.scope_type)+'</span>'
+          +'<span style="font-size:10px;background:rgba(139,92,246,.15);color:#8b5cf6;padding:1px 6px;border-radius:4px">'+(SOURCE_LABEL[m.metric_source]||m.metric_source)+'</span>'
+          +revTag
+          +(deptCodes.length?'<span style="font-size:10px;background:rgba(100,116,139,.15);color:#94a3b8;padding:1px 6px;border-radius:4px">📌 '+deptCodes.length+' 部門</span>':'<span style="font-size:10px;background:rgba(100,116,139,.15);color:#94a3b8;padding:1px 6px;border-radius:4px">📌 全廠</span>')
+        +'</div>'
+        +(tierPreview?'<div style="font-size:11px;color:#64748b">🏆 '+tierPreview+'</div>':'<div style="font-size:11px;color:#475569">尚未設定獎金階梯</div>')
+      +'</div>'
+      +'<div style="display:flex;gap:5px;flex-shrink:0">'
+        +'<button class="btn btn-secondary btn-sm" onclick="openMetricModal('+m.id+')">✏️ 編輯</button>'
+        +'<button class="btn btn-danger btn-sm" onclick="deleteMetric('+m.id+',\''+m.metric_name.replace(/'/g,"\\'")+'\')">刪除</button>'
+      +'</div>'
+    +'</div>';
   }).join('');
 }
 
@@ -726,6 +685,9 @@ async function loadDeptCheckboxes(selectedCodes) {
   try {
     const depts=await fetch('/api/bonus/departments?period='+periodForLoad).then(r=>r.json());
     _allDepts=depts;
+    // 偵測重複 dept_code（可能是零件部等跨廠問題）
+    const codeCount={};
+    depts.forEach(d=>{ codeCount[d.dept_code]=(codeCount[d.dept_code]||0)+1; });
     const byFactory={};
     depts.forEach(d=>{ const f=d.factory||'售後服務處'; if(!byFactory[f])byFactory[f]=[]; byFactory[f].push(d); });
     let html='';
@@ -735,8 +697,10 @@ async function loadDeptCheckboxes(selectedCodes) {
       html+='<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:'+fc+';margin-bottom:5px">'+factory+'</div><div style="display:flex;flex-wrap:wrap;gap:4px">';
       deptList.forEach(d=>{
         const checked=selectedCodes.includes(d.dept_code);
+        const isDup=codeCount[d.dept_code]>1;
+        const dupWarn=isDup?'<span style="color:#f59e0b;font-size:9px;margin-left:2px">⚠️重複</span>':'';
         html+='<label class="dept-chip '+(checked?'checked':'')+'" style="'+(checked?'background:'+fc+'22;border-color:'+fc+';color:'+fc:'')+'" onclick="toggleDeptChip(this,\''+fc+'\')">';
-        html+='<input type="checkbox" value="'+d.dept_code+'" '+(checked?'checked':'')+'>'+d.dept_name+' <span style="color:#475569;font-size:10px">'+d.dept_code+'</span></label>';
+        html+='<input type="checkbox" value="'+d.dept_code+'" '+(checked?'checked':'')+'>'+d.dept_name+dupWarn+' <span style="color:#475569;font-size:10px">'+d.dept_code+'</span></label>';
       });
       html+='</div></div>';
     });
@@ -760,32 +724,27 @@ function updateDeptCount() {
 }
 
 async function loadDeptJobTitles() {
-  const periodForLoad = _period || _rosterPeriods[0];
-  const selectedCodes = getSelectedDeptCodes();
-  const sugDiv = document.getElementById('mJobTitleSuggestions');
-  const chipsDiv = document.getElementById('mJobTitleChips');
-  if (!sugDiv || !chipsDiv) return;
-  if (!periodForLoad || !selectedCodes.length) { sugDiv.style.display = 'none'; return; }
+  const periodForLoad=_period||_rosterPeriods[0];
+  const selectedCodes=getSelectedDeptCodes();
+  const sugDiv=document.getElementById('mJobTitleSuggestions');
+  const chipsDiv=document.getElementById('mJobTitleChips');
+  if (!sugDiv||!chipsDiv||!periodForLoad||!selectedCodes.length){ if(sugDiv) sugDiv.style.display='none'; return; }
   try {
-    const params = new URLSearchParams({ period: periodForLoad, scope_type: 'person', dept_codes: selectedCodes.join(',') });
-    const members = await fetch('/api/bonus/scope-members?' + params).then(r => r.json());
-    const titles = [...new Set(members.map(m => m.job_title).filter(Boolean))].sort();
-    if (!titles.length) { sugDiv.style.display = 'none'; return; }
-    chipsDiv.innerHTML = titles.map(t => {
-      const already = _tierRoles.includes(t);
-      const safeT = t.replace(/'/g, "\\'");
-      return `<span onclick="${already ? '' : `addRoleVal('${safeT}')`}"
-        style="display:inline-flex;align-items:center;gap:3px;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:${already?'default':'pointer'};border:1px solid;transition:all .12s;
-        ${already ? 'background:rgba(59,130,246,.15);border-color:#3b82f6;color:#60a5fa' : 'background:#1e293b;border-color:#2d3f56;color:#94a3b8'}">
-        ${already ? '✓ ' : '＋ '}${t}
-      </span>`;
+    const params=new URLSearchParams({period:periodForLoad,scope_type:'person',dept_codes:selectedCodes.join(',')});
+    const members=await fetch('/api/bonus/scope-members?'+params).then(r=>r.json());
+    const titles=[...new Set(members.map(m=>m.job_title).filter(Boolean))].sort();
+    if (!titles.length){ sugDiv.style.display='none'; return; }
+    chipsDiv.innerHTML=titles.map(t=>{
+      const already=_tierRoles.includes(t);
+      const safeT=t.replace(/'/g,"\\'");
+      return '<span onclick="'+(already?'':'addRoleVal(\''+safeT+'\')')+'" style="display:inline-flex;align-items:center;gap:3px;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:'+(already?'default':'pointer')+';border:1px solid;'+(already?'background:rgba(59,130,246,.15);border-color:#3b82f6;color:#60a5fa':'background:#1e293b;border-color:#2d3f56;color:#94a3b8')+'">'+(already?'✓ ':'＋ ')+t+'</span>';
     }).join('');
-    sugDiv.style.display = '';
-  } catch(e) { sugDiv.style.display = 'none'; }
+    sugDiv.style.display='';
+  } catch(e){ if(sugDiv) sugDiv.style.display='none'; }
 }
 
 function selectAllDepts() {
-  document.querySelectorAll('#mDeptCheckboxWrap input[type=checkbox]').forEach(cb=>{ if(!cb.checked) toggleDeptChip(cb.closest('label'), cb.closest('label').style.color||'#3b82f6'); });
+  document.querySelectorAll('#mDeptCheckboxWrap input[type=checkbox]').forEach(cb=>{ if(!cb.checked) toggleDeptChip(cb.closest('label'),cb.closest('label').style.color||'#3b82f6'); });
 }
 function clearAllDepts() {
   document.querySelectorAll('#mDeptCheckboxWrap input[type=checkbox]:checked').forEach(cb=>{ toggleDeptChip(cb.closest('label'),''); });
@@ -794,86 +753,64 @@ function getSelectedDeptCodes() {
   return [...document.querySelectorAll('#mDeptCheckboxWrap input[type=checkbox]:checked')].map(cb=>cb.value);
 }
 
-// ══ 職稱角色管理 ══
+// ══ 職稱角色 ══
 function renderRoleTags() {
   const wrap=document.getElementById('mRoleTagsWrap');
   if (!_tierRoles.length){ wrap.innerHTML='<span style="color:#475569;font-size:11px">（未設定職稱 → 所有人同一金額）</span>'; return; }
   wrap.innerHTML=_tierRoles.map((r,i)=>'<span class="role-tag">'+r+'<button onclick="removeRole('+i+')" title="移除">×</button></span>').join('');
-  renderTierTable();
-  loadDeptJobTitles();
+  renderTierTable(); loadDeptJobTitles();
 }
 function addRole() {
-  const input=document.getElementById('mRoleInput');
-  const val=input.value.trim();
-  if (!val||_tierRoles.includes(val)) { input.value=''; return; }
-  _tierRoles.push(val); input.value='';
-  renderRoleTags(); renderTierTable();
+  const input=document.getElementById('mRoleInput'), val=input.value.trim();
+  if (!val||_tierRoles.includes(val)){ input.value=''; return; }
+  _tierRoles.push(val); input.value=''; renderRoleTags(); renderTierTable();
 }
 function addRoleVal(val) {
   if (_tierRoles.includes(val)) return;
-  _tierRoles.push(val);
-  renderRoleTags(); renderTierTable();
+  _tierRoles.push(val); renderRoleTags(); renderTierTable();
 }
-function removeRole(i) {
-  _tierRoles.splice(i,1);
-  renderRoleTags(); renderTierTable();
-}
+function removeRole(i) { _tierRoles.splice(i,1); renderRoleTags(); renderTierTable(); }
 
 // ══ 階梯表格 ══
 function renderTierTable() {
-  const head=document.getElementById('mTierHead');
-  const body=document.getElementById('mTierBody');
+  const head=document.getElementById('mTierHead'), body=document.getElementById('mTierBody');
   const roles=_tierRoles;
   let thHtml='<tr><th style="background:#0f172a;color:#64748b;padding:7px 10px;border-bottom:1px solid #2d3f56;text-align:center;white-space:nowrap;min-width:90px">達成率 ≥ (%)</th>';
   thHtml+='<th style="background:#0f172a;color:#64748b;padding:7px 10px;border-bottom:1px solid #2d3f56;text-align:center;white-space:nowrap;min-width:90px">未達 (%, 空=無上限)</th>';
-  if (roles.length) {
-    roles.forEach(r=>{ thHtml+='<th style="background:#0f172a;color:#10b981;padding:7px 10px;border-bottom:1px solid #2d3f56;text-align:center;white-space:nowrap;min-width:80px">'+r+'</th>'; });
-  } else {
-    thHtml+='<th style="background:#0f172a;color:#10b981;padding:7px 10px;border-bottom:1px solid #2d3f56;text-align:center;min-width:90px">獎金金額（元）</th>';
-  }
+  if (roles.length) roles.forEach(r=>{ thHtml+='<th style="background:#0f172a;color:#10b981;padding:7px 10px;border-bottom:1px solid #2d3f56;text-align:center;white-space:nowrap;min-width:80px">'+r+'</th>'; });
+  else thHtml+='<th style="background:#0f172a;color:#10b981;padding:7px 10px;border-bottom:1px solid #2d3f56;text-align:center;min-width:90px">獎金金額（元）</th>';
   thHtml+='<th style="background:#0f172a;padding:7px 6px;border-bottom:1px solid #2d3f56;width:30px"></th></tr>';
   head.innerHTML=thHtml;
   let bodyHtml='';
   _tiers.forEach((t,i)=>{
-    bodyHtml+='<tr>';
-    bodyHtml+='<td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3)"><input class="tier-input" type="number" value="'+t.gte+'" min="0" max="300" step="0.1" onchange="_tiers['+i+'].gte=parseFloat(this.value)||0" style="color:#3b82f6;font-weight:700"></td>';
+    bodyHtml+='<tr><td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3)"><input class="tier-input" type="number" value="'+t.gte+'" min="0" max="300" step="0.1" onchange="_tiers['+i+'].gte=parseFloat(this.value)||0" style="color:#3b82f6;font-weight:700"></td>';
     bodyHtml+='<td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3)"><input class="tier-input" type="number" value="'+(t.lt!==null?t.lt:'')+'" min="0" max="300" step="0.1" placeholder="無上限" onchange="_tiers['+i+'].lt=this.value===\'\'?null:parseFloat(this.value)" style="color:#64748b"></td>';
     if (roles.length) {
       roles.forEach(r=>{
         const amt=(t.amounts&&t.amounts[r]!==undefined)?t.amounts[r]:0;
-        var safeRole = r.replace(/"/g, '&quot;');
-        bodyHtml+='<td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3)"><input class="tier-input" type="number" value="'+amt+'" min="0" step="1" data-ti="'+i+'" data-role="'+safeRole+'" oninput="syncTierAmount(this)" style="color:#10b981;font-weight:700"></td>';
+        bodyHtml+='<td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3)"><input class="tier-input" type="number" value="'+amt+'" min="0" step="1" data-ti="'+i+'" data-role="'+r.replace(/"/g,'&quot;')+'" oninput="syncTierAmount(this)" style="color:#10b981;font-weight:700"></td>';
       });
     } else {
       const amt=t.amount!==undefined?t.amount:(t.amounts?.default||0);
       bodyHtml+='<td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3)"><input class="tier-input" type="number" value="'+amt+'" min="0" step="1" onchange="_tiers['+i+'].amount=parseFloat(this.value)||0" style="color:#10b981;font-weight:700"></td>';
     }
-    bodyHtml+='<td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center"><button class="btn btn-danger btn-sm" onclick="removeTier('+i+')" style="padding:3px 8px">×</button></td>';
-    bodyHtml+='</tr>';
+    bodyHtml+='<td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center"><button class="btn btn-danger btn-sm" onclick="removeTier('+i+')" style="padding:3px 8px">×</button></td></tr>';
   });
-  if (!_tiers.length) bodyHtml='<tr><td colspan="'+(2+(roles.length||1)+1)+'" style="padding:14px;text-align:center;color:#475569;font-size:12px">尚未設定階梯，點擊「＋ 新增階梯」</td></tr>';
+  if (!_tiers.length) bodyHtml='<tr><td colspan="'+(2+(roles.length||1)+1)+'" style="padding:14px;text-align:center;color:#475569;font-size:12px">尚未設定階梯</td></tr>';
   body.innerHTML=bodyHtml;
 }
-
 function syncTierAmount(el) {
-  var i = parseInt(el.getAttribute('data-ti'));
-  var role = el.getAttribute('data-role');
+  var i=parseInt(el.getAttribute('data-ti')), role=el.getAttribute('data-role');
   if (!_tiers[i]) return;
-  if (!_tiers[i].amounts) _tiers[i].amounts = {};
-  _tiers[i].amounts[role] = parseFloat(el.value) || 0;
+  if (!_tiers[i].amounts) _tiers[i].amounts={};
+  _tiers[i].amounts[role]=parseFloat(el.value)||0;
 }
-
 function addTier() {
   const lastGte=_tiers.length>0?Math.max(0,_tiers[_tiers.length-1].gte-10):80;
-  const amounts={};
-  _tierRoles.forEach(r=>{ amounts[r]=0; });
-  _tiers.push({gte:lastGte, lt:null, amount:0, amounts});
-  renderTierTable();
+  const amounts={}; _tierRoles.forEach(r=>{ amounts[r]=0; });
+  _tiers.push({gte:lastGte,lt:null,amount:0,amounts}); renderTierTable();
 }
-function removeTier(i) {
-  _tiers.splice(i,1);
-  renderTierTable();
-}
+function removeTier(i) { _tiers.splice(i,1); renderTierTable(); }
 
 function getTiersData() {
   const trs=document.querySelectorAll('#mTierBody tr');
@@ -885,29 +822,11 @@ function getTiersData() {
     if (_tierRoles.length) {
       if (!_tiers[i].amounts) _tiers[i].amounts={};
       _tierRoles.forEach((r,ri)=>{ if(inputs[2+ri]) _tiers[i].amounts[r]=parseFloat(inputs[2+ri].value)||0; });
-    } else {
-      if (inputs[2]) _tiers[i].amount=parseFloat(inputs[2].value)||0;
-    }
+    } else { if (inputs[2]) _tiers[i].amount=parseFloat(inputs[2].value)||0; }
   });
   return [..._tiers].sort((a,b)=>b.gte-a.gte);
 }
 
-function buildTierPreview(rule) {
-  if (!rule) return '';
-  const tiers=rule.tiers||[];
-  const roles=rule.roles||[];
-  if (!tiers.length) return '';
-  return tiers.sort((a,b)=>b.gte-a.gte).map(t=>{
-    const range=t.lt!==null?('\u2265'+t.gte+'% <'+t.lt+'%'):('\u2265'+t.gte+'%');
-    if (roles.length && t.amounts) {
-      const amtStr=roles.map(r=>r+': '+(t.amounts[r]||0).toLocaleString()+'\u5143').join(' / ');
-      return range+' → '+amtStr;
-    }
-    return range+' → '+(t.amount||0).toLocaleString()+'\u5143';
-  }).join('；');
-}
-
-// ══ onMSourceChange() ══
 function onMSourceChange() {
   const src=document.getElementById('mSource').value;
   document.getElementById('mFiltersArea').style.display=(src!=='manual'&&src!=='performance'&&src!=='revenue')?'':'none';
@@ -927,30 +846,6 @@ function onMSourceChange() {
   }
 }
 
-async function openNewMetricForDept(deptCode, deptName) {
-  await openMetricModal(null);
-  const nameEl = document.getElementById('mName');
-  if (nameEl && !nameEl.value) nameEl.value = deptName ? deptName.replace(/廠|部門/g,'') + ' 獎金' : '';
-  await new Promise(r => setTimeout(r, 200));
-  const cb = document.querySelector('input[data-dept="' + deptCode + '"]');
-  if (cb && !cb.checked) { cb.checked = true; cb.dispatchEvent(new Event('change')); }
-  _afterSaveCallback = async () => { await loadMetrics(); await renderProgressContent(); };
-}
-
-async function openNewMetricForFactory(factory) {
-  await openMetricModal(null);
-  await new Promise(r => setTimeout(r, 200));
-  document.querySelectorAll('input[data-dept]').forEach(cb => {
-    if (cb.dataset.factory === factory && !cb.checked) {
-      cb.checked = true; cb.dispatchEvent(new Event('change'));
-    }
-  });
-  _afterSaveCallback = async () => { await loadMetrics(); await renderProgressContent(); };
-}
-
-let _afterSaveCallback = null;
-
-// ══ openMetricModal() ══
 async function openMetricModal(id) {
   _editingMetricId=id||null;
   document.getElementById('metricModalTitle').textContent=id?'編輯指標':'新增指標';
@@ -986,7 +881,6 @@ async function openMetricModal(id) {
   setTimeout(()=>document.getElementById('mName').focus(),80);
 }
 
-// ══ saveMetric() ══
 async function saveMetric() {
   const metric_name=document.getElementById('mName').value.trim();
   if (!metric_name){ alert('請輸入指標名稱'); return; }
@@ -1007,29 +901,21 @@ async function saveMetric() {
   }
   const target_dept_codes=getSelectedDeptCodes();
   const tiersData=getTiersData();
-  const bonus_rule={
-    roles:[..._tierRoles],
-    tiers:tiersData,
-    note:document.getElementById('mRuleNote').value.trim(),
-  };
-  const payload={
-    metric_name, description:document.getElementById('mDesc').value.trim(),
-    scope_type:document.getElementById('mScope').value,
-    metric_source:src,
-    stat_field:document.getElementById('mStatField')?.value||'amount',
-    unit:document.getElementById('mUnit').value.trim(),
-    sort_order:parseInt(document.getElementById('mOrder').value)||0,
-    filters, bonus_rule, target_dept_codes,
-  };
+  const bonus_rule={ roles:[..._tierRoles], tiers:tiersData, note:document.getElementById('mRuleNote').value.trim() };
+  const payload={ metric_name, description:document.getElementById('mDesc').value.trim(), scope_type:document.getElementById('mScope').value, metric_source:src, stat_field:document.getElementById('mStatField')?.value||'amount', unit:document.getElementById('mUnit').value.trim(), sort_order:parseInt(document.getElementById('mOrder').value)||0, filters, bonus_rule, target_dept_codes };
   const btn=document.getElementById('btnSaveMetric'); btn.disabled=true;
   try {
     const url=_editingMetricId?'/api/bonus/metrics/'+_editingMetricId:'/api/bonus/metrics';
     const data=await fetch(url,{method:_editingMetricId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(r=>r.json());
     if (data.error) throw new Error(data.error);
     closeModal('metricModal');
-    if (_afterSaveCallback) { await _afterSaveCallback(); _afterSaveCallback = null; }
-    else { await loadMetrics(); }
-    if(document.getElementById('tab-progress')&&document.getElementById('tab-progress').style.display!=='none') await renderProgressContent();
+    await loadMetrics();
+    // 重新渲染指標管理面板
+    const panelEl=document.getElementById('metricMgmtList');
+    if (panelEl) panelEl.innerHTML=renderMetricManagementPanel();
+    // 重新渲染進度
+    const progressInner=document.getElementById('progressInner');
+    if (progressInner) { progressInner.innerHTML='<div class="loading"><span class="spinner"></span>重新計算中</div>'; await renderProgressContent(); }
   } catch(e){ alert('儲存失敗：'+e.message); }
   finally { btn.disabled=false; }
 }
@@ -1038,524 +924,341 @@ async function deleteMetric(id,name) {
   if (!confirm('確定刪除指標「'+name+'」及所有目標？')) return;
   await fetch('/api/bonus/metrics/'+id,{method:'DELETE'});
   await loadMetrics();
-}
-
-// ══ 目標設定 Modal 輔助 ══
-function buildTargetTable(depts, existing, unit, roles) {
-  const thSt='text-align:left;padding:8px 12px;background:#0f172a;color:#64748b;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56';
-  let html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>';
-  html+='<th style="'+thSt+'">部門</th><th style="'+thSt+';text-align:right">月目標（'+unit+'）</th><th style="'+thSt+';text-align:right">去年同期</th><th style="'+thSt+'">備註</th></tr></thead><tbody>';
-  depts.forEach(d=>{
-    const ex=existing[d.dept_code]||{}, fc=FC_COLORS[d.factory]||'#94a3b8';
-    html+='<tr><td style="padding:8px 12px;border-bottom:1px solid rgba(45,63,86,.3)"><span style="font-size:11px;font-weight:700;background:'+fc+'22;color:'+fc+';padding:2px 7px;border-radius:4px">'+(d.factory||'')+'</span><span style="font-weight:600;margin-left:6px">'+d.dept_name+'</span></td>';
-    html+='<td style="padding:6px 10px;border-bottom:1px solid rgba(45,63,86,.3)"><input type="number" id="tgt-'+d.dept_code+'" value="'+(ex.target_value||'')+'" placeholder="—" step="any" style="background:#0f172a;border:1px solid #2d3f56;color:#10b981;padding:6px 10px;border-radius:6px;font-size:13px;font-weight:700;width:100%;text-align:right;outline:none"></td>';
-    html+='<td style="padding:6px 10px;border-bottom:1px solid rgba(45,63,86,.3)"><input type="number" id="ly-'+d.dept_code+'" value="'+(ex.last_year_value||'')+'" placeholder="—" step="any" style="background:#0f172a;border:1px solid #2d3f56;color:#64748b;padding:6px 10px;border-radius:6px;font-size:12px;width:100%;text-align:right;outline:none"></td>';
-    html+='<td style="padding:6px 10px;border-bottom:1px solid rgba(45,63,86,.3)"><input type="text" id="note-'+d.dept_code+'" value="'+(ex.note||'')+'" placeholder="（選填）" style="background:#0f172a;border:1px solid #2d3f56;color:#94a3b8;padding:6px 10px;border-radius:6px;font-size:12px;width:100%;outline:none"></td></tr>';
-  });
-  return html+'</tbody></table></div>';
-}
-
-function buildPersonTargetTable(members, existing, unit, roles) {
-  const byDept={};
-  members.forEach(e=>{ const dk=(e.factory||'其他')+'|||'+(e.dept_name||e.dept_code); if(!byDept[dk])byDept[dk]={factory:e.factory,dept_name:e.dept_name,employees:[]}; byDept[dk].employees.push(e); });
-  let html='<div style="font-size:12px;color:#64748b;margin-bottom:10px">'+members.length+' 位人員</div>';
-  Object.values(byDept).forEach(group=>{
-    const fc=FC_COLORS[group.factory]||'#94a3b8';
-    const thSt='text-align:left;padding:7px 10px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56';
-    html+='<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:700;color:'+fc+';margin-bottom:6px;display:flex;align-items:center;gap:6px"><span style="background:'+fc+'22;padding:2px 8px;border-radius:4px">'+(group.factory||'售後服務處')+'</span>'+(group.dept_name||'')+'</div>';
-    html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>';
-    html+='<th style="'+thSt+'">姓名</th><th style="'+thSt+'">職務</th>';
-    html+='<th style="'+thSt+';text-align:right">月目標（'+unit+'）</th><th style="'+thSt+';text-align:right">去年同期</th><th style="'+thSt+'">備註</th></tr></thead><tbody>';
-    group.employees.forEach(e=>{
-      const ex=existing[e.emp_id]||{};
-      html+='<tr><td style="padding:6px 10px;border-bottom:1px solid rgba(45,63,86,.3);font-weight:700">'+e.emp_name+'</td>';
-      html+='<td style="padding:6px 10px;border-bottom:1px solid rgba(45,63,86,.3);font-size:11px;color:#64748b">'+(e.job_title||'—')+'</td>';
-      html+='<td style="padding:5px 8px;border-bottom:1px solid rgba(45,63,86,.3)"><input type="number" id="tgt-'+e.emp_id+'" value="'+(ex.target_value||'')+'" placeholder="—" step="any" style="background:#0f172a;border:1px solid #2d3f56;color:#10b981;padding:5px 8px;border-radius:5px;font-size:12px;font-weight:700;width:100%;text-align:right;min-width:90px;outline:none"></td>';
-      html+='<td style="padding:5px 8px;border-bottom:1px solid rgba(45,63,86,.3)"><input type="number" id="ly-'+e.emp_id+'" value="'+(ex.last_year_value||'')+'" placeholder="—" step="any" style="background:#0f172a;border:1px solid #2d3f56;color:#64748b;padding:5px 8px;border-radius:5px;font-size:12px;width:100%;text-align:right;min-width:90px;outline:none"></td>';
-      html+='<td style="padding:5px 8px;border-bottom:1px solid rgba(45,63,86,.3)"><input type="text" id="note-'+e.emp_id+'" value="'+(ex.note||'')+'" placeholder="（選填）" style="background:#0f172a;border:1px solid #2d3f56;color:#94a3b8;padding:5px 8px;border-radius:5px;font-size:12px;width:100%;min-width:100px;outline:none"></td></tr>';
-    });
-    html+='</tbody></table></div></div>';
-  });
-  return html;
+  const panelEl=document.getElementById('metricMgmtList');
+  if (panelEl) panelEl.innerHTML=renderMetricManagementPanel();
+  const progressInner=document.getElementById('progressInner');
+  if (progressInner) { progressInner.innerHTML='<div class="loading"><span class="spinner"></span>重新計算中</div>'; await renderProgressContent(); }
 }
 
 // ══ 獎金進度 ══
 async function loadProgress() {
-  const el = document.getElementById('progressContent');
+  const el=document.getElementById('progressContent');
   if (!_actualPeriod) {
-    const now = new Date();
-    const prev = now.getMonth() === 0
-      ? `${now.getFullYear()-1}12`
-      : `${now.getFullYear()}${String(now.getMonth()).padStart(2,'0')}`;
-    _actualPeriod = prev;
+    const now=new Date();
+    _actualPeriod=now.getMonth()===0?`${now.getFullYear()-1}12`:`${now.getFullYear()}${String(now.getMonth()).padStart(2,'0')}`;
   }
-  window._bonusProgressPrevPeriod = _actualPeriod;
 
-  const periodOptions = (() => {
-    const now = new Date();
-    const all = new Set([..._rosterPeriods]);
-    for (let i = 0; i < 24; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      all.add(`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}`);
-    }
+  const periodOptions=(()=>{
+    const now=new Date(), all=new Set([..._rosterPeriods]);
+    for(let i=0;i<24;i++){ const d=new Date(now.getFullYear(),now.getMonth()-i,1); all.add(`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}`); }
     return [...all].sort().reverse();
   })();
 
-  el.innerHTML = `
-    <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:10px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+  el.innerHTML=`
+    <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:10px;padding:12px 18px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
       <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:12px;color:#64748b;font-weight:600;white-space:nowrap">&#x1F465; 名冊</span>
+        <span style="font-size:12px;color:#64748b;font-weight:600;white-space:nowrap">👥 名冊</span>
         <span style="font-size:12px;font-weight:700;color:#94a3b8;background:#0f172a;padding:3px 10px;border-radius:5px" id="rosterPeriodLabel">載入中...</span>
       </div>
       <span style="color:#374151;font-size:14px">｜</span>
       <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:200px">
-        <span style="font-size:12px;color:#64748b;font-weight:600;white-space:nowrap">&#x1F4CA; 目標 &amp; 實績期間</span>
+        <span style="font-size:12px;color:#64748b;font-weight:600;white-space:nowrap">📊 實績期間</span>
         <select id="actualPeriodSel" style="background:#0f172a;border:1px solid #3b82f6;color:#60a5fa;padding:6px 12px;border-radius:6px;font-size:13px;font-weight:700;outline:none;cursor:pointer;flex:1;min-width:0">
           ${periodOptions.map(p=>'<option value="'+p+'" '+(p===_actualPeriod?'selected':'')+'>'+p.slice(0,4)+'年'+parseInt(p.slice(4))+'月</option>').join('')}
         </select>
         <button onclick="applyActualPeriod()" style="background:#3b82f6;color:#fff;border:none;padding:6px 16px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">套用</button>
       </div>
-      <div style="font-size:11px;color:#475569;width:100%">&#x1F4A1; <strong style="color:#64748b">名冊</strong>固定用最新上傳期間 | <strong style="color:#64748b">目標 &amp; 實績</strong>：DMS數據與獎金目標設定均取自選定期間</div>
+    </div>
+    <!-- 指標管理面板 -->
+    <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:10px;margin-bottom:12px;overflow:hidden">
+      <div style="padding:10px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;border-bottom:1px solid #2d3f56" onclick="toggleBonusMgmt()">
+        <span id="bonusMgmtArrow" style="font-size:11px;color:#64748b;transition:transform .2s;display:inline-block">▶</span>
+        <span style="font-size:13px;font-weight:700;color:#e2e8f0">⚙️ 獎金指標管理</span>
+        <span style="font-size:11px;color:#64748b;background:#0f172a;padding:1px 8px;border-radius:10px">${_metrics.length} 個</span>
+        <button onclick="event.stopPropagation();openMetricModal()" style="margin-left:auto;background:#3b82f6;color:#fff;border:none;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">＋ 新增指標</button>
+      </div>
+      <div id="bonusMgmtPanel" style="display:none;padding:12px 16px">
+        <div id="metricMgmtList">${renderMetricManagementPanel()}</div>
+      </div>
     </div>
     <div id="progressInner"><div class="loading"><span class="spinner"></span>計算中</div></div>`;
 
   await renderProgressContent();
 }
 
+function toggleBonusMgmt() {
+  const panel=document.getElementById('bonusMgmtPanel');
+  const arrow=document.getElementById('bonusMgmtArrow');
+  if (!panel) return;
+  const open=panel.style.display==='none';
+  panel.style.display=open?'':'none';
+  if (arrow) arrow.style.transform=open?'rotate(90deg)':'rotate(0deg)';
+}
+
 async function applyActualPeriod() {
-  const sel = document.getElementById('actualPeriodSel');
-  if (sel) { _actualPeriod = sel.value; window._bonusProgressPrevPeriod = _actualPeriod; }
-  const inner = document.getElementById('progressInner');
-  if (inner) inner.innerHTML = '<div class="loading"><span class="spinner"></span>計算中</div>';
+  const sel=document.getElementById('actualPeriodSel');
+  if (sel) _actualPeriod=sel.value;
+  const inner=document.getElementById('progressInner');
+  if (inner) inner.innerHTML='<div class="loading"><span class="spinner"></span>計算中</div>';
   await renderProgressContent();
 }
 
-// ══ ★ 核心修正：renderProgressContent 依部門過濾指標 ══
+// ══ ★ renderProgressContent：每部門獨立過濾指標 + auto指標自動套用所有人 ══
 async function renderProgressContent() {
-  var el = document.getElementById('progressInner');
+  var el=document.getElementById('progressInner');
   if (!el) return;
-  var actLabel = _actualPeriod.slice(0,4)+'年'+parseInt(_actualPeriod.slice(4))+'月';
+  var actLabel=_actualPeriod.slice(0,4)+'年'+parseInt(_actualPeriod.slice(4))+'月';
 
   try {
-    var factory = document.getElementById('selFactory').value;
+    var factory=document.getElementById('selFactory').value;
 
     if (!_rosterData.length) await loadRoster();
-    var rLbl = document.getElementById('rosterPeriodLabel');
-    if (rLbl && _rosterLoadedPeriod) {
-      rLbl.textContent = _rosterLoadedPeriod.slice(0,4)+'年'+parseInt(_rosterLoadedPeriod.slice(4))+'月（最新）';
-    }
+    var rLbl=document.getElementById('rosterPeriodLabel');
+    if (rLbl&&_rosterLoadedPeriod) rLbl.textContent=_rosterLoadedPeriod.slice(0,4)+'年'+parseInt(_rosterLoadedPeriod.slice(4))+'月（最新）';
 
     if (!_rosterData.length) {
-      el.innerHTML = '<div style="text-align:center;padding:48px;color:#64748b">'
-        +'<div style="font-size:36px;margin-bottom:12px">👥</div>'
-        +'<div style="font-size:14px;font-weight:700;margin-bottom:8px">尚無人員名冊</div>'
-        +'<div style="font-size:12px">請先點擊右上角「上傳人員資料」</div>'
-        +'</div>';
+      el.innerHTML='<div style="text-align:center;padding:48px;color:#64748b"><div style="font-size:36px;margin-bottom:12px">👥</div><div style="font-size:14px;font-weight:700;margin-bottom:8px">尚無人員名冊</div><div style="font-size:12px">請先點擊右上角「上傳人員資料」</div></div>';
       return;
     }
 
-    var metaById    = {};
-    var deptTargets = {};
-    var empTargets  = {};
-
-    for (var mi0=0; mi0<_metrics.length; mi0++) {
-      var m0 = _metrics[mi0];
-      metaById[m0.id] = {
-        metric: m0, actual: null, autoPT: null,
-        useAuto: false, autoRate: null,
-        tiers: (m0.bonus_rule||{}).tiers||[],
-        roles: (m0.bonus_rule||{}).roles||[]
-      };
+    var metaById={}, deptTargets={}, empTargets={};
+    for (var mi0=0;mi0<_metrics.length;mi0++) {
+      var m0=_metrics[mi0];
+      metaById[m0.id]={metric:m0,actual:null,autoPT:null,useAuto:false,autoRate:null,tiers:(m0.bonus_rule||{}).tiers||[],roles:(m0.bonus_rule||{}).roles||[]};
     }
 
     try {
-      var params = new URLSearchParams({ period: _actualPeriod, data_period: _actualPeriod });
-      if (factory) params.set('factory', factory);
-      var data = await fetch('/api/bonus/progress?'+params).then(function(r){return r.json();});
-      if (!data.error && data.results && data.results.length) {
-        for (var ii=0; ii<data.results.length; ii++) {
-          var item   = data.results[ii];
-          var m      = item.metric;
-          var actual = item.actual;
-          var autoPT = item.perfTarget;
-          var tiers  = (m.bonus_rule||{}).tiers||[];
-          var roles  = (m.bonus_rule||{}).roles||[];
-          var useAuto = (m.metric_source==='revenue'||m.metric_source==='performance') && autoPT!==null;
-          var autoRate = useAuto && autoPT>0 && actual!==null ? actual/autoPT*100 : null;
-          metaById[m.id] = {metric:m, actual:actual, autoPT:autoPT, useAuto:useAuto, autoRate:autoRate, tiers:tiers, roles:roles};
-
-          for (var ti=0; ti<item.targets.length; ti++) {
-            var t2 = item.targets[ti];
-            var tgtVal = parseFloat(t2.target_value||0);
-            var rate2 = useAuto ? autoRate : (tgtVal>0&&actual!==null ? actual/tgtVal*100 : null);
-            if (t2.dept_code) {
-              if (!deptTargets[t2.dept_code]) deptTargets[t2.dept_code] = {};
-              deptTargets[t2.dept_code][m.id] = {rate:rate2, target_value:t2.target_value};
-            }
-            if (t2.emp_id) {
-              if (!empTargets[t2.emp_id]) empTargets[t2.emp_id] = {};
-              empTargets[t2.emp_id][m.id] = {rate:rate2, target_value:t2.target_value};
-            }
+      var params=new URLSearchParams({period:_actualPeriod,data_period:_actualPeriod});
+      if (factory) params.set('factory',factory);
+      var data=await fetch('/api/bonus/progress?'+params).then(function(r){return r.json();});
+      if (!data.error&&data.results&&data.results.length) {
+        for (var ii=0;ii<data.results.length;ii++) {
+          var item=data.results[ii], m=item.metric, actual=item.actual, autoPT=item.perfTarget;
+          var tiers=(m.bonus_rule||{}).tiers||[], roles=(m.bonus_rule||{}).roles||[];
+          var useAuto=(m.metric_source==='revenue'||m.metric_source==='performance')&&autoPT!==null;
+          var autoRate=useAuto&&autoPT>0&&actual!==null?actual/autoPT*100:null;
+          metaById[m.id]={metric:m,actual:actual,autoPT:autoPT,useAuto:useAuto,autoRate:autoRate,tiers:tiers,roles:roles};
+          for (var ti=0;ti<item.targets.length;ti++) {
+            var t2=item.targets[ti], tgtVal=parseFloat(t2.target_value||0);
+            var rate2=useAuto?autoRate:(tgtVal>0&&actual!==null?actual/tgtVal*100:null);
+            if (t2.dept_code){ if(!deptTargets[t2.dept_code])deptTargets[t2.dept_code]={}; deptTargets[t2.dept_code][m.id]={rate:rate2,target_value:t2.target_value}; }
+            if (t2.emp_id){ if(!empTargets[t2.emp_id])empTargets[t2.emp_id]={}; empTargets[t2.emp_id][m.id]={rate:rate2,target_value:t2.target_value}; }
           }
         }
       }
-    } catch(apiErr) { console.warn('progress API error:', apiErr); }
+    } catch(apiErr){ console.warn('progress API error:',apiErr); }
 
-    var allMetricIds = Object.keys(metaById);
-    var hasMetrics   = allMetricIds.length > 0;
+    var allMetricIds=Object.keys(metaById);
+    var hasMetrics=allMetricIds.length>0;
 
-    function calcBonus(rate, jobTitle, tiers, roles) {
-      if (rate===null || !tiers || !tiers.length) return 0;
-      var match = tiers.slice().sort(function(a,b){return b.gte-a.gte;}).find(function(t){
-        return rate>=t.gte && (t.lt===null||rate<t.lt);
-      });
+    function calcBonus(rate,jobTitle,tiers,roles) {
+      if (rate===null||!tiers||!tiers.length) return 0;
+      var match=tiers.slice().sort(function(a,b){return b.gte-a.gte;}).find(function(t){return rate>=t.gte&&(t.lt===null||rate<t.lt);});
       if (!match) return 0;
-      if (roles && roles.length && match.amounts) {
-        var hit = roles.find(function(r){return jobTitle&&(jobTitle===r||jobTitle.indexOf(r)>=0||r.indexOf(jobTitle)>=0);});
-        return hit ? (match.amounts[hit]||0) : (match.amount||0);
+      if (roles&&roles.length&&match.amounts) {
+        var hit=roles.find(function(r){return jobTitle&&(jobTitle===r||jobTitle.indexOf(r)>=0||r.indexOf(jobTitle)>=0);});
+        return hit?(match.amounts[hit]||0):(match.amount||0);
       }
       return match.amount||0;
     }
 
-    // ── 過濾此部門適用的指標 ──
-    // target_dept_codes 空陣列 = 全廠適用；有值 = 只限指定部門
+    // ★ 此部門適用的指標
     function getMetricIdsForDept(dkey) {
-      return allMetricIds.filter(function(mId) {
-        var codes = (metaById[mId].metric.target_dept_codes || []);
-        return codes.length === 0 || codes.indexOf(dkey) !== -1;
+      return allMetricIds.filter(function(mId){
+        var codes=(metaById[mId].metric.target_dept_codes||[]);
+        return codes.length===0||codes.indexOf(dkey)!==-1;
       });
     }
 
-    var FC_ORDER  = ['售後服務處','AMA','AMD','AMC','聯合','鈑烤','零件','其他'];
-    var FC_LABELS = {AMA:'AMA 內湖', AMC:'AMC 仁愛', AMD:'AMD 士林',
-                     '聯合':'聯合服務中心', '鈑烤':'鈑烤廠', '零件':'零件部', '售後服務處':'售後服務處'};
+    var FC_ORDER=['售後服務處','AMA','AMD','AMC','聯合','鈑烤','零件','其他'];
+    var FC_LABELS={AMA:'AMA 內湖',AMC:'AMC 仁愛',AMD:'AMD 士林','聯合':'聯合服務中心','鈑烤':'鈑烤廠','零件':'零件部','售後服務處':'售後服務處'};
 
-    var byFactory = {};
-    for (var pi=0; pi<_rosterData.length; pi++) {
-      var person = _rosterData[pi];
-      var dn = person.dept_name||'';
-      var fc = person.factory || (/售後/.test(dn)?'售後服務處':/內湖|AMA/.test(dn)?'AMA':/仁愛|AMC/.test(dn)?'AMC':/士林|AMD/.test(dn)?'AMD':/聯合/.test(dn)?'聯合':/鈑烤/.test(dn)?'鈑烤':/零件/.test(dn)?'零件':'售後服務處');
-      if (factory && fc !== factory) continue;
-      var dk = person.dept_code||'—';
-      if (!byFactory[fc]) byFactory[fc] = {};
-      if (!byFactory[fc][dk]) byFactory[fc][dk] = {dept_name: person.dept_name||dk, members:[]};
+    var byFactory={};
+    for (var pi=0;pi<_rosterData.length;pi++) {
+      var person=_rosterData[pi], dn=person.dept_name||'';
+      var fc=person.factory||(/售後/.test(dn)?'售後服務處':/內湖|AMA/.test(dn)?'AMA':/仁愛|AMC/.test(dn)?'AMC':/士林|AMD/.test(dn)?'AMD':/聯合/.test(dn)?'聯合':/鈑烤/.test(dn)?'鈑烤':/零件/.test(dn)?'零件':'售後服務處');
+      if (factory&&fc!==factory) continue;
+      var dk=person.dept_code||'—';
+      if (!byFactory[fc]) byFactory[fc]={};
+      if (!byFactory[fc][dk]) byFactory[fc][dk]={dept_name:person.dept_name||dk,members:[]};
       byFactory[fc][dk].members.push(person);
     }
 
-    var sortedFc = Object.keys(byFactory).sort(function(a,b){
-      return (FC_ORDER.indexOf(a)<0?99:FC_ORDER.indexOf(a)) - (FC_ORDER.indexOf(b)<0?99:FC_ORDER.indexOf(b));
-    });
+    var sortedFc=Object.keys(byFactory).sort(function(a,b){return (FC_ORDER.indexOf(a)<0?99:FC_ORDER.indexOf(a))-(FC_ORDER.indexOf(b)<0?99:FC_ORDER.indexOf(b));});
+    if (!sortedFc.length){ el.innerHTML='<div class="empty">此廠別無人員資料</div>'; return; }
 
-    if (!sortedFc.length) {
-      el.innerHTML = '<div class="empty">此廠別無人員資料</div>';
-      return;
-    }
-
-    // ── 整體達成摘要 ──
-    var html = '';
+    // 整體達成率摘要
+    var html='';
     if (hasMetrics) {
-      var summaryItems = '';
-      for (var si=0; si<allMetricIds.length; si++) {
-        var mId0 = allMetricIds[si];
-        var meta0 = metaById[mId0];
-        if (!meta0.useAuto && meta0.actual===null) continue;
-        var isAmtS = meta0.metric.stat_field==='amount'||meta0.useAuto;
-        var fvS = (function(isAmt){ return function(v){return v===null||v===undefined?'—':isAmt?Math.round(parseFloat(v)/1000).toLocaleString()+'K':Math.round(parseFloat(v)).toLocaleString();}; })(isAmtS);
-        var rc0 = meta0.autoRate===null?'#64748b':meta0.autoRate>=100?'#10b981':meta0.autoRate>=80?'#f59e0b':'#ef4444';
-        var bw0 = meta0.autoRate!==null?Math.min(100,meta0.autoRate).toFixed(1):0;
-        summaryItems += '<div style="display:inline-flex;align-items:center;gap:8px;background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:8px 12px;margin:0 6px 6px 0">'
+      var summaryItems='';
+      for (var si=0;si<allMetricIds.length;si++) {
+        var mId0=allMetricIds[si], meta0=metaById[mId0];
+        if (!meta0.useAuto&&meta0.actual===null) continue;
+        var isAmtS=meta0.metric.stat_field==='amount'||meta0.useAuto;
+        var fvS=(function(isAmt){return function(v){return v===null||v===undefined?'—':isAmt?Math.round(parseFloat(v)/1000).toLocaleString()+'K':Math.round(parseFloat(v)).toLocaleString();};})(isAmtS);
+        var rc0=meta0.autoRate===null?'#64748b':meta0.autoRate>=100?'#10b981':meta0.autoRate>=80?'#f59e0b':'#ef4444';
+        var bw0=meta0.autoRate!==null?Math.min(100,meta0.autoRate).toFixed(1):0;
+        summaryItems+='<div style="display:inline-flex;align-items:center;gap:8px;background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:8px 12px;margin:0 6px 6px 0">'
           +'<span style="font-size:12px;font-weight:700;color:#e2e8f0">'+meta0.metric.metric_name+'</span>'
           +(meta0.autoPT!==null?'<span style="font-size:11px;color:#64748b">目標 <strong style="color:#94a3b8">'+fvS(meta0.autoPT)+'</strong></span>':'')
           +(meta0.actual!==null?'<span style="font-size:11px;color:#64748b">實際 <strong style="color:#10b981">'+fvS(meta0.actual)+'</strong></span>':'')
           +(meta0.autoRate!==null?'<div style="display:flex;align-items:center;gap:4px"><div style="width:36px;background:#1e293b;border-radius:3px;height:5px"><div style="width:'+bw0+'%;height:5px;background:'+rc0+';border-radius:3px"></div></div><span style="font-size:13px;font-weight:900;color:'+rc0+'">'+meta0.autoRate.toFixed(1)+'%</span></div>':'')
         +'</div>';
       }
-      if (summaryItems) {
-        html += '<div style="margin-bottom:14px;padding:12px 16px;background:#1a2332;border:1px solid #2d3f56;border-radius:10px">'
-          +'<div style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:8px;letter-spacing:.04em">'+actLabel+' 整體達成率</div>'
-          +'<div>'+summaryItems+'</div>'
-          +'</div>';
-      }
+      if (summaryItems) html+='<div style="margin-bottom:14px;padding:12px 16px;background:#1a2332;border:1px solid #2d3f56;border-radius:10px"><div style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:8px;letter-spacing:.04em">'+actLabel+' 整體達成率</div><div>'+summaryItems+'</div></div>';
     }
 
-    // ── 廠別→部門→人員 ──
-    for (var fi=0; fi<sortedFc.length; fi++) {
-      var fc = sortedFc[fi];
-      var fcDepts  = byFactory[fc];
-      var fcColor  = FC_COLORS[fc]||'#94a3b8';
-      var fcLabel  = FC_LABELS[fc]||fc;
-      var fcId     = 'fc-bl-'+fi;
-      var deptKeys = Object.keys(fcDepts).sort();
+    // 廠別 → 部門 → 人員
+    for (var fi=0;fi<sortedFc.length;fi++) {
+      var fc=sortedFc[fi], fcDepts=byFactory[fc], fcColor=FC_COLORS[fc]||'#94a3b8', fcLabel=FC_LABELS[fc]||fc;
+      var fcId='fc-bl-'+fi, deptKeys=Object.keys(fcDepts).sort();
 
-      // 廠別獎金合計（依各部門適用指標分別計算）
+      // 廠別獎金合計
       var fcTotalBonus=0, fcTotalPpl=0, fcBonusPpl=0;
-      for (var di0=0; di0<deptKeys.length; di0++) {
-        var dept0 = fcDepts[deptKeys[di0]];
-        var dMIds0 = getMetricIdsForDept(deptKeys[di0]);
-        fcTotalPpl += dept0.members.length;
-        for (var mi0b=0; mi0b<dept0.members.length; mi0b++) {
-          var p0 = dept0.members[mi0b];
-          var pTotal0 = 0;
-          for (var mii0=0; mii0<dMIds0.length; mii0++) {
-            var mId00 = dMIds0[mii0];
-            var meta00 = metaById[mId00];
-            var te0 = (empTargets[p0.emp_id]&&empTargets[p0.emp_id][mId00])
-              ? empTargets[p0.emp_id][mId00]
-              : (deptTargets[p0.dept_code]&&deptTargets[p0.dept_code][mId00])
-                ? deptTargets[p0.dept_code][mId00] : null;
-            if (te0) pTotal0 += calcBonus(te0.rate, p0.job_title||'', meta00.tiers, meta00.roles);
+      for (var di0=0;di0<deptKeys.length;di0++) {
+        var dept0=fcDepts[deptKeys[di0]], dMIds0=getMetricIdsForDept(deptKeys[di0]);
+        fcTotalPpl+=dept0.members.length;
+        for (var mi0b=0;mi0b<dept0.members.length;mi0b++) {
+          var p0=dept0.members[mi0b], pTotal0=0;
+          for (var mii0=0;mii0<dMIds0.length;mii0++) {
+            var mId00=dMIds0[mii0], meta00=metaById[mId00];
+            var te0=(empTargets[p0.emp_id]&&empTargets[p0.emp_id][mId00])?empTargets[p0.emp_id][mId00]:(deptTargets[p0.dept_code]&&deptTargets[p0.dept_code][mId00])?deptTargets[p0.dept_code][mId00]:null;
+            // ★ auto 指標：即使沒有手動設定目標，也用 autoRate
+            var eff0=te0?te0.rate:(meta00.useAuto?meta00.autoRate:null);
+            if (eff0!==null) pTotal0+=calcBonus(eff0,p0.job_title||'',meta00.tiers,meta00.roles);
           }
           if (pTotal0>0) fcBonusPpl++;
-          fcTotalBonus += pTotal0;
+          fcTotalBonus+=pTotal0;
         }
       }
+      var fcHasMetrics=deptKeys.some(function(dk){return getMetricIdsForDept(dk).length>0;});
 
-      var fcHasMetrics = deptKeys.some(function(dk){ return getMetricIdsForDept(dk).length>0; });
-
-      html += '<div style="margin-bottom:14px;border:2px solid '+fcColor+'55;border-radius:12px;overflow:hidden">'
+      html+='<div style="margin-bottom:14px;border:2px solid '+fcColor+'55;border-radius:12px;overflow:hidden">'
         +'<div id="'+fcId+'-hdr" style="background:'+fcColor+'1e;padding:12px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none" onclick="toggleProgSection(\''+fcId+'\')">'
           +'<span id="'+fcId+'-arrow" style="font-size:12px;color:'+fcColor+';transition:transform .2s;display:inline-block;transform:rotate(90deg)">▶</span>'
           +'<span style="font-size:16px;font-weight:900;color:'+fcColor+'">'+fcLabel+'</span>'
           +'<span style="font-size:12px;color:#64748b;background:#0f172a;padding:2px 8px;border-radius:10px">'+fcTotalPpl+' 人</span>'
           +(fcBonusPpl>0?'<span style="font-size:12px;color:#10b981;background:rgba(16,185,129,.1);padding:2px 8px;border-radius:10px">'+fcBonusPpl+' 人有獎金</span>':'')
-          +'<div style="margin-left:auto;display:flex;align-items:center;gap:8px">'
-          +'<button onclick="event.stopPropagation();openNewMetricForFactory(\''+fc+'\')" style="background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.3);padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">＋ 新增指標</button>'
-          +(fcHasMetrics?'<span style="font-size:18px;font-weight:900;color:'+(fcTotalBonus>0?'#f59e0b':'#475569')+'">'+(fcTotalBonus>0?fcTotalBonus.toLocaleString()+' 元':'—')+'</span>':'')
-          +'</div>'
+          +'<div style="margin-left:auto">'+(fcHasMetrics?'<span style="font-size:18px;font-weight:900;color:'+(fcTotalBonus>0?'#f59e0b':'#475569')+'">'+(fcTotalBonus>0?fcTotalBonus.toLocaleString()+' 元':'—')+'</span>':'')+'</div>'
         +'</div>'
         +'<div id="'+fcId+'-body">';
 
-      for (var di=0; di<deptKeys.length; di++) {
-        var dkey = deptKeys[di];
-        var dept = fcDepts[dkey];
+      for (var di=0;di<deptKeys.length;di++) {
+        var dkey=deptKeys[di], dept=fcDepts[dkey];
+        var deptMetricIds=getMetricIdsForDept(dkey), deptHasMetrics=deptMetricIds.length>0;
+        var deptTotalBonus=0, deptBonusPpl=0, memberRows=[];
 
-        // ★ 此部門適用的指標
-        var deptMetricIds = getMetricIdsForDept(dkey);
-        var deptHasMetrics = deptMetricIds.length > 0;
-
-        var deptTotalBonus=0, deptBonusPpl=0;
-        var memberRows=[];
-
-        for (var mi3=0; mi3<dept.members.length; mi3++) {
-          var person3 = dept.members[mi3];
-          var personBonuses = {};
-          var personTotal   = 0;
-          for (var mii2=0; mii2<deptMetricIds.length; mii2++) {
-            var mId3 = deptMetricIds[mii2];
-            var meta3 = metaById[mId3];
-            var te3 = (empTargets[person3.emp_id]&&empTargets[person3.emp_id][mId3])
-              ? empTargets[person3.emp_id][mId3]
-              : (deptTargets[person3.dept_code]&&deptTargets[person3.dept_code][mId3])
-                ? deptTargets[person3.dept_code][mId3] : null;
-            var bonusAmt = te3 ? calcBonus(te3.rate, person3.job_title||'', meta3.tiers, meta3.roles) : 0;
-            personBonuses[mId3] = {bonus:bonusAmt, rate:te3?te3.rate:null, hasTarget:!!te3};
-            personTotal += bonusAmt;
+        for (var mi3=0;mi3<dept.members.length;mi3++) {
+          var person3=dept.members[mi3], personBonuses={}, personTotal=0;
+          for (var mii2=0;mii2<deptMetricIds.length;mii2++) {
+            var mId3=deptMetricIds[mii2], meta3=metaById[mId3];
+            var te3=(empTargets[person3.emp_id]&&empTargets[person3.emp_id][mId3])?empTargets[person3.emp_id][mId3]:(deptTargets[person3.dept_code]&&deptTargets[person3.dept_code][mId3])?deptTargets[person3.dept_code][mId3]:null;
+            // ★ auto 指標自動套用全員，無需手動設定目標
+            var effectiveRate=te3?te3.rate:(meta3.useAuto?meta3.autoRate:null);
+            var effectiveHasTarget=!!te3||meta3.useAuto;
+            var bonusAmt=effectiveHasTarget?calcBonus(effectiveRate,person3.job_title||'',meta3.tiers,meta3.roles):0;
+            personBonuses[mId3]={bonus:bonusAmt,rate:effectiveRate,hasTarget:effectiveHasTarget};
+            personTotal+=bonusAmt;
           }
           if (personTotal>0) deptBonusPpl++;
-          deptTotalBonus += personTotal;
-          memberRows.push({person:person3, bonuses:personBonuses, total:personTotal});
+          deptTotalBonus+=personTotal;
+          memberRows.push({person:person3,bonuses:personBonuses,total:personTotal});
         }
         memberRows.sort(function(a,b){return b.total-a.total;});
 
-        var thBase = 'text-align:left;padding:8px 10px;background:#090f1a;color:#475569;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;white-space:nowrap;border-right:1px solid #1a2535;';
+        var thBase='text-align:left;padding:8px 10px;background:#090f1a;color:#475569;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;white-space:nowrap;border-right:1px solid #1a2535;';
 
-        html += '<div style="border-top:1px solid '+fcColor+'22">'
+        // 部門 header：只顯示指標資訊，無設定按鈕
+        var deptTagsHtml=deptHasMetrics?'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-left:6px">'+deptMetricIds.map(function(mId7){
+          var meta7=metaById[mId7], rc7=meta7.autoRate===null?'#64748b':meta7.autoRate>=100?'#10b981':meta7.autoRate>=80?'#f59e0b':'#ef4444';
+          return '<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:6px;padding:3px 8px">'
+            +'<span style="font-size:10px;color:#60a5fa;font-weight:700">'+meta7.metric.metric_name+'</span>'
+            +(meta7.autoRate!==null?'<span style="font-size:10px;color:'+rc7+';font-weight:700">'+meta7.autoRate.toFixed(0)+'%</span>':'')
+          +'</span>';
+        }).join('')+'</div>':'';
+
+        html+='<div style="border-top:1px solid '+fcColor+'22">'
           +'<div style="background:#0b1422;padding:8px 18px 8px 28px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
             +'<span style="font-size:12px;font-weight:800;color:#cbd5e1">📂 '+dept.dept_name+'</span>'
             +'<span style="font-size:11px;color:#475569;background:#0f172a;padding:1px 7px;border-radius:6px">'+dept.members.length+' 人</span>'
             +(deptBonusPpl>0?'<span style="font-size:11px;color:#10b981">'+deptBonusPpl+' 人有獎金</span>':'')
-            +(deptHasMetrics
-              ?'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-left:6px">'
-                +deptMetricIds.map(function(mId7){
-                  var meta7 = metaById[mId7];
-                  var hasDeptTgt = !!(deptTargets[dkey]&&deptTargets[dkey][mId7]);
-                  var dRate7 = hasDeptTgt?deptTargets[dkey][mId7].rate:null;
-                  var dTgt7  = hasDeptTgt?deptTargets[dkey][mId7].target_value:null;
-                  var isAmtM7 = meta7.metric.stat_field==='amount'||meta7.useAuto;
-                  var fvM7 = function(v){return v===null||v===undefined?'—':isAmtM7?Math.round(parseFloat(v)/1000).toLocaleString()+'K':Math.round(parseFloat(v)).toLocaleString();};
-                  var rc7 = dRate7===null?'#64748b':dRate7>=100?'#10b981':dRate7>=80?'#f59e0b':'#ef4444';
-                  return '<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:6px;padding:3px 8px">'
-                    +'<span style="font-size:10px;color:#60a5fa;font-weight:700">'+meta7.metric.metric_name+'</span>'
-                    +(hasDeptTgt && dRate7!==null?'<span style="font-size:10px;color:'+rc7+';font-weight:700">'+dRate7.toFixed(0)+'%</span>':'')
-                    +(hasDeptTgt && dTgt7?'<span style="font-size:10px;color:#475569">目標:'+fvM7(dTgt7)+'</span>':'')
-                    +'<button onclick="event.stopPropagation();openTargetForDept('+mId7+',\''+dkey+'\')" style="background:rgba(59,130,246,.2);color:#60a5fa;border:none;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">'+(hasDeptTgt?'✏️ 修改':'＋ 設定')+'</button>'
-                  +'</span>';
-                }).join('')
-              +'</div>'
-              :'')
-            +'<button onclick="event.stopPropagation();openNewMetricForDept(\''+dkey+'\',\''+dept.dept_name+'\')" style="margin-left:auto;background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3);padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">＋ 新增指標</button>'
-            +(deptHasMetrics&&deptTotalBonus>0?'<span style="font-size:13px;font-weight:800;color:#f59e0b">'+deptTotalBonus.toLocaleString()+' 元</span>':'')
+            +deptTagsHtml
+            +(deptHasMetrics&&deptTotalBonus>0?'<span style="font-size:13px;font-weight:800;color:#f59e0b;margin-left:auto">'+deptTotalBonus.toLocaleString()+' 元</span>':'')
           +'</div>'
-          +'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'
-          +'<thead><tr>'
+          +'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>'
             +'<th style="'+thBase+'min-width:80px">姓名</th>'
             +'<th style="'+thBase+'min-width:65px">職務</th>'
             +'<th style="'+thBase+'min-width:55px">狀態</th>';
 
-        for (var mhi=0; mhi<deptMetricIds.length; mhi++) {
-          var mId4 = deptMetricIds[mhi];
-          var meta4 = metaById[mId4];
-          var isAmtM = meta4.metric.stat_field==='amount'||meta4.useAuto;
-          var fv4 = (function(isAmt,m4){ return function(v){return v===null||v===undefined?'—':isAmt?Math.round(parseFloat(v)/1000).toLocaleString()+'K':Math.round(parseFloat(v)).toLocaleString();}; })(isAmtM,meta4);
-          var rc4 = meta4.autoRate===null?'#64748b':meta4.autoRate>=100?'#10b981':meta4.autoRate>=80?'#f59e0b':'#ef4444';
-          html += '<th style="'+thBase+'min-width:110px;text-align:center;background:#0c1524;border-bottom:1px solid #1e2d40">'
+        for (var mhi=0;mhi<deptMetricIds.length;mhi++) {
+          var mId4=deptMetricIds[mhi], meta4=metaById[mId4];
+          var isAmtM=meta4.metric.stat_field==='amount'||meta4.useAuto;
+          var fv4=(function(isAmt){return function(v){return v===null||v===undefined?'—':isAmt?Math.round(parseFloat(v)/1000).toLocaleString()+'K':Math.round(parseFloat(v)).toLocaleString();};})(isAmtM);
+          var rc4=meta4.autoRate===null?'#64748b':meta4.autoRate>=100?'#10b981':meta4.autoRate>=80?'#f59e0b':'#ef4444';
+          html+='<th style="'+thBase+'min-width:110px;text-align:center;background:#0c1524;border-bottom:1px solid #1e2d40">'
             +'<div style="font-size:11px;font-weight:800;color:#e2e8f0;margin-bottom:2px">'+meta4.metric.metric_name+'</div>'
-            +(meta4.useAuto && meta4.autoRate!==null
-              ?'<div style="font-size:10px;margin-bottom:3px"><span style="color:#64748b">'+fv4(meta4.actual)+'</span> <span style="color:'+rc4+';font-weight:700">'+meta4.autoRate.toFixed(1)+'%</span></div>'
-              :'')
-            +'<button onclick="event.stopPropagation();openTargetForDept('+mId4+',\''+dkey+'\')" style="background:rgba(59,130,246,.2);color:#60a5fa;border:1px solid rgba(59,130,246,.3);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">🎯 設定目標</button>'
+            +(meta4.useAuto&&meta4.autoRate!==null?'<div style="font-size:10px;color:#64748b;margin-bottom:2px"><span>'+fv4(meta4.actual)+'</span> <span style="color:'+rc4+';font-weight:700">'+meta4.autoRate.toFixed(1)+'%</span></div>':'')
+            +'<button onclick="event.stopPropagation();openMetricModal('+mId4+')" style="background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.25);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">✏️ 編輯指標</button>'
           +'</th>';
         }
 
-        if (!deptHasMetrics) {
-          html += '<th style="'+thBase+'min-width:120px;text-align:center;color:#334155">（尚無獎金指標）</th>';
-        }
-
-        html += '<th style="'+thBase+'min-width:80px;text-align:right;background:#0c1524;color:#f59e0b'+(deptHasMetrics?'':';display:none')+'">總獎金</th>'
+        if (!deptHasMetrics) html+='<th style="'+thBase+'min-width:120px;text-align:center;color:#334155">（尚無獎金指標）</th>';
+        html+='<th style="'+thBase+'min-width:80px;text-align:right;background:#0c1524;color:#f59e0b'+(deptHasMetrics?'':';display:none')+'">總獎金</th>'
           +'</tr></thead><tbody>';
 
-        for (var pri=0; pri<memberRows.length; pri++) {
-          var mRow = memberRows[pri];
-          var p4   = mRow.person;
-          var statusColor = p4.status==='在職'?'#10b981':p4.status==='留職停薪'?'#f59e0b':'#ef4444';
-          html += '<tr>'
+        for (var pri=0;pri<memberRows.length;pri++) {
+          var mRow=memberRows[pri], p4=mRow.person;
+          var statusColor=p4.status==='在職'?'#10b981':p4.status==='留職停薪'?'#f59e0b':'#ef4444';
+          html+='<tr>'
             +'<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);font-weight:700;color:#e2e8f0;border-right:1px solid #1a2535">'+p4.emp_name+'</td>'
             +'<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:#64748b;border-right:1px solid #1a2535">'+(p4.job_title||'—')+'</td>'
             +'<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);border-right:1px solid #1a2535"><span style="font-size:10px;padding:1px 6px;border-radius:6px;background:'+statusColor+'22;color:'+statusColor+';font-weight:700">'+p4.status+'</span></td>';
 
-          for (var mci=0; mci<deptMetricIds.length; mci++) {
-            var mId5  = deptMetricIds[mci];
-            var bData = mRow.bonuses[mId5];
-            var bonus5 = bData?bData.bonus:0;
-            var rate5  = bData?bData.rate:null;
-            var hasTgt = bData?bData.hasTarget:false;
-            var rc5    = rate5===null?'#64748b':rate5>=100?'#10b981':rate5>=80?'#f59e0b':'#ef4444';
-            html += '<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:center;border-right:1px solid #1a2535;background:rgba(245,158,11,.02)">'
+          for (var mci=0;mci<deptMetricIds.length;mci++) {
+            var mId5=deptMetricIds[mci], bData=mRow.bonuses[mId5];
+            var bonus5=bData?bData.bonus:0, rate5=bData?bData.rate:null, hasTgt=bData?bData.hasTarget:false;
+            var rc5=rate5===null?'#64748b':rate5>=100?'#10b981':rate5>=80?'#f59e0b':'#ef4444';
+            html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:center;border-right:1px solid #1a2535;background:rgba(245,158,11,.02)">'
               +(hasTgt
                 ?(rate5!==null?'<div style="font-size:10px;color:'+rc5+';margin-bottom:2px;font-weight:700">'+rate5.toFixed(1)+'%</div>':'')
                   +(bonus5>0?'<span style="color:#f59e0b;font-weight:900;font-size:13px">'+bonus5.toLocaleString()+'<span style="font-size:9px;margin-left:1px">元</span></span>':'<span style="color:#475569;font-size:11px">0 元</span>')
-                :'<span style="color:#1e3a5f;font-size:11px">未設定</span>')
+                :'<span style="color:#475569;font-size:11px">—</span>')
             +'</td>';
           }
 
-          if (!deptHasMetrics) {
-            html += '<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:center;color:#334155;font-size:11px">—</td>';
-          }
-
-          html += '<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;background:rgba(245,158,11,.04);font-weight:900;'+(deptHasMetrics?'':'display:none')+';">'
+          if (!deptHasMetrics) html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:center;color:#334155;font-size:11px">—</td>';
+          html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;background:rgba(245,158,11,.04);font-weight:900;'+(deptHasMetrics?'':'display:none')+';">'
             +(mRow.total>0?'<span style="color:#f59e0b;font-size:14px">'+mRow.total.toLocaleString()+'<span style="font-size:9px;margin-left:1px">元</span></span>':'<span style="color:#2d4060">—</span>')
           +'</td></tr>';
         }
 
         // 部門小計
         if (deptHasMetrics) {
-          html += '<tr style="background:'+fcColor+'0a">'
-            +'<td colspan="3" style="padding:7px 10px;font-size:12px;font-weight:700;color:'+fcColor+';border-right:1px solid #1a2535">'+dept.dept_name+'（'+dept.members.length+'人）</td>';
-          for (var msi=0; msi<deptMetricIds.length; msi++) {
-            var mId6  = deptMetricIds[msi];
-            var dMB   = memberRows.reduce(function(s,r){return s+(r.bonuses[mId6]?r.bonuses[mId6].bonus:0);},0);
-            html += '<td style="padding:7px 10px;text-align:center;border-right:1px solid #1a2535;font-weight:700;color:'+(dMB>0?'#f59e0b':'#334155')+'">'+(dMB>0?dMB.toLocaleString()+'元':'—')+'</td>';
+          html+='<tr style="background:'+fcColor+'0a"><td colspan="3" style="padding:7px 10px;font-size:12px;font-weight:700;color:'+fcColor+';border-right:1px solid #1a2535">'+dept.dept_name+'（'+dept.members.length+'人）</td>';
+          for (var msi=0;msi<deptMetricIds.length;msi++) {
+            var mId6=deptMetricIds[msi], dMB=memberRows.reduce(function(s,r){return s+(r.bonuses[mId6]?r.bonuses[mId6].bonus:0);},0);
+            html+='<td style="padding:7px 10px;text-align:center;border-right:1px solid #1a2535;font-weight:700;color:'+(dMB>0?'#f59e0b':'#334155')+'">'+(dMB>0?dMB.toLocaleString()+'元':'—')+'</td>';
           }
-          html += '<td style="padding:7px 10px;text-align:right;font-weight:900;color:'+(deptTotalBonus>0?'#f59e0b':'#334155')+'">'+(deptTotalBonus>0?deptTotalBonus.toLocaleString()+' 元':'—')+'</td></tr>';
+          html+='<td style="padding:7px 10px;text-align:right;font-weight:900;color:'+(deptTotalBonus>0?'#f59e0b':'#334155')+'">'+(deptTotalBonus>0?deptTotalBonus.toLocaleString()+' 元':'—')+'</td></tr>';
         }
 
-        html += '</tbody></table></div></div>';
-      } // end depts
+        html+='</tbody></table></div></div>';
+      }
 
-      html += '<div style="background:'+fcColor+'18;border-top:1px solid '+fcColor+'44;padding:10px 18px;display:flex;align-items:center;justify-content:space-between">'
+      html+='<div style="background:'+fcColor+'18;border-top:1px solid '+fcColor+'44;padding:10px 18px;display:flex;align-items:center;justify-content:space-between">'
         +'<span style="font-size:13px;font-weight:700;color:'+fcColor+'">'+fcLabel+' 合計 '+fcTotalPpl+' 人'+(fcBonusPpl>0?' / <span style="color:#10b981">'+fcBonusPpl+' 人有獎金</span>':'')+'</span>'
         +(fcHasMetrics?'<span style="font-size:18px;font-weight:900;color:'+(fcTotalBonus>0?'#f59e0b':'#475569')+'">'+(fcTotalBonus>0?fcTotalBonus.toLocaleString()+' 元':'—')+'</span>':'')
       +'</div></div></div>';
-    } // end factories
-
-    if (!hasMetrics) {
-      html += '<div style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-radius:10px;padding:14px 18px;margin-top:8px;text-align:center">'
-        +'<div style="font-size:13px;font-weight:700;color:#3b82f6;margin-bottom:4px">⚙️ 尚未設定獎金指標</div>'
-        +'<div style="font-size:12px;color:#64748b">請至「⚙️ 獎金設定」頁籤新增指標，設定目標後即可看到各人的應得獎金。</div>'
-        +'</div>';
     }
 
-    el.innerHTML = html;
+    if (!hasMetrics) {
+      html+='<div style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-radius:10px;padding:14px 18px;margin-top:8px;text-align:center">'
+        +'<div style="font-size:13px;font-weight:700;color:#3b82f6;margin-bottom:4px">⚙️ 尚未設定獎金指標</div>'
+        +'<div style="font-size:12px;color:#64748b">請展開上方「獎金指標管理」新增指標，設定達成率與獎金階梯。</div></div>';
+    }
 
+    el.innerHTML=html;
   } catch(e) {
-    el.innerHTML = '<div style="color:#ef4444;padding:16px">'+e.message+'<br><small style="color:#475569">'+e.stack+'</small></div>';
+    el.innerHTML='<div style="color:#ef4444;padding:16px">'+e.message+'<br><small style="color:#475569">'+e.stack+'</small></div>';
   }
 }
 
-async function openTargetForDept(metricId, deptCode) {
-  window._bonusProgressPrevPeriod = _actualPeriod;
-  await openTargetModal(metricId);
-}
-
 function toggleProgSection(id) {
-  var body  = document.getElementById(id+'-body');
-  var arrow = document.getElementById(id+'-arrow');
+  var body=document.getElementById(id+'-body'), arrow=document.getElementById(id+'-arrow');
   if (!body) return;
-  var open = body.style.display === 'none';
-  body.style.display  = open ? 'block' : 'none';
-  if (arrow) arrow.style.transform = open ? 'rotate(90deg)' : 'rotate(0deg)';
-}
-
-// ══ openTargetModal ══
-async function openTargetModal(metricId) {
-  if (!_actualPeriod){ alert('請先選擇目標 & 實績期間後按查詢'); return; }
-  _tgtMetricId=metricId;
-  var tgtPeriod = _actualPeriod;
-  var tgtLabel  = tgtPeriod.slice(0,4)+'年'+parseInt(tgtPeriod.slice(4))+'月';
-  window._tgtActivePeriod = tgtPeriod;
-  var m=_metrics.find(function(x){return x.id===metricId;});
-  document.getElementById('targetModalTitle').textContent='🎯 目標設定 — '+(m?m.metric_name:'')+'（'+tgtLabel+'）';
-  document.getElementById('targetFormContent').innerHTML='<div class="loading"><span class="spinner"></span>載入中</div>';
-  openModal('targetModal');
-  try {
-    var deptCodes=m?m.target_dept_codes||[]:[];
-    var deptParam=deptCodes.length?'&dept_codes='+encodeURIComponent(deptCodes.join(',')):'';
-    var rosterPeriodForMembers = _rosterLoadedPeriod||_rosterPeriods[0]||_actualPeriod;
-    var res = await Promise.all([
-      fetch('/api/bonus/scope-members?period='+rosterPeriodForMembers+'&scope_type='+(m?m.scope_type||'person':'person')+deptParam).then(r=>r.json()),
-      fetch('/api/bonus/targets?metric_id='+metricId+'&period='+tgtPeriod).then(r=>r.json()),
-    ]);
-    var membersRes = res[0], existingTgtsRes = res[1];
-    var existing={};
-    existingTgtsRes.forEach(function(t){existing[t.emp_id||t.dept_code||'']=t;});
-    var unit=m?(m.unit||(m.stat_field==='amount'?'元':m.stat_field==='qty'?'件':'台')):'台';
-    var rule=m?(m.bonus_rule||{}):{};
-    var roles=rule.roles||[];
-    var html='<div style="font-size:12px;color:#64748b;margin-bottom:12px;background:#0f172a;border-radius:7px;padding:10px 14px;line-height:1.8">'
-      +'👥 名冊來源：<strong style="color:#e2e8f0">'+(_rosterLoadedPeriod||'最新')+'</strong>　'
-      +'🎯 目標期間：<strong style="color:#3b82f6">'+tgtLabel+'</strong>　'
-      +'範圍：<strong style="color:#e2e8f0">'+(m&&m.scope_type==='dept'?'部門目標':'個人目標')+'</strong>（'+membersRes.length+'筆）'
-      +(rule.tiers&&rule.tiers.length?'<br>🏆 '+buildTierPreview(rule):'')
-      +'</div>';
-    if(m&&m.scope_type==='dept'){
-      html+=buildTargetTable(membersRes,existing,unit,roles);
-      window._tgtMembers=membersRes.map(function(d){return{key:d.dept_code,dept_code:d.dept_code,emp_id:null};});
-    }else{
-      html+=buildPersonTargetTable(membersRes,existing,unit,roles);
-      window._tgtMembers=membersRes.map(function(e){return{key:e.emp_id,emp_id:e.emp_id,dept_code:null};});
-    }
-    document.getElementById('targetFormContent').innerHTML=html;
-  } catch(e){document.getElementById('targetFormContent').innerHTML='<div style="color:#ef4444">'+e.message+'</div>';}
-}
-
-async function saveTargets() {
-  var members=window._tgtMembers||[];
-  var savePeriod=window._tgtActivePeriod||_actualPeriod;
-  var entries=members.map(function(mb){return{
-    metric_id:_tgtMetricId,period:savePeriod,
-    emp_id:mb.emp_id,dept_code:mb.dept_code,
-    target_value:parseFloat(document.getElementById('tgt-'+mb.key)?document.getElementById('tgt-'+mb.key).value:'')||null,
-    last_year_value:parseFloat(document.getElementById('ly-'+mb.key)?document.getElementById('ly-'+mb.key).value:'')||null,
-    note:document.getElementById('note-'+mb.key)?document.getElementById('note-'+mb.key).value.trim():'',
-  };});
-  var btn=document.getElementById('btnSaveTargets');btn.disabled=true;
-  try{
-    var r=await fetch('/api/bonus/targets/batch',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({entries:entries})}).then(r=>r.json());
-    if(r.error)throw new Error(r.error);
-    closeModal('targetModal');
-    if(document.getElementById('tab-progress')&&document.getElementById('tab-progress').style.display!=='none') await renderProgressContent();
-  }catch(e){alert('儲存失敗：'+e.message);}
-  finally{btn.disabled=false;}
+  var open=body.style.display==='none';
+  body.style.display=open?'block':'none';
+  if (arrow) arrow.style.transform=open?'rotate(90deg)':'rotate(0deg)';
 }
 
 // ══ 上傳人員資料 ══
@@ -1588,17 +1291,13 @@ async function doUploadRoster() {
     var data=await fetch('/api/bonus/upload-roster',{method:'POST',body:formData}).then(r=>r.json());
     if (data.error) throw new Error(data.error);
     document.getElementById('uploadResult').innerHTML='<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:10px 14px;font-size:13px;color:#10b981">✅ 成功上傳 '+data.count+' 筆（'+period.slice(0,4)+'年'+parseInt(period.slice(4))+'月）</div>';
-    _allDepts=[];
-    _rosterData=[];
-    _rosterLoadedPeriod='';
-    await loadPeriods();
-    await loadRoster();
+    _allDepts=[]; _rosterData=[]; _rosterLoadedPeriod='';
+    await loadPeriods(); await loadRoster();
   } catch(e){
     document.getElementById('uploadResult').innerHTML='<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:10px 14px;font-size:13px;color:#ef4444">❌ '+e.message+'</div>';
   } finally { btn.disabled=false; }
 }
 
-// ══ 初始化 ══
 checkAuth();
 </script>
 </body>
