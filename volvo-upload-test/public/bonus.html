@@ -1139,11 +1139,23 @@ async function renderProgressContent() {
       return;
     }
 
-    // ── 2. 查詢指標進度（有就顯示，沒有也繼續顯示人員列表）──
-    var metaById = {};   // metric_id → {metric, actual, autoPT, useAuto, autoRate, tiers, roles}
-    var deptTargets = {}; // dept_code → { metric_id → {rate, target_value} }
-    var empTargets  = {}; // emp_id    → { metric_id → {rate, target_value} }
+    // ── 2. _metrics 為主軸，progress API 只填入實際數字 ──
+    var metaById    = {};
+    var deptTargets = {};
+    var empTargets  = {};
 
+    // 先用 _metrics 初始化（確保有指標就一定顯示欄位）
+    for (var mi0=0; mi0<_metrics.length; mi0++) {
+      var m0 = _metrics[mi0];
+      metaById[m0.id] = {
+        metric: m0, actual: null, autoPT: null,
+        useAuto: false, autoRate: null,
+        tiers: (m0.bonus_rule||{}).tiers||[],
+        roles: (m0.bonus_rule||{}).roles||[]
+      };
+    }
+
+    // 呼叫 progress API 填入實際達成數字
     try {
       var params = new URLSearchParams({ period: _actualPeriod, data_period: _actualPeriod });
       if (factory) params.set('factory', factory);
@@ -1175,7 +1187,7 @@ async function renderProgressContent() {
           }
         }
       }
-    } catch(apiErr) { /* 指標查詢失敗不影響顯示名冊 */ }
+    } catch(apiErr) { console.warn('progress API error:', apiErr); }
 
     var allMetricIds = Object.keys(metaById);
     var hasMetrics   = allMetricIds.length > 0;
