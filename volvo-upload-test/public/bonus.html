@@ -507,9 +507,16 @@ async function loadPerfMetricsList() {
 async function doLoad() {
   _period=document.getElementById('selPeriod').value;
   if (!_period){ alert('請先選擇期間'); return; }
-  _actualPeriod=''; // 重置，讓進度頁重新計算
+  _actualPeriod=''; // 重置，讓進度頁重新計算上個月
+  _rosterData=[];   // 強制重新載入名冊（廠別篩選可能改了）
+  _rosterLoadedPeriod='';
   document.getElementById('lastUpdate').textContent='更新中...';
   await Promise.all([loadRoster(), loadMetrics()]);
+  // 如果目前在進度頁，重新渲染
+  const progressTab = document.getElementById('tab-progress');
+  if (progressTab && progressTab.style.display !== 'none') {
+    await loadProgress();
+  }
   document.getElementById('lastUpdate').textContent=new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})+' 更新';
 }
 
@@ -1319,9 +1326,31 @@ async function renderProgressContent() {
             +'<span style="font-size:12px;font-weight:800;color:#cbd5e1">📂 '+dept.dept_name+'</span>'
             +'<span style="font-size:11px;color:#475569;background:#0f172a;padding:1px 7px;border-radius:6px">'+dept.members.length+' 人</span>'
             +(deptBonusPpl>0?'<span style="font-size:11px;color:#10b981">'+deptBonusPpl+' 人有獎金</span>':'')
+            // 各指標的部門設定按鈕
+            +(hasMetrics
+              ?'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-left:6px">'
+                +allMetricIds.map(function(mId7){
+                  var meta7 = metaById[mId7];
+                  var hasDeptTgt = !!(deptTargets[dkey]&&deptTargets[dkey][mId7]);
+                  var dRate7 = hasDeptTgt?deptTargets[dkey][mId7].rate:null;
+                  var dTgt7  = hasDeptTgt?deptTargets[dkey][mId7].target_value:null;
+                  var isAmtM7 = meta7.metric.stat_field==='amount'||meta7.useAuto;
+                  var fvM7 = function(v){return v===null||v===undefined?'—':isAmtM7?Math.round(parseFloat(v)/1000).toLocaleString()+'K':Math.round(parseFloat(v)).toLocaleString();};
+                  var rc7 = dRate7===null?'#64748b':dRate7>=100?'#10b981':dRate7>=80?'#f59e0b':'#ef4444';
+                  return '<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:6px;padding:3px 8px">'
+                    +'<span style="font-size:10px;color:#60a5fa;font-weight:700">'+meta7.metric.metric_name+'</span>'
+                    +(hasDeptTgt && dRate7!==null?'<span style="font-size:10px;color:'+rc7+';font-weight:700">'+dRate7.toFixed(0)+'%</span>':'')
+                    +(hasDeptTgt && dTgt7?'<span style="font-size:10px;color:#475569">目標:'+fvM7(dTgt7)+'</span>':'')
+                    +'<button onclick="event.stopPropagation();openTargetForDept('+mId7+',\''+dkey+'\')" '
+                      +'style="background:rgba(59,130,246,.2);color:#60a5fa;border:none;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">'
+                      +(hasDeptTgt?'✏️ 修改':'＋ 設定')+'</button>'
+                  +'</span>';
+                }).join('')
+              +'</div>'
+              :'')
             +(hasMetrics&&deptTotalBonus>0
               ?'<span style="margin-left:auto;font-size:13px;font-weight:800;color:#f59e0b">'+deptTotalBonus.toLocaleString()+' 元</span>'
-              :(hasMetrics?'<span style="margin-left:auto;font-size:11px;color:#334155">（未設定目標）</span>':''))
+              :'')
           +'</div>'
           // 人員表格
           +'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'
