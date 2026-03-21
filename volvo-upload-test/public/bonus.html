@@ -1084,11 +1084,33 @@ async function renderProgressContent() {
       return match.amount||0;
     }
 
-    // ★ 此部門適用的指標
-    function getMetricIdsForDept(dkey) {
+    // ★ 過濾此部門適用的指標
+    // 同時檢查 branch_override（解決同部門代碼跨廠問題）和 revenue branch
+    function getMetricIdsForDept(dkey, fcName) {
       return allMetricIds.filter(function(mId){
-        var codes=(metaById[mId].metric.target_dept_codes||[]);
-        return codes.length===0||codes.indexOf(dkey)!==-1;
+        var metric=metaById[mId].metric;
+        var codes=(metric.target_dept_codes||[]);
+        var filters=metric.filters||[];
+
+        // 先過濾部門代碼
+        var deptMatch = codes.length===0 || codes.indexOf(dkey)!==-1;
+        if (!deptMatch) return false;
+
+        // ★ 若有 branch_override，只對 matching factory 顯示
+        var brOv=(filters.find(function(f){return f.type==='branch_override';}))||null;
+        if (brOv && brOv.value && ['AMA','AMC','AMD'].indexOf(brOv.value)!==-1) {
+          if (fcName !== brOv.value) return false;
+        }
+
+        // ★ revenue 指標若有 branch filter，只對 matching factory 顯示
+        if (metric.metric_source==='revenue') {
+          var revBr=(filters.find(function(f){return f.type==='branch';}))||null;
+          if (revBr && revBr.value && ['AMA','AMC','AMD'].indexOf(revBr.value)!==-1) {
+            if (fcName !== revBr.value) return false;
+          }
+        }
+
+        return true;
       });
     }
 
@@ -1120,7 +1142,7 @@ async function renderProgressContent() {
       // 廠別獎金合計
       var fcTotalBonus=0, fcTotalPpl=0, fcBonusPpl=0;
       for (var di0=0;di0<deptKeys.length;di0++) {
-        var dept0=fcDepts[deptKeys[di0]], dMIds0=getMetricIdsForDept(deptKeys[di0]);
+        var dept0=fcDepts[deptKeys[di0]], dMIds0=getMetricIdsForDept(deptKeys[di0], fc);
         fcTotalPpl+=dept0.members.length;
         for (var mi0b=0;mi0b<dept0.members.length;mi0b++) {
           var p0=dept0.members[mi0b], pTotal0=0;
@@ -1135,7 +1157,7 @@ async function renderProgressContent() {
           fcTotalBonus+=pTotal0;
         }
       }
-      var fcHasMetrics=deptKeys.some(function(dk){return getMetricIdsForDept(dk).length>0;});
+      var fcHasMetrics=deptKeys.some(function(dk){return getMetricIdsForDept(dk, fc).length>0;});
 
       html+='<div style="margin-bottom:14px;border:2px solid '+fcColor+'55;border-radius:12px;overflow:hidden">'
         +'<div id="'+fcId+'-hdr" style="background:'+fcColor+'1e;padding:12px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none" onclick="toggleProgSection(\''+fcId+'\')">'
@@ -1149,7 +1171,7 @@ async function renderProgressContent() {
 
       for (var di=0;di<deptKeys.length;di++) {
         var dkey=deptKeys[di], dept=fcDepts[dkey];
-        var deptMetricIds=getMetricIdsForDept(dkey), deptHasMetrics=deptMetricIds.length>0;
+        var deptMetricIds=getMetricIdsForDept(dkey, fc), deptHasMetrics=deptMetricIds.length>0;
         var deptTotalBonus=0, deptBonusPpl=0, memberRows=[];
 
         for (var mi3=0;mi3<dept.members.length;mi3++) {
