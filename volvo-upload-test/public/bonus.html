@@ -273,8 +273,9 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
         <button class="btn btn-secondary btn-sm" onclick="clearAllDepts()">全部清除</button>
         <span id="mDeptCountLabel" style="font-size:12px;color:#64748b;align-self:center"></span>
       </div>
-      <div id="mJobTitleSuggestions" style="display:none;margin-top:10px;background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:10px 12px">
-        <div style="font-size:11px;color:#475569;font-weight:700;margin-bottom:6px">📋 已選部門現有職稱（點擊快速加入）</div>
+      <!-- 職稱快速選取（由勾選部門動態生成） -->
+      <div id="mJobTitleSuggestions" style="display:none;margin-top:10px">
+        <div style="font-size:11px;color:#475569;margin-bottom:6px">此部門常見職稱（點擊快速加入）</div>
         <div id="mJobTitleChips" style="display:flex;flex-wrap:wrap;gap:5px"></div>
       </div>
 
@@ -703,6 +704,7 @@ async function loadDeptCheckboxes(selectedCodes) {
     updateDeptCount();
   } catch(e){ el.innerHTML='<span style="color:#ef4444;font-size:12px">'+e.message+'</span>'; }
 }
+
 function toggleDeptChip(label, color) {
   const cb=label.querySelector('input');
   cb.checked=!cb.checked;
@@ -711,10 +713,38 @@ function toggleDeptChip(label, color) {
   updateDeptCount();
   loadDeptJobTitles();
 }
+
 function updateDeptCount() {
   const cnt=document.querySelectorAll('#mDeptCheckboxWrap input[type=checkbox]:checked').length;
   document.getElementById('mDeptCountLabel').textContent=cnt>0?'已選 '+cnt+' 個部門':'（留空 = 全廠所有正職人員）';
 }
+
+// ══ 依勾選部門載入職稱建議 ══
+async function loadDeptJobTitles() {
+  const periodForLoad = _period || _rosterPeriods[0];
+  const selectedCodes = getSelectedDeptCodes();
+  const sugDiv = document.getElementById('mJobTitleSuggestions');
+  const chipsDiv = document.getElementById('mJobTitleChips');
+  if (!sugDiv || !chipsDiv) return;
+  if (!periodForLoad || !selectedCodes.length) { sugDiv.style.display = 'none'; return; }
+  try {
+    const params = new URLSearchParams({ period: periodForLoad, scope_type: 'person', dept_codes: selectedCodes.join(',') });
+    const members = await fetch('/api/bonus/scope-members?' + params).then(r => r.json());
+    const titles = [...new Set(members.map(m => m.job_title).filter(Boolean))].sort();
+    if (!titles.length) { sugDiv.style.display = 'none'; return; }
+    chipsDiv.innerHTML = titles.map(t => {
+      const already = _tierRoles.includes(t);
+      const safeT = t.replace(/'/g, "\\'");
+      return `<span onclick="${already ? '' : `addRoleVal('${safeT}')`}"
+        style="display:inline-flex;align-items:center;gap:3px;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:${already?'default':'pointer'};border:1px solid;transition:all .12s;
+        ${already ? 'background:rgba(59,130,246,.15);border-color:#3b82f6;color:#60a5fa' : 'background:#1e293b;border-color:#2d3f56;color:#94a3b8'}">
+        ${already ? '✓ ' : '＋ '}${t}
+      </span>`;
+    }).join('');
+    sugDiv.style.display = '';
+  } catch(e) { sugDiv.style.display = 'none'; }
+}
+
 function selectAllDepts() {
   document.querySelectorAll('#mDeptCheckboxWrap input[type=checkbox]').forEach(cb=>{ if(!cb.checked) toggleDeptChip(cb.closest('label'), cb.closest('label').style.color||'#3b82f6'); });
 }
@@ -731,6 +761,8 @@ function renderRoleTags() {
   if (!_tierRoles.length){ wrap.innerHTML='<span style="color:#475569;font-size:11px">（未設定職稱 → 所有人同一金額）</span>'; return; }
   wrap.innerHTML=_tierRoles.map((r,i)=>'<span class="role-tag">'+r+'<button onclick="removeRole('+i+')" title="移除">×</button></span>').join('');
   renderTierTable();
+  // 同步更新職稱建議的已選狀態
+  loadDeptJobTitles();
 }
 function addRole() {
   const input=document.getElementById('mRoleInput');
@@ -743,7 +775,6 @@ function addRoleVal(val) {
   if (_tierRoles.includes(val)) return;
   _tierRoles.push(val);
   renderRoleTags(); renderTierTable();
-  loadDeptJobTitles(); // 刷新標記哪些已加入
 }
 function removeRole(i) {
   _tierRoles.splice(i,1);
@@ -783,20 +814,37 @@ function renderTierTable() {
       const amt=t.amount!==undefined?t.amount:(t.amounts?.default||0);
       bodyHtml+='<td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3)"><input class="tier-input" type="number" value="'+amt+'" min="0" step="1" onchange="_tiers['+i+'].amount=parseFloat(this.value)||0" style="color:#10b981;font-weight:700"></td>';
     }
-    const syncBtn = _tierRoles.length > 1 ? `<button class="btn btn-secondary btn-sm" onclick="syncTierRow(${i})" style="padding:3px 7px;font-size:10px;margin-right:3px" title="同步此行金額到所有職稱">≡同步</button>` : '';
-    bodyHtml+='<td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center;white-space:nowrap">'+syncBtn+'<button class="btn btn-danger btn-sm" onclick="removeTier('+i+')" style="padding:3px 8px">×</button></td>';
+    bodyHtml+='<td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center"><button class="btn btn-danger btn-sm" onclick="removeTier('+i+')" style="padding:3px 8px">×</button></td>';
     bodyHtml+='</tr>';
   });
   if (!_tiers.length) bodyHtml='<tr><td colspan="'+(2+(roles.length||1)+1)+'" style="padding:14px;text-align:center;color:#475569;font-size:12px">尚未設定階梯，點擊「＋ 新增階梯」</td></tr>';
   body.innerHTML=bodyHtml;
 }
 
+// ══ syncTierAmount：同步個別職稱欄位輸入至 _tiers ══
 function syncTierAmount(el) {
   var i = parseInt(el.getAttribute('data-ti'));
   var role = el.getAttribute('data-role');
   if (!_tiers[i]) return;
   if (!_tiers[i].amounts) _tiers[i].amounts = {};
   _tiers[i].amounts[role] = parseFloat(el.value) || 0;
+}
+
+// ══ syncTierRow：將同一列第一個有值的欄位同步填入所有職稱欄 ══
+function syncTierRow(i) {
+  if (!_tiers[i] || !_tierRoles.length) return;
+  const rows = document.querySelectorAll('#mTierBody tr');
+  if (!rows[i]) return;
+  const inputs = [...rows[i].querySelectorAll('input[data-ti]')];
+  if (!inputs.length) return;
+  // 找第一個有值的欄位
+  const firstVal = inputs.reduce((v, inp) => v !== 0 ? v : (parseFloat(inp.value)||0), 0);
+  inputs.forEach(inp => {
+    inp.value = firstVal;
+    const role = inp.getAttribute('data-role');
+    if (!_tiers[i].amounts) _tiers[i].amounts = {};
+    _tiers[i].amounts[role] = firstVal;
+  });
 }
 
 function addTier() {
@@ -882,11 +930,16 @@ async function openMetricModal(id) {
     const perfId=(m.filters||[]).find(f=>f.type==='perf_metric_id')?.value;
     if (perfId) document.getElementById('mPerfMetricId').value=perfId;
   }
+  // 隱藏職稱建議（等部門勾選後再顯示）
+  const sugDiv=document.getElementById('mJobTitleSuggestions');
+  if (sugDiv) sugDiv.style.display='none';
   onMSourceChange();
   renderRoleTags();
   renderTierTable();
   openModal('metricModal');
   await loadDeptCheckboxes(m.target_dept_codes||[]);
+  // 如果有預先勾選的部門，載入職稱建議
+  if ((m.target_dept_codes||[]).length) loadDeptJobTitles();
   setTimeout(()=>document.getElementById('mName').focus(),80);
 }
 
