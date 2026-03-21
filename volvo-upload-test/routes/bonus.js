@@ -445,55 +445,88 @@ router.delete('/bonus/targets/:id', async (req, res) => {
 
 // ══════════════════════════════════════════════
 // 獎金進度計算
-// ── 注意：period = 獎金發放月份（目標/名冊來源）
-//          actualPeriod = 實績計算月份（上個月的DMS數據）
+// ── period      = 獎金月份：名冊來源、目標設定的依據
+// ── actualPeriod = 實績月份：DMS 數據來源（通常 = 上個月）
 // ══════════════════════════════════════════════
+
+// 從 target_dept_codes 推算所屬分館（用於實績過濾）
+function inferBranchFromDeptCodes(deptCodes) {
+  if (!deptCodes || !deptCodes.length) return null;
+  const prefixes = { '051': 'AMA', '053': 'AMC', '054': 'AMD' };
+  const branches = new Set();
+  for (const code of deptCodes) {
+    for (const [prefix, br] of Object.entries(prefixes)) {
+      if (String(code).startsWith(prefix)) { branches.add(br); break; }
+    }
+  }
+  // 只有唯一分館時才回傳，多分館或無法判斷回傳 null
+  return branches.size === 1 ? [...branches][0] : null;
+}
+
 router.get('/bonus/progress', async (req, res) => {
   const { period, factory, data_period } = req.query;
-  const actualPeriod = data_period || period; // 實績期間（通常為上月），目標期間用 period
+  const actualPeriod = data_period || period;
   if (!period) return res.status(400).json({ error: 'period 為必填' });
   try {
     const metrics = (await pool.query(`SELECT * FROM bonus_metrics ORDER BY sort_order, id`)).rows;
-    // 目標也從 actualPeriod（上月）取，因為獎金是根據上月的目標設定計算
-    const targets = (await pool.query(`SELECT * FROM bonus_targets WHERE period=$1`, [actualPeriod])).rows;
+    // ★ 目標永遠從 period（獎金月）取；只有實績從 actualPeriod 取
+    const targets = (await pool.query(`SELECT * FROM bonus_targets WHERE period=$1`, [period])).rows;
     const results = [];
 
     for (const m of metrics) {
-      const filters = m.filters || [];
+      const filters   = m.filters || [];
+      const deptCodes = m.target_dept_codes || [];
       let actual = null;
       let perfTarget = null;
 
-      // ── 連結營收目標（目標和實績都從 actualPeriod 取）──
-      if (m.metric_source === 'revenue') {
-        const branchF = filters.find(f=>f.type==='branch')?.value || null;
-        const revType = filters.find(f=>f.type==='revenue_type')?.value || 'paid';
-        const effectiveBranch = (factory && ['AMA','AMC','AMD'].includes(factory))
+      // ── 從 factory 查詢參數或 target_dept_codes 推算分館 ──
+      const effectiveBranch =
+        (factory && ['AMA','AMC','AMD'].includes(factory))
           ? factory
-          : branchF;
+          : inferBranchFromDeptCodes(deptCodes);
+
+      // ── 連結營收目標 ──
+      if (m.metric_source === 'revenue') {
+        const revBranchF = filters.find(f=>f.type==='branch')?.value || null;
+        const revType    = filters.find(f=>f.type==='revenue_type')?.value || 'paid';
+        // 分館優先級：effectiveBranch（廠別篩選/dept推算）> revBranchF（指標設定的branch filter）
+        const useBranch  = effectiveBranch || revBranchF;
         try {
-          actual     = await computeRevenueActual(actualPeriod, effectiveBranch, revType);
-          perfTarget = await getRevenueTarget(actualPeriod, effectiveBranch, revType); // 目標也用 actualPeriod
+          actual     = await computeRevenueActual(actualPeriod, useBranch, revType); // 實績用 actualPeriod
+          perfTarget = await getRevenueTarget(period, useBranch, revType);           // 目標用 period
         } catch(e) { actual = null; }
 
-      // ── 連結業績指標（目標和實績都從 actualPeriod 取）──
+      // ── 連結業績指標 ──
       } else if (m.metric_source === 'performance') {
         const perfMetricId = filters.find(f => f.type === 'perf_metric_id')?.value;
         if (perfMetricId) {
           try {
             const perfMetric = (await pool.query(`SELECT * FROM performance_metrics WHERE id=$1`, [perfMetricId])).rows[0];
             if (perfMetric) {
-              actual = await computePerfActual(perfMetric, actualPeriod, factory && ['AMA','AMC','AMD'].includes(factory) ? factory : null);
-              const perfBranch = factory && ['AMA','AMC','AMD'].includes(factory) ? factory : 'AMA';
-              // 目標也用 actualPeriod
-              const tRes = await pool.query(`SELECT target_value FROM performance_targets WHERE metric_id=$1 AND period=$2 AND branch=$3`, [perfMetricId, actualPeriod, perfBranch]);
-              perfTarget = tRes.rows[0]?.target_value || null;
+              // 實績用 actualPeriod + 推算分館
+              actual = await computePerfActual(perfMetric, actualPeriod, effectiveBranch);
+              // 目標用 period；分館優先用 effectiveBranch，否則抓 AMA/AMC/AMD 合計
+              if (effectiveBranch) {
+                const tRes = await pool.query(
+                  `SELECT target_value FROM performance_targets WHERE metric_id=$1 AND period=$2 AND branch=$3`,
+                  [perfMetricId, period, effectiveBranch]
+                );
+                perfTarget = parseFloat(tRes.rows[0]?.target_value || 0) || null;
+              } else {
+                // 集團合計：加總所有分館
+                const tRes = await pool.query(
+                  `SELECT COALESCE(SUM(target_value),0) AS v FROM performance_targets WHERE metric_id=$1 AND period=$2`,
+                  [perfMetricId, period]
+                );
+                perfTarget = parseFloat(tRes.rows[0]?.v || 0) || null;
+              }
             }
           } catch(e) { actual = null; }
         }
 
-      // ── DMS 直接來源（實績從 actualPeriod 取）──
+      // ── DMS 直接來源 ──
       } else if (m.metric_source !== 'manual') {
-        const branchF = factory && ['AMA','AMC','AMD'].includes(factory) ? factory : null;
+        const branchF = effectiveBranch;
         try {
           if (m.metric_source === 'repair_income') {
             const acTypes = filters.filter(f=>f.type==='account_type').map(f=>f.value);
@@ -526,7 +559,7 @@ router.get('/bonus/progress', async (req, res) => {
       }
 
       const myTargets = targets.filter(t => t.metric_id === m.id);
-      results.push({ metric: m, targets: myTargets, actual, perfTarget });
+      results.push({ metric: m, targets: myTargets, actual, perfTarget, effectiveBranch });
     }
     res.json({ results, period, actualPeriod });
   } catch(err) { res.status(500).json({ error: err.message }); }
