@@ -70,8 +70,6 @@ const initDatabase = async () => {
     await client.query(`ALTER TABLE business_query ADD COLUMN IF NOT EXISTS labor_fee NUMERIC(12,2) DEFAULT 0`);
     await client.query(`ALTER TABLE business_query ADD COLUMN IF NOT EXISTS repair_material_fee NUMERIC(12,2) DEFAULT 0`);
     await client.query(`ALTER TABLE business_query ADD COLUMN IF NOT EXISTS sales_material_fee NUMERIC(12,2) DEFAULT 0`);
-    await client.query(`ALTER TABLE bonus_metrics ADD COLUMN IF NOT EXISTS target_dept_codes JSONB DEFAULT '[]'`);
-    await client.query(`ALTER TABLE bonus_metrics ADD COLUMN IF NOT EXISTS bonus_rule JSONB DEFAULT '{}'`);
     await client.query(`ALTER TABLE repair_income ALTER COLUMN account_type TYPE VARCHAR(50)`);
     await client.query(`ALTER TABLE repair_income ALTER COLUMN account_type_code TYPE VARCHAR(50)`);
     await client.query(`ALTER TABLE repair_income ALTER COLUMN account_type TYPE VARCHAR(100)`);
@@ -80,7 +78,6 @@ const initDatabase = async () => {
     await client.query(`ALTER TABLE tech_performance ALTER COLUMN account_type TYPE VARCHAR(100)`);
     await client.query(`ALTER TABLE tech_performance ALTER COLUMN work_code TYPE VARCHAR(50)`);
     await client.query(`ALTER TABLE tech_performance ALTER COLUMN work_order TYPE VARCHAR(50)`);
-    
 
     const bqCheck = await client.query(
       `SELECT column_name FROM information_schema.columns
@@ -213,7 +210,7 @@ const initDatabase = async () => {
         UNIQUE(branch, period)
       )`);
 
-    // ── 獎金表模組 ──
+    // ── 人員名冊 ──
     await client.query(`
       CREATE TABLE IF NOT EXISTS staff_roster (
         id                SERIAL PRIMARY KEY,
@@ -236,6 +233,7 @@ const initDatabase = async () => {
         UNIQUE (period, emp_id)
       )`);
 
+    // ── 獎金指標 ──
     await client.query(`
       CREATE TABLE IF NOT EXISTS bonus_metrics (
         id            SERIAL PRIMARY KEY,
@@ -248,9 +246,15 @@ const initDatabase = async () => {
         stat_field    VARCHAR(30) DEFAULT 'amount',
         unit          VARCHAR(20) DEFAULT '',
         sort_order    INTEGER DEFAULT 0,
+        target_dept_codes JSONB DEFAULT '[]',
+        bonus_rule    JSONB DEFAULT '{}',
         updated_at    TIMESTAMPTZ DEFAULT NOW(),
         created_at    TIMESTAMPTZ DEFAULT NOW()
       )`);
+
+    // ── bonus_metrics 補欄位（舊版升級用）──
+    await client.query(`ALTER TABLE bonus_metrics ADD COLUMN IF NOT EXISTS target_dept_codes JSONB DEFAULT '[]'`);
+    await client.query(`ALTER TABLE bonus_metrics ADD COLUMN IF NOT EXISTS bonus_rule JSONB DEFAULT '{}'`);
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS bonus_targets (
