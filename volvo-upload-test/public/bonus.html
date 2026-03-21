@@ -1009,8 +1009,8 @@ async function openTargetModal(metricId) {
   if (!_period){ alert('請先選擇期間後按查詢'); return; }
   _tgtMetricId=metricId;
 
-  // 使用實績期間（進度頁設定的）作為目標設定期間
-  const tgtPeriod = window._bonusProgressPrevPeriod || _actualPeriod || _period;
+  // ★ 目標永遠設定在 _period（獎金月），不跟著實績期間走
+  const tgtPeriod = _period;
   const tgtLabel  = `${tgtPeriod.slice(0,4)}年${parseInt(tgtPeriod.slice(4))}月`;
   window._tgtActivePeriod = tgtPeriod;
 
@@ -1032,8 +1032,9 @@ async function openTargetModal(metricId) {
     const roles=rule.roles||[];
     let html=`<div style="font-size:12px;color:#64748b;margin-bottom:12px;background:#0f172a;border-radius:7px;padding:10px 14px;line-height:1.8">
       👥 名冊期間：<strong style="color:#e2e8f0">${_period.slice(0,4)}年${parseInt(_period.slice(4))}月</strong>　
-      🎯 目標期間：<strong style="color:#f59e0b">${tgtLabel}</strong>　
+      🎯 目標期間：<strong style="color:#3b82f6">${tgtLabel}</strong>　
       範圍：<strong style="color:#e2e8f0">${m?.scope_type==='dept'?'部門目標':'個人目標'}</strong>（${membersRes.length}筆）
+      <br><span style="color:#475569;font-size:11px">📌 目標設定在「名冊期間」，實績取自進度頁選擇的「實績期間」</span>
       ${rule.tiers?.length?'<br>🏆 '+buildTierPreview(rule):''}
     </div>`;
     if(m?.scope_type==='dept'){
@@ -1145,7 +1146,7 @@ async function loadProgress() {
         </select>
         <button onclick="applyActualPeriod()" style="background:#3b82f6;color:#fff;border:none;padding:6px 16px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">套用</button>
       </div>
-      <div style="font-size:11px;color:#475569;width:100%">💡 DMS 實績與獎金目標設定均取自「實績 ＆ 目標期間」；人員名冊取自「名冊期間」</div>
+      <div style="font-size:11px;color:#475569;width:100%">💡 <strong style="color:#64748b">名冊期間</strong>：獎金發放對象（人員）｜<strong style="color:#64748b">實績 & 目標期間</strong>：DMS 實績數據來源，目標設定也在此期間（🎯 目標按鈕）</div>
     </div>
     <div id="progressInner"><div class="loading"><span class="spinner"></span>計算中</div></div>`;
 
@@ -1252,11 +1253,12 @@ async function renderProgressContent() {
       const isDepth = m.scope_type==='dept';
 
       if (!targets.length) {
+        const periodLabel = `${_period.slice(0,4)}年${parseInt(_period.slice(4))}月`;
         tableHtml=`<div style="background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:14px 18px">
-          <div style="font-size:13px;font-weight:700;color:#f59e0b;margin-bottom:6px">⚠️ 尚未在 ${actLabel} 設定人員目標</div>
+          <div style="font-size:13px;font-weight:700;color:#f59e0b;margin-bottom:6px">⚠️ 尚未在 ${periodLabel} 設定人員目標</div>
           <div style="font-size:12px;color:#64748b;line-height:1.9">
-            請至「⚙️ 獎金設定」頁籤 → 找到此指標 → 點擊「🎯 目標」→ 選擇期間
-            <strong style="color:#e2e8f0"> ${actLabel}（${_actualPeriod}）</strong> → 填入目標後儲存。
+            請至「⚙️ 獎金設定」頁籤 → 找到此指標 → 點擊「🎯 目標」→ 填入目標後儲存。<br>
+            <span style="color:#475569">目標設定在<strong style="color:#e2e8f0"> ${periodLabel}（${_period}）</strong>（名冊期間），實績則取自目前選擇的「實績期間」。</span>
           </div>
         </div>`;
       } else {
