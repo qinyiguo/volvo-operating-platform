@@ -38,7 +38,7 @@ function activeFilter(period, startIdx) {
   };
 }
 function inferFactory(deptCode) {
-  if (!deptCode) return null;
+  if (!deptCode) return '售後服務處';
   const code = String(deptCode);
   if (code.startsWith('051')) return 'AMA';
   if (code.startsWith('053')) return 'AMC';
@@ -46,7 +46,8 @@ function inferFactory(deptCode) {
   if (code.startsWith('055')) return '聯合';
   if (code.startsWith('056') || code.startsWith('061')) return '鈑烤';
   if (code.startsWith('057') || code.startsWith('07'))  return '零件';
-  return null;
+  // 其餘（050/052 等集團層級部門）歸屬售後服務處
+  return '售後服務處';
 }
 
 // ── 計算 performance_metrics 實際值 ──
