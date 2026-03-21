@@ -648,12 +648,25 @@ async function saveEmpEdit() {
   const deptCode=deptSel.value||null, deptName=deptCode?(deptSel.options[deptSel.selectedIndex]?.getAttribute('data-name')||null):null;
   const btn=document.getElementById('btnSaveEmpEdit'), msgEl=document.getElementById('empEditMsg');
   btn.disabled=true;
+  // ★ 儲存捲軸位置 + 已展開的區塊
+  const scrollY=window.scrollY;
+  const openDepts=new Set([...document.querySelectorAll('.dept-body.open')].map(el=>el.id));
+  const openFcs=new Set([...document.querySelectorAll('.factory-body')].map(el=>el.id)); // factory 預設全開
   try {
     const body={factory:factory||null};
     if (deptCode){body.dept_code=deptCode;body.dept_name=deptName;}
     const r=await fetch('/api/bonus/roster/'+period+'/'+empId,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json());
     if (r.error) throw new Error(r.error);
-    closeModal('empEditModal'); await loadRoster();
+    closeModal('empEditModal');
+    await loadRoster();
+    // ★ 恢復展開的部門區塊
+    openDepts.forEach(id=>{
+      const el=document.getElementById(id);
+      const arrow=document.getElementById(id.replace('-body','-arrow'));
+      if(el&&!el.classList.contains('open')){ el.classList.add('open'); if(arrow) arrow.style.transform='rotate(90deg)'; }
+    });
+    // ★ 恢復捲軸位置
+    window.scrollTo(0, scrollY);
   } catch(e){ msgEl.style.color='#ef4444'; msgEl.textContent='失敗：'+e.message; }
   finally { btn.disabled=false; }
 }
