@@ -549,7 +549,18 @@ function renderRosterTree(rows) {
   const byFactory={};
   rows.forEach(r=>{ const f=r.factory||'售後服務處'; if(!byFactory[f])byFactory[f]={}; const d=r.dept_code||'—'; if(!byFactory[f][d])byFactory[f][d]={dept_name:r.dept_name,employees:[]}; byFactory[f][d].employees.push(r); });
   const FACTORY_ORDER=['售後服務處','AMA','AMD','AMC','聯合','鈑烤','零件'];
+  const FC_SHORT={AMA:'AMA',AMC:'AMC',AMD:'AMD','聯合':'聯合','鈑烤':'鈑烤','零件':'零件','售後服務處':'總部'};
   const factories=[...new Set(rows.map(r=>r.factory||'售後服務處'))].sort((a,b)=>(FACTORY_ORDER.indexOf(a)+99)-(FACTORY_ORDER.indexOf(b)+99));
+
+  // ★ 偵測哪些部門名稱跨廠重複（例如「零件部」同時出現在 AMA 和 AMD）
+  const deptNameCount={};
+  factories.forEach(f=>{
+    Object.values(byFactory[f]||{}).forEach(dept=>{
+      const n=dept.dept_name||'';
+      if(n) deptNameCount[n]=(deptNameCount[n]||0)+1;
+    });
+  });
+
   let html='';
   factories.forEach((f,fi)=>{
     const meta=FACTORY_META[f]||{label:'其他',color:'#64748b',icon:'🏢'};
@@ -568,9 +579,12 @@ function renderRosterTree(rows) {
     Object.keys(depts).sort().forEach((dk,di)=>{
       const dept=depts[dk], emps=dept.employees, dId=fcId+'-dept-'+di;
       const aE=emps.filter(e=>e.status==='在職').length, rE=emps.filter(e=>e.status==='離職').length, uE=emps.filter(e=>e.status==='留職停薪').length;
+      // ★ 若部門名稱跨廠重複，顯示「AMA 零件部」而非「零件部」
+      const rawName=dept.dept_name||dk;
+      const displayName=(deptNameCount[rawName]>1&&FC_SHORT[f])?(FC_SHORT[f]+' '+rawName):rawName;
       html+='<div class="dept-section"><div class="dept-header" onclick="toggleSection(\''+dId+'\')">';
       html+='<span id="'+dId+'-arrow" style="margin-right:4px;color:#475569;transition:transform .2s;display:inline-block">▶</span>';
-      html+='<span style="font-weight:700;color:#cbd5e1">'+(dept.dept_name||dk)+'</span><span style="font-size:11px;color:#475569;margin-left:6px">'+dk+'</span>';
+      html+='<span style="font-weight:700;color:#cbd5e1">'+displayName+'</span><span style="font-size:11px;color:#475569;margin-left:6px">'+dk+'</span>';
       html+='<div style="margin-left:auto;display:flex;gap:5px"><span style="font-size:11px;color:#10b981;font-weight:700">'+aE+'在</span>';
       if(uE) html+='<span style="font-size:11px;color:#f59e0b;font-weight:700">'+uE+'停</span>';
       if(rE) html+='<span style="font-size:11px;color:#ef4444">'+rE+'離</span>';
@@ -1116,6 +1130,7 @@ async function renderProgressContent() {
 
     var FC_ORDER=['售後服務處','AMA','AMD','AMC','聯合','鈑烤','零件','其他'];
     var FC_LABELS={AMA:'AMA 內湖',AMC:'AMC 仁愛',AMD:'AMD 士林','聯合':'聯合服務中心','鈑烤':'鈑烤廠','零件':'零件部','售後服務處':'售後服務處'};
+    var FC_SHORT={AMA:'AMA',AMC:'AMC',AMD:'AMD','聯合':'聯合','鈑烤':'鈑烤','零件':'零件','售後服務處':'總部'};
 
     var byFactory={};
     for (var pi=0;pi<_rosterData.length;pi++) {
@@ -1130,6 +1145,10 @@ async function renderProgressContent() {
 
     var sortedFc=Object.keys(byFactory).sort(function(a,b){return (FC_ORDER.indexOf(a)<0?99:FC_ORDER.indexOf(a))-(FC_ORDER.indexOf(b)<0?99:FC_ORDER.indexOf(b));});
     if (!sortedFc.length){ el.innerHTML='<div class="empty">此廠別無人員資料</div>'; return; }
+
+    // ★ 偵測跨廠重複的部門名稱
+    var progDeptNameCount={};
+    sortedFc.forEach(function(f){ Object.values(byFactory[f]).forEach(function(dept){ var n=dept.dept_name||''; if(n) progDeptNameCount[n]=(progDeptNameCount[n]||0)+1; }); });
 
     // 直接進入廠別 → 部門 → 人員（達成率只顯示在各部門）
     var html='';
@@ -1197,6 +1216,9 @@ async function renderProgressContent() {
         // 部門 header：指標標籤 + 每個指標的編輯/刪除 + 新增按鈕
         // 自動從 factory 推算 branch_override
         var autoBranch = ['AMA','AMC','AMD'].includes(fc) ? fc : '';
+        // ★ 重複部門名稱加廠別前綴
+        var rawDeptName=dept.dept_name||dkey;
+        var displayDeptName=(progDeptNameCount[rawDeptName]>1&&FC_SHORT[fc])?(FC_SHORT[fc]+' '+rawDeptName):rawDeptName;
 
         var deptTagsHtml = deptHasMetrics
           ? '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-left:6px">'
@@ -1215,11 +1237,11 @@ async function renderProgressContent() {
 
         html+='<div style="border-top:1px solid '+fcColor+'22">'
           +'<div style="background:#0b1422;padding:8px 18px 8px 28px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
-            +'<span style="font-size:12px;font-weight:800;color:#cbd5e1">📂 '+dept.dept_name+'</span>'
+            +'<span style="font-size:12px;font-weight:800;color:#cbd5e1">📂 '+displayDeptName+'</span>'
             +'<span style="font-size:11px;color:#475569;background:#0f172a;padding:1px 7px;border-radius:6px">'+dept.members.length+' 人</span>'
             +(deptBonusPpl>0?'<span style="font-size:11px;color:#10b981">'+deptBonusPpl+' 人有獎金</span>':'')
             +deptTagsHtml
-            +'<button onclick="event.stopPropagation();openNewMetricForDept(\''+dkey+'\',\''+dept.dept_name.replace(/'/g,"\\'")+'\',\''+fc+'\',\''+autoBranch+'\')" '
+            +'<button onclick="event.stopPropagation();openNewMetricForDept(\''+dkey+'\',\''+displayDeptName.replace(/'/g,"\\'")+'\',\''+fc+'\',\''+autoBranch+'\')" '
               +'style="margin-left:auto;background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3);padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">＋ 新增獎金規則</button>'
             +(deptHasMetrics&&deptTotalBonus>0?'<span style="font-size:13px;font-weight:800;color:#f59e0b">'+deptTotalBonus.toLocaleString()+' 元</span>':'')
           +'</div>'
@@ -1272,7 +1294,7 @@ async function renderProgressContent() {
 
         // 部門小計
         if (deptHasMetrics) {
-          html+='<tr style="background:'+fcColor+'0a"><td colspan="3" style="padding:7px 10px;font-size:12px;font-weight:700;color:'+fcColor+';border-right:1px solid #1a2535">'+dept.dept_name+'（'+dept.members.length+'人）</td>';
+          html+='<tr style="background:'+fcColor+'0a"><td colspan="3" style="padding:7px 10px;font-size:12px;font-weight:700;color:'+fcColor+';border-right:1px solid #1a2535">'+displayDeptName+'（'+dept.members.length+'人）</td>';
           for (var msi=0;msi<deptMetricIds.length;msi++) {
             var mId6=deptMetricIds[msi], dMB=memberRows.reduce(function(s,r){return s+(r.bonuses[mId6]?r.bonuses[mId6].bonus:0);},0);
             html+='<td style="padding:7px 10px;text-align:center;border-right:1px solid #1a2535;font-weight:700;color:'+(dMB>0?'#f59e0b':'#334155')+'">'+(dMB>0?dMB.toLocaleString()+'元':'—')+'</td>';
