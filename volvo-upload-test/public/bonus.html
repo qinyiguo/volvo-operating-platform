@@ -921,7 +921,7 @@ async function saveMetric() {
     if (revBranch) filters.push({type:'branch',value:revBranch});
     filters.push({type:'revenue_type',value:revType});
   }
-  // 計算據點 override（用於零件/技師等各廠同名部門）
+  // 計算據點 override
   if (src!=='manual'&&src!=='revenue') {
     const brOv=document.getElementById('mBranchOverride')?.value||'';
     if (brOv) filters.push({type:'branch_override',value:brOv});
@@ -931,25 +931,32 @@ async function saveMetric() {
   const bonus_rule={ roles:[..._tierRoles], tiers:tiersData, note:document.getElementById('mRuleNote').value.trim() };
   const payload={ metric_name, description:document.getElementById('mDesc').value.trim(), scope_type:document.getElementById('mScope').value, metric_source:src, stat_field:document.getElementById('mStatField')?.value||'amount', unit:document.getElementById('mUnit').value.trim(), sort_order:parseInt(document.getElementById('mOrder').value)||0, filters, bonus_rule, target_dept_codes };
   const btn=document.getElementById('btnSaveMetric'); btn.disabled=true;
+  // ★ 儲存捲軸位置
+  const scrollY=window.scrollY;
   try {
     const url=_editingMetricId?'/api/bonus/metrics/'+_editingMetricId:'/api/bonus/metrics';
     const data=await fetch(url,{method:_editingMetricId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(r=>r.json());
     if (data.error) throw new Error(data.error);
     closeModal('metricModal');
     await loadMetrics();
-    // 重新渲染進度頁
     const progressInner=document.getElementById('progressInner');
     if (progressInner) { progressInner.innerHTML='<div class="loading"><span class="spinner"></span>重新計算中</div>'; await renderProgressContent(); }
+    // ★ 恢復捲軸位置
+    window.scrollTo(0, scrollY);
   } catch(e){ alert('儲存失敗：'+e.message); }
   finally { btn.disabled=false; }
 }
 
 async function deleteMetric(id,name) {
   if (!confirm('確定刪除指標「'+name+'」？')) return;
+  // ★ 儲存捲軸位置
+  const scrollY=window.scrollY;
   await fetch('/api/bonus/metrics/'+id,{method:'DELETE'});
   await loadMetrics();
   const progressInner=document.getElementById('progressInner');
   if (progressInner) { progressInner.innerHTML='<div class="loading"><span class="spinner"></span>重新計算中</div>'; await renderProgressContent(); }
+  // ★ 恢復捲軸位置
+  window.scrollTo(0, scrollY);
 }
 
 // ══ 新增部門指標（從部門按鈕觸發，自動帶入部門+廠別）══
@@ -1102,26 +1109,8 @@ async function renderProgressContent() {
     var sortedFc=Object.keys(byFactory).sort(function(a,b){return (FC_ORDER.indexOf(a)<0?99:FC_ORDER.indexOf(a))-(FC_ORDER.indexOf(b)<0?99:FC_ORDER.indexOf(b));});
     if (!sortedFc.length){ el.innerHTML='<div class="empty">此廠別無人員資料</div>'; return; }
 
-    // 整體達成率摘要
+    // 直接進入廠別 → 部門 → 人員（達成率只顯示在各部門）
     var html='';
-    if (hasMetrics) {
-      var summaryItems='';
-      for (var si=0;si<allMetricIds.length;si++) {
-        var mId0=allMetricIds[si], meta0=metaById[mId0];
-        if (!meta0.useAuto&&meta0.actual===null) continue;
-        var isAmtS=meta0.metric.stat_field==='amount'||meta0.useAuto;
-        var fvS=(function(isAmt){return function(v){return v===null||v===undefined?'—':isAmt?Math.round(parseFloat(v)/1000).toLocaleString()+'K':Math.round(parseFloat(v)).toLocaleString();};})(isAmtS);
-        var rc0=meta0.autoRate===null?'#64748b':meta0.autoRate>=100?'#10b981':meta0.autoRate>=80?'#f59e0b':'#ef4444';
-        var bw0=meta0.autoRate!==null?Math.min(100,meta0.autoRate).toFixed(1):0;
-        summaryItems+='<div style="display:inline-flex;align-items:center;gap:8px;background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:8px 12px;margin:0 6px 6px 0">'
-          +'<span style="font-size:12px;font-weight:700;color:#e2e8f0">'+meta0.metric.metric_name+'</span>'
-          +(meta0.autoPT!==null?'<span style="font-size:11px;color:#64748b">目標 <strong style="color:#94a3b8">'+fvS(meta0.autoPT)+'</strong></span>':'')
-          +(meta0.actual!==null?'<span style="font-size:11px;color:#64748b">實際 <strong style="color:#10b981">'+fvS(meta0.actual)+'</strong></span>':'')
-          +(meta0.autoRate!==null?'<div style="display:flex;align-items:center;gap:4px"><div style="width:36px;background:#1e293b;border-radius:3px;height:5px"><div style="width:'+bw0+'%;height:5px;background:'+rc0+';border-radius:3px"></div></div><span style="font-size:13px;font-weight:900;color:'+rc0+'">'+meta0.autoRate.toFixed(1)+'%</span></div>':'')
-        +'</div>';
-      }
-      if (summaryItems) html+='<div style="margin-bottom:14px;padding:12px 16px;background:#1a2332;border:1px solid #2d3f56;border-radius:10px"><div style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:8px;letter-spacing:.04em">'+actLabel+' 整體達成率</div><div>'+summaryItems+'</div></div>';
-    }
 
     // 廠別 → 部門 → 人員
     for (var fi=0;fi<sortedFc.length;fi++) {
