@@ -34,6 +34,7 @@ const DEFAULT_RATES = {
 const DEFAULT_CONFIG = {
   utilization_rates:     DEFAULT_RATES,
   resigned_count_target: false,
+  hourly_rate:           2150,   // ← 每小時工資（元），用於 wage 回推工時
 };
 
 // ── 部門偵測：dept_name 含關鍵字 → dept type ──
@@ -50,26 +51,30 @@ const DEPT_LABELS = {
   beauty:   '美容部',
 };
 
-// 所有支援廠別（短名，與 staff_roster.factory 欄位值一致）
 const ALL_FACTORIES  = ['AMA', 'AMC', 'AMD', '聯合', '鈑烤'];
 const STD_BRANCHES   = new Set(['AMA', 'AMC', 'AMD']);
-const BEAUTY_FACTORY = '聯合';   // 美容 DMS → 聯合服務中心
-const AMAB_FACTORY   = '鈑烤';   // AMAB/AMAE/AMAP DMS → 鈑烤廠
+const BEAUTY_FACTORY = '聯合';
+const AMAB_FACTORY   = '鈑烤';
 const AMAB_NAMES     = ['AMAB', 'AMAE', 'AMAP'];
 
-// ── 折扣回推 SQL 表達式 ──
-// DMS 的 discount 欄位可能是小數（0.97）或百分比數值（97.xx）兩種格式
-// 統一處理：< 1 視為小數，>= 1 且 < 100 視為百分比數值
-const RESTORE_HOURS_EXPR = `
-  CASE
-    WHEN discount IS NOT NULL AND discount > 0 AND discount < 1
-      THEN standard_hours / discount
-    WHEN discount IS NOT NULL AND discount >= 1 AND discount < 100
-      THEN standard_hours / (discount / 100.0)
-    ELSE standard_hours
-  END
-`;
+// ── 用 wage 反推回推工時的 SQL 表達式（需帶入時薪）──
+// 邏輯：先把折扣還原得到「滿額工資」，再除以時薪得到工時
+//   discount < 1    → 小數格式（0.93）
+//   discount 1~100  → 百分比格式（93.xx）
+//   其餘（無折扣）  → 直接用 wage / hourly_rate
+function buildRestoreExpr(hourlyRate) {
+  return `
+    CASE
+      WHEN discount IS NOT NULL AND discount > 0 AND discount < 1
+        THEN (wage / NULLIF(discount, 0)) / ${hourlyRate}
+      WHEN discount IS NOT NULL AND discount >= 1 AND discount < 100
+        THEN (wage / NULLIF(discount / 100.0, 0)) / ${hourlyRate}
+      ELSE wage / ${hourlyRate}
+    END
+  `;
+}
 
+// 是否有折扣（用於查核 modal 標記）
 const WAS_DISCOUNTED_EXPR = `
   CASE
     WHEN (discount IS NOT NULL AND discount > 0 AND discount < 1)
@@ -92,6 +97,7 @@ async function getConfig() {
     const r = await pool.query(`SELECT value FROM app_settings WHERE key='tech_capacity_config'`);
     if (r.rows.length && r.rows[0].value) {
       const saved = JSON.parse(r.rows[0].value);
+      // 補上新欄位 hourly_rate 的預設值（舊版設定升級相容）
       return { ...DEFAULT_CONFIG, ...saved };
     }
   } catch(e) {}
@@ -145,6 +151,9 @@ router.get('/stats/tech-hours', async (req, res) => {
     const config              = await getConfig();
     const rates               = config.utilization_rates    || DEFAULT_RATES;
     const resignedCountTarget = config.resigned_count_target === true;
+    const hourlyRate          = parseFloat(config.hourly_rate) || 2150;
+
+    const RESTORE_HOURS_EXPR = buildRestoreExpr(hourlyRate);
 
     const rosterPeriodRes = await pool.query(
       `SELECT DISTINCT period FROM staff_roster ORDER BY period DESC LIMIT 1`
@@ -156,7 +165,7 @@ router.get('/stats/tech-hours', async (req, res) => {
       ? [branch]
       : ALL_FACTORIES;
 
-    // ── 預先抓美容 DMS 工時（美容技師-A/C/D，不限 branch）──
+    // ── 美容 DMS 工時（不限 branch）──
     const beautyDmsRes = await pool.query(
       `SELECT tech_name_clean,
               SUM(${RESTORE_HOURS_EXPR}) AS actual_hours
@@ -170,7 +179,7 @@ router.get('/stats/tech-hours', async (req, res) => {
       beautyDmsMap[r.tech_name_clean] = Math.round(parseFloat(r.actual_hours || 0) * 10) / 10;
     });
 
-    // ── 預先抓 AMAB/AMAE/AMAP DMS 工時（不限 branch）──
+    // ── AMAB/AMAE/AMAP DMS 工時（不限 branch）──
     const amabDmsRes = await pool.query(
       `SELECT tech_name_clean,
               SUM(${RESTORE_HOURS_EXPR}) AS actual_hours
@@ -262,9 +271,7 @@ router.get('/stats/tech-hours', async (req, res) => {
         deptTypeMap[dt].push(r);
       });
 
-      // 4. 實際工時（折扣回推）
-      //    標準廠別：只抓該 branch
-      //    聯合/鈑烤：不限 branch
+      // 4. 實際工時（工資反推，折扣還原）
       let actualRes;
       if (STD_BRANCHES.has(br)) {
         actualRes = await pool.query(
@@ -375,12 +382,17 @@ router.get('/stats/tech-hours', async (req, res) => {
       result[br] = branchResult;
     }
 
-    res.json({ branches: result, rosterPeriod, resigned_count_target: resignedCountTarget });
+    res.json({
+      branches:              result,
+      rosterPeriod,
+      resigned_count_target: resignedCountTarget,
+      hourly_rate:           hourlyRate,
+    });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
 // ══════════════════════════════════════════════
-// GET /api/stats/tech-hours-raw  — 折扣查核
+// GET /api/stats/tech-hours-raw  — 折扣查核明細
 // ══════════════════════════════════════════════
 router.get('/stats/tech-hours-raw', async (req, res) => {
   const { period, branch, emp_name } = req.query;
@@ -388,16 +400,21 @@ router.get('/stats/tech-hours-raw', async (req, res) => {
     return res.status(400).json({ error: 'period / emp_name 為必填' });
   }
   try {
+    const config     = await getConfig();
+    const hourlyRate = parseFloat(config.hourly_rate) || 2150;
+    const RESTORE_HOURS_EXPR = buildRestoreExpr(hourlyRate);
+
     const isBeautyDms = /美容/.test(emp_name);
     const isAmabDms   = AMAB_NAMES.includes(emp_name);
     let rawRes;
 
     if (isBeautyDms || isAmabDms) {
       rawRes = await pool.query(
-        `SELECT branch, dispatch_date, work_order, work_code, task_content, account_type, discount,
-                standard_hours AS original_hours,
-                ROUND((${RESTORE_HOURS_EXPR})::numeric, 4) AS restored_hours,
-                (${WAS_DISCOUNTED_EXPR}) AS was_discounted
+        `SELECT branch, dispatch_date, work_order, work_code, task_content, account_type,
+                discount, wage,
+                wage                                            AS original_hours_wage,
+                ROUND((${RESTORE_HOURS_EXPR})::numeric, 4)     AS restored_hours,
+                (${WAS_DISCOUNTED_EXPR})                       AS was_discounted
          FROM tech_performance
          WHERE period=$1 AND tech_name_clean=$2
          ORDER BY branch, dispatch_date, work_order`,
@@ -420,30 +437,38 @@ router.get('/stats/tech-hours-raw', async (req, res) => {
       if (!matchedNames.length) return res.json({ emp_name, matched_names: [], rows: [], summary: null });
 
       rawRes = await pool.query(
-        `SELECT dispatch_date, work_order, work_code, task_content, account_type, discount,
-                standard_hours AS original_hours,
-                ROUND((${RESTORE_HOURS_EXPR})::numeric, 4) AS restored_hours,
-                (${WAS_DISCOUNTED_EXPR}) AS was_discounted
+        `SELECT dispatch_date, work_order, work_code, task_content, account_type,
+                discount, wage,
+                wage                                            AS original_hours_wage,
+                ROUND((${RESTORE_HOURS_EXPR})::numeric, 4)     AS restored_hours,
+                (${WAS_DISCOUNTED_EXPR})                       AS was_discounted
          FROM tech_performance
          WHERE period=$1 AND tech_name_clean = ANY($2)
          ORDER BY dispatch_date, work_order`,
         [period, matchedNames]
       );
+
+      // 回填 matched_names
+      res._matchedNames = matchedNames;
     }
 
     const rows    = rawRes.rows;
-    const sumOrig = rows.reduce((s, r) => s + parseFloat(r.original_hours || 0), 0);
-    const sumRest = rows.reduce((s, r) => s + parseFloat(r.restored_hours  || 0), 0);
+    const sumWage = rows.reduce((s, r) => s + parseFloat(r.wage || 0), 0);
+    const sumRest = rows.reduce((s, r) => s + parseFloat(r.restored_hours || 0), 0);
+    const sumOrigH = sumWage / hourlyRate;   // 未折扣還原的「原始工資折算工時」
+
     res.json({
       emp_name,
-      matched_names: (isBeautyDms || isAmabDms) ? [emp_name] : [],
+      matched_names: (isBeautyDms || isAmabDms) ? [emp_name] : (res._matchedNames || []),
+      hourly_rate:   hourlyRate,
       rows,
       summary: {
         total_rows:         rows.length,
         discounted_rows:    rows.filter(r => r.was_discounted).length,
-        sum_original_hours: Math.round(sumOrig * 100) / 100,
-        sum_restored_hours: Math.round(sumRest * 100) / 100,
-        difference:         Math.round((sumRest - sumOrig) * 100) / 100,
+        sum_wage:           Math.round(sumWage),
+        sum_original_hours: Math.round(sumOrigH * 100) / 100,   // wage/hourly_rate（未還原）
+        sum_restored_hours: Math.round(sumRest * 100) / 100,    // 還原折扣後
+        difference:         Math.round((sumRest - sumOrigH) * 100) / 100,
       },
     });
   } catch(err) { res.status(500).json({ error: err.message }); }
@@ -453,10 +478,12 @@ router.get('/stats/tech-hours-raw', async (req, res) => {
 router.get('/tech-capacity-config/default', (req, res) => {
   res.json(JSON.parse(JSON.stringify(DEFAULT_CONFIG)));
 });
+
 router.get('/tech-capacity-config', async (req, res) => {
   try { res.json(await getConfig()); }
   catch(err) { res.status(500).json({ error: err.message }); }
 });
+
 router.put('/tech-capacity-config', async (req, res) => {
   try {
     await pool.query(
