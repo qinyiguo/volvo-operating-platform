@@ -50,10 +50,12 @@ const DEPT_LABELS = {
   beauty:   '美容部',
 };
 
-// 所有支援廠別
-const ALL_FACTORIES = ['AMA', 'AMC', 'AMD', '鈑烤', '聯合'];
-// 標準 DMS 廠別（business_query / working_days_config 用這些）
+// 所有支援廠別（需與 staff_roster.factory 欄位值完全一致）
+const ALL_FACTORIES = ['AMA', 'AMC', 'AMD', '聯合服務中心', '鈑烤廠'];
+// 標準 DMS 廠別（有 business_query / working_days_config 資料）
 const STD_BRANCHES  = new Set(['AMA', 'AMC', 'AMD']);
+// 美容部 DMS 補充只放在這個廠別下
+const BEAUTY_FACTORY = '鈑烤廠';
 
 function detectDeptType(deptName) {
   if (!deptName) return null;
@@ -280,53 +282,35 @@ router.get('/stats/tech-hours', async (req, res) => {
         };
       }
 
-      // 6. 美容部 DMS 補充
-      // 把 beautyDmsMap 中尚未被名冊匹配的「美容」名稱，加入 beauty dept
-      // 這些是無名冊對應的 DMS 彙總行（美容技師/外包等），不設目標
-      const beautyDmsEntries = Object.entries(beautyDmsMap)
-        .filter(([name]) => !matchedSet.has(name))
-        .map(([name, hours]) => ({
-          emp_name:        name,
-          job_title:       '（DMS 彙總）',
-          dept_name:       '美容部',
-          status:          '在職',
-          resign_date:     null,
-          utilization:     0,
-          target_hours:    0,
-          actual_hours:    hours,
-          achieve_rate:    null,
-          target_excluded: true,
-          is_dms_only:     true,
-        }))
-        .filter(e => e.actual_hours > 0);
+      // 6. 美容部 DMS 補充（只在鈑烤廠顯示）
+      // 把 beautyDmsMap 中尚未被名冊匹配的「美容」DMS 名稱，加入 beauty dept
+      if (br === BEAUTY_FACTORY) {
+        const beautyDmsEntries = Object.entries(beautyDmsMap)
+          .filter(([name]) => !matchedSet.has(name))
+          .map(([name, hours]) => ({
+            emp_name:        name,
+            job_title:       '（DMS 彙總）',
+            dept_name:       '美容部',
+            status:          '在職',
+            resign_date:     null,
+            utilization:     0,
+            target_hours:    0,
+            actual_hours:    hours,
+            achieve_rate:    null,
+            target_excluded: true,
+            is_dms_only:     true,
+          }))
+          .filter(e => e.actual_hours > 0);
 
-      if (beautyDmsEntries.length) {
-        if (!branchResult.dept_types['beauty']) {
-          branchResult.dept_types['beauty'] = { label: DEPT_LABELS['beauty'], techs: [] };
+        if (beautyDmsEntries.length) {
+          if (!branchResult.dept_types['beauty']) {
+            branchResult.dept_types['beauty'] = { label: DEPT_LABELS['beauty'], techs: [] };
+          }
+          branchResult.dept_types['beauty'].techs.push(...beautyDmsEntries);
         }
-        branchResult.dept_types['beauty'].techs.push(...beautyDmsEntries);
-        beautyDmsEntries.forEach(e => matchedSet.add(e.emp_name));
       }
 
-      // 美容 DMS 僅掛在第一個有資料的廠（避免每廠都重複顯示）
-      // 實作：用全域已消費 flag；簡單做法：只讓聯合顯示（若聯合無名冊則讓第一廠顯示）
-      // 這裡透過 beautyDmsEntries 已在各廠各自決定是否顯示（按 matchedSet 去重）
-
       result[br] = branchResult;
-    }
-
-    // ── 去重：美容 DMS 跨廠可能重複，只保留第一次出現
-    const beautyDmsSeenGlobal = new Set();
-    for (const br of BRANCHES) {
-      const beautyDept = result[br]?.dept_types?.['beauty'];
-      if (!beautyDept) continue;
-      beautyDept.techs = beautyDept.techs.filter(t => {
-        if (!t.is_dms_only) return true;
-        if (beautyDmsSeenGlobal.has(t.emp_name)) return false;
-        beautyDmsSeenGlobal.add(t.emp_name);
-        return true;
-      });
-      if (!beautyDept.techs.length) delete result[br].dept_types['beauty'];
     }
 
     res.json({ branches: result, rosterPeriod, resigned_count_target: resignedCountTarget });
