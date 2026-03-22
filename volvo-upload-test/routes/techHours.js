@@ -50,12 +50,15 @@ const DEPT_LABELS = {
   beauty:   '美容部',
 };
 
-// 所有支援廠別（需與 staff_roster.factory 欄位值完全一致）
-const ALL_FACTORIES = ['AMA', 'AMC', 'AMD', '聯合服務中心', '鈑烤廠'];
+// 所有支援廠別（短名，與 staff_roster.factory 欄位值一致）
+const ALL_FACTORIES  = ['AMA', 'AMC', 'AMD', '聯合', '鈑烤'];
 // 標準 DMS 廠別（有 business_query / working_days_config 資料）
-const STD_BRANCHES  = new Set(['AMA', 'AMC', 'AMD']);
-// 美容部 DMS 補充只放在這個廠別下
-const BEAUTY_FACTORY = '鈑烤廠';
+const STD_BRANCHES   = new Set(['AMA', 'AMC', 'AMD']);
+// 美容 DMS（美容技師-A/C/D 等）→ 聯合服務中心
+const BEAUTY_FACTORY = '聯合';
+// AMAB/AMAE/AMAP DMS → 鈑烤廠
+const AMAB_FACTORY   = '鈑烤';
+const AMAB_NAMES     = ['AMAB', 'AMAE', 'AMAP'];
 
 function detectDeptType(deptName) {
   if (!deptName) return null;
@@ -136,8 +139,7 @@ router.get('/stats/tech-hours', async (req, res) => {
       ? [branch]
       : ALL_FACTORIES;
 
-    // ── 預先跨廠抓美容部 DMS 工時
-    // tech_performance 中含「美容」的 tech_name_clean，不限 branch
+    // ── 預先抓美容 DMS 工時（美容技師-A/C/D 等，不限 branch）──
     const beautyDmsRes = await pool.query(
       `SELECT tech_name_clean,
               SUM(CASE WHEN discount IS NOT NULL AND discount > 0 AND discount < 1
@@ -152,6 +154,21 @@ router.get('/stats/tech-hours', async (req, res) => {
       beautyDmsMap[r.tech_name_clean] = Math.round(parseFloat(r.actual_hours || 0) * 10) / 10;
     });
 
+    // ── 預先抓 AMAB/AMAE/AMAP DMS 工時（不限 branch）──
+    const amabDmsRes = await pool.query(
+      `SELECT tech_name_clean,
+              SUM(CASE WHEN discount IS NOT NULL AND discount > 0 AND discount < 1
+                  THEN standard_hours / discount ELSE standard_hours END) AS actual_hours
+       FROM tech_performance
+       WHERE period=$1 AND tech_name_clean = ANY($2)
+       GROUP BY tech_name_clean`,
+      [period, AMAB_NAMES]
+    );
+    const amabDmsMap = {};
+    amabDmsRes.rows.forEach(r => {
+      amabDmsMap[r.tech_name_clean] = Math.round(parseFloat(r.actual_hours || 0) * 10) / 10;
+    });
+
     const result = {};
 
     for (const br of BRANCHES) {
@@ -164,7 +181,6 @@ router.get('/stats/tech-hours', async (req, res) => {
       if (wdRes.rows[0]?.work_dates?.length) {
         workingDays = wdRes.rows[0].work_dates.length;
       } else if (STD_BRANCHES.has(br)) {
-        // AMA/AMC/AMD：business_query 自動偵測
         const r2 = await pool.query(
           `SELECT COUNT(DISTINCT open_time::date) AS cnt
            FROM business_query WHERE period=$1 AND branch=$2 AND open_time IS NOT NULL`,
@@ -172,14 +188,14 @@ router.get('/stats/tech-hours', async (req, res) => {
         );
         workingDays = parseInt(r2.rows[0]?.cnt || 0);
       } else {
-        // 鈑烤/聯合：tech_performance dispatch_date 自動偵測
+        // 聯合/鈑烤：tech_performance dispatch_date 自動偵測
         const r2 = await pool.query(
           `SELECT COUNT(DISTINCT dispatch_date) AS cnt
            FROM tech_performance WHERE period=$1 AND branch=$2 AND dispatch_date IS NOT NULL`,
           [period, br]
         );
         workingDays = parseInt(r2.rows[0]?.cnt || 0);
-        // 若仍為 0（該廠無 tech_performance），嘗試全廠最大天數
+        // 仍為 0 → 用全廠最大天數
         if (!workingDays) {
           const r3 = await pool.query(
             `SELECT MAX(cnt) AS cnt FROM (
@@ -193,13 +209,8 @@ router.get('/stats/tech-hours', async (req, res) => {
         }
       }
 
-      // 2. 名冊查詢
+      // 2. 名冊查詢（factory 使用短名 '聯合'/'鈑烤'）
       const periodStart = `${period.slice(0,4)}-${period.slice(4,6)}-01`;
-      const activeFilter = `AND (
-        status = '在職' OR status = '留職停薪'
-        OR (status = '離職' AND resign_date IS NOT NULL AND resign_date >= $PERIOD_START::date)
-      )`;
-
       let rosterRows;
       if (STD_BRANCHES.has(br)) {
         const r2 = await pool.query(
@@ -238,16 +249,32 @@ router.get('/stats/tech-hours', async (req, res) => {
         deptTypeMap[dt].push(r);
       });
 
-      // 4. 實際工時（折扣回推）—— 從 tech_performance 抓該 branch
-      const actualRes = await pool.query(
-        `SELECT tech_name_clean,
-                SUM(CASE WHEN discount IS NOT NULL AND discount > 0 AND discount < 1
-                    THEN standard_hours / discount ELSE standard_hours END) AS actual_hours
-         FROM tech_performance
-         WHERE period=$1 AND branch=$2
-         GROUP BY tech_name_clean`,
-        [period, br]
-      );
+      // 4. 實際工時（折扣回推）
+      //    標準廠別：只抓該 branch
+      //    聯合/鈑烤：不限 branch（因 tech_performance 可能記在 AMA/AMC/AMD）
+      let actualRes;
+      if (STD_BRANCHES.has(br)) {
+        actualRes = await pool.query(
+          `SELECT tech_name_clean,
+                  SUM(CASE WHEN discount IS NOT NULL AND discount > 0 AND discount < 1
+                      THEN standard_hours / discount ELSE standard_hours END) AS actual_hours
+           FROM tech_performance
+           WHERE period=$1 AND branch=$2
+           GROUP BY tech_name_clean`,
+          [period, br]
+        );
+      } else {
+        // 聯合/鈑烤：全廠查，讓名冊技師能配對到任意 branch 的工時
+        actualRes = await pool.query(
+          `SELECT tech_name_clean,
+                  SUM(CASE WHEN discount IS NOT NULL AND discount > 0 AND discount < 1
+                      THEN standard_hours / discount ELSE standard_hours END) AS actual_hours
+           FROM tech_performance
+           WHERE period=$1
+           GROUP BY tech_name_clean`,
+          [period]
+        );
+      }
       const actualMap  = buildActualMap(actualRes.rows);
       const matchedSet = new Set();
 
@@ -282,8 +309,7 @@ router.get('/stats/tech-hours', async (req, res) => {
         };
       }
 
-      // 6. 美容部 DMS 補充（只在鈑烤廠顯示）
-      // 把 beautyDmsMap 中尚未被名冊匹配的「美容」DMS 名稱，加入 beauty dept
+      // 6. 美容 DMS 補充 → 聯合服務中心
       if (br === BEAUTY_FACTORY) {
         const beautyDmsEntries = Object.entries(beautyDmsMap)
           .filter(([name]) => !matchedSet.has(name))
@@ -310,6 +336,32 @@ router.get('/stats/tech-hours', async (req, res) => {
         }
       }
 
+      // 7. AMAB/AMAE/AMAP DMS 補充 → 鈑烤廠
+      if (br === AMAB_FACTORY) {
+        const amabEntries = Object.entries(amabDmsMap)
+          .map(([name, hours]) => ({
+            emp_name:        name,
+            job_title:       '（DMS 彙總）',
+            dept_name:       '鈑烤維修',
+            status:          '在職',
+            resign_date:     null,
+            utilization:     0,
+            target_hours:    0,
+            actual_hours:    hours,
+            achieve_rate:    null,
+            target_excluded: true,
+            is_dms_only:     true,
+          }))
+          .filter(e => e.actual_hours > 0);
+
+        if (amabEntries.length) {
+          if (!branchResult.dept_types['bodywork']) {
+            branchResult.dept_types['bodywork'] = { label: DEPT_LABELS['bodywork'], techs: [] };
+          }
+          branchResult.dept_types['bodywork'].techs.push(...amabEntries);
+        }
+      }
+
       result[br] = branchResult;
     }
 
@@ -327,10 +379,11 @@ router.get('/stats/tech-hours-raw', async (req, res) => {
   }
   try {
     const isBeautyDms = /美容/.test(emp_name);
+    const isAmabDms   = AMAB_NAMES.includes(emp_name);
     let rawRes;
 
-    if (isBeautyDms) {
-      // 美容 DMS：跨廠查詢
+    if (isBeautyDms || isAmabDms) {
+      // DMS 彙總名稱：跨廠查詢
       rawRes = await pool.query(
         `SELECT branch, dispatch_date, work_order, work_code, task_content, account_type, discount,
                 standard_hours AS original_hours,
@@ -345,10 +398,10 @@ router.get('/stats/tech-hours-raw', async (req, res) => {
         [period, emp_name]
       );
     } else {
-      if (!branch) return res.status(400).json({ error: 'branch 為必填（非美容技師）' });
+      if (!branch) return res.status(400).json({ error: 'branch 為必填（非 DMS 彙總技師）' });
       const allRes = await pool.query(
-        `SELECT DISTINCT tech_name_clean FROM tech_performance WHERE period=$1 AND branch=$2`,
-        [period, branch]
+        `SELECT DISTINCT tech_name_clean FROM tech_performance WHERE period=$1`,
+        [period]
       );
       const matchedNames = allRes.rows
         .map(r => r.tech_name_clean)
@@ -369,9 +422,9 @@ router.get('/stats/tech-hours-raw', async (req, res) => {
                 CASE WHEN discount IS NOT NULL AND discount > 0 AND discount < 1
                      THEN true ELSE false END AS was_discounted
          FROM tech_performance
-         WHERE period=$1 AND branch=$2 AND tech_name_clean = ANY($3)
+         WHERE period=$1 AND tech_name_clean = ANY($2)
          ORDER BY dispatch_date, work_order`,
-        [period, branch, matchedNames]
+        [period, matchedNames]
       );
     }
 
@@ -380,7 +433,7 @@ router.get('/stats/tech-hours-raw', async (req, res) => {
     const sumRest = rows.reduce((s, r) => s + parseFloat(r.restored_hours  || 0), 0);
     res.json({
       emp_name,
-      matched_names: isBeautyDms ? [emp_name] : [],
+      matched_names: (isBeautyDms || isAmabDms) ? [emp_name] : [],
       rows,
       summary: {
         total_rows:         rows.length,
