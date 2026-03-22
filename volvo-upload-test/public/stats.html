@@ -303,7 +303,7 @@
               <th class="num">台數</th>
               <th class="num">總營收 (K)</th>
               <th class="num" style="color:#10b981">單車銷售額 (元)</th>
-              <th style="min-width:140px">佔比</th>
+              <th style="min-width:140px" title="該類型總營收 ÷ 該廠有費營收">佔比（÷有費營收）</th>
             </tr>
           </thead>
           <tbody id="tbTech"><tr><td colspan="7" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
@@ -1030,7 +1030,6 @@ async function loadRevenuePerVehicle(period, branch) {
     }
 
     const branches = [...new Set(rows.map(r => r.branch))].sort();
-    const maxAvg   = Math.max(...rows.map(r => parseFloat(r.revenue_per_vehicle||0)), 1);
     let tbHtml = '';
 
     branches.forEach(br => {
@@ -1040,13 +1039,19 @@ async function loadRevenuePerVehicle(period, branch) {
       const brRevenue  = brRows.reduce((s,r) => s + parseFloat(r.total_revenue||0), 0);
       const brAvg      = brVehicles > 0 ? Math.round(brRevenue / brVehicles) : 0;
 
+      // 有費營收 = 一般(含保養/維修/自費鈑烤) + 延保 + 保險 的總營收加總
+      const PAID_CATS  = new Set(['保養','維修','自費鈑烤','延保','保險']);
+      const brPaidRev  = brRows
+        .filter(r => PAID_CATS.has(r.repair_category))
+        .reduce((s,r) => s + parseFloat(r.total_revenue||0), 0);
+
       tbHtml += `
         <tr style="background:${col}18">
           <td colspan="7" style="padding:10px 12px;border-bottom:1px solid ${col}33">
             <span style="font-size:13px;font-weight:800;color:${col}">${br}</span>
             <span style="font-size:12px;color:#64748b;margin-left:10px">
               總台數 <strong style="color:#e2e8f0">${brVehicles.toLocaleString()}</strong> 台 ｜
-              總營收 <strong style="color:#10b981">${fmtK(brRevenue)}</strong> ｜
+              有費營收 <strong style="color:#10b981">${fmtK(brPaidRev)}</strong> ｜
               均單車 <strong style="color:#f97316">${fmt(brAvg)}</strong> 元
             </span>
           </td>
@@ -1055,7 +1060,9 @@ async function loadRevenuePerVehicle(period, branch) {
       brRows.forEach(r => {
         const catCol   = RPV_CAT_COLORS[r.repair_category] || '#94a3b8';
         const catBadge = RPV_CAT_BADGE[r.repair_category]  || 'badge-gray';
-        const barW     = maxAvg > 0 ? (parseFloat(r.revenue_per_vehicle) / maxAvg * 100).toFixed(1) : 0;
+        // 佔比 = 該類型總營收 ÷ 該廠有費營收
+        const revShare = brPaidRev > 0 ? (parseFloat(r.total_revenue||0) / brPaidRev * 100) : 0;
+        const barW     = revShare.toFixed(1);
         const mainCatColor = r.main_category === '一般' ? '#3b82f6'
                            : r.main_category === '延保' ? '#f59e0b' : '#f97316';
         tbHtml += `
@@ -1068,7 +1075,7 @@ async function loadRevenuePerVehicle(period, branch) {
             <td class="num" style="font-weight:800;color:${catCol}">${fmt(r.revenue_per_vehicle)}</td>
             <td>
               <div class="bar-wrap">
-                <div class="bar-bg"><div class="bar-fill" style="width:${barW}%;background:${catCol}"></div></div>
+                <div class="bar-bg"><div class="bar-fill" style="width:${Math.min(100,parseFloat(barW))}%;background:${catCol}"></div></div>
                 <span style="font-size:11px;color:#64748b;white-space:nowrap">${barW}%</span>
               </div>
             </td>
