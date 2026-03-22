@@ -22,6 +22,7 @@ app.use('/api', require('./routes/stats'));
 app.use('/api', require('./routes/auth'));
 app.use('/api', require('./routes/bonus'));
 app.use('/api', require('./routes/techHours'));
+app.use('/api', require('./routes/personTargets'));
 
 // ── 啟動 ──
 initDatabase()
