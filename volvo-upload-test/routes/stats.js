@@ -554,15 +554,19 @@ router.get('/stats/wip', async (req, res) => {
     const rows = r.rows;
     const byRepairType = {};
     const byPeriod     = {};
-    let total   = { count: 0, wage: 0, sales: 0, cost: 0, c30: 0, cOver30: 0 };
-    let exclPdi = { count: 0, wage: 0, sales: 0, cost: 0, c30: 0, cOver30: 0 };
+    const byBranch     = {};
+    const ZERO = () => ({ count: 0, wage: 0, mat: 0, sales: 0, c30: 0, cOver30: 0,
+                           wage30: 0, mat30: 0, sales30: 0 });
+    let total   = ZERO();
+    let exclPdi = ZERO();
 
     for (const row of rows) {
       const rt      = row.repair_type || '（未知）';
       const per     = row.open_period || '（未知）';
-      const w       = parseFloat(row.wage      || 0);
-      const s       = parseFloat(row.sales_amt || 0);
-      const c       = parseFloat(row.cost_amt  || 0);
+      const br      = row.branch      || '（未知）';
+      const w       = parseFloat(row.wage           || 0);  // labor_fee
+      const m       = parseFloat(row.cost_amt       || 0);  // repair_material_fee
+      const s       = parseFloat(row.sales_amt      || 0);  // repair_amount
       const days    = row.days_open !== null ? parseFloat(row.days_open) : null;
       const isOver30 = days !== null && days > 30;
       const isPdi   = /PDI/i.test(row.repair_type || '') || /PDI/i.test(row.repair_item || '');
@@ -570,15 +574,26 @@ router.get('/stats/wip', async (req, res) => {
       const inc = (obj) => {
         obj.count++;
         obj.wage  += w;
+        obj.mat   += m;
         obj.sales += s;
-        obj.cost  += c;
-        if (days !== null) { if (isOver30) obj.cOver30++; else obj.c30++; }
+        if (days !== null) {
+          if (isOver30) {
+            obj.cOver30++;
+          } else {
+            obj.c30++;
+            obj.wage30  += w;
+            obj.mat30   += m;
+            obj.sales30 += s;
+          }
+        }
       };
 
-      if (!byRepairType[rt]) byRepairType[rt] = { label: rt, count: 0, wage: 0, sales: 0, cost: 0, c30: 0, cOver30: 0 };
+      if (!byRepairType[rt]) byRepairType[rt] = { label: rt, ...ZERO() };
       inc(byRepairType[rt]);
-      if (!byPeriod[per]) byPeriod[per] = { label: per, count: 0, wage: 0, sales: 0, cost: 0, c30: 0, cOver30: 0 };
+      if (!byPeriod[per]) byPeriod[per] = { label: per, ...ZERO() };
       inc(byPeriod[per]);
+      if (!byBranch[br]) byBranch[br] = { label: br, ...ZERO() };
+      inc(byBranch[br]);
       inc(total);
       if (!isPdi) inc(exclPdi);
       row.is_pdi = isPdi;
@@ -590,6 +605,7 @@ router.get('/stats/wip', async (req, res) => {
         total, exclPdi,
         byAccountType: Object.values(byPeriod).sort((a,b) => a.label < b.label ? -1 : 1),
         byRepairType:  Object.values(byRepairType).sort((a,b) => b.count - a.count),
+        byBranch:      Object.values(byBranch).sort((a,b) => a.label < b.label ? -1 : 1),
       },
     });
   } catch (err) { res.status(500).json({ error: err.message }); }
