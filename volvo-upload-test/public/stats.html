@@ -1645,9 +1645,20 @@ async function loadTechHours(period, branch) {
 
     contentEl.innerHTML = html;
   } catch(e) {
-    if (document.getElementById('techHoursKPI'))     document.getElementById('techHoursKPI').innerHTML = '';
+    if (document.getElementById('techHoursKPI')) document.getElementById('techHoursKPI').innerHTML = '';
+    const isBadGw = e.message.includes('Bad Gateway') || e.message.includes('not valid JSON');
     if (document.getElementById('techHoursContent')) document.getElementById('techHoursContent').innerHTML =
-      `<div style="color:#ef4444;padding:16px">${e.message}</div>`;
+      `<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:20px 24px;margin-top:8px">
+        <div style="font-size:14px;font-weight:700;color:#ef4444;margin-bottom:8px">${isBadGw ? '⚠️ 伺服器暫時無法回應（502 Bad Gateway）' : '❌ 載入失敗'}</div>
+        <div style="font-size:13px;color:#94a3b8;line-height:1.8">${isBadGw
+          ? '請至 <strong style="color:#e2e8f0">Zeabur 控制台</strong> 確認服務是否正在運行，若已停止請重新啟動後再重新整理頁面。'
+          : e.message}
+        </div>
+        <button onclick="loadTechHours(getPeriod(), document.getElementById('selBranch').value)"
+          style="margin-top:12px;padding:7px 16px;background:#3b82f6;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">
+          🔄 重試
+        </button>
+      </div>`;
   }
 }
 
