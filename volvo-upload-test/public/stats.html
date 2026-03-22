@@ -1046,6 +1046,167 @@ function exportWipModalCSV(){
   const a=document.createElement('a');a.href=url;a.download=`wip_detail_${Date.now()}.csv`;a.click();URL.revokeObjectURL(url);
 }
 
+ // ══ 技師工時 ══
+const DT_COLORS_TH = { engine:'#8b5cf6', bodywork:'#f97316', paint:'#06b6d4' };
+const DT_ICONS_TH  = { engine:'🔧', bodywork:'🔨', paint:'🎨' };
+const DT_LABELS_TH = { engine:'引擎維護科', bodywork:'鈑金科', paint:'烤漆科' };
+const DT_ORDER_TH  = ['engine','bodywork','paint'];
+const FC_COLORS_TH = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b' };
+
+function pctColorTH(v) {
+  if (v === null) return '#64748b';
+  return v >= 100 ? '#10b981' : v >= 80 ? '#f59e0b' : '#ef4444';
+}
+
+async function loadTechHours(period, branch) {
+  const kpiEl     = document.getElementById('techHoursKPI');
+  const contentEl = document.getElementById('techHoursContent');
+  if (!kpiEl || !contentEl) return;
+  if (!period) { contentEl.innerHTML = '<div class="empty">請選擇期間後按查詢</div>'; return; }
+
+  try {
+    const params = new URLSearchParams({ period });
+    if (branch) params.set('branch', branch);
+    const data = await fetch(`/api/stats/tech-hours?${params}`).then(r => r.json());
+    if (data.error) throw new Error(data.error);
+
+    const branches = Object.keys(data.branches || {}).sort((a,b) =>
+      ['AMA','AMD','AMC'].indexOf(a) - ['AMA','AMD','AMC'].indexOf(b)
+    );
+
+    if (!branches.length) {
+      kpiEl.innerHTML = '';
+      contentEl.innerHTML = '<div class="empty">此期間無技師工時資料，請確認已上傳人員名冊</div>';
+      return;
+    }
+
+    // ── KPI 卡片 ──
+    let kpiHtml = '';
+    let gtTgt = 0, gtAct = 0, gtPpl = 0;
+    branches.forEach(br => {
+      const bd  = data.branches[br];
+      const col = FC_COLORS_TH[br] || '#94a3b8';
+      let brTgt = 0, brAct = 0, brPpl = 0;
+      DT_ORDER_TH.forEach(dt => {
+        const dtd = bd.dept_types?.[dt];
+        if (!dtd) return;
+        dtd.techs.forEach(t => { brTgt += t.target_hours; brAct += t.actual_hours; brPpl++; });
+      });
+      const brPct = brTgt > 0 ? brAct / brTgt * 100 : null;
+      gtTgt += brTgt; gtAct += brAct; gtPpl += brPpl;
+      kpiHtml += `<div class="kpi-card"><div class="kpi-label" style="color:${col}">${br} 達成率</div>
+        <div class="kpi-value" style="color:${pctColorTH(brPct)}">${brPct !== null ? brPct.toFixed(1)+'%' : '—'}</div>
+        <div class="kpi-sub">${brAct.toFixed(0)} / ${brTgt.toFixed(0)} H · ${brPpl} 人</div></div>`;
+    });
+    const gtPct = gtTgt > 0 ? gtAct / gtTgt * 100 : null;
+    kpiHtml = `<div class="kpi-card"><div class="kpi-label">⏱️ 整體達成率</div>
+      <div class="kpi-value" style="color:${pctColorTH(gtPct)}">${gtPct !== null ? gtPct.toFixed(1)+'%' : '—'}</div>
+      <div class="kpi-sub">${gtPpl} 人 · ${gtAct.toFixed(0)}/${gtTgt.toFixed(0)} H</div></div>` + kpiHtml;
+    kpiEl.innerHTML = kpiHtml;
+
+    // ── 各廠卡片 ──
+    const rosterLabel = data.rosterPeriod
+      ? `名冊：${data.rosterPeriod.slice(0,4)}年${parseInt(data.rosterPeriod.slice(4))}月`
+      : '名冊：最新';
+    let html = '';
+
+    branches.forEach(br => {
+      const bd  = data.branches[br];
+      const wd  = bd.working_days;
+      const col = FC_COLORS_TH[br] || '#94a3b8';
+      const dts = DT_ORDER_TH.filter(dt => bd.dept_types?.[dt]);
+
+      let fcTgt = 0, fcAct = 0, fcPpl = 0;
+      dts.forEach(dt => { bd.dept_types[dt].techs.forEach(t => { fcTgt += t.target_hours; fcAct += t.actual_hours; fcPpl++; }); });
+      const fcPct = fcTgt > 0 ? fcAct / fcTgt * 100 : null;
+
+      html += `<div class="card" style="border-left:3px solid ${col}">
+        <div class="card-title" style="color:${col}">
+          ${br}
+          <span style="font-size:12px;font-weight:400;color:#64748b;margin-left:4px">工作天 ${wd} 天 · ${fcPpl} 人</span>
+          <span style="font-size:11px;color:#475569;margin-left:auto">${rosterLabel}</span>
+          <span style="font-size:15px;font-weight:800;margin-left:12px;color:${pctColorTH(fcPct)}">${fcPct !== null ? fcPct.toFixed(1)+'%' : '—'}</span>
+        </div>`;
+
+      dts.forEach(dt => {
+        const dtd   = bd.dept_types[dt];
+        const techs = dtd.techs;
+        const dtCol = DT_COLORS_TH[dt] || '#94a3b8';
+        const dtTgt = techs.reduce((s,t) => s + t.target_hours, 0);
+        const dtAct = techs.reduce((s,t) => s + t.actual_hours, 0);
+        const dtPct = dtTgt > 0 ? dtAct / dtTgt * 100 : null;
+
+        html += `<div style="margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:6px 0;border-bottom:1px solid #2d3f56">
+            <span>${DT_ICONS_TH[dt]}</span>
+            <span style="font-size:12px;font-weight:700;color:${dtCol}">${DT_LABELS_TH[dt] || dt}</span>
+            <span style="font-size:11px;color:#475569">${techs.length} 人</span>
+            <span style="margin-left:auto;font-size:12px;color:#64748b">
+              目標 <strong style="color:#94a3b8">${dtTgt.toFixed(1)} H</strong>　
+              實績 <strong style="color:${pctColorTH(dtPct)}">${dtAct.toFixed(1)} H</strong>
+            </span>
+            <span style="font-size:14px;font-weight:800;color:${pctColorTH(dtPct)};min-width:52px;text-align:right">${dtPct !== null ? dtPct.toFixed(1)+'%' : '—'}</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>姓名</th><th>職務</th>
+                <th class="num">產能利用率</th>
+                <th class="num">月工時目標 (H)</th>
+                <th class="num">實績工時 (H)</th>
+                <th style="min-width:140px">達成率</th>
+              </tr></thead>
+              <tbody>
+                ${techs.map(t => {
+                  const pct  = t.achieve_rate;
+                  const clr  = pctColorTH(pct);
+                  const fillW = pct !== null ? Math.min(100, pct).toFixed(1) : 0;
+                  const isZero = t.actual_hours === 0;
+                  return `<tr ${isZero ? 'style="opacity:.55"' : ''}>
+                    <td style="font-weight:700">${t.emp_name}</td>
+                    <td><span class="badge badge-gray" style="font-size:11px">${t.job_title}</span></td>
+                    <td class="num"><span style="color:${dtCol};font-weight:700">${Math.round(t.utilization*100)}%</span></td>
+                    <td class="num" style="color:#94a3b8">${t.target_hours.toFixed(1)}</td>
+                    <td class="num" style="color:${pct !== null ? clr : '#475569'};font-weight:${isZero ? '400' : '700'}">${t.actual_hours.toFixed(1)}</td>
+                    <td>
+                      ${pct !== null ? `<div style="display:flex;align-items:center;gap:8px">
+                        <div style="flex:1;background:#0f172a;border-radius:3px;height:5px;min-width:40px">
+                          <div style="width:${fillW}%;height:5px;border-radius:3px;background:${clr}"></div>
+                        </div>
+                        <span style="font-size:12px;font-weight:800;color:${clr};min-width:44px;text-align:right">${pct.toFixed(1)}%</span>
+                      </div>` : '<span style="color:#334155;font-size:11px">—</span>'}
+                    </td>
+                  </tr>`;
+                }).join('')}
+                <tr class="subtotal-row">
+                  <td colspan="3" style="color:${dtCol}">小計（${techs.length} 人）</td>
+                  <td class="num">${dtTgt.toFixed(1)}</td>
+                  <td class="num" style="color:${pctColorTH(dtPct)}">${dtAct.toFixed(1)}</td>
+                  <td style="color:${pctColorTH(dtPct)};font-weight:800">${dtPct !== null ? dtPct.toFixed(1)+'%' : '—'}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+      });
+
+      if (!dts.length) {
+        html += `<div style="padding:24px;text-align:center;color:#64748b;font-size:13px">
+          此廠無符合條件的技師部門（需部門名稱含「引擎」「鈑金」「烤漆」）
+        </div>`;
+      }
+
+      html += `</div>`;
+    });
+
+    contentEl.innerHTML = html;
+  } catch(e) {
+    if (document.getElementById('techHoursKPI'))     document.getElementById('techHoursKPI').innerHTML = '';
+    if (document.getElementById('techHoursContent')) document.getElementById('techHoursContent').innerHTML =
+      `<div style="color:#ef4444;padding:16px">${e.message}</div>`;
+  }
+}
+
 (async()=>{ await loadPeriods(); await loadAll(); })();
 </script>
 </body>
