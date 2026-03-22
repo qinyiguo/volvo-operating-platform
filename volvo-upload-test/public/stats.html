@@ -1758,7 +1758,44 @@ async function loadPersonPerfDashboard() {
       // 三個科別
       const raw維修 = roster.filter(p => p.dept_name?.includes('維修服務') && p.status !== '離職');
       const raw客服 = roster.filter(p => p.dept_name?.includes('客戶服務') && p.status !== '離職');
-      const raw承保 = roster.filter(p => p.dept_name?.includes('承保理賠') && p.status !== '離職');
+      let   raw承保 = roster.filter(p => p.dept_name?.includes('承保理賠') && p.status !== '離職');
+
+      // ── AMA 特殊：把鈑烤廠的承保理賠科員工也納入 ──
+      if (br === 'AMA') {
+        try {
+          // 策略1：不帶 factory 取全部（若後端支援）
+          let extraClaims = [];
+          const allRoster = await fetch(`/api/bonus/roster?period=${rosterPeriod}`)
+            .then(r => r.ok ? r.json() : null).catch(() => null);
+
+          if (Array.isArray(allRoster) && allRoster.length) {
+            // API 回傳全部：找非主要廠別的承保理賠員工
+            extraClaims = allRoster.filter(p =>
+              !['AMA','AMC','AMD'].includes(p.factory) &&
+              p.dept_name?.includes('承保理賠') &&
+              p.status !== '離職'
+            );
+          } else {
+            // 策略2：逐一嘗試常見的鈑烤廠代碼
+            const candidates = ['鈑烤廠','鈑烤','AMB','AMA-B','AMAB','AMA鈑烤'];
+            for (const fc of candidates) {
+              const r = await fetch(`/api/bonus/roster?period=${rosterPeriod}&factory=${encodeURIComponent(fc)}`)
+                .then(r => r.ok ? r.json() : []).catch(() => []);
+              const found = r.filter(p => p.dept_name?.includes('承保理賠') && p.status !== '離職');
+              if (found.length) { extraClaims = found; break; }
+            }
+          }
+
+          if (extraClaims.length) {
+            const existing = new Set(raw承保.map(p => p.emp_name));
+            const newPeople = extraClaims.filter(p => !existing.has(p.emp_name));
+            if (newPeople.length) {
+              raw承保 = [...raw承保, ...newPeople];
+              console.log(`[pp] AMA claims: merged ${newPeople.length} from 鈑烤廠`, newPeople.map(p=>p.emp_name));
+            }
+          }
+        } catch(e) { console.warn('[pp] extra claims fetch failed', e); }
+      }
 
       if (!raw維修.length && !raw客服.length && !raw承保.length) return;
 
