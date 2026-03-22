@@ -26,13 +26,14 @@ const DEFAULT_RATES = {
   },
 };
 
-const DEPT_PATTERNS = {
-  engine:   ['引擎'],
-  bodywork: ['鈑金'],
-  paint:    ['烤漆', '噴漆'],
+const DEFAULT_CONFIG = {
+  utilization_rates:    DEFAULT_RATES,
+  resigned_count_target: false,
+  manual_extra_hours: { AMA: [], AMC: [], AMD: [] },
 };
 
-const DEPT_LABELS = { engine:'引擎維護', bodywork:'鈑金', paint:'烤漆' };
+const DEPT_PATTERNS = { engine: ['引擎'], bodywork: ['鈑金'], paint: ['烤漆', '噴漆'] };
+const DEPT_LABELS   = { engine: '引擎維護', bodywork: '鈑金', paint: '烤漆' };
 
 function detectDeptType(deptName) {
   for (const [type, patterns] of Object.entries(DEPT_PATTERNS)) {
@@ -44,57 +45,57 @@ function detectDeptType(deptName) {
 async function getConfig() {
   try {
     const r = await pool.query(`SELECT value FROM app_settings WHERE key='tech_capacity_config'`);
-    if (r.rows.length && r.rows[0].value) return JSON.parse(r.rows[0].value);
+    if (r.rows.length && r.rows[0].value) {
+      const saved = JSON.parse(r.rows[0].value);
+      return {
+        ...DEFAULT_CONFIG,
+        ...saved,
+        manual_extra_hours: {
+          AMA: [], AMC: [], AMD: [],
+          ...(saved.manual_extra_hours || {}),
+        },
+      };
+    }
   } catch(e) {}
-  return { utilization_rates: DEFAULT_RATES };
+  return JSON.parse(JSON.stringify(DEFAULT_CONFIG));
 }
 
-// ══════════════════════════════════════════════
-// 姓名模糊比對：tech_name_clean 可能是「吳開健-KCW」「林新祐/張○○」等
-// 名冊的 emp_name 是「吳開健」「林新祐」
-// 規則：取 tech_name_clean 以「-/、,，空格」分割後的第一段，
-//        若 emp_name 與任一段完全相符 → 匹配
-// ══════════════════════════════════════════════
+// ── 姓名模糊比對 ──
 function splitTechName(rawName) {
   if (!rawName) return [];
-  return rawName
-    .split(/[-\/、,，\s]+/)
-    .map(s => s.trim())
-    .filter(Boolean);
+  return rawName.split(/[-\/、,，\s]+/).map(s => s.trim()).filter(Boolean);
 }
 
 function buildActualMap(rows) {
-  // key: 每個分割後的名字片段 → 累加工時
-  // 同時也保留原始 key
   const map = {};
   rows.forEach(r => {
-    const name = (r.tech_name_clean || '').trim();
+    const name  = (r.tech_name_clean || '').trim();
     const hours = parseFloat(r.actual_hours || 0);
     if (!name) return;
-    // 原始 key
-    map[name] = (map[name] || 0) + hours;
-    // 分割後各片段
+    if (!map[name]) map[name] = { hours: 0, rawName: name };
+    map[name].hours += hours;
     splitTechName(name).forEach(seg => {
       if (seg && seg !== name) {
-        map[seg] = (map[seg] || 0) + hours;
+        if (!map[seg]) map[seg] = { hours: 0, rawName: name };
+        map[seg].hours += hours;
       }
     });
   });
   return map;
 }
 
-function findActualHours(empName, actualMap) {
+function findActualHours(empName, actualMap, matchedSet) {
   if (!empName) return 0;
   const name = empName.trim();
-  // 1. 精確匹配
-  if (actualMap[name] !== undefined) return actualMap[name];
-  // 2. actualMap 的 key 包含 empName（如 key="吳開健-KCW" ⊇ empName="吳開健"）
-  for (const [key, val] of Object.entries(actualMap)) {
-    if (key.includes(name)) return val;
+  if (actualMap[name] !== undefined) {
+    matchedSet.add(actualMap[name].rawName);
+    return actualMap[name].hours;
   }
-  // 3. empName 包含某個 key（反向）
   for (const [key, val] of Object.entries(actualMap)) {
-    if (key.length >= 2 && name.includes(key)) return val;
+    if (key.includes(name)) { matchedSet.add(val.rawName); return val.hours; }
+  }
+  for (const [key, val] of Object.entries(actualMap)) {
+    if (key.length >= 2 && name.includes(key)) { matchedSet.add(val.rawName); return val.hours; }
   }
   return 0;
 }
@@ -107,10 +108,11 @@ router.get('/stats/tech-hours', async (req, res) => {
   if (!period) return res.status(400).json({ error: 'period 為必填' });
 
   try {
-    const config = await getConfig();
-    const rates  = config.utilization_rates || DEFAULT_RATES;
+    const config              = await getConfig();
+    const rates               = config.utilization_rates    || DEFAULT_RATES;
+    const resignedCountTarget = config.resigned_count_target === true; // 預設 false
+    const manualExtraHours    = config.manual_extra_hours   || { AMA: [], AMC: [], AMD: [] };
 
-    // 最新名冊期間
     const rosterPeriodRes = await pool.query(
       `SELECT DISTINCT period FROM staff_roster ORDER BY period DESC LIMIT 1`
     );
@@ -140,9 +142,7 @@ router.get('/stats/tech-hours', async (req, res) => {
         workingDays = parseInt(autoWd.rows[0]?.cnt || 0);
       }
 
-      // 2. 技師名單（依部門名稱判斷類型）
-      //    納入條件：在職 OR 留職停薪 OR 當月離職（resign_date >= 該月1日）
-      //    這樣 3月中離職的技師，3月報表仍會顯示其目標與實績
+      // 2. 技師名單：在職 + 留停 + 當月離職
       const periodStart = `${period.slice(0,4)}-${period.slice(4,6)}-01`;
       const rosterRes = await pool.query(
         `SELECT emp_id, emp_name, job_title, dept_code, dept_name, factory,
@@ -154,19 +154,13 @@ router.get('/stats/tech-hours', async (req, res) => {
            AND (
              status = '在職'
              OR status = '留職停薪'
-             OR (
-               status = '離職'
-               AND resign_date IS NOT NULL
-               AND resign_date >= $4::date
-             )
+             OR (status = '離職' AND resign_date IS NOT NULL AND resign_date >= $4::date)
            )
          ORDER BY dept_code,
-           CASE status WHEN '在職' THEN 0 WHEN '留職停薪' THEN 1 ELSE 2 END,
-           emp_id`,
+           CASE status WHEN '在職' THEN 0 WHEN '留職停薪' THEN 1 ELSE 2 END, emp_id`,
         [rosterPeriod, br, `%${br}%`, periodStart]
       );
 
-      // 按 deptType 分組
       const deptTypeMap = {};
       rosterRes.rows.forEach(r => {
         const dt = detectDeptType(r.dept_name);
@@ -175,19 +169,29 @@ router.get('/stats/tech-hours', async (req, res) => {
         deptTypeMap[dt].push(r);
       });
 
-      // 3. 實際工時 — 從 tech_performance.standard_hours 抓，依 branch + period
-      //    tech_name_clean 可能含後綴（-KCW 等），用 buildActualMap 處理
+      // 3. 實際工時（折扣回推：discount 欄位 0<d<1 時代表工時被打折，回推100%工時）
+      //    原始工時 = standard_hours / discount（當 discount 介於 0~1 時）
+      //    其餘情況（discount=0 或 null 或 ≥1）直接使用 standard_hours
       const actualRes = await pool.query(
         `SELECT tech_name_clean,
-                SUM(standard_hours) AS actual_hours
+                SUM(
+                  CASE
+                    WHEN discount IS NOT NULL
+                     AND discount > 0
+                     AND discount < 1
+                    THEN standard_hours / discount
+                    ELSE standard_hours
+                  END
+                ) AS actual_hours
          FROM tech_performance
          WHERE period=$1 AND branch=$2
          GROUP BY tech_name_clean`,
         [period, br]
       );
-      const actualMap = buildActualMap(actualRes.rows);
+      const actualMap  = buildActualMap(actualRes.rows);
+      const matchedSet = new Set();
 
-      // 4. 組合結果
+      // 4. 組合名冊技師
       const branchResult = { working_days: workingDays, dept_types: {} };
 
       for (const [deptType, techs] of Object.entries(deptTypeMap)) {
@@ -195,41 +199,57 @@ router.get('/stats/tech-hours', async (req, res) => {
         branchResult.dept_types[deptType] = {
           label: DEPT_LABELS[deptType] || deptType,
           techs: techs.map(t => {
-            const rate = typeRates[t.job_title] !== undefined
+            const rate       = typeRates[t.job_title] !== undefined
               ? typeRates[t.job_title] : (typeRates.default ?? 1.0);
-            const targetHours = Math.round(workingDays * 8 * rate * 10) / 10;
-            const actualHours = findActualHours(t.emp_name, actualMap);
-            const achieveRate = targetHours > 0
+            const isResigned = t.status === '離職';
+            // 離職技師：若設定「不列入目標」→ effectiveRate = 0（目標為0，但實績照算）
+            const effectiveRate = (isResigned && !resignedCountTarget) ? 0 : rate;
+            const targetHours   = Math.round(workingDays * 8 * effectiveRate * 10) / 10;
+            const actualHours   = findActualHours(t.emp_name, actualMap, matchedSet);
+            const achieveRate   = targetHours > 0
               ? Math.round(actualHours / targetHours * 1000) / 10 : null;
             return {
-              emp_name:     t.emp_name,
-              job_title:    t.job_title || '—',
-              dept_name:    t.dept_name,
-              status:       t.status || '在職',
-              resign_date:  t.resign_date ? t.resign_date.toISOString().slice(0,10) : null,
-              utilization:  rate,
-              target_hours: targetHours,
-              actual_hours: Math.round(actualHours * 10) / 10,
-              achieve_rate: achieveRate,
+              emp_name:       t.emp_name,
+              job_title:      t.job_title || '—',
+              dept_name:      t.dept_name,
+              status:         t.status || '在職',
+              resign_date:    t.resign_date ? t.resign_date.toISOString().slice(0,10) : null,
+              utilization:    rate,
+              target_hours:   targetHours,
+              actual_hours:   Math.round(actualHours * 10) / 10,
+              achieve_rate:   achieveRate,
+              target_excluded: isResigned && !resignedCountTarget,
             };
           }),
         };
       }
 
+      // 5. 名單外技師（tech_performance 有，名冊無對應）→ 自動偵測
+      const extraFromRoster = actualRes.rows
+        .filter(r => !matchedSet.has((r.tech_name_clean || '').trim()))
+        .map(r => ({
+          tech_name: r.tech_name_clean,
+          hours:     Math.round(parseFloat(r.actual_hours || 0) * 10) / 10,
+        }))
+        .filter(r => r.hours > 0);
+
+      // 6. 手動額外工時（config 設定的固定項目）
+      const manualExtra = (manualExtraHours[br] || [])
+        .map(e => ({ name: e.name || '額外工時', hours: parseFloat(e.hours || 0), note: e.note || '' }))
+        .filter(e => e.hours > 0);
+
+      branchResult.extra_from_roster = extraFromRoster;
+      branchResult.manual_extra      = manualExtra;
       result[br] = branchResult;
     }
 
-    res.json({ branches: result, rosterPeriod });
+    res.json({ branches: result, rosterPeriod, resigned_count_target: resignedCountTarget });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// ══════════════════════════════════════════════
-// GET /api/tech-capacity-config  — 取得產能設定
-// PUT /api/tech-capacity-config  — 儲存產能設定
-// GET /api/tech-capacity-config/default — 取得預設值（供前端 reset 用）
-// ══════════════════════════════════════════════
+// ── Config CRUD ──
 router.get('/tech-capacity-config/default', (req, res) => {
-  res.json({ utilization_rates: DEFAULT_RATES });
+  res.json(JSON.parse(JSON.stringify(DEFAULT_CONFIG)));
 });
 
 router.get('/tech-capacity-config', async (req, res) => {
