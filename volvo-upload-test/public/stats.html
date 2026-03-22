@@ -1321,7 +1321,7 @@ function openWipDetail(filterType,filterValue){
         <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);white-space:nowrap">${row.plate_no||'—'}</td>
         <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3)">${row.open_period||'—'}</td>
         <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3)">${row.repair_type||'—'}</td>
-        <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);white-space:nowrap;font-size:11px">${fmtDate(row.open_time)}</td>
+        <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);white-space:nowrap;font-size:11px">${fmtDate(r.open_time)}</td>
         <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;font-weight:800;color:${daysCol};border-left:1px solid #2d3f56">
           ${isOver30?'⚠️ ':''}${daysTxt}
         </td>
@@ -1741,6 +1741,7 @@ async function openVerifyModal(empName, branch, period) {
           const badge = isDis
            ? `<span style="background:rgba(245,158,11,.15);color:#f59e0b;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700">回推 ÷${disc}</span>`
            : `<span style="background:rgba(16,185,129,.1);color:#10b981;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700">無折扣</span>`;
+          const taskContent = (r.task_content || '').slice(0, 40) + ((r.task_content || '').length > 40 ? '…' : '');
           return `<tr style="${rowBg}">
             <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.2);white-space:nowrap;font-size:11px">${r.dispatch_date ? String(r.dispatch_date).slice(0,10) : '—'}</td>
             <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.2);font-family:monospace;font-size:11px;white-space:nowrap">${r.work_order || '—'}</td>
