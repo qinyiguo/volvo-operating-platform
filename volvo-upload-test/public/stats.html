@@ -2115,6 +2115,8 @@ async function _ppSaveRow(dKey,ni,personName){
 }
 
 // ── 儲存全科 ──
+// ✅ 先抓全廠所有人的現有資料，只更新當前科別的人，其他科別的人保持不動
+// 避免 batch 先刪後寫時把其他科別的權重清空
 async function _ppSaveDept(dKey){
   const d=_ppDeptData[dKey];if(!d)return;
   const{branch,deptKey,roster,metricIds}=d;
@@ -2122,20 +2124,51 @@ async function _ppSaveDept(dKey){
   if(msgEl){msgEl.textContent='儲存中...';msgEl.style.color='#64748b';}
   const period=getPeriod();let saved=0;
   try{
+    // 先讀取畫面上所有人的權重輸入值
     const weightMap={};
     roster.forEach((p,ni)=>{
       const wInput=document.getElementById(`ppW-${branch}-${deptKey}-${ni}`);
       const rawW=wInput?parseFloat(wInput.value):NaN;
       weightMap[p.emp_name]=(!isNaN(rawW)&&rawW>0)?rawW:null;
     });
+
+    // 當前科別有設定權重的人名 set
+    const deptNames=new Set(roster.map(p=>p.emp_name));
+
     for(const mid of metricIds){
-      const entries=roster.map(p=>({person_name:p.emp_name,weight:weightMap[p.emp_name],target_value:null,note:''})).filter(e=>e.weight!==null);
+      // 抓全廠所有人現有資料（包含其他科別）
+      const existing=await fetch(`/api/person-targets?metric_id=${mid}&period=${period}&branch=${branch}`).then(r=>r.json());
+
+      // 以 Map 合併：保留其他科別，更新當前科別
+      const mergedMap={};
+      // 1. 先把所有現有資料放入 map（其他科別人員保留）
+      existing.forEach(e=>{
+        mergedMap[e.person_name]={
+          person_name:e.person_name,
+          weight:e.weight!=null?parseFloat(e.weight):null,
+          target_value:e.target_value!=null?parseFloat(e.target_value):null,
+          note:e.note||''
+        };
+      });
+      // 2. 只更新當前科別的人
+      roster.forEach(p=>{
+        const w=weightMap[p.emp_name];
+        if(w!=null){
+          mergedMap[p.emp_name]={person_name:p.emp_name,weight:w,target_value:null,note:''};
+        }
+        // 如果 w 為 null（未設），且之前有設定 → 保留舊值（不清除）
+        // 如果想清除請刪除這行的 if 判斷
+      });
+
+      const entries=Object.values(mergedMap);
       if(!entries.length)continue;
       const res=await fetch('/api/person-targets/batch',{method:'PUT',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({metric_id:parseInt(mid),period,branch,entries})});
       if(!res.ok)throw new Error(`HTTP ${res.status}`);
       saved++;
     }
+
+    // 更新記憶體 ptMap
     roster.forEach(p=>{
       const w=weightMap[p.emp_name];if(w==null)return;
       if(!d.ptMap[p.emp_name])d.ptMap[p.emp_name]={};
@@ -2146,6 +2179,7 @@ async function _ppSaveDept(dKey){
     if(msgEl){msgEl.textContent=saved?'✅ 已儲存':'⚠️ 無有效權重';msgEl.style.color=saved?'#10b981':'#f59e0b';setTimeout(()=>{if(msgEl)msgEl.textContent='';},2000);}
   }catch(e){if(msgEl){msgEl.textContent='❌ '+e.message;msgEl.style.color='#ef4444';}console.error('_ppSaveDept',e);}
 }
+
  
 // ══ Init ══
 document.addEventListener('DOMContentLoaded',async()=>{
