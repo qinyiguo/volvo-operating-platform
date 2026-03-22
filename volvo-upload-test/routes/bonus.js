@@ -37,16 +37,16 @@ function activeFilter(period, startIdx) {
     nextIdx: startIdx + 1,
   };
 }
+
 function inferFactory(deptCode) {
   if (!deptCode) return '售後服務處';
   const code = String(deptCode);
   if (code.startsWith('051')) return 'AMA';
   if (code.startsWith('053')) return 'AMC';
   if (code.startsWith('054')) return 'AMD';
-  if (code.startsWith('055')) return '鈑烤';
-  if (code.startsWith('056')) return '聯合';
+  if (code.startsWith('055')) return '鈑烤';       // 鈑烤廠（原本錯誤是'聯合'）
+  if (code.startsWith('056') || code.startsWith('061')) return '聯合';  // 聯合服務中心（原本錯誤是'鈑烤'）
   if (code.startsWith('057') || code.startsWith('07'))  return '零件';
-  // 其餘（050/052 等集團層級部門）歸屬售後服務處
   return '售後服務處';
 }
 
