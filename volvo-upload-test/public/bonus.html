@@ -1112,7 +1112,7 @@ async function renderProgressContent() {
     }
 
     // ★ 過濾此部門適用的指標
-    // 同時檢查 branch_override（解決同部門代碼跨廠問題）和 revenue branch
+    // branch_override 控制「顯示給哪個廠」，revenue 的 branch 只控制「抓哪個廠的數字」
     function getMetricIdsForDept(dkey, fcName) {
       return allMetricIds.filter(function(mId){
         var metric=metaById[mId].metric;
@@ -1124,18 +1124,14 @@ async function renderProgressContent() {
         if (!deptMatch) return false;
 
         // ★ 若有 branch_override，只對 matching factory 顯示
+        // （用來解決同部門代碼跨廠問題，如零件部 05700 同時在 AMA/AMD）
         var brOv=(filters.find(function(f){return f.type==='branch_override';}))||null;
         if (brOv && brOv.value && ['AMA','AMC','AMD'].indexOf(brOv.value)!==-1) {
           if (fcName !== brOv.value) return false;
         }
 
-        // ★ revenue 指標若有 branch filter，只對 matching factory 顯示
-        if (metric.metric_source==='revenue') {
-          var revBr=(filters.find(function(f){return f.type==='branch';}))||null;
-          if (revBr && revBr.value && ['AMA','AMC','AMD'].indexOf(revBr.value)!==-1) {
-            if (fcName !== revBr.value) return false;
-          }
-        }
+        // revenue 的 branch filter 只控制「抓哪個廠的數字」，不影響顯示對象
+        // 所以不在這裡過濾 revenue branch
 
         return true;
       });
