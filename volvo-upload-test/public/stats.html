@@ -1325,61 +1325,122 @@ async function loadTechHours(period,branch){
   if(!period){contentEl.innerHTML='<div class="empty">請選擇期間</div>';return;}
   try{
     const params=new URLSearchParams();params.set('period',period);if(branch)params.set('branch',branch);
-    const[data,cfg,wd]=await Promise.all([
-      fetch(`/api/stats/income-summary?${params}`).then(r=>r.json()),
-      fetch('/api/tech-capacity-config').then(r=>r.json()),
-      fetch(`/api/stats/daily?${params}`).then(r=>r.json()),
-    ]);
+    const data=await fetch(`/api/stats/tech-hours?${params}`).then(r=>r.json());
     if(data.error)throw new Error(data.error);
-    const techByType=data.techByType||[];
-    const HOURLY=parseFloat(cfg?.hourly_rate||2150);
-    const util=cfg?.utilization_rates||{};
-    const resignedCountTarget=cfg?.resigned_count_target===true;
-    const wdMap={};(wd.summary||[]).forEach(r=>{wdMap[r.branch]=parseInt(r.working_days||0);});
-    const rosterRes=await fetch('/api/staff-roster').then(r=>r.json()).catch(()=>([]));
-    const allRoster=Array.isArray(rosterRes)?rosterRes:(rosterRes.staff||[]);
-    const branchColors={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
-    const deptDef={engine:{label:'引擎維護科',col:'#8b5cf6',kw:['引擎','維護']},bodywork:{label:'鈑金科',col:'#f97316',kw:['鈑金']},paint:{label:'烤漆科',col:'#06b6d4',kw:['烤漆']},beauty:{label:'美容部',col:'#ec4899',kw:['美容']}};
-    function getDept(name){if(!name)return null;const n=name;for(const[k,v]of Object.entries(deptDef)){if(v.kw.some(kw=>n.includes(kw)))return k;}return null;}
-    function getJobRate(dept,title){if(!dept)return 0;const rates=util[dept]||{};if(title&&rates[title]!==undefined)return rates[title];return rates['default']!==undefined?rates['default']:0.8;}
-    const BRANCHES=branch?[branch]:['AMA','AMC','AMD'];
-    const branchSections=[];
-    let grandActH=0,grandTgtH=0,grandBranchCount=0;
-    for(const br of BRANCHES){
-      const brRoster=allRoster.filter(r=>r.branch===br&&['引擎','鈑金','烤漆','美容'].some(k=>r.department?.includes(k)));
-      const workDays=wdMap[br]||0;
-      const brTechMap={};brRoster.forEach(s=>{brTechMap[s.staff_name||s.name]={dept:getDept(s.department||''),title:s.job_title||'',resigned:!!s.resigned_date};});
-      const brWageTotal=techByType.filter(r=>r.branch===br).reduce((s,r)=>s+parseFloat(r.total_wage||0),0);
-      const brActH=brWageTotal>0?Math.round(brWageTotal/HOURLY*10)/10:0;
-      let brTgtH=0;
-      brRoster.forEach(s=>{const dept=getDept(s.department||''),title=s.job_title||'',isResigned=!!s.resigned_date;if(!dept)return;if(isResigned&&!resignedCountTarget)return;const rate=getJobRate(dept,title);brTgtH+=workDays*8*rate;});
-      brTgtH=Math.round(brTgtH*10)/10;
-      const ach=brTgtH>0?Math.round(brActH/brTgtH*1000)/10:null;
-      grandActH+=brActH;grandTgtH+=brTgtH;grandBranchCount++;
 
-      const deptRows=[];
-      Object.entries(deptDef).forEach(([dk,dv])=>{
-        const dRoster=brRoster.filter(s=>getDept(s.department||'')===dk);
-        if(!dRoster.length)return;
-        let dTgt=0;dRoster.forEach(s=>{const isResigned=!!s.resigned_date;if(isResigned&&!resignedCountTarget)return;const rate=getJobRate(dk,s.job_title||'');dTgt+=workDays*8*rate;});
-        dTgt=Math.round(dTgt*10)/10;
-        const dAct=dRoster.reduce((s,r)=>{const tw=techByType.filter(t=>t.branch===br&&(r.staff_name||r.name)&&t.tech_name===r.staff_name).reduce((a,t)=>a+parseFloat(t.total_wage||0),0);return s+tw;},0);
-        const dActH=HOURLY>0?Math.round(dAct/HOURLY*10)/10:0;
-        const dAch=dTgt>0?Math.round(dActH/dTgt*1000)/10:null;
-        deptRows.push({dk,dv,dRoster,dTgt,dActH,dAch,workDays});
+    const {branches:branchData,rosterPeriod,hourly_rate:HOURLY=2150}=data;
+    const branchColors={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
+    const DEPT_COLORS={engine:'#8b5cf6',bodywork:'#f97316',paint:'#06b6d4',beauty:'#ec4899'};
+    const brKeys=Object.keys(branchData).filter(br=>!branch||br===branch);
+
+    // KPI
+    let grandActH=0,grandTgtH=0;
+    brKeys.forEach(br=>{
+      const bd=branchData[br]||{};
+      Object.values(bd.dept_types||{}).forEach(dt=>{
+        dt.techs.forEach(t=>{grandActH+=t.actual_hours||0;grandTgtH+=t.target_hours||0;});
       });
-      branchSections.push({br,brRoster,workDays,brActH,brTgtH,ach,deptRows,col:branchColors[br]||'#94a3b8'});
-    }
+    });
+    grandActH=Math.round(grandActH*10)/10;
+    grandTgtH=Math.round(grandTgtH*10)/10;
     const grandAch=grandTgtH>0?Math.round(grandActH/grandTgtH*1000)/10:null;
-    kpiEl.innerHTML=`<div class="kpi-card" style="border-color:#8b5cf6"><div class="kpi-label" style="color:#8b5cf6">全廠實際工時</div><div class="kpi-value kpi-purple">${grandActH.toLocaleString()}</div><div class="kpi-sub">H（工資÷${HOURLY}元/H）</div></div><div class="kpi-card" style="border-color:#94a3b8"><div class="kpi-label">全廠工時目標</div><div class="kpi-value">${grandTgtH.toLocaleString()}</div><div class="kpi-sub">H</div></div><div class="kpi-card" style="border-color:${grandAch===null?'#475569':grandAch>=100?'#10b981':'#f59e0b'}"><div class="kpi-label">全廠達成率</div><div class="kpi-value ${grandAch===null?'':grandAch>=100?'kpi-green':'kpi-yellow'}">${grandAch===null?'—':grandAch+'%'}</div></div>`;
+    kpiEl.innerHTML=`
+      <div class="kpi-card" style="border-color:#8b5cf6">
+        <div class="kpi-label" style="color:#8b5cf6">全廠實際工時</div>
+        <div class="kpi-value kpi-purple">${grandActH.toLocaleString()}</div>
+        <div class="kpi-sub">H（工資÷${HOURLY}元/H）</div>
+      </div>
+      <div class="kpi-card" style="border-color:#94a3b8">
+        <div class="kpi-label">全廠工時目標</div>
+        <div class="kpi-value">${grandTgtH.toLocaleString()}</div>
+        <div class="kpi-sub">H</div>
+      </div>
+      <div class="kpi-card" style="border-color:${grandAch===null?'#475569':grandAch>=100?'#10b981':'#f59e0b'}">
+        <div class="kpi-label">全廠達成率</div>
+        <div class="kpi-value ${grandAch===null?'':grandAch>=100?'kpi-green':'kpi-yellow'}">${grandAch===null?'—':grandAch+'%'}</div>
+      </div>`;
+
+    if(!rosterPeriod){
+      contentEl.innerHTML='<div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:16px;color:#f59e0b;font-size:13px">⚠️ 尚無人員名冊資料，請先至<strong>獎金表 → 上傳人員資料</strong>上傳最新月份的人員名冊。</div>';
+      return;
+    }
+
     let html='';
-    branchSections.forEach(({br,workDays,brActH,brTgtH,ach,deptRows,col})=>{
+    brKeys.forEach(br=>{
+      const bd=branchData[br];if(!bd)return;
+      const col=branchColors[br]||'#94a3b8';
+      const deptTypes=bd.dept_types||{};
+      // 計算廠別合計
+      let brActH=0,brTgtH=0;
+      Object.values(deptTypes).forEach(dt=>dt.techs.forEach(t=>{brActH+=t.actual_hours||0;brTgtH+=t.target_hours||0;}));
+      brActH=Math.round(brActH*10)/10;brTgtH=Math.round(brTgtH*10)/10;
+      const ach=brTgtH>0?Math.round(brActH/brTgtH*1000)/10:null;
       const achColor=ach===null?'#475569':ach>=100?'#10b981':ach>=80?'#f59e0b':'#ef4444';
-      html+=`<div class="card" style="margin-bottom:12px"><div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap"><span style="font-size:16px;font-weight:800;color:${col}">${br}</span><span style="font-size:12px;color:#64748b">工作天 ${workDays} 天</span><div style="display:flex;gap:8px;margin-left:auto;align-items:center;flex-wrap:wrap"><div style="font-size:12px;color:#64748b">實 <strong style="color:#8b5cf6">${brActH}H</strong></div><div style="font-size:12px;color:#64748b">目標 <strong style="color:#94a3b8">${brTgtH}H</strong></div><div style="background:rgba(0,0,0,.3);border:1px solid ${achColor};padding:3px 10px;border-radius:20px;font-size:13px;font-weight:800;color:${achColor}">${ach===null?'—':ach+'%'}</div></div></div>`;
-      if(!deptRows.length){html+=`<div style="color:#64748b;font-size:12px;padding:12px 0">此據點無符合條件技師資料</div>`;html+=`</div>`;return;}
-      html+=`<div class="table-wrap"><table><thead><tr><th>科別</th><th class="num">人數</th><th class="num">工作天</th><th class="num">目標工時</th><th class="num">實際工時</th><th class="num">達成率</th><th style="min-width:120px">進度</th></tr></thead><tbody>`;
-      deptRows.forEach(({dk,dv,dRoster,dTgt,dActH,dAch,workDays})=>{const achCol=dAch===null?'#475569':dAch>=100?'#10b981':dAch>=80?'#f59e0b':'#ef4444';const barW=dTgt>0?Math.min(100,dActH/dTgt*100):0;html+=`<tr><td><span style="color:${dv.col};font-weight:700">${dv.label}</span></td><td class="num">${dRoster.length}</td><td class="num">${workDays}</td><td class="num">${dTgt}</td><td class="num" style="color:#8b5cf6;font-weight:700">${dActH}</td><td class="num" style="color:${achCol};font-weight:800">${dAch===null?'—':dAch+'%'}</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${barW.toFixed(0)}%;background:${achCol}"></div></div><span style="font-size:11px;color:#64748b">${barW.toFixed(0)}%</span></div></td></tr>`;});
-      html+=`</tbody></table></div></div>`;
+
+      html+=`<div class="card" style="margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+          <span style="font-size:16px;font-weight:800;color:${col}">${br}</span>
+          <span style="font-size:12px;color:#64748b">工作天 ${bd.working_days} 天</span>
+          <div style="display:flex;gap:8px;margin-left:auto;align-items:center;flex-wrap:wrap">
+            <div style="font-size:12px;color:#64748b">實 <strong style="color:#8b5cf6">${brActH}H</strong></div>
+            <div style="font-size:12px;color:#64748b">目標 <strong style="color:#94a3b8">${brTgtH}H</strong></div>
+            <div style="background:rgba(0,0,0,.3);border:1px solid ${achColor};padding:3px 10px;border-radius:20px;font-size:13px;font-weight:800;color:${achColor}">${ach===null?'—':ach+'%'}</div>
+          </div>
+        </div>`;
+
+      if(!Object.keys(deptTypes).length){
+        html+=`<div style="color:#64748b;font-size:12px;padding:12px 0">此據點在人員名冊中無符合科別（引擎／鈑金／烤漆／美容）的技師資料</div></div>`;
+        return;
+      }
+
+      Object.entries(deptTypes).forEach(([dk,dv])=>{
+        if(!dv.techs.length)return;
+        const dCol=DEPT_COLORS[dk]||'#94a3b8';
+        let dActH=0,dTgtH=0;
+        dv.techs.forEach(t=>{dActH+=t.actual_hours||0;dTgtH+=t.target_hours||0;});
+        dActH=Math.round(dActH*10)/10;dTgtH=Math.round(dTgtH*10)/10;
+        const dAch=dTgtH>0?Math.round(dActH/dTgtH*1000)/10:null;
+        const dAchCol=dAch===null?'#475569':dAch>=100?'#10b981':dAch>=80?'#f59e0b':'#ef4444';
+        const barW=dTgtH>0?Math.min(100,dActH/dTgtH*100):0;
+
+        html+=`<div style="margin-bottom:12px">
+          <div style="font-size:12px;font-weight:700;color:${dCol};margin-bottom:6px;display:flex;align-items:center;gap:8px">
+            ${dv.label}
+            <span style="font-size:11px;color:#64748b">${dv.techs.length}人 ｜ 實${dActH}H ／ 目標${dTgtH}H</span>
+            <span style="font-size:12px;font-weight:800;color:${dAchCol}">${dAch===null?'—':dAch+'%'}</span>
+            <div style="flex:1;background:#0f172a;border-radius:3px;height:4px;max-width:120px">
+              <div style="width:${barW.toFixed(0)}%;height:4px;background:${dAchCol};border-radius:3px"></div>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>姓名</th><th>職務</th><th>狀態</th>
+                <th class="num">利用率</th><th class="num">目標工時</th>
+                <th class="num">實際工時</th><th class="num">達成率</th>
+              </tr></thead>
+              <tbody>`;
+        dv.techs.forEach(t=>{
+          const isResigned=t.status==='離職';
+          const tAch=t.achieve_rate;
+          const tAchCol=tAch===null?'#475569':tAch>=100?'#10b981':tAch>=80?'#f59e0b':'#ef4444';
+          const tBarW=t.target_hours>0?Math.min(100,t.actual_hours/t.target_hours*100):0;
+          html+=`<tr style="${isResigned?'opacity:.65':''} ${t.is_dms_only?'background:rgba(100,116,139,.04)':''}">
+            <td style="font-weight:600">${t.emp_name}</td>
+            <td style="font-size:12px;color:#94a3b8">${t.job_title||'—'}</td>
+            <td><span style="font-size:10px;padding:1px 6px;border-radius:6px;background:${t.status==='在職'?'rgba(16,185,129,.15)':t.status==='留職停薪'?'rgba(245,158,11,.15)':'rgba(239,68,68,.15)'};color:${t.status==='在職'?'#10b981':t.status==='留職停薪'?'#f59e0b':'#ef4444'}">${t.status}</span></td>
+            <td class="num" style="color:#64748b">${t.target_excluded?'—':(t.utilization*100).toFixed(0)+'%'}</td>
+            <td class="num">${t.target_excluded?'<span style="color:#475569">不計目標</span>':t.target_hours+'H'}</td>
+            <td class="num" style="color:#8b5cf6;font-weight:700">${t.actual_hours}H</td>
+            <td class="num">
+              ${tAch===null?'<span style="color:#475569">—</span>':`<span style="color:${tAchCol};font-weight:800">${tAch}%</span>`}
+              ${!t.target_excluded&&t.target_hours>0?`<div class="bar-wrap" style="margin-top:3px"><div class="bar-bg" style="height:3px"><div class="bar-fill" style="width:${tBarW.toFixed(0)}%;height:3px;background:${tAchCol}"></div></div></div>`:''}
+            </td>
+          </tr>`;
+        });
+        html+=`</tbody></table></div></div>`;
+      });
+      html+=`</div>`;
     });
     contentEl.innerHTML=html||'<div class="empty">無資料</div>';
   }catch(e){contentEl.innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;}
