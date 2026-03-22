@@ -197,12 +197,12 @@
 
 <div class="sticky-header">
   <nav class="nav">
-    <span class="nav-brand">🚗 Volvo 營運統計</span>
-    <a href="/performance.html" class="nav-link">🎯 業績指標</a>
-    <a href="/stats.html" class="nav-link active">📊 各廠明細</a>
-    <a href="/query.html" class="nav-link">🔍 資料查詢</a>
-    <a href="/bonus.html" class="nav-link">💰 獎金表</a>
-    <a href="/settings.html" class="nav-link">⚙️ 設定</a>
+    <span class="nav-brand">&#x1F697; Volvo 營運統計</span>
+    <a href="/performance.html" class="nav-link">&#x1F3AF; 業績指標</a>
+    <a href="/stats.html" class="nav-link active">&#x1F4CA; 各廠明細</a>
+    <a href="/query.html" class="nav-link">&#x1F50D; 資料查詢</a>
+    <a href="/bonus.html" class="nav-link">&#x1F4B0; 獎金表</a>
+    <a href="/settings.html" class="nav-link">&#x2699;&#xFE0F; 設定</a>
   </nav>
   <div class="header-inner">
     <div class="filter-bar">
@@ -222,15 +222,15 @@
     </div>
     <div class="tabs-wrap">
       <div class="tabs">
-        <button class="tab active" onclick="switchTab('repair')">🔧 維修收入</button>
-        <button class="tab" onclick="switchTab('tech')">👨‍🔧 技師工資</button>
-        <button class="tab" onclick="switchTab('parts')">🔩 零件銷售</button>
-        <button class="tab" onclick="switchTab('boutique')">💎 精品配件</button>
-        <button class="tab" onclick="switchTab('sa-sales')">📋 指標銷售</button>
-        <button class="tab" onclick="switchTab('trend')">📈 月份趨勢</button>
-        <button class="tab" onclick="switchTab('daily')">📅 每日進廠</button>
-        <button class="tab" onclick="switchTab('wip')">🔧 WIP 未結工單</button>
-        <button class="tab" onclick="switchTab('tech-hours')">⏱️ 技師工時</button>
+        <button class="tab active" onclick="switchTab('repair')">&#x1F527; 維修收入</button>
+        <button class="tab" onclick="switchTab('tech')">&#x1F697; 單車銷售額</button>
+        <button class="tab" onclick="switchTab('parts')">&#x1F529; 零件銷售</button>
+        <button class="tab" onclick="switchTab('boutique')">&#x1F48E; 精品配件</button>
+        <button class="tab" onclick="switchTab('sa-sales')">&#x1F4CB; 指標銷售</button>
+        <button class="tab" onclick="switchTab('trend')">&#x1F4C8; 月份趨勢</button>
+        <button class="tab" onclick="switchTab('daily')">&#x1F4C5; 每日進廠</button>
+        <button class="tab" onclick="switchTab('wip')">&#x1F527; WIP 未結工單</button>
+        <button class="tab" onclick="switchTab('tech-hours')">&#x23F1;&#xFE0F; 技師工時</button>
       </div>
     </div>
   </div>
@@ -243,8 +243,8 @@
     <div id="repairKPI" class="kpi-grid"></div>
     <div id="grandKPI"></div>
     <div class="card">
-      <div class="card-title">💰 收入分類分析（未稅）<span class="card-title-note">各收入÷1.05換算未稅｜零件成本已為未稅</span></div>
-      <div class="income-section-title">📊 有費收入摘要</div>
+      <div class="card-title">&#x1F4B0; 收入分類分析（未稅）<span class="card-title-note">各收入÷1.05換算未稅｜零件成本已為未稅</span></div>
+      <div class="income-section-title">&#x1F4CA; 有費收入摘要</div>
       <div id="incomeCategoryCards" class="income-category-grid"><div style="color:#64748b;font-size:13px;grid-column:1/-1"><span class="spinner"></span>載入中</div></div>
       <div class="divider-label">有費收入明細（未稅）</div>
       <div class="table-wrap" style="margin-bottom:16px">
@@ -254,7 +254,7 @@
         </table>
       </div>
       <div class="divider-label">無費工單成本</div>
-      <div class="income-section-title" style="margin-top:4px">📋 無費工單成本摘要</div>
+      <div class="income-section-title" style="margin-top:4px">&#x1F4CB; 無費工單成本摘要</div>
       <div id="incomeCostCards" class="income-category-grid"><div style="color:#64748b;font-size:13px;grid-column:1/-1"><span class="spinner"></span>載入中</div></div>
       <div class="table-wrap">
         <table>
@@ -264,7 +264,7 @@
       </div>
     </div>
     <div class="card">
-      <div class="card-title">📋 SA 業績排名</div>
+      <div class="card-title">&#x1F4CB; SA 業績排名</div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>#</th><th>據點</th><th>服務顧問</th><th class="num">台數</th><th class="num">總營收(未稅)</th><th class="num">引擎工資</th><th class="num">零件收入</th><th class="num">佔比</th></tr></thead>
@@ -273,7 +273,7 @@
       </div>
     </div>
     <div class="card">
-      <div class="card-title">📂 帳類分析</div>
+      <div class="card-title">&#x1F4C2; 帳類分析</div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>據點</th><th>帳類</th><th class="num">工單數</th><th class="num">總營收</th><th class="num">零件</th><th class="num">引擎工資</th><th class="num">鈑烤</th><th class="num">零件成本</th></tr></thead>
@@ -283,15 +283,30 @@
     </div>
   </div>
 
-  <!-- ══ 技師工資 ══ -->
+  <!-- ══ 單車銷售額 ══ -->
   <div id="tab-tech" style="display:none">
     <div id="techKPI" class="kpi-grid"></div>
+    <div id="rpvGrandWrap" style="margin-bottom:16px"></div>
     <div class="card">
-      <div class="card-title">🏆 技師工資排名</div>
+      <div class="card-title">&#x1F697; 單車銷售額分析
+        <span class="card-title-note">
+          保養＝工資代碼含17300/17301/17398｜自費鈑烤＝一般帳類有鈑金烤漆｜台數依車牌＋日期＋類型去重
+        </span>
+      </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>#</th><th>據點</th><th>技師</th><th class="num">台數</th><th class="num">標準工時</th><th class="num">總工資</th><th class="num">美容工資</th><th class="num">淨工資</th><th>工資佔比</th></tr></thead>
-          <tbody id="tbTech"><tr><td colspan="9" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
+          <thead>
+            <tr>
+              <th>據點</th>
+              <th>大類</th>
+              <th>類型</th>
+              <th class="num">台數</th>
+              <th class="num">總營收 (K)</th>
+              <th class="num" style="color:#10b981">單車銷售額 (元)</th>
+              <th style="min-width:140px">佔比</th>
+            </tr>
+          </thead>
+          <tbody id="tbTech"><tr><td colspan="7" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -301,7 +316,7 @@
   <div id="tab-parts" style="display:none">
     <div id="partsKPI" class="kpi-grid"></div>
     <div class="card">
-      <div class="card-title">📦 零件種類彙總</div>
+      <div class="card-title">&#x1F4E6; 零件種類彙總</div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>據點</th><th>種類</th><th class="num">筆數</th><th class="num">總數量</th><th class="num">銷售金額</th><th class="num">成本</th><th class="num">毛利</th><th class="num">毛利率</th></tr></thead>
@@ -310,7 +325,7 @@
       </div>
     </div>
     <div class="card">
-      <div class="card-title">🥇 銷售金額 Top 20 零件</div>
+      <div class="card-title">&#x1F947; 銷售金額 Top 20 零件</div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>#</th><th>零件編號</th><th>零件名稱</th><th>種類</th><th class="num">總數量</th><th class="num">銷售金額</th></tr></thead>
@@ -323,12 +338,12 @@
   <!-- ══ 精品配件銷售 ══ -->
   <div id="tab-boutique" style="display:none">
     <div style="background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.25);border-radius:8px;padding:10px 14px;font-size:12px;color:#a78bfa;margin-bottom:14px;line-height:1.8">
-      💡 <strong>資料來源</strong>：零件銷售明細（parts_sales），品項類型透過<strong>零件型錄（parts_catalog）</strong>比對 part_number 判斷。
+      &#x1F4A1; <strong>資料來源</strong>：零件銷售明細（parts_sales），品項類型透過<strong>零件型錄（parts_catalog）</strong>比對 part_number 判斷。
     </div>
     <div id="boutiqueKPI" class="kpi-grid"></div>
     <div class="card" style="padding:0">
       <div style="padding:16px 20px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <div style="font-size:14px;font-weight:700">💎 精品 &amp; 配件銷售矩陣</div>
+        <div style="font-size:14px;font-weight:700">&#x1F48E; 精品 &amp; 配件銷售矩陣</div>
         <div style="font-size:12px;color:#64748b">金額單位：元（未稅）</div>
       </div>
       <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;overflow-y:auto;max-height:70vh;padding:0 0 4px">
@@ -341,11 +356,11 @@
   <div id="tab-sa-sales" style="display:none">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
       <div class="sa-subtab-bar">
-        <button id="saSubBtn-sales" class="sa-subtab active" onclick="switchSaSubTab('sales')">👤 銷售人員</button>
-        <button id="saSubBtn-tech"  class="sa-subtab"        onclick="switchSaSubTab('tech')">🔧 技師施工</button>
+        <button id="saSubBtn-sales" class="sa-subtab active" onclick="switchSaSubTab('sales')">&#x1F464; 銷售人員</button>
+        <button id="saSubBtn-tech"  class="sa-subtab"        onclick="switchSaSubTab('tech')">&#x1F527; 技師施工</button>
       </div>
       <div id="saMatrixMeta" style="font-size:12px;color:#64748b"></div>
-      <a href="/settings.html" style="font-size:12px;color:#64748b;text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border:1px solid #2d3f56;border-radius:6px;background:#1e293b;margin-left:auto">⚙️ 設定</a>
+      <a href="/settings.html" style="font-size:12px;color:#64748b;text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border:1px solid #2d3f56;border-radius:6px;background:#1e293b;margin-left:auto">&#x2699;&#xFE0F; 設定</a>
     </div>
     <div id="saView-sales">
       <div class="card" style="padding:0">
@@ -366,7 +381,7 @@
   <!-- ══ 月份趨勢 ══ -->
   <div id="tab-trend" style="display:none">
     <div class="card">
-      <div class="card-title">📈 各月份維修收入趨勢</div>
+      <div class="card-title">&#x1F4C8; 各月份維修收入趨勢</div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>期間</th><th>據點</th><th class="num">出廠台數</th><th class="num">總營收</th><th class="num">引擎工資</th><th class="num">零件收入</th><th class="num">環比</th></tr></thead>
@@ -380,13 +395,13 @@
   <div id="tab-daily" style="display:none">
     <div id="dailyKPI" class="kpi-grid"></div>
     <div class="card">
-      <div class="card-title">📅 每日進廠台數（已排除 PDI）
+      <div class="card-title">&#x1F4C5; 每日進廠台數（已排除 PDI）
         <span class="card-title-note">日均 = 總台數 ÷ 已有資料天（進度均值）</span>
       </div>
       <div id="dailyChart" style="padding:8px 0;overflow-x:auto;-webkit-overflow-scrolling:touch"></div>
     </div>
     <div class="card">
-      <div class="card-title">📋 每日明細</div>
+      <div class="card-title">&#x1F4CB; 每日明細</div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>日期</th><th>據點</th><th class="num">進廠台數</th><th>vs 日均</th></tr></thead>
@@ -399,13 +414,13 @@
   <!-- ══ WIP 未結工單 ══ -->
   <div id="tab-wip" style="display:none">
     <div style="background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.25);border-radius:8px;padding:10px 14px;font-size:12px;color:#fb923c;margin-bottom:14px;line-height:1.8">
-      🔧 <strong>未結工單定義</strong>：截至選定月份月底，所有在 business_query 有進廠紀錄、但在 repair_income 尚未結算的工單（跨月累計，已排除 PV 外賣訂單）。<br>
-      💡 PDI 工單包含在內並以 <span style="background:rgba(245,158,11,.15);color:#f59e0b;padding:1px 5px;border-radius:3px;font-size:11px;font-weight:700">PDI</span> 標記，KPI 卡片同時顯示含PDI與扣PDI數字。依進廠月份分類可看出老 WIP 積壓情況。
+      &#x1F527; <strong>未結工單定義</strong>：截至選定月份月底，所有在 business_query 有進廠紀錄、但在 repair_income 尚未結算的工單（跨月累計，已排除 PV 外賣訂單）。<br>
+      &#x1F4A1; PDI 工單包含在內並以 <span style="background:rgba(245,158,11,.15);color:#f59e0b;padding:1px 5px;border-radius:3px;font-size:11px;font-weight:700">PDI</span> 標記，KPI 卡片同時顯示含PDI與扣PDI數字。依進廠月份分類可看出老 WIP 積壓情況。
     </div>
     <div id="wipKPI" class="kpi-grid"></div>
     <div class="card">
       <div class="card-title">
-        📋 未結工單統計
+        &#x1F4CB; 未結工單統計
         <span class="card-title-note">點擊任一列查看工單明細</span>
       </div>
       <div id="wipSummaryWrap">
@@ -418,12 +433,12 @@
   <div id="tab-tech-hours" style="display:none">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
       <div style="background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.25);border-radius:8px;padding:10px 14px;font-size:12px;color:#a78bfa;line-height:1.8;flex:1;min-width:0">
-        ⏱️ <strong>資料來源</strong>：人員名冊（staff_roster）× 工作天數 × 產能利用率 計算月工時目標，實績來自 tech_performance.wage ÷ 時薪 反推。<br>
-        💡 部門名稱含「引擎」「鈑金」「烤漆」的技師才會顯示。<strong>折扣回推已啟用</strong>：discount &lt; 1 的工時自動回推至 100%。
+        &#x23F1;&#xFE0F; <strong>資料來源</strong>：人員名冊（staff_roster）× 工作天數 × 產能利用率 計算月工時目標，實績來自 tech_performance.wage ÷ 時薪 反推。<br>
+        &#x1F4A1; 部門名稱含「引擎」「鈑金」「烤漆」的技師才會顯示。<strong>折扣回推已啟用</strong>：discount &lt; 1 的工時自動回推至 100%。
       </div>
       <button onclick="openTechHoursConfig()"
         style="flex-shrink:0;background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.4);padding:9px 16px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap">
-        ⚙️ 產能利用率設定
+        &#x2699;&#xFE0F; 產能利用率設定
       </button>
     </div>
     <div id="techHoursKPI" class="kpi-grid"></div>
@@ -442,40 +457,32 @@
   <div style="background:#1a2740;border:1px solid #2d4060;border-radius:14px;
               width:100%;max-width:820px;display:flex;flex-direction:column;
               box-shadow:0 24px 64px rgba(0,0,0,.85);margin:auto">
-
-    <!-- Header -->
     <div style="display:flex;align-items:center;gap:8px;padding:16px 20px 14px;border-bottom:1px solid #2d3f56;flex-shrink:0;flex-wrap:wrap">
-      <div style="font-size:15px;font-weight:800;flex:1;color:#fff;min-width:0">⚙️ 技師工時產能設定</div>
+      <div style="font-size:15px;font-weight:800;flex:1;color:#fff;min-width:0">&#x2699;&#xFE0F; 技師工時產能設定</div>
       <button onclick="resetTechRatesToDefault()"
         style="padding:6px 12px;background:#253347;color:#cbd5e1;border:1px solid #2d3f56;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">
-        ↩️ 還原預設
+        &#x21A9;&#xFE0F; 還原預設
       </button>
       <button onclick="saveTechCapacityConfig()"
         style="padding:6px 14px;background:#3b82f6;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">
-        💾 儲存設定
+        &#x1F4BE; 儲存設定
       </button>
       <button onclick="closeTechHoursConfig()"
         style="width:30px;height:30px;border-radius:8px;border:1px solid #2d3f56;
                background:#0f172a;color:#64748b;font-size:18px;line-height:1;cursor:pointer;
-               display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
+               display:flex;align-items:center;justify-content:center;flex-shrink:0">&times;</button>
     </div>
-
-    <!-- Body -->
     <div style="padding:18px 20px;overflow-y:auto;max-height:calc(100vh - 120px)">
-
-      <!-- 儲存訊息 -->
       <div id="techRatesSaveMsg" style="font-size:13px;min-height:18px;margin-bottom:12px"></div>
-
-      <!-- ① 離職技師目標設定 -->
       <div style="background:#0f172a;border:1px solid #2d3f56;border-radius:10px;padding:14px 16px;margin-bottom:16px">
-        <div style="font-size:13px;font-weight:800;color:#e2e8f0;margin-bottom:10px">① 離職技師目標處理方式</div>
+        <div style="font-size:13px;font-weight:800;color:#e2e8f0;margin-bottom:10px">&#x2460; 離職技師目標處理方式</div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;background:#1a2332;border:1.5px solid #2d3f56;border-radius:8px;padding:11px 14px;transition:border-color .15s"
             id="resignedOptLabel-false" onclick="selectResignedOpt(false)">
             <input type="radio" name="resignedOpt" value="false" checked
               style="margin-top:2px;accent-color:#3b82f6;width:15px;height:15px;flex-shrink:0">
             <div>
-              <div style="font-size:13px;font-weight:700;color:#e2e8f0">🎯 不列入目標（預設）</div>
+              <div style="font-size:13px;font-weight:700;color:#e2e8f0">&#x1F3AF; 不列入目標（預設）</div>
               <div style="font-size:11px;color:#64748b;margin-top:2px;line-height:1.7">
                 離職技師的月工時目標 = 0，<strong style="color:#94a3b8">不影響整體達成率分母</strong>。<br>
                 實績工時仍照常顯示與累計，只是不計入目標。
@@ -487,23 +494,19 @@
             <input type="radio" name="resignedOpt" value="true"
               style="margin-top:2px;accent-color:#f97316;width:15px;height:15px;flex-shrink:0">
             <div>
-              <div style="font-size:13px;font-weight:700;color:#e2e8f0">📋 列入目標計算</div>
+              <div style="font-size:13px;font-weight:700;color:#e2e8f0">&#x1F4CB; 列入目標計算</div>
               <div style="font-size:11px;color:#64748b;margin-top:2px;line-height:1.7">
-                離職技師依職務利用率正常計算目標，<strong style="color:#94a3b8">計入整體達成率分母</strong>。<br>
-                適合想呈現「該月整體應達成工時」的情境。
+                離職技師依職務利用率正常計算目標，<strong style="color:#94a3b8">計入整體達成率分母</strong>。
               </div>
             </div>
           </label>
         </div>
       </div>
-
-      <!-- ② 產能利用率設定 -->
       <div style="background:#0f172a;border:1px solid #2d3f56;border-radius:10px;padding:14px 16px;margin-bottom:16px">
-        <!-- ★ 標題列：含時薪設定 -->
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;flex-wrap:wrap">
-          <div style="font-size:13px;font-weight:800;color:#e2e8f0">② 各職務產能利用率</div>
+          <div style="font-size:13px;font-weight:800;color:#e2e8f0">&#x2461; 各職務產能利用率</div>
           <div style="display:flex;align-items:center;gap:8px;margin-left:auto;background:#1a2332;border:1px solid #2d3f56;border-radius:8px;padding:7px 12px">
-            <span style="font-size:12px;color:#64748b;white-space:nowrap">⏱️ 每小時工資（元）</span>
+            <span style="font-size:12px;color:#64748b;white-space:nowrap">&#x23F1;&#xFE0F; 每小時工資（元）</span>
             <input type="number" id="trHourlyRate" min="100" max="10000" step="50" value="2150"
               style="background:#0f172a;border:1px solid #3b82f6;color:#60a5fa;padding:4px 8px;
                      border-radius:5px;font-size:13px;font-weight:800;width:90px;text-align:right;outline:none">
@@ -511,30 +514,24 @@
           </div>
         </div>
         <div style="font-size:12px;color:#64748b;margin-bottom:12px;line-height:1.7">
-          月工時目標 = 工作天 × 8H × 利用率。鈑金/烤漆可超過 1.0（如 1.8 = 180%）。領班設 0 表示不計目標。<br>
-          <span style="color:#475569">時薪用於從 DMS 工資反推實際工時（實際工時 = 工資 ÷ 時薪）。</span>
+          月工時目標 = 工作天 × 8H × 利用率。鈑金/烤漆可超過 1.0（如 1.8 = 180%）。領班設 0 表示不計目標。
         </div>
-
-        <!-- 科別 Tabs -->
         <div style="display:flex;gap:3px;background:#1e293b;border:1px solid #2d3f56;border-radius:8px;padding:3px;width:fit-content;margin-bottom:14px">
           <button id="trTabBtn-engine"   onclick="switchTrTab('engine')"
-            style="padding:7px 18px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:#8b5cf6;color:#fff">🔧 引擎維護科</button>
+            style="padding:7px 18px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:#8b5cf6;color:#fff">&#x1F527; 引擎維護科</button>
           <button id="trTabBtn-bodywork" onclick="switchTrTab('bodywork')"
-            style="padding:7px 18px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:#64748b">🔨 鈑金科</button>
+            style="padding:7px 18px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:#64748b">&#x1F528; 鈑金科</button>
           <button id="trTabBtn-paint"    onclick="switchTrTab('paint')"
-            style="padding:7px 18px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:#64748b">🎨 烤漆科</button>
+            style="padding:7px 18px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:#64748b">&#x1F3A8; 烤漆科</button>
           <button id="trTabBtn-beauty"   onclick="switchTrTab('beauty')"
-            style="padding:7px 18px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:#64748b">💅 美容部</button>
+            style="padding:7px 18px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:#64748b">&#x1F485; 美容部</button>
         </div>
-
         <div id="trPanel-engine"></div>
         <div id="trPanel-bodywork" style="display:none"></div>
         <div id="trPanel-paint"    style="display:none"></div>
         <div id="trPanel-beauty"   style="display:none"></div>
-
-        <!-- 新增自訂職務 -->
         <div style="margin-top:14px;padding-top:12px;border-top:1px solid #2d3f56">
-          <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:8px">➕ 新增自訂職務</div>
+          <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:8px">&#x2795; 新增自訂職務</div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <select id="trNewDept"
               style="background:#1e293b;border:1px solid #2d3f56;color:#e2e8f0;padding:7px 10px;border-radius:6px;font-size:12px;min-width:120px">
@@ -548,24 +545,47 @@
               style="background:#1e293b;border:1px solid #2d3f56;color:#e2e8f0;padding:7px 10px;border-radius:6px;font-size:12px;width:130px;outline:none">
             <button onclick="addTrRow()"
               style="padding:7px 14px;background:#253347;color:#cbd5e1;border:1px solid #2d3f56;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">
-              ＋ 加入
+              &#xFF0B; 加入
             </button>
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
 
-      <!-- 說明 -->
-      <div style="padding:10px 14px;background:#0c1524;border:1px solid #2d3f56;border-radius:8px;font-size:11px;color:#475569;line-height:1.9">
-        <strong style="color:#64748b">部門偵測</strong>（依 staff_roster.dept_name）：含「引擎」→ 引擎維護科 ｜ 含「鈑金」→ 鈑金科 ｜ 含「烤漆/噴漆」→ 烤漆科<br>
-        <strong style="color:#64748b">姓名比對</strong>：「吳開健-KCW」自動匹配「吳開健」；「林新祐/陳○○」多人施工各自匹配
-      </div>
+<div id="wipDetailModal"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;
+         align-items:center;justify-content:center;padding:16px"
+  onclick="if(event.target===this)closeWipModal()">
+  <div style="background:#1a2740;border:1px solid #2d4060;border-radius:14px;
+              width:100%;max-width:1150px;max-height:92vh;display:flex;flex-direction:column;
+              box-shadow:0 24px 64px rgba(0,0,0,.85)">
+    <div style="display:flex;align-items:center;gap:10px;padding:16px 20px 12px;border-bottom:1px solid #2d3f56;flex-shrink:0">
+      <div id="wipModalTitle" style="font-size:15px;font-weight:800;flex:1;color:#fff"></div>
+      <span id="wipModalCount" style="font-size:12px;color:#64748b"></span>
+      <button onclick="closeWipModal()"
+        style="width:30px;height:30px;border-radius:8px;border:1px solid #2d3f56;
+               background:#0f172a;color:#64748b;font-size:18px;line-height:1;cursor:pointer;
+               display:flex;align-items:center;justify-content:center;flex-shrink:0">&times;</button>
+    </div>
+    <div style="overflow:auto;flex:1">
+      <table id="wipModalTable" style="width:100%;border-collapse:collapse;font-size:12px"></table>
+    </div>
+    <div style="padding:10px 20px 14px;border-top:1px solid #2d3f56;display:flex;gap:10px;
+                align-items:center;flex-shrink:0;flex-wrap:wrap">
+      <span id="wipModalStats" style="font-size:12px;color:#64748b;flex:1"></span>
+      <button onclick="exportWipModalCSV()"
+        style="padding:6px 14px;background:rgba(16,185,129,.15);color:#10b981;
+               border:1px solid rgba(16,185,129,.3);border-radius:6px;font-size:12px;
+               font-weight:600;cursor:pointer">&#x2B07;&#xFE0F; 匯出 CSV</button>
     </div>
   </div>
 </div>
 
 <script>
 // ══ 技師工時產能設定 ══
-const TR_DEPT_COLORS = { engine:'#8b5cf6', bodywork:'#f97316', paint:'#06b6d4' };
+const TR_DEPT_COLORS = { engine:'#8b5cf6', bodywork:'#f97316', paint:'#06b6d4', beauty:'#ec4899' };
 const TR_JOB_ORDER = ['領班','副領班','L4技師','L3技師','L2技師','L1技師','L0技師','實習生','default'];
 let _trConfig     = null;
 let _trCurrentTab = 'engine';
@@ -583,14 +603,12 @@ function closeTechHoursConfig() {
 async function loadTechCapacityConfig() {
   try {
     _trConfig = await fetch('/api/tech-capacity-config').then(r => r.json());
-    // 確保每個科別的預設職務都存在於 rates（第一次載入或缺少時補入）
     const DEF = (await fetch('/api/tech-capacity-config/default').then(r => r.json())).utilization_rates || {};
     if (!_trConfig.utilization_rates) _trConfig.utilization_rates = {};
     for (const dept of ['engine','bodywork','paint','beauty']) {
       if (!_trConfig.utilization_rates[dept]) {
         _trConfig.utilization_rates[dept] = { ...(DEF[dept] || {}) };
       } else {
-        // 只補入尚未存在的預設職務，不覆蓋已自訂的值
         for (const [k, v] of Object.entries(DEF[dept] || {})) {
           if (!(_trConfig.utilization_rates[dept].hasOwnProperty(k))) {
             _trConfig.utilization_rates[dept][k] = v;
@@ -599,7 +617,6 @@ async function loadTechCapacityConfig() {
       }
     }
     syncResignedRadio();
-    // ★ 同步時薪輸入框
     const hrEl = document.getElementById('trHourlyRate');
     if (hrEl) hrEl.value = _trConfig.hourly_rate || 2150;
     renderAllTrTables();
@@ -617,20 +634,15 @@ async function resetTechRatesToDefault() {
   } catch(e) { setTrMsg('還原失敗：' + e.message, '#ef4444'); }
 }
 
-// ── ① 離職選項 ──
 function syncResignedRadio() {
   const val = _trConfig?.resigned_count_target === true;
-  document.querySelectorAll('input[name="resignedOpt"]').forEach(r => {
-    r.checked = (r.value === String(val));
-  });
+  document.querySelectorAll('input[name="resignedOpt"]').forEach(r => { r.checked = (r.value === String(val)); });
   updateResignedLabelStyle(val);
 }
 function selectResignedOpt(val) {
   if (!_trConfig) _trConfig = {};
   _trConfig.resigned_count_target = val;
-  document.querySelectorAll('input[name="resignedOpt"]').forEach(r => {
-    r.checked = (r.value === String(val));
-  });
+  document.querySelectorAll('input[name="resignedOpt"]').forEach(r => { r.checked = (r.value === String(val)); });
   updateResignedLabelStyle(val);
 }
 function updateResignedLabelStyle(val) {
@@ -640,7 +652,6 @@ function updateResignedLabelStyle(val) {
   if (trueEl)  trueEl.style.borderColor  =  val ? '#f97316' : '#2d3f56';
 }
 
-// ── ② 利用率 ──
 function switchTrTab(dept) {
   _trCurrentTab = dept;
   ['engine','bodywork','paint','beauty'].forEach(d => {
@@ -657,7 +668,6 @@ function renderTrTable(dept) {
   if (!el || !_trConfig) return;
   const rates = (_trConfig.utilization_rates || {})[dept] || {};
   const col   = TR_DEPT_COLORS[dept];
-  // 只顯示 rates 裡實際存在的 key，刪除後不會被 TR_JOB_ORDER 補回
   const sorted = Object.keys(rates).sort((a, b) => {
     const ai = TR_JOB_ORDER.indexOf(a), bi = TR_JOB_ORDER.indexOf(b);
     if (ai >= 0 && bi >= 0) return ai - bi;
@@ -771,7 +781,6 @@ function removeTrRow(dept, key) {
 
 async function saveTechCapacityConfig() {
   setTrMsg('儲存中...', '#64748b');
-  // ★ 從輸入框讀取時薪並寫入 config
   const hrEl = document.getElementById('trHourlyRate');
   if (hrEl && _trConfig) _trConfig.hourly_rate = parseFloat(hrEl.value) || 2150;
   try {
@@ -799,36 +808,6 @@ document.addEventListener('keydown', e => {
   }
 });
 </script>
-
-
-<div id="wipDetailModal"
-  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;
-         align-items:center;justify-content:center;padding:16px"
-  onclick="if(event.target===this)closeWipModal()">
-  <div style="background:#1a2740;border:1px solid #2d4060;border-radius:14px;
-              width:100%;max-width:1150px;max-height:92vh;display:flex;flex-direction:column;
-              box-shadow:0 24px 64px rgba(0,0,0,.85)">
-    <div style="display:flex;align-items:center;gap:10px;padding:16px 20px 12px;border-bottom:1px solid #2d3f56;flex-shrink:0">
-      <div id="wipModalTitle" style="font-size:15px;font-weight:800;flex:1;color:#fff"></div>
-      <span id="wipModalCount" style="font-size:12px;color:#64748b"></span>
-      <button onclick="closeWipModal()"
-        style="width:30px;height:30px;border-radius:8px;border:1px solid #2d3f56;
-               background:#0f172a;color:#64748b;font-size:18px;line-height:1;cursor:pointer;
-               display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
-    </div>
-    <div style="overflow:auto;flex:1">
-      <table id="wipModalTable" style="width:100%;border-collapse:collapse;font-size:12px"></table>
-    </div>
-    <div style="padding:10px 20px 14px;border-top:1px solid #2d3f56;display:flex;gap:10px;
-                align-items:center;flex-shrink:0;flex-wrap:wrap">
-      <span id="wipModalStats" style="font-size:12px;color:#64748b;flex:1"></span>
-      <button onclick="exportWipModalCSV()"
-        style="padding:6px 14px;background:rgba(16,185,129,.15);color:#10b981;
-               border:1px solid rgba(16,185,129,.3);border-radius:6px;font-size:12px;
-               font-weight:600;cursor:pointer">⬇️ 匯出 CSV</button>
-    </div>
-  </div>
-</div>
 
 <script>
 let _currentPeriod='',_allPeriods=[];
@@ -899,7 +878,7 @@ async function loadAll(){
   await Promise.all([
     loadRepair(period,branch),
     loadIncomeSummary(period,branch),
-    loadTech(period,branch),
+    loadRevenuePerVehicle(period,branch),
     loadParts(period,branch),
     loadBoutiqueAccessories(period,branch),
     loadTrend(branch),
@@ -960,17 +939,153 @@ async function loadIncomeSummary(period,branch){
   }catch(e){cardsEl.innerHTML=`<div style="color:#ef4444;grid-column:1/-1">${e.message}</div>`;}
 }
 
-async function loadTech(period,branch){
-  try{
-    const params=new URLSearchParams();if(period)params.set('period',period);if(branch)params.set('branch',branch);
-    const data=await(await fetch(`/api/stats/tech?${params}`)).json();
-    if(data.error)throw new Error(data.error);
-    const rows=data.ranking,totalWage=rows.reduce((s,r)=>s+n(r.total_wage),0),maxWage=Math.max(...rows.map(r=>n(r.total_wage)),1);
-    document.getElementById('techKPI').innerHTML=`<div class="kpi-card"><div class="kpi-label">技師人數</div><div class="kpi-value kpi-blue">${rows.length}</div><div class="kpi-sub">人</div></div><div class="kpi-card"><div class="kpi-label">工資總額</div><div class="kpi-value kpi-green">${fmtK(totalWage)}</div><div class="kpi-sub">K</div></div><div class="kpi-card"><div class="kpi-label">平均工資</div><div class="kpi-value">${rows.length?fmt(totalWage/rows.length):0}</div><div class="kpi-sub">元/人</div></div>`;
-    document.getElementById('tbTech').innerHTML=rows.length?rows.map((r,i)=>`<tr><td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td><td><span class="badge badge-blue">${r.branch}</span></td><td style="font-weight:600">${r.tech_name_clean}</td><td class="num">${parseInt(r.car_count||0)}</td><td class="num">${n(r.total_hours).toFixed(1)}</td><td class="num" style="font-weight:700;color:#10b981">${fmt(r.total_wage)}</td><td class="num" style="color:#f59e0b">${fmt(r.beauty_wage)}</td><td class="num" style="color:#3b82f6">${fmt(r.net_wage)}</td><td style="min-width:80px"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill green" style="width:${(n(r.total_wage)/maxWage*100).toFixed(0)}%"></div></div><span style="font-size:11px;color:#64748b">${totalWage>0?(n(r.total_wage)/totalWage*100).toFixed(1):0}%</span></div></td></tr>`).join(''):'<tr><td colspan="9" class="empty">無資料</td></tr>';
-  }catch(e){document.getElementById('tbTech').innerHTML=`<tr><td colspan="9" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;}
-}
+// ══ 單車銷售額 ══
+async function loadRevenuePerVehicle(period, branch) {
+  const kpiEl   = document.getElementById('techKPI');
+  const tbEl    = document.getElementById('tbTech');
+  const grandEl = document.getElementById('rpvGrandWrap');
+  if (!kpiEl || !tbEl) return;
 
+  const RPV_CAT_COLORS = {
+    '保養':'#10b981','維修':'#3b82f6','自費鈑烤':'#8b5cf6','延保':'#f59e0b','保險':'#f97316',
+  };
+  const RPV_CAT_BADGE = {
+    '保養':'badge-green','維修':'badge-blue','自費鈑烤':'badge-purple','延保':'badge-yellow','保險':'badge-orange',
+  };
+  const catOrder = ['保養','維修','自費鈑烤','延保','保險'];
+
+  try {
+    const params = new URLSearchParams();
+    if (period) params.set('period', period);
+    if (branch) params.set('branch', branch);
+
+    const data = await (await fetch(`/api/stats/revenue-per-vehicle?${params}`)).json();
+    if (data.error) throw new Error(data.error);
+
+    const rows  = data.rows;
+    const grand = data.grand;
+    const branchColors = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b' };
+
+    const totalVehicles = rows.reduce((s,r) => s + parseInt(r.vehicle_count||0), 0);
+    const totalRevenue  = rows.reduce((s,r) => s + parseFloat(r.total_revenue||0), 0);
+    const overallAvg    = totalVehicles > 0 ? Math.round(totalRevenue / totalVehicles) : 0;
+
+    let kpiHtml = `
+      <div class="kpi-card" style="border-color:#f97316">
+        <div class="kpi-label" style="color:#f97316">全廠總台數</div>
+        <div class="kpi-value kpi-orange">${totalVehicles.toLocaleString()}</div>
+        <div class="kpi-sub">台</div>
+      </div>
+      <div class="kpi-card" style="border-color:#10b981">
+        <div class="kpi-label" style="color:#10b981">全廠均單車銷售額</div>
+        <div class="kpi-value kpi-green">${fmt(overallAvg)}</div>
+        <div class="kpi-sub">元/台</div>
+      </div>`;
+
+    const catTotals = {};
+    rows.forEach(r => {
+      if (!catTotals[r.repair_category]) catTotals[r.repair_category] = { vehicles:0, revenue:0 };
+      catTotals[r.repair_category].vehicles += parseInt(r.vehicle_count||0);
+      catTotals[r.repair_category].revenue  += parseFloat(r.total_revenue||0);
+    });
+    catOrder.forEach(cat => {
+      const t = catTotals[cat]; if (!t) return;
+      const avg = t.vehicles > 0 ? Math.round(t.revenue / t.vehicles) : 0;
+      const col = RPV_CAT_COLORS[cat] || '#94a3b8';
+      kpiHtml += `
+        <div class="kpi-card">
+          <div class="kpi-label" style="color:${col}">${cat}</div>
+          <div class="kpi-value" style="color:${col}">${t.vehicles.toLocaleString()}</div>
+          <div class="kpi-sub">台 ｜ 均 <strong style="color:${col}">${fmt(avg)}</strong> 元</div>
+        </div>`;
+    });
+    kpiEl.innerHTML = kpiHtml;
+
+    if (grandEl && grand.length) {
+      const grandTotal = grand.reduce((s,g) => s + g.vehicle_count, 0);
+      let gHtml = `
+        <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:10px;padding:14px 18px">
+          <div style="font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+            🌐 全廠合計（各類型）
+            <span style="margin-left:auto;font-size:11px;color:#475569">總台數 ${grandTotal} 台</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">`;
+      catOrder.forEach(cat => {
+        const g = grand.find(x => x.repair_category === cat);
+        if (!g) return;
+        const col = RPV_CAT_COLORS[cat] || '#94a3b8';
+        const pct = grandTotal > 0 ? (g.vehicle_count / grandTotal * 100).toFixed(1) : 0;
+        gHtml += `
+          <div style="background:#0f172a;border:1px solid ${col}44;border-radius:8px;padding:12px 14px">
+            <div style="font-size:11px;color:${col};font-weight:700;margin-bottom:4px">${cat}</div>
+            <div style="font-size:20px;font-weight:800;color:#e2e8f0;margin-bottom:2px">${g.vehicle_count.toLocaleString()}<span style="font-size:11px;color:#475569;margin-left:3px">台</span></div>
+            <div style="font-size:11px;color:#64748b;margin-bottom:6px">${pct}% ｜ 均 <span style="color:${col};font-weight:700">${fmt(g.revenue_per_vehicle)}</span> 元</div>
+            <div style="background:#1a2332;border-radius:3px;height:4px">
+              <div style="width:${Math.min(100,parseFloat(pct))}%;height:4px;background:${col};border-radius:3px"></div>
+            </div>
+          </div>`;
+      });
+      gHtml += `</div></div>`;
+      grandEl.innerHTML = gHtml;
+    }
+
+    const branches = [...new Set(rows.map(r => r.branch))].sort();
+    const maxAvg   = Math.max(...rows.map(r => parseFloat(r.revenue_per_vehicle||0)), 1);
+    let tbHtml = '';
+
+    branches.forEach(br => {
+      const brRows     = rows.filter(r => r.branch === br);
+      const col        = branchColors[br] || '#94a3b8';
+      const brVehicles = brRows.reduce((s,r) => s + parseInt(r.vehicle_count||0), 0);
+      const brRevenue  = brRows.reduce((s,r) => s + parseFloat(r.total_revenue||0), 0);
+      const brAvg      = brVehicles > 0 ? Math.round(brRevenue / brVehicles) : 0;
+
+      tbHtml += `
+        <tr style="background:${col}18">
+          <td colspan="7" style="padding:10px 12px;border-bottom:1px solid ${col}33">
+            <span style="font-size:13px;font-weight:800;color:${col}">${br}</span>
+            <span style="font-size:12px;color:#64748b;margin-left:10px">
+              總台數 <strong style="color:#e2e8f0">${brVehicles.toLocaleString()}</strong> 台 ｜
+              總營收 <strong style="color:#10b981">${fmtK(brRevenue)}</strong> ｜
+              均單車 <strong style="color:#f97316">${fmt(brAvg)}</strong> 元
+            </span>
+          </td>
+        </tr>`;
+
+      brRows.forEach(r => {
+        const catCol   = RPV_CAT_COLORS[r.repair_category] || '#94a3b8';
+        const catBadge = RPV_CAT_BADGE[r.repair_category]  || 'badge-gray';
+        const barW     = maxAvg > 0 ? (parseFloat(r.revenue_per_vehicle) / maxAvg * 100).toFixed(1) : 0;
+        const mainCatColor = r.main_category === '一般' ? '#3b82f6'
+                           : r.main_category === '延保' ? '#f59e0b' : '#f97316';
+        tbHtml += `
+          <tr>
+            <td><span style="background:${col}22;color:${col};padding:1px 6px;border-radius:4px;font-size:11px;font-weight:700">${r.branch}</span></td>
+            <td><span style="font-size:12px;font-weight:700;color:${mainCatColor}">${r.main_category}</span></td>
+            <td><span class="badge ${catBadge}">${r.repair_category}</span></td>
+            <td class="num" style="font-weight:700">${parseInt(r.vehicle_count||0).toLocaleString()}</td>
+            <td class="num">${fmtK(r.total_revenue)}</td>
+            <td class="num" style="font-weight:800;color:${catCol}">${fmt(r.revenue_per_vehicle)}</td>
+            <td>
+              <div class="bar-wrap">
+                <div class="bar-bg"><div class="bar-fill" style="width:${barW}%;background:${catCol}"></div></div>
+                <span style="font-size:11px;color:#64748b;white-space:nowrap">${barW}%</span>
+              </div>
+            </td>
+          </tr>`;
+      });
+    });
+
+    tbEl.innerHTML = tbHtml || '<tr><td colspan="7" class="empty">無資料</td></tr>';
+
+  } catch(e) {
+    if (kpiEl) kpiEl.innerHTML = '';
+    if (tbEl)  tbEl.innerHTML  = `<tr><td colspan="7" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;
+  }
+}
+</script>
+
+<script>
 async function loadParts(period,branch){
   try{
     const params=new URLSearchParams();if(period)params.set('period',period);if(branch)params.set('branch',branch);
@@ -978,6 +1093,7 @@ async function loadParts(period,branch){
     if(data.error)throw new Error(data.error);
     const byType=data.byType,totalSales=byType.reduce((s,r)=>s+n(r.total_sales),0),totalCost=byType.reduce((s,r)=>s+n(r.total_cost),0);
     document.getElementById('partsKPI').innerHTML=`<div class="kpi-card"><div class="kpi-label">銷售總額</div><div class="kpi-value kpi-green">${fmtK(totalSales)}</div><div class="kpi-sub">K</div></div><div class="kpi-card"><div class="kpi-label">成本總額</div><div class="kpi-value kpi-yellow">${fmtK(totalCost)}</div><div class="kpi-sub">K</div></div><div class="kpi-card"><div class="kpi-label">毛利</div><div class="kpi-value kpi-blue">${fmtK(totalSales-totalCost)}</div><div class="kpi-sub">K</div></div><div class="kpi-card"><div class="kpi-label">毛利率</div><div class="kpi-value">${totalSales>0?((totalSales-totalCost)/totalSales*100).toFixed(1):0}%</div></div>`;
+    const badgeType=(t)=>({零件:'badge-blue',配件:'badge-green',精品:'badge-yellow'}[t]||'badge-purple');
     document.getElementById('tbPartsType').innerHTML=byType.length?byType.map(r=>{const s=n(r.total_sales),c=n(r.total_cost),m=s>0?((s-c)/s*100):0;return`<tr><td><span class="badge badge-blue">${r.branch}</span></td><td><span class="badge ${badgeType(r.part_type)}">${r.part_type||'-'}</span></td><td class="num">${parseInt(r.count||0).toLocaleString()}</td><td class="num">${n(r.total_qty).toLocaleString()}</td><td class="num" style="font-weight:700">${fmt(s)}</td><td class="num">${fmt(c)}</td><td class="num" style="color:#10b981">${fmt(s-c)}</td><td class="num" style="color:${m>20?'#10b981':m>10?'#f59e0b':'#ef4444'}">${m.toFixed(1)}%</td></tr>`;}).join(''):'<tr><td colspan="8" class="empty">無資料</td></tr>';
     document.getElementById('tbTopParts').innerHTML=data.topParts.length?data.topParts.map((r,i)=>`<tr><td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td><td style="font-family:monospace;font-size:11px">${r.part_number}</td><td>${r.part_name||'-'}</td><td><span class="badge ${badgeType(r.part_type)}">${r.part_type||'-'}</span></td><td class="num">${n(r.total_qty).toLocaleString()}</td><td class="num" style="font-weight:700;color:#10b981">${fmt(r.total_sales)}</td></tr>`).join(''):'<tr><td colspan="6" class="empty">無資料</td></tr>';
   }catch(e){document.getElementById('tbPartsType').innerHTML=`<tr><td colspan="8" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;}
@@ -1031,7 +1147,6 @@ async function loadBoutiqueAccessories(period,branch){
   }catch(e){kpiEl.innerHTML=`<div style="color:#ef4444;padding:12px;grid-column:1/-1">${e.message}</div>`;matrixEl.innerHTML='';}
 }
 
-// ══ SA Sales sub-tabs ══
 let currentSaSubTab='sales';
 let saLoaded={sales:false,tech:false};
 function switchSaSubTab(tab){currentSaSubTab=tab;['sales','tech'].forEach(t=>{document.getElementById(`saSubBtn-${t}`).classList.toggle('active',t===tab);document.getElementById(`saView-${t}`).style.display=t===tab?'':'none';});if(!saLoaded[tab]){const view=tab==='tech'?'pickup_person':'sales_person';loadSASalesView(view,`saMatrix-${tab}`,tab);}}
@@ -1088,7 +1203,6 @@ async function loadTrend(branch){
   }catch(e){document.getElementById('tbTrend').innerHTML=`<tr><td colspan="7" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;}
 }
 
-// ══ 每日進廠台數 ══
 async function loadDaily(period,branch){
   try{
     const params=new URLSearchParams();if(period)params.set('period',period);if(branch)params.set('branch',branch);
@@ -1114,740 +1228,168 @@ async function loadDaily(period,branch){
   }catch(e){document.getElementById('dailyKPI').innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;}
 }
 
-window._toggleDailyAvg=function(branch){
-  const s=window._dailyState;if(!s)return;
-  s.showAvg[branch]=!s.showAvg[branch];
-  const col=s.colors[branch]||'#94a3b8';
-  const btn=document.getElementById(`avgToggle-${branch}`);
-  if(btn){btn.style.background=s.showAvg[branch]?col+'28':'transparent';btn.style.borderWidth=s.showAvg[branch]?'2px':'1.5px';btn.style.fontWeight=s.showAvg[branch]?'800':'600';}
-  window._renderDailyChart();
-};
+window._toggleDailyAvg=function(branch){const s=window._dailyState;if(!s)return;s.showAvg[branch]=!s.showAvg[branch];const col=s.colors[branch]||'#94a3b8';const btn=document.getElementById(`avgToggle-${branch}`);if(btn){btn.style.background=s.showAvg[branch]?col+'28':'transparent';btn.style.borderWidth=s.showAvg[branch]?'2px':'1.5px';btn.style.fontWeight=s.showAvg[branch]?'800':'600';}window._renderDailyChart();};
+window._renderDailyChart=function(){const s=window._dailyState;if(!s)return;const{branchList,dateList,colors,maxCount,barW,dayMap,avgMap,showAvg}=s;const leftPad=44,chartH=180,xLabelH=18,legendH=24;const groupW=branchList.length*(barW+2);const minW=leftPad+dateList.length*(groupW+6)+40;const chartW=Math.max(300,minW);const totalH=chartH+xLabelH+legendH;let bars='',xLabels='',avgLines='',yAxis='',legend='';for(let i=0;i<=4;i++){const val=Math.round(maxCount*i/4);const y=chartH-(i/4)*(chartH-28);yAxis+=`<line x1="${leftPad-4}" y1="${y.toFixed(0)}" x2="${chartW-16}" y2="${y.toFixed(0)}" stroke="${i===0?'#374151':'#1e3050'}" stroke-width="1"/>`;yAxis+=`<text x="${leftPad-6}" y="${(y+4).toFixed(0)}" text-anchor="end" font-size="9" fill="#475569">${val}</text>`;}dateList.forEach((d,di)=>{const gx=leftPad+di*(groupW+6);branchList.forEach((b,bi)=>{const val=dayMap[d]?.[b]||0;const barH=val>0?Math.max(2,val/maxCount*(chartH-28)):0;const x=gx+bi*(barW+2),y=chartH-barH;bars+=`<rect x="${x}" y="${y.toFixed(1)}" width="${barW}" height="${barH.toFixed(1)}" fill="${colors[b]||'#64748b'}" rx="2" opacity="0.85"><title>${b} ${d}: ${val}台</title></rect>`;if(val>0&&barW>=8){const labelY=Math.max(10,(y-2));bars+=`<text x="${(x+barW/2).toFixed(0)}" y="${labelY.toFixed(0)}" text-anchor="middle" font-size="8" fill="#94a3b8">${val}</text>`;}});xLabels+=`<text x="${(gx+groupW/2).toFixed(0)}" y="${chartH+13}" text-anchor="middle" font-size="8" fill="#475569">${d.slice(8)}</text>`;});branchList.forEach(b=>{if(!showAvg[b])return;const avg=avgMap[b];if(!avg)return;const y=chartH-avg/maxCount*(chartH-28);const col=colors[b]||'#94a3b8';avgLines+=`<line x1="${leftPad}" y1="${y.toFixed(1)}" x2="${chartW-18}" y2="${y.toFixed(1)}" stroke="${col}" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.9"/>`;avgLines+=`<rect x="${chartW-17}" y="${(y-7).toFixed(0)}" width="17" height="12" rx="2" fill="${col}" opacity="0.25"/>`;avgLines+=`<text x="${chartW-8}" y="${(y+4).toFixed(0)}" text-anchor="middle" font-size="8" fill="${col}" font-weight="800">${avg.toFixed(1)}</text>`;});const legY=chartH+xLabelH+5;branchList.forEach((b,i)=>{const col=colors[b]||'#94a3b8';legend+=`<rect x="${leftPad+i*60}" y="${legY}" width="10" height="10" fill="${col}" rx="2"/>`;legend+=`<text x="${leftPad+13+i*60}" y="${legY+8}" font-size="10" fill="#94a3b8" font-weight="600">${b}</text>`;});const svg=`<svg viewBox="0 0 ${chartW} ${totalH}" style="width:100%;height:auto;display:block;min-width:${Math.min(300,chartW)}px">${yAxis}${bars}${xLabels}${avgLines}${legend}</svg>`;const wrap=document.getElementById('dailyChartSvgWrap');if(wrap)wrap.innerHTML=svg;};
+</script>
 
-window._renderDailyChart=function(){
-  const s=window._dailyState;if(!s)return;
-  const{branchList,dateList,colors,maxCount,barW,dayMap,avgMap,showAvg}=s;
-  const leftPad=44,chartH=180,xLabelH=18,legendH=24;
-  const groupW=branchList.length*(barW+2);
-  const minW=leftPad+dateList.length*(groupW+6)+40;
-  const chartW=Math.max(300,minW);
-  const totalH=chartH+xLabelH+legendH;
-  let bars='',xLabels='',avgLines='',yAxis='',legend='';
-  for(let i=0;i<=4;i++){const val=Math.round(maxCount*i/4);const y=chartH-(i/4)*(chartH-28);yAxis+=`<line x1="${leftPad-4}" y1="${y.toFixed(0)}" x2="${chartW-16}" y2="${y.toFixed(0)}" stroke="${i===0?'#374151':'#1e3050'}" stroke-width="1"/>`;yAxis+=`<text x="${leftPad-6}" y="${(y+4).toFixed(0)}" text-anchor="end" font-size="9" fill="#475569">${val}</text>`;}
-  dateList.forEach((d,di)=>{const gx=leftPad+di*(groupW+6);branchList.forEach((b,bi)=>{const val=dayMap[d]?.[b]||0;const barH=val>0?Math.max(2,val/maxCount*(chartH-28)):0;const x=gx+bi*(barW+2),y=chartH-barH;bars+=`<rect x="${x}" y="${y.toFixed(1)}" width="${barW}" height="${barH.toFixed(1)}" fill="${colors[b]||'#64748b'}" rx="2" opacity="0.85"><title>${b} ${d}: ${val}台</title></rect>`;if(val>0&&barW>=8){const labelY=Math.max(10,(y-2));bars+=`<text x="${(x+barW/2).toFixed(0)}" y="${labelY.toFixed(0)}" text-anchor="middle" font-size="8" fill="#94a3b8">${val}</text>`;}});xLabels+=`<text x="${(gx+groupW/2).toFixed(0)}" y="${chartH+13}" text-anchor="middle" font-size="8" fill="#475569">${d.slice(8)}</text>`;});
-  branchList.forEach(b=>{if(!showAvg[b])return;const avg=avgMap[b];if(!avg)return;const y=chartH-avg/maxCount*(chartH-28);const col=colors[b]||'#94a3b8';avgLines+=`<line x1="${leftPad}" y1="${y.toFixed(1)}" x2="${chartW-18}" y2="${y.toFixed(1)}" stroke="${col}" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.9"/>`;avgLines+=`<rect x="${chartW-17}" y="${(y-7).toFixed(0)}" width="17" height="12" rx="2" fill="${col}" opacity="0.25"/>`;avgLines+=`<text x="${chartW-8}" y="${(y+4).toFixed(0)}" text-anchor="middle" font-size="8" fill="${col}" font-weight="800">${avg.toFixed(1)}</text>`;});
-  const legY=chartH+xLabelH+5;branchList.forEach((b,i)=>{const col=colors[b]||'#94a3b8';legend+=`<rect x="${leftPad+i*60}" y="${legY}" width="10" height="10" fill="${col}" rx="2"/>`;legend+=`<text x="${leftPad+13+i*60}" y="${legY+8}" font-size="10" fill="#94a3b8" font-weight="600">${b}</text>`;});
-  const svg=`<svg viewBox="0 0 ${chartW} ${totalH}" style="width:100%;height:auto;display:block;min-width:${Math.min(300,chartW)}px">${yAxis}${bars}${xLabels}${avgLines}${legend}</svg>`;
-  const wrap=document.getElementById('dailyChartSvgWrap');if(wrap)wrap.innerHTML=svg;
-};
-
+<script>
 // ══ WIP 未結工單 ══
-let _wipRows=[];
-let _wipModalFiltered=[];
-
+let _wipData=null;
 async function loadWip(period,branch){
-  const kpiEl=document.getElementById('wipKPI');
-  const wrapEl=document.getElementById('wipSummaryWrap');
-  if(!kpiEl||!wrapEl)return;
-  kpiEl.innerHTML='';
-  wrapEl.innerHTML='<div class="loading"><span class="spinner"></span>載入中</div>';
-  if(!period){wrapEl.innerHTML='<div class="empty">請選擇期間後按查詢</div>';return;}
+  const kpiEl=document.getElementById('wipKPI'),summaryEl=document.getElementById('wipSummaryWrap');
+  kpiEl.innerHTML='';summaryEl.innerHTML='<div class="loading"><span class="spinner"></span>載入中</div>';
+  if(!period){summaryEl.innerHTML='<div class="empty">請選擇期間</div>';return;}
   try{
-    const p=new URLSearchParams({period});if(branch)p.set('branch',branch);
-    const data=await(await fetch(`/api/stats/wip?${p}`)).json();
+    const params=new URLSearchParams();params.set('period',period);if(branch)params.set('branch',branch);
+    const data=await(await fetch(`/api/stats/wip?${params}`)).json();
     if(data.error)throw new Error(data.error);
-    _wipRows=data.rows||[];
-    renderWipKPI(data.summary);
-    renderWipSummary(data.summary);
-  }catch(e){wrapEl.innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;}
-}
-
-function renderWipKPI(summary){
-  const kpiEl=document.getElementById('wipKPI');
-  const{total,exclPdi}=summary;
-  const fmtN=v=>Math.round(parseFloat(v||0)).toLocaleString();
-  const pdiCount=total.count-exclPdi.count;
-  const over30=_wipRows.filter(r=>r.days_open!==null&&parseFloat(r.days_open)>30).length;
-  const over30ExclPdi=_wipRows.filter(r=>!r.is_pdi&&r.days_open!==null&&parseFloat(r.days_open)>30).length;
-  const under30ExclPdi=exclPdi.count-over30ExclPdi;
-  kpiEl.innerHTML=`
-    <div class="kpi-card" style="border-color:#f97316">
-      <div class="kpi-label" style="color:#f97316">🔧 未結工單（含PDI）</div>
-      <div class="kpi-value kpi-orange">${total.count}</div>
-      <div class="kpi-sub">扣PDI ${pdiCount} 台 → 實際 ${exclPdi.count} 台</div>
-    </div>
-    <div class="kpi-card" style="border-color:#10b981">
-      <div class="kpi-label" style="color:#10b981">✅ 30天內（扣PDI）</div>
-      <div class="kpi-value kpi-green">${under30ExclPdi}</div>
-      <div class="kpi-sub">台</div>
-    </div>
-    <div class="kpi-card" style="border-color:#ef4444">
-      <div class="kpi-label" style="color:#ef4444">⚠️ 超過30天（扣PDI）</div>
-      <div class="kpi-value kpi-red">${over30ExclPdi}</div>
-      <div class="kpi-sub">台（含PDI共${over30}台）</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">💰 工時費（扣PDI）</div>
-      <div class="kpi-value kpi-green">${fmtN(exclPdi.wage)}</div>
-      <div class="kpi-sub">元（含PDI ${fmtN(total.wage)}）</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">📦 銷售材料費（扣PDI）</div>
-      <div class="kpi-value kpi-yellow">${fmtN(exclPdi.sales)}</div>
-      <div class="kpi-sub">元未稅</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">🏷️ 維修材料費（扣PDI）</div>
-      <div class="kpi-value">${fmtN(exclPdi.cost)}</div>
-      <div class="kpi-sub">元未稅</div>
-    </div>`;
-}
-
-function renderWipSummary(summary){
-  const wrapEl=document.getElementById('wipSummaryWrap');
-  const{byAccountType,byRepairType}=summary;
-  const fmtN=v=>Math.round(parseFloat(v||0)).toLocaleString();
-  const thStyle='background:#0f172a;color:#64748b;font-size:11px;font-weight:700;padding:9px 12px;border-bottom:1px solid #2d3f56;white-space:nowrap;';
-  const thR=thStyle+'text-align:right;';
-
-  const buildTable=(items,groupLabel,clickType)=>{
-    if(!items||!items.length)return'';
-    const tot=items.reduce((s,i)=>({
-      count:s.count+i.count,wage:s.wage+i.wage,
-      sales:s.sales+i.sales,cost:s.cost+i.cost,c30:s.c30+i.c30,cOver30:s.cOver30+i.cOver30
-    }),{count:0,wage:0,sales:0,cost:0,c30:0,cOver30:0});
-
-    const rowsHtml=items.map(item=>{
-      const esc=item.label.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-      const c30Col=item.c30>0?'#10b981':'#475569';
-      const cO30Col=item.cOver30>0?'#ef4444':'#475569';
-      return `<tr style="cursor:pointer;transition:background .1s"
-        onclick="openWipDetail('${clickType}','${esc}')"
-        onmouseover="this.querySelectorAll('td').forEach(c=>c.style.background='rgba(59,130,246,.07)')"
-        onmouseout="this.querySelectorAll('td').forEach(c=>c.style.background='')">
-        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3)">
-          <span style="font-weight:700;color:#e2e8f0">${item.label}</span>
-        </td>
-        <td style="text-align:right;padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);font-weight:800;color:#f97316">${item.count}</td>
-        <td style="text-align:right;padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:#10b981;font-weight:700">${fmtN(item.wage)}</td>
-        <td style="text-align:right;padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:#f59e0b;font-weight:700">${fmtN(item.sales)}</td>
-        <td style="text-align:right;padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:#64748b">${fmtN(item.cost)}</td>
-        <td style="text-align:right;padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:${c30Col};font-weight:700;border-left:1px solid #2d3f56">
-          ${item.c30>0?item.c30:'—'}
-        </td>
-        <td style="text-align:right;padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:${cO30Col};font-weight:800">
-          ${item.cOver30>0?item.cOver30:'—'}
-        </td>
-        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:#475569;font-size:11px">🔍</td>
-      </tr>`;
-    }).join('');
-
-    const totRow=`<tr style="background:rgba(249,115,22,.07)">
-      <td style="padding:10px 12px;font-weight:800;color:#f97316">合計</td>
-      <td style="text-align:right;padding:10px 12px;font-weight:800;color:#f97316">${tot.count}</td>
-      <td style="text-align:right;padding:10px 12px;color:#10b981;font-weight:800">${fmtN(tot.wage)}</td>
-      <td style="text-align:right;padding:10px 12px;color:#f59e0b;font-weight:800">${fmtN(tot.sales)}</td>
-      <td style="text-align:right;padding:10px 12px;color:#64748b">${fmtN(tot.cost)}</td>
-      <td style="text-align:right;padding:10px 12px;color:#10b981;font-weight:800;border-left:1px solid #2d3f56">${tot.c30}</td>
-      <td style="text-align:right;padding:10px 12px;color:#ef4444;font-weight:800">${tot.cOver30>0?tot.cOver30:'—'}</td>
-      <td></td>
-    </tr>`;
-
-    const pdiInScope=_wipRows.filter(r=>{
-      if(!r.is_pdi)return false;
-      const val=clickType==='open_period'?(r.open_period||'（未知）'):clickType==='account_type'?(r.account_type||'（未知）'):(r.repair_type||'（未知）');
-      return items.some(i=>i.label===val);
-    });
-    const pdiSum=pdiInScope.reduce((s,r)=>({
-      count:s.count+1,
-      wage:s.wage+parseFloat(r.wage||0),
-      sales:s.sales+parseFloat(r.sales_amt||0),
-      cost:s.cost+parseFloat(r.cost_amt||0),
-    }),{count:0,wage:0,sales:0,cost:0});
-    const exPdi={
-      count:tot.count-pdiSum.count,
-      wage:tot.wage-pdiSum.wage,
-      sales:tot.sales-pdiSum.sales,
-      cost:tot.cost-pdiSum.cost,
-      c30:tot.c30-(pdiInScope.filter(r=>r.days_open!==null&&parseFloat(r.days_open)<=30).length),
-      cOver30:tot.cOver30-(pdiInScope.filter(r=>r.days_open!==null&&parseFloat(r.days_open)>30).length),
-    };
-    const exPdiRow=pdiSum.count>0?`<tr style="background:rgba(16,185,129,.06);border-top:1px dashed #2d3f56">
-      <td style="padding:8px 12px;font-size:12px;font-weight:700;color:#10b981">合計（扣 PDI ${pdiSum.count} 台）</td>
-      <td style="text-align:right;padding:8px 12px;font-size:12px;color:#f97316;font-weight:800">${exPdi.count}</td>
-      <td style="text-align:right;padding:8px 12px;font-size:12px;color:#10b981;font-weight:700">${fmtN(exPdi.wage)}</td>
-      <td style="text-align:right;padding:8px 12px;font-size:12px;color:#f59e0b;font-weight:700">${fmtN(exPdi.sales)}</td>
-      <td style="text-align:right;padding:8px 12px;font-size:12px;color:#64748b">${fmtN(exPdi.cost)}</td>
-      <td style="text-align:right;padding:8px 12px;font-size:12px;color:#10b981;font-weight:700;border-left:1px solid #2d3f56">${exPdi.c30}</td>
-      <td style="text-align:right;padding:8px 12px;font-size:12px;color:${exPdi.cOver30>0?'#ef4444':'#475569'};font-weight:700">${exPdi.cOver30>0?exPdi.cOver30:'—'}</td>
-      <td></td>
-    </tr>`:'';
-
-    return `
-      <div style="margin-bottom:24px">
-        <div style="font-size:12px;font-weight:700;color:#475569;display:flex;align-items:center;gap:8px;margin-bottom:10px;letter-spacing:.04em">
-          依 ${groupLabel} 分組
-          <div style="flex:1;height:1px;background:#2d3f56"></div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr>
-              <th style="${thStyle}min-width:120px">${groupLabel}</th>
-              <th style="${thR}">台數</th>
-              <th style="${thR}">工時費(元)</th>
-              <th style="${thR}">銷售材料費(元)</th>
-              <th style="${thR}">維修材料費(元)</th>
-              <th style="${thR}border-left:1px solid #374151;color:#10b981">≤30天</th>
-              <th style="${thR}color:#ef4444">&gt;30天</th>
-              <th style="${thStyle}width:30px"></th>
-            </tr></thead>
-            <tbody>
-              ${rowsHtml}
-              ${totRow}
-              ${exPdiRow}
-            </tbody>
-          </table>
-        </div>
+    _wipData=data;
+    const{rows,summary}=data;const{total,exclPdi,byAccountType,byRepairType}=summary;
+    const T=total,E=exclPdi;
+    kpiEl.innerHTML=`
+      <div class="kpi-card" style="border-color:#f97316">
+        <div class="kpi-label" style="color:#f97316">WIP 總件數</div>
+        <div class="kpi-value kpi-orange">${T.count.toLocaleString()}</div>
+        <div class="kpi-sub">（含PDI）扣PDI: ${E.count}</div>
+      </div>
+      <div class="kpi-card" style="border-color:#ef4444">
+        <div class="kpi-label" style="color:#ef4444">逾30天工單</div>
+        <div class="kpi-value kpi-red">${T.cOver30.toLocaleString()}</div>
+        <div class="kpi-sub">30天內: ${T.c30} | 扣PDI逾30: ${E.cOver30}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">工資總額</div>
+        <div class="kpi-value kpi-blue">${fmtK(T.wage)}</div>
+        <div class="kpi-sub">K元（扣PDI: ${fmtK(E.wage)}K）</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">銷售金額</div>
+        <div class="kpi-value">${fmtK(T.sales)}</div>
+        <div class="kpi-sub">K元（扣PDI: ${fmtK(E.sales)}K）</div>
       </div>`;
-  };
-
-  const html=(buildTable(byAccountType,'進廠月份','open_period')||'')
-            +(buildTable(byRepairType,'維修類型','repair_type')||'')
-            ||'<div class="empty">此期間無未結工單</div>';
-  wrapEl.innerHTML=html;
+    let html=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">`;
+    html+=`<div class="card"><div class="card-title">📆 依進廠月份</div><div class="table-wrap"><table><thead><tr><th>進廠月份</th><th class="num">件數</th><th class="num">工資</th><th class="num">逾30天</th></tr></thead><tbody>`;
+    byAccountType.forEach(r=>{html+=`<tr onclick="openWipModal('period','${r.label}')" style="cursor:pointer"><td>${r.label}</td><td class="num">${r.count}</td><td class="num">${fmtK(r.wage)}K</td><td class="num" style="color:${r.cOver30>0?'#ef4444':'#64748b'}">${r.cOver30}</td></tr>`;});
+    html+=`</tbody></table></div></div>`;
+    html+=`<div class="card"><div class="card-title">🔧 依維修類型</div><div class="table-wrap"><table><thead><tr><th>維修類型</th><th class="num">件數</th><th class="num">工資</th><th class="num">逾30天</th></tr></thead><tbody>`;
+    byRepairType.forEach(r=>{const isPdi=/PDI/i.test(r.label);html+=`<tr onclick="openWipModal('type','${r.label}')" style="cursor:pointer"><td>${isPdi?`<span class="badge badge-yellow">${r.label}</span>`:r.label}</td><td class="num">${r.count}</td><td class="num">${fmtK(r.wage)}K</td><td class="num" style="color:${r.cOver30>0?'#ef4444':'#64748b'}">${r.cOver30}</td></tr>`;});
+    html+=`</tbody></table></div></div></div>`;
+    html+=`<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px"><div style="font-size:13px;font-weight:700">📋 全部工單 (${rows.length})</div><button onclick="openWipModal('all','')" style="padding:5px 12px;background:rgba(59,130,246,.15);color:#3b82f6;border:1px solid rgba(59,130,246,.3);border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">🔍 查看明細</button></div><div style="font-size:12px;color:#64748b">點擊上方分類列可依月份或維修類型篩選工單明細。</div></div>`;
+    summaryEl.innerHTML=html;
+  }catch(e){summaryEl.innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;}
 }
 
-function openWipDetail(filterType,filterValue){
-  const filtered=filterType==='open_period'
-    ?_wipRows.filter(r=>(r.open_period||'（未知）')===filterValue)
-    :filterType==='account_type'
-    ?_wipRows.filter(r=>(r.account_type||'（未知）')===filterValue)
-    :_wipRows.filter(r=>(r.repair_type||'（未知）')===filterValue);
-
-  _wipModalFiltered=filtered;
-  const typeLabel=filterType==='open_period'?'進廠月份':filterType==='account_type'?'帳類':'維修類型';
-  document.getElementById('wipModalTitle').textContent=`WIP 未結工單 — ${typeLabel}：${filterValue}`;
+let _wipModal={filterType:'',filterVal:''};
+function openWipModal(filterType,filterVal){
+  if(!_wipData)return;
+  _wipModal={filterType,filterVal};
+  const modal=document.getElementById('wipDetailModal');
+  modal.style.display='flex';document.body.style.overflow='hidden';
+  renderWipModal();
+}
+function closeWipModal(){document.getElementById('wipDetailModal').style.display='none';document.body.style.overflow='';}
+function renderWipModal(){
+  if(!_wipData)return;
+  const{filterType,filterVal}=_wipModal;
+  let filtered=_wipData.rows;
+  if(filterType==='period')filtered=filtered.filter(r=>(r.open_period||'（未知）')===filterVal);
+  else if(filterType==='type')filtered=filtered.filter(r=>(r.repair_type||'（未知）')===filterVal);
+  const title=filterType==='all'?'全部未結工單':filterType==='period'?`進廠月份：${filterVal}`:`維修類型：${filterVal}`;
+  document.getElementById('wipModalTitle').textContent=title;
   document.getElementById('wipModalCount').textContent=`共 ${filtered.length} 筆`;
-  const bCol={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
-  const fmtN=v=>Math.round(parseFloat(v||0)).toLocaleString();
-  const fmtDate=v=>{if(!v)return'—';const s=String(v);return s.length>=10?s.slice(0,10):s;};
-  const thS='background:#0f172a;color:#64748b;font-size:11px;font-weight:700;padding:8px 10px;border-bottom:1px solid #2d3f56;white-space:nowrap;position:sticky;top:0;z-index:2;';
-  const thR=thS+'text-align:right;';
-  let totW=0,totS=0,totC=0;
-  const bodyHtml=filtered
-    .slice().sort((a,b)=>{
-      const aOver=(a.days_open!==null&&parseFloat(a.days_open)>30)?1:0;
-      const bOver=(b.days_open!==null&&parseFloat(b.days_open)>30)?1:0;
-      if(bOver!==aOver)return bOver-aOver;
-      if(a.open_time&&b.open_time)return new Date(a.open_time)-new Date(b.open_time);
-      return 0;
-    })
-    .map((row,i)=>{
-      const col=bCol[row.branch]||'#94a3b8';
-      const w=parseFloat(row.wage||0),s=parseFloat(row.sales_amt||0),c=parseFloat(row.cost_amt||0);
-      totW+=w;totS+=s;totC+=c;
-      const days=row.days_open!==null?Math.round(parseFloat(row.days_open)):null;
-      const isOver30=days!==null&&days>30;
-      const daysCol=days===null?'#475569':isOver30?'#ef4444':'#10b981';
-      const daysBg=isOver30?'rgba(239,68,68,.08)':'';
-      const daysTxt=days!==null?`${days}天`:'—';
-      return `<tr style="${daysBg?'background:'+daysBg:''}">
-        <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);color:#475569;font-size:11px">${i+1}</td>
-        <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);font-family:monospace;font-size:11px;white-space:nowrap">${row.work_order}</td>
-        <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3)">
-          <span style="background:${col}22;color:${col};padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">${row.branch}</span>
-        </td>
-        <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);white-space:nowrap">${row.plate_no||'—'}</td>
-        <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3)">${row.open_period||'—'}</td>
-        <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3)">${row.repair_type||'—'}</td>
-        <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);white-space:nowrap;font-size:11px">${fmtDate(row.open_time)}</td>
-        <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;font-weight:800;color:${daysCol};border-left:1px solid #2d3f56">
-          ${isOver30?'⚠️ ':''}${daysTxt}
-        </td>
-        <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;color:#10b981;font-weight:700">${fmtN(w)}</td>
-        <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;color:#f59e0b;font-weight:700">${fmtN(s)}</td>
-        <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;color:#64748b">${fmtN(c)}</td>
-        <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);font-size:11px">${row.service_advisor||'—'}</td>
-        <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3)">${row.car_series||'—'}</td>
-        <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3)">
-          ${row.is_pdi?'<span style="background:rgba(245,158,11,.15);color:#f59e0b;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:700">PDI</span>':''}
-        </td>
-      </tr>`;
-    }).join('');
-  document.getElementById('wipModalTable').innerHTML=`
-    <thead><tr>
-      <th style="${thS}width:28px">#</th>
-      <th style="${thS}">工單號</th>
-      <th style="${thS}">據點</th>
-      <th style="${thS}">車牌</th>
-      <th style="${thS}">進廠月份</th>
-      <th style="${thS}">維修類型</th>
-      <th style="${thS}">開單時間</th>
-      <th style="${thR}border-left:1px solid #2d3f56">在廠天數</th>
-      <th style="${thR}">工時費(元)</th>
-      <th style="${thR}">銷售材料費(元)</th>
-      <th style="${thR}">維修材料費(元)</th>
-      <th style="${thS}">SA</th>
-      <th style="${thS}">車系</th>
-      <th style="${thS}">標記</th>
-    </tr></thead>
-    <tbody>
-      ${bodyHtml||'<tr><td colspan="14" class="empty">無資料</td></tr>'}
-      <tr style="background:rgba(249,115,22,.08);font-weight:800;border-top:2px solid #374151">
-        <td colspan="8" style="padding:9px 10px;color:#f97316">合計（${filtered.length} 筆）</td>
-        <td style="padding:9px 10px;text-align:right;color:#10b981">${fmtN(totW)}</td>
-        <td style="padding:9px 10px;text-align:right;color:#f59e0b">${fmtN(totS)}</td>
-        <td style="padding:9px 10px;text-align:right;color:#64748b">${fmtN(totC)}</td>
-        <td colspan="3"></td>
-      </tr>
-    </tbody>`;
-  document.getElementById('wipModalStats').textContent=`工時費 ${fmtN(totW)} 元｜銷售材料費 ${fmtN(totS)} 元｜維修材料費 ${fmtN(totC)} 元`;
-  document.getElementById('wipDetailModal').style.display='flex';
-}
-
-function closeWipModal(){
-  document.getElementById('wipDetailModal').style.display='none';
-  _wipModalFiltered=[];
+  const totalWage=filtered.reduce((s,r)=>s+parseFloat(r.wage||0),0);
+  const over30=filtered.filter(r=>r.days_open!==null&&parseFloat(r.days_open)>30).length;
+  document.getElementById('wipModalStats').textContent=`工資合計：${fmt(totalWage)} 元 ｜ 逾30天：${over30} 筆`;
+  const cols=[{k:'branch',l:'據點'},{k:'work_order',l:'工單號'},{k:'open_period',l:'進廠月'},{k:'plate_no',l:'車牌'},{k:'repair_type',l:'維修類型'},{k:'service_advisor',l:'SA'},{k:'wage',l:'工資',num:true},{k:'sales_amt',l:'銷售',num:true},{k:'days_open',l:'開單天數',num:true}];
+  let html=`<thead style="position:sticky;top:0;z-index:2"><tr>${cols.map(c=>`<th style="padding:9px 12px;text-align:${c.num?'right':'left'};font-size:11px;color:#64748b;background:#0f172a;border-bottom:1px solid #2d3f56;white-space:nowrap">${c.l}</th>`).join('')}</tr></thead><tbody>`;
+  filtered.forEach(r=>{const days=r.days_open!==null?parseFloat(r.days_open):null;const over=days!==null&&days>30;const bg=r.is_pdi?'rgba(245,158,11,.06)':over?'rgba(239,68,68,.05)':'';html+=`<tr style="background:${bg}">${cols.map(c=>{const v=r[c.k];let disp=v===null||v===undefined||v===''?'—':c.num&&!isNaN(v)?Math.round(parseFloat(v)).toLocaleString():v;if(c.k==='days_open'&&days!==null){disp=`<span style="color:${over?'#ef4444':days>15?'#f59e0b':'#64748b'};font-weight:${over?700:400}">${Math.round(days)}</span>`;}if(c.k==='work_order'&&r.is_pdi){disp=`${v} <span class="badge badge-yellow" style="font-size:10px">PDI</span>`;}return`<td style="padding:7px 12px;border-bottom:1px solid rgba(45,63,86,.3);font-size:11px;${c.num?'text-align:right;font-variant-numeric:tabular-nums':''}">${disp}</td>`;}).join('')}</tr>`;});
+  document.getElementById('wipModalTable').innerHTML=html+'</tbody>';
 }
 
 function exportWipModalCSV(){
-  if(!_wipModalFiltered.length)return;
-  const cols=[
-    ['work_order','工單號'],['branch','據點'],['plate_no','車牌'],
-    ['open_period','進廠月份'],['repair_type','維修類型'],['open_time','開單時間'],
-    ['days_open','在廠天數'],['wage','工時費'],
-    ['sales_amt','銷售材料費'],['cost_amt','維修材料費'],
-    ['service_advisor','SA'],['car_series','車系'],
-  ];
-  const header=cols.map(c=>c[1]).join(',');
-  const rows=_wipModalFiltered.map(r=>cols.map(([key])=>{
-    const v=r[key]===null||r[key]===undefined?'':String(r[key]);
-    return v.includes(',')||v.includes('"')?'"'+v.replace(/"/g,'""')+'"':v;
-  }).join(','));
-  const csv='\uFEFF'+[header,...rows].join('\r\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`wip_detail_${Date.now()}.csv`;a.click();URL.revokeObjectURL(url);
+  if(!_wipData)return;
+  const{filterType,filterVal}=_wipModal;
+  let filtered=_wipData.rows;
+  if(filterType==='period')filtered=filtered.filter(r=>(r.open_period||'（未知）')===filterVal);
+  else if(filterType==='type')filtered=filtered.filter(r=>(r.repair_type||'（未知）')===filterVal);
+  const header=['據點','工單號','進廠月','車牌','維修類型','SA','工資','銷售金額','開單天數'];
+  const rows=filtered.map(r=>[r.branch,r.work_order,r.open_period,r.plate_no,r.repair_type,r.service_advisor,Math.round(r.wage||0),Math.round(r.sales_amt||0),r.days_open!==null?Math.round(r.days_open):''].map(v=>JSON.stringify(v??'')).join(','));
+  const csv='\uFEFF'+[header.join(','),...rows].join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=`wip_${filterVal||'all'}.csv`;a.click();
 }
 
 // ══ 技師工時 ══
-const DT_COLORS_TH = { engine:'#8b5cf6', bodywork:'#f97316', paint:'#06b6d4', beauty:'#ec4899' };
-const DT_ICONS_TH  = { engine:'🔧', bodywork:'🔨', paint:'🎨', beauty:'💅' };
-const DT_LABELS_TH = { engine:'引擎維護科', bodywork:'鈑金科', paint:'烤漆科', beauty:'美容部' };
-const DT_ORDER_TH  = ['engine','bodywork','paint','beauty'];
-const FC_COLORS_TH = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b', '聯合':'#f97316', '鈑烤':'#ec4899' };
-const FC_LABELS_TH = { AMA:'AMA 內湖', AMC:'AMC 仁愛', AMD:'AMD 士林', '聯合':'聯合服務中心', '鈑烤':'鈑烤廠' };
-const FC_ORDER_TH  = ['AMA','AMD','AMC','聯合','鈑烤'];
+async function loadTechHours(period,branch){
+  const kpiEl=document.getElementById('techHoursKPI'),contentEl=document.getElementById('techHoursContent');
+  kpiEl.innerHTML='';contentEl.innerHTML='<div class="loading"><span class="spinner"></span>載入中</div>';
+  if(!period){contentEl.innerHTML='<div class="empty">請選擇期間</div>';return;}
+  try{
+    const params=new URLSearchParams();params.set('period',period);if(branch)params.set('branch',branch);
+    const[data,cfg,wd]=await Promise.all([
+      fetch(`/api/stats/income-summary?${params}`).then(r=>r.json()),
+      fetch('/api/tech-capacity-config').then(r=>r.json()),
+      fetch(`/api/stats/daily?${params}`).then(r=>r.json()),
+    ]);
+    if(data.error)throw new Error(data.error);
+    const techByType=data.techByType||[];
+    const HOURLY=parseFloat(cfg?.hourly_rate||2150);
+    const util=cfg?.utilization_rates||{};
+    const resignedCountTarget=cfg?.resigned_count_target===true;
+    const wdMap={};(wd.summary||[]).forEach(r=>{wdMap[r.branch]=parseInt(r.working_days||0);});
+    const rosterRes=await fetch('/api/staff-roster').then(r=>r.json()).catch(()=>([]));
+    const allRoster=Array.isArray(rosterRes)?rosterRes:(rosterRes.staff||[]);
+    const branchColors={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
+    const deptDef={engine:{label:'引擎維護科',col:'#8b5cf6',kw:['引擎','維護']},bodywork:{label:'鈑金科',col:'#f97316',kw:['鈑金']},paint:{label:'烤漆科',col:'#06b6d4',kw:['烤漆']},beauty:{label:'美容部',col:'#ec4899',kw:['美容']}};
+    function getDept(name){if(!name)return null;const n=name;for(const[k,v]of Object.entries(deptDef)){if(v.kw.some(kw=>n.includes(kw)))return k;}return null;}
+    function getJobRate(dept,title){if(!dept)return 0;const rates=util[dept]||{};if(title&&rates[title]!==undefined)return rates[title];return rates['default']!==undefined?rates['default']:0.8;}
+    const BRANCHES=branch?[branch]:['AMA','AMC','AMD'];
+    const branchSections=[];
+    let grandActH=0,grandTgtH=0,grandBranchCount=0;
+    for(const br of BRANCHES){
+      const brRoster=allRoster.filter(r=>r.branch===br&&['引擎','鈑金','烤漆','美容'].some(k=>r.department?.includes(k)));
+      const workDays=wdMap[br]||0;
+      const brTechMap={};brRoster.forEach(s=>{brTechMap[s.staff_name||s.name]={dept:getDept(s.department||''),title:s.job_title||'',resigned:!!s.resigned_date};});
+      const brWageTotal=techByType.filter(r=>r.branch===br).reduce((s,r)=>s+parseFloat(r.total_wage||0),0);
+      const brActH=brWageTotal>0?Math.round(brWageTotal/HOURLY*10)/10:0;
+      let brTgtH=0;
+      brRoster.forEach(s=>{const dept=getDept(s.department||''),title=s.job_title||'',isResigned=!!s.resigned_date;if(!dept)return;if(isResigned&&!resignedCountTarget)return;const rate=getJobRate(dept,title);brTgtH+=workDays*8*rate;});
+      brTgtH=Math.round(brTgtH*10)/10;
+      const ach=brTgtH>0?Math.round(brActH/brTgtH*1000)/10:null;
+      grandActH+=brActH;grandTgtH+=brTgtH;grandBranchCount++;
 
-function pctColorTH(v) {
-  if (v === null) return '#64748b';
-  return v >= 100 ? '#10b981' : v >= 80 ? '#f59e0b' : '#ef4444';
-}
-
-async function loadTechHours(period, branch) {
-  const kpiEl     = document.getElementById('techHoursKPI');
-  const contentEl = document.getElementById('techHoursContent');
-  if (!kpiEl || !contentEl) return;
-  if (!period) { contentEl.innerHTML = '<div class="empty">請選擇期間後按查詢</div>'; return; }
-
-  kpiEl.innerHTML = '';
-  contentEl.innerHTML = '<div class="loading"><span class="spinner"></span>載入中</div>';
-
-  try {
-    const params = new URLSearchParams({ period });
-    if (branch) params.set('branch', branch);
-    const data = await fetch(`/api/stats/tech-hours?${params}`).then(r => r.json());
-    if (data.error) throw new Error(data.error);
-
-    const branches = Object.keys(data.branches || {}).sort((a,b) =>
-      (FC_ORDER_TH.indexOf(a) < 0 ? 99 : FC_ORDER_TH.indexOf(a)) -
-      (FC_ORDER_TH.indexOf(b) < 0 ? 99 : FC_ORDER_TH.indexOf(b))
-    );
-
-    if (!branches.length) {
-      kpiEl.innerHTML = '';
-      contentEl.innerHTML = '<div class="empty">此期間無技師工時資料，請確認已上傳人員名冊（獎金表頁面右上角）</div>';
-      return;
+      const deptRows=[];
+      Object.entries(deptDef).forEach(([dk,dv])=>{
+        const dRoster=brRoster.filter(s=>getDept(s.department||'')===dk);
+        if(!dRoster.length)return;
+        let dTgt=0;dRoster.forEach(s=>{const isResigned=!!s.resigned_date;if(isResigned&&!resignedCountTarget)return;const rate=getJobRate(dk,s.job_title||'');dTgt+=workDays*8*rate;});
+        dTgt=Math.round(dTgt*10)/10;
+        const dAct=dRoster.reduce((s,r)=>{const tw=techByType.filter(t=>t.branch===br&&(r.staff_name||r.name)&&t.tech_name===r.staff_name).reduce((a,t)=>a+parseFloat(t.total_wage||0),0);return s+tw;},0);
+        const dActH=HOURLY>0?Math.round(dAct/HOURLY*10)/10:0;
+        const dAch=dTgt>0?Math.round(dActH/dTgt*1000)/10:null;
+        deptRows.push({dk,dv,dRoster,dTgt,dActH,dAch,workDays});
+      });
+      branchSections.push({br,brRoster,workDays,brActH,brTgtH,ach,deptRows,col:branchColors[br]||'#94a3b8'});
     }
-
-    let kpiHtml = '';
-    let gtTgt = 0, gtAct = 0, gtPpl = 0, gtPplResigned = 0;
-    branches.forEach(br => {
-      const bd  = data.branches[br];
-      const col = FC_COLORS_TH[br] || '#94a3b8';
-      let brTgt = 0, brAct = 0, brPpl = 0, brResigned = 0;
-      DT_ORDER_TH.forEach(dt => {
-        const dtd = bd.dept_types?.[dt];
-        if (!dtd) return;
-        dtd.techs.forEach(t => {
-          brTgt += t.target_hours;
-          brAct += t.actual_hours;
-          if (t.status === '離職') brResigned++;
-          else brPpl++;
-        });
-      });
-      const brPct = brTgt > 0 ? brAct / brTgt * 100 : null;
-      gtTgt += brTgt; gtAct += brAct; gtPpl += brPpl; gtPplResigned += brResigned;
-      const brPplLabel = brResigned > 0
-        ? `${brAct.toFixed(0)} / ${brTgt.toFixed(0)} H · ${brPpl} 人<span style="color:#ef4444;font-size:10px"> (+${brResigned}離)</span>`
-        : `${brAct.toFixed(0)} / ${brTgt.toFixed(0)} H · ${brPpl} 人`;
-      kpiHtml += `<div class="kpi-card"><div class="kpi-label" style="color:${col}">${FC_LABELS_TH[br] || br} 達成率</div>
-        <div class="kpi-value" style="color:${pctColorTH(brPct)}">${brPct !== null ? brPct.toFixed(1)+'%' : '—'}</div>
-        <div class="kpi-sub">${brPplLabel}</div></div>`;
+    const grandAch=grandTgtH>0?Math.round(grandActH/grandTgtH*1000)/10:null;
+    kpiEl.innerHTML=`<div class="kpi-card" style="border-color:#8b5cf6"><div class="kpi-label" style="color:#8b5cf6">全廠實際工時</div><div class="kpi-value kpi-purple">${grandActH.toLocaleString()}</div><div class="kpi-sub">H（工資÷${HOURLY}元/H）</div></div><div class="kpi-card" style="border-color:#94a3b8"><div class="kpi-label">全廠工時目標</div><div class="kpi-value">${grandTgtH.toLocaleString()}</div><div class="kpi-sub">H</div></div><div class="kpi-card" style="border-color:${grandAch===null?'#475569':grandAch>=100?'#10b981':'#f59e0b'}"><div class="kpi-label">全廠達成率</div><div class="kpi-value ${grandAch===null?'':grandAch>=100?'kpi-green':'kpi-yellow'}">${grandAch===null?'—':grandAch+'%'}</div></div>`;
+    let html='';
+    branchSections.forEach(({br,workDays,brActH,brTgtH,ach,deptRows,col})=>{
+      const achColor=ach===null?'#475569':ach>=100?'#10b981':ach>=80?'#f59e0b':'#ef4444';
+      html+=`<div class="card" style="margin-bottom:12px"><div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap"><span style="font-size:16px;font-weight:800;color:${col}">${br}</span><span style="font-size:12px;color:#64748b">工作天 ${workDays} 天</span><div style="display:flex;gap:8px;margin-left:auto;align-items:center;flex-wrap:wrap"><div style="font-size:12px;color:#64748b">實 <strong style="color:#8b5cf6">${brActH}H</strong></div><div style="font-size:12px;color:#64748b">目標 <strong style="color:#94a3b8">${brTgtH}H</strong></div><div style="background:rgba(0,0,0,.3);border:1px solid ${achColor};padding:3px 10px;border-radius:20px;font-size:13px;font-weight:800;color:${achColor}">${ach===null?'—':ach+'%'}</div></div></div>`;
+      if(!deptRows.length){html+=`<div style="color:#64748b;font-size:12px;padding:12px 0">此據點無符合條件技師資料</div>`;html+=`</div>`;return;}
+      html+=`<div class="table-wrap"><table><thead><tr><th>科別</th><th class="num">人數</th><th class="num">工作天</th><th class="num">目標工時</th><th class="num">實際工時</th><th class="num">達成率</th><th style="min-width:120px">進度</th></tr></thead><tbody>`;
+      deptRows.forEach(({dk,dv,dRoster,dTgt,dActH,dAch,workDays})=>{const achCol=dAch===null?'#475569':dAch>=100?'#10b981':dAch>=80?'#f59e0b':'#ef4444';const barW=dTgt>0?Math.min(100,dActH/dTgt*100):0;html+=`<tr><td><span style="color:${dv.col};font-weight:700">${dv.label}</span></td><td class="num">${dRoster.length}</td><td class="num">${workDays}</td><td class="num">${dTgt}</td><td class="num" style="color:#8b5cf6;font-weight:700">${dActH}</td><td class="num" style="color:${achCol};font-weight:800">${dAch===null?'—':dAch+'%'}</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${barW.toFixed(0)}%;background:${achCol}"></div></div><span style="font-size:11px;color:#64748b">${barW.toFixed(0)}%</span></div></td></tr>`;});
+      html+=`</tbody></table></div></div>`;
     });
-    const gtPct = gtTgt > 0 ? gtAct / gtTgt * 100 : null;
-    const gtPplLabel = gtPplResigned > 0
-      ? `${gtPpl} 人 (+${gtPplResigned}離) · ${gtAct.toFixed(0)}/${gtTgt.toFixed(0)} H`
-      : `${gtPpl} 人 · ${gtAct.toFixed(0)}/${gtTgt.toFixed(0)} H`;
-    kpiHtml = `<div class="kpi-card"><div class="kpi-label">⏱️ 整體達成率</div>
-      <div class="kpi-value" style="color:${pctColorTH(gtPct)}">${gtPct !== null ? gtPct.toFixed(1)+'%' : '—'}</div>
-      <div class="kpi-sub">${gtPplLabel}</div></div>` + kpiHtml;
-    kpiEl.innerHTML = kpiHtml;
-
-    const rosterLabel = data.rosterPeriod
-      ? `名冊：${data.rosterPeriod.slice(0,4)}年${parseInt(data.rosterPeriod.slice(4))}月`
-      : '名冊：最新';
-    let html = '';
-
-    branches.forEach(br => {
-      const bd  = data.branches[br];
-      const wd  = bd.working_days;
-      const col = FC_COLORS_TH[br] || '#94a3b8';
-      const dts = DT_ORDER_TH.filter(dt => bd.dept_types?.[dt]);
-
-      let fcTgt = 0, fcAct = 0, fcPpl = 0, fcResigned = 0;
-      dts.forEach(dt => {
-        bd.dept_types[dt].techs.forEach(t => {
-          fcTgt += t.target_hours;
-          fcAct += t.actual_hours;
-          if (t.status === '離職') fcResigned++;
-          else fcPpl++;
-        });
-      });
-      const fcPct = fcTgt > 0 ? fcAct / fcTgt * 100 : null;
-      const fcPplLabel = fcResigned > 0
-        ? `工作天 ${wd} 天 · ${fcPpl} 人 <span style="color:#ef4444;font-size:11px">(+${fcResigned}離職)</span>`
-        : `工作天 ${wd} 天 · ${fcPpl} 人`;
-
-      html += `<div class="card" style="border-left:3px solid ${col}">
-        <div class="card-title" style="color:${col}">
-          ${FC_LABELS_TH[br] || br}
-          <span style="font-size:12px;font-weight:400;color:#64748b;margin-left:4px">${fcPplLabel}</span>
-          <span style="font-size:11px;color:#475569;margin-left:auto">${rosterLabel}</span>
-          <span style="font-size:15px;font-weight:800;margin-left:12px;color:${pctColorTH(fcPct)}">${fcPct !== null ? fcPct.toFixed(1)+'%' : '—'}</span>
-        </div>`;
-
-      dts.forEach(dt => {
-        const dtd   = bd.dept_types[dt];
-        const techs = dtd.techs;
-        const dtCol = DT_COLORS_TH[dt] || '#94a3b8';
-        const dtTgt = techs.reduce((s,t) => s + t.target_hours, 0);
-        const dtAct = techs.reduce((s,t) => s + t.actual_hours, 0);
-        const dtPct = dtTgt > 0 ? dtAct / dtTgt * 100 : null;
-        const dtActivePpl   = techs.filter(t => t.status !== '離職').length;
-        const dtResignedPpl = techs.filter(t => t.status === '離職').length;
-        const dtPplLabel = dtResignedPpl > 0
-          ? `${dtActivePpl} 人 <span style="color:#ef4444;font-size:10px">(+${dtResignedPpl}離)</span>`
-          : `${techs.length} 人`;
-
-        html += `<div style="margin-bottom:16px">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:6px 0;border-bottom:1px solid #2d3f56">
-            <span>${DT_ICONS_TH[dt]}</span>
-            <span style="font-size:12px;font-weight:700;color:${dtCol}">${DT_LABELS_TH[dt] || dt}</span>
-            <span style="font-size:11px;color:#475569">${dtPplLabel}</span>
-            <span style="margin-left:auto;font-size:12px;color:#64748b">
-              目標 <strong style="color:#94a3b8">${dtTgt.toFixed(1)} H</strong>　
-              實績 <strong style="color:${pctColorTH(dtPct)}">${dtAct.toFixed(1)} H</strong>
-            </span>
-            <span style="font-size:14px;font-weight:800;color:${pctColorTH(dtPct)};min-width:52px;text-align:right">${dtPct !== null ? dtPct.toFixed(1)+'%' : '—'}</span>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr>
-                <th>姓名</th><th>職務</th>
-                <th class="num">產能利用率</th>
-                <th class="num">月工時目標 (H)</th>
-                <th class="num">實績工時 (H)</th>
-                <th style="min-width:160px">達成率</th>
-                <th style="width:44px;text-align:center;background:#0f172a;color:#64748b;font-size:11px;padding:10px 8px;border-bottom:1px solid #2d3f56">查核</th>
-              </tr></thead>
-              <tbody>
-                ${techs.map(t => {
-                  const pct    = t.achieve_rate;
-                  const clr    = pctColorTH(pct);
-                  const fillW  = pct !== null ? Math.min(100, pct).toFixed(1) : 0;
-                  const isZero = t.actual_hours === 0;
-                  const isResigned   = t.status === '離職';
-                  const isUnpaid     = t.status === '留職停薪';
-                  const isDmsOnly    = t.is_dms_only === true;
-                  const targetExcl   = t.target_excluded === true;
-                  const rowOpacity   = isResigned ? 'opacity:.7' : isUnpaid ? 'opacity:.85' : '';
-                  const rowBgExtra   = isDmsOnly ? 'background:rgba(236,72,153,.04)' : '';
-                  const statusBadge  = isDmsOnly
-                    ? `<span style="display:inline-block;margin-left:5px;padding:1px 6px;border-radius:5px;font-size:10px;font-weight:700;background:rgba(236,72,153,.15);color:#ec4899">DMS彙總</span>`
-                    : isResigned
-                    ? `<span style="display:inline-block;margin-left:5px;padding:1px 6px;border-radius:5px;font-size:10px;font-weight:700;background:rgba(239,68,68,.15);color:#ef4444">離職${t.resign_date?(' '+t.resign_date.slice(5)):''}</span>`
-                      + (targetExcl ? `<span style="display:inline-block;margin-left:3px;padding:1px 6px;border-radius:5px;font-size:10px;font-weight:700;background:rgba(100,116,139,.15);color:#64748b">不計目標</span>` : '')
-                    : isUnpaid
-                    ? `<span style="display:inline-block;margin-left:5px;padding:1px 6px;border-radius:5px;font-size:10px;font-weight:700;background:rgba(245,158,11,.15);color:#f59e0b">留停</span>`
-                    : '';
-                  const targetDisplay = (targetExcl || isDmsOnly)
-                    ? `<span style="color:#334155;font-size:11px">—</span>`
-                    : `${t.target_hours.toFixed(1)}`;
-                  return `<tr style="${rowOpacity}${rowBgExtra ? ';'+rowBgExtra : ''}">
-                    <td style="font-weight:700">${t.emp_name}${statusBadge}</td>
-                    <td><span class="badge badge-gray" style="font-size:11px">${t.job_title}</span></td>
-                    <td class="num"><span style="color:${dtCol};font-weight:700">${Math.round(t.utilization*100)}%</span></td>
-                    <td class="num" style="color:${(targetExcl||isDmsOnly)?'#334155':'#94a3b8'}">${targetDisplay}</td>
-                    <td class="num" style="color:${isDmsOnly?'#ec4899':pct !== null ? clr : '#475569'};font-weight:${isZero ? '400' : '700'}">${t.actual_hours.toFixed(1)}</td>
-                    <td>
-                      ${(targetExcl || isDmsOnly)
-                        ? (isDmsOnly
-                            ? `<span style="color:#ec4899;font-size:11px;font-weight:600">僅記實績</span>`
-                            : `<span style="color:#475569;font-size:11px">僅計實績</span>`)
-                        : pct !== null ? `<div style="display:flex;align-items:center;gap:8px">
-                        <div style="flex:1;background:#0f172a;border-radius:3px;height:5px;min-width:40px">
-                          <div style="width:${fillW}%;height:5px;border-radius:3px;background:${clr}"></div>
-                        </div>
-                        <span style="font-size:12px;font-weight:800;color:${clr};min-width:48px;text-align:right">${pct.toFixed(1)}%</span>
-                      </div>` : '<span style="color:#334155;font-size:11px">—</span>'}
-                    </td>
-                    <td style="text-align:center;padding:8px">
-                      <button onclick="openVerifyModal('${t.emp_name.replace(/'/g,"\\'")}','${br}','${period}')"
-                        title="查核折扣回推明細"
-                        style="background:rgba(59,130,246,.1);color:#60a5fa;border:1px solid rgba(59,130,246,.25);
-                               padding:3px 8px;border-radius:5px;font-size:11px;cursor:pointer;white-space:nowrap">
-                        🔍
-                      </button>
-                    </td>
-                  </tr>`;
-                }).join('')}
-                <tr class="subtotal-row">
-                  <td colspan="3" style="color:${dtCol}">小計（${dtActivePpl}人${dtResignedPpl>0?` +${dtResignedPpl}離`:``}）</td>
-                  <td class="num">${dtTgt.toFixed(1)}</td>
-                  <td class="num" style="color:${pctColorTH(dtPct)}">${dtAct.toFixed(1)}</td>
-                  <td style="color:${pctColorTH(dtPct)};font-weight:800;padding:9px 12px">${dtPct !== null ? dtPct.toFixed(1)+'%' : '—'}</td>
-                  <td></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>`;
-      });
-
-      if (!dts.length) {
-        html += `<div style="padding:24px;text-align:center;color:#64748b;font-size:13px">
-          此廠無符合條件的技師部門（需部門名稱含「引擎」「鈑金」「烤漆」）
-        </div>`;
-      }
-
-      html += `</div>`;
-    });
-
-    contentEl.innerHTML = html;
-  } catch(e) {
-    if (document.getElementById('techHoursKPI')) document.getElementById('techHoursKPI').innerHTML = '';
-    const isBadGw = e.message.includes('Bad Gateway') || e.message.includes('not valid JSON');
-    if (document.getElementById('techHoursContent')) document.getElementById('techHoursContent').innerHTML =
-      `<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:20px 24px;margin-top:8px">
-        <div style="font-size:14px;font-weight:700;color:#ef4444;margin-bottom:8px">${isBadGw ? '⚠️ 伺服器暫時無法回應（502 Bad Gateway）' : '❌ 載入失敗'}</div>
-        <div style="font-size:13px;color:#94a3b8;line-height:1.8">${isBadGw
-          ? '請至 <strong style="color:#e2e8f0">Zeabur 控制台</strong> 確認服務是否正在運行，若已停止請重新啟動後再重新整理頁面。'
-          : e.message}
-        </div>
-        <button onclick="loadTechHours(getPeriod(), document.getElementById('selBranch').value)"
-          style="margin-top:12px;padding:7px 16px;background:#3b82f6;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">
-          🔄 重試
-        </button>
-      </div>`;
-  }
+    contentEl.innerHTML=html||'<div class="empty">無資料</div>';
+  }catch(e){contentEl.innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;}
 }
 
-(async()=>{ await loadPeriods(); await loadAll(); })();
-</script>
-
-<!-- ══ 工時查核 Modal ══ -->
-<div id="techHoursVerifyModal"
-  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:600;
-         align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto"
-  onclick="if(event.target===this)closeVerifyModal()">
-  <div style="background:#1a2740;border:1px solid #2d4060;border-radius:14px;
-              width:100%;max-width:1000px;display:flex;flex-direction:column;
-              box-shadow:0 24px 64px rgba(0,0,0,.9);margin:auto">
-
-    <!-- Header -->
-    <div style="display:flex;align-items:center;gap:10px;padding:16px 20px 14px;border-bottom:1px solid #2d3f56;flex-shrink:0">
-      <div id="verifyModalTitle" style="font-size:15px;font-weight:800;flex:1;color:#fff">🔍 工時查核</div>
-      <button onclick="exportVerifyCSV()"
-        style="padding:6px 12px;background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3);border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">
-        ⬇️ 匯出 CSV
-      </button>
-      <button onclick="closeVerifyModal()"
-        style="width:30px;height:30px;border-radius:8px;border:1px solid #2d3f56;background:#0f172a;
-               color:#64748b;font-size:18px;line-height:1;cursor:pointer;
-               display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
-    </div>
-
-    <!-- Summary bar -->
-    <div id="verifySummary" style="padding:12px 20px;border-bottom:1px solid #2d3f56;display:flex;gap:12px;flex-wrap:wrap;align-items:center"></div>
-
-    <!-- Table -->
-    <div style="overflow:auto;flex:1;max-height:calc(100vh - 220px)">
-      <table id="verifyTable" style="width:100%;border-collapse:collapse;font-size:12px"></table>
-    </div>
-  </div>
-</div>
-
-<script>
-// ══ 工時查核 Modal ══
-let _verifyRows = [];
-
-async function openVerifyModal(empName, branch, period) {
-  const modal = document.getElementById('techHoursVerifyModal');
-  const title = document.getElementById('verifyModalTitle');
-  const sumEl = document.getElementById('verifySummary');
-  const tbl   = document.getElementById('verifyTable');
-  _verifyRows = [];
-
-  title.textContent = `🔍 工時查核 — ${empName}（${branch} ${period.slice(0,4)}年${parseInt(period.slice(4))}月）`;
-  sumEl.innerHTML   = '<span class="spinner"></span> 查詢中...';
-  tbl.innerHTML     = '';
-  modal.style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-
-  try {
-    const p   = new URLSearchParams({ period, branch, emp_name: empName });
-    const data = await fetch(`/api/stats/tech-hours-raw?${p}`).then(r => r.json());
-    if (data.error) throw new Error(data.error);
-    _verifyRows = data.rows || [];
-
-    const s = data.summary;
-    if (!s) {
-      sumEl.innerHTML = `<span style="color:#ef4444">找不到此技師的工時紀錄。DMS 中的姓名可能不同，實際比對名稱：無法找到</span>`;
-    } else {
-      const matchStr = data.matched_names.join('、');
-      const hasDiff  = s.difference !== 0;
-      sumEl.innerHTML = `
-        <div style="background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:10px 14px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;width:100%">
-          <div>
-            <div style="font-size:10px;color:#64748b;margin-bottom:2px">比對到的 DMS 姓名</div>
-            <div style="font-size:12px;font-weight:700;color:#94a3b8">${matchStr}</div>
-          </div>
-          <div style="width:1px;background:#2d3f56;align-self:stretch"></div>
-          <div>
-            <div style="font-size:10px;color:#64748b;margin-bottom:2px">總筆數</div>
-            <div style="font-size:16px;font-weight:800;color:#e2e8f0">${s.total_rows}</div>
-          </div>
-          <div>
-            <div style="font-size:10px;color:#f59e0b;margin-bottom:2px">含折扣筆數</div>
-            <div style="font-size:16px;font-weight:800;color:#f59e0b">${s.discounted_rows}</div>
-          </div>
-          <div style="width:1px;background:#2d3f56;align-self:stretch"></div>
-          <div>
-            <div style="font-size:10px;color:#64748b;margin-bottom:2px">原始工時合計</div>
-            <div style="font-size:16px;font-weight:800;color:#94a3b8">${s.sum_original_hours.toFixed(2)} H</div>
-          </div>
-          <div>
-            <div style="font-size:10px;color:#10b981;margin-bottom:2px">回推後工時合計</div>
-            <div style="font-size:16px;font-weight:800;color:#10b981">${s.sum_restored_hours.toFixed(2)} H</div>
-          </div>
-          ${hasDiff ? `
-          <div>
-            <div style="font-size:10px;color:#f97316;margin-bottom:2px">折扣回推增加</div>
-            <div style="font-size:16px;font-weight:800;color:#f97316">+${s.difference.toFixed(2)} H</div>
-          </div>` : `
-          <div style="padding:6px 12px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:6px;font-size:12px;color:#10b981;font-weight:700">
-            ✅ 無折扣，工時無異動
-          </div>`}
-          <div style="margin-left:auto;background:#1a2332;border:1px solid #2d3f56;border-radius:6px;padding:6px 12px;display:flex;align-items:center;gap:6px">
-            <span style="font-size:11px;color:#64748b">時薪</span>
-            <span style="font-size:13px;font-weight:800;color:#60a5fa">${data.hourly_rate.toLocaleString()} 元/H</span>
-          </div>
-        </div>`;
-    }
-
-    const thS = 'background:#090f1a;color:#64748b;font-size:11px;font-weight:700;padding:8px 10px;border-bottom:1px solid #2d3f56;white-space:nowrap;text-align:left;position:sticky;top:0;z-index:2;';
-    const thR = thS + 'text-align:right;';
-    tbl.innerHTML = `
-      <thead><tr>
-        <th style="${thS}">日期</th>
-        <th style="${thS}">工單號</th>
-        <th style="${thS}">工資代碼</th>
-        <th style="${thS}max-width:200px">作業內容</th>
-        <th style="${thS}">帳類</th>
-        <th style="${thR}">折扣率</th>
-        <th style="${thR}">DMS 原始工時</th>
-        <th style="${thR}">回推後工時 (÷折扣)</th>
-        <th style="${thS}text-align:center">狀態</th>
-      </tr></thead>
-      <tbody>
-        ${_verifyRows.map((r, i) => {
-          const orig    = parseFloat(r.original_hours || 0);
-          const rest    = parseFloat(r.restored_hours || 0);
-          const disc    = r.discount != null ? parseFloat(r.discount) : null;
-          const isDis   = r.was_discounted;
-          const rowBg   = isDis ? 'background:rgba(245,158,11,.04)' : '';
-          const rawPct  = disc === null ? null : disc > 1 ? disc : disc * 100;
-          const discStr = rawPct !== null ? (isDis ? `<span style="color:#f59e0b;font-weight:700">${rawPct.toFixed(1)}%</span>` : `<span style="color:#64748b">${rawPct.toFixed(1)}%</span>`) : '—';
-          const badge = isDis
-           ? `<span style="background:rgba(245,158,11,.15);color:#f59e0b;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700">回推 ÷${disc}</span>`
-           : `<span style="background:rgba(16,185,129,.1);color:#10b981;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700">無折扣</span>`;
-          const taskContent = (r.task_content || '').slice(0, 40) + ((r.task_content || '').length > 40 ? '…' : '');
-          return `<tr style="${rowBg}">
-            <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.2);white-space:nowrap;font-size:11px">${r.dispatch_date ? String(r.dispatch_date).slice(0,10) : '—'}</td>
-            <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.2);font-family:monospace;font-size:11px;white-space:nowrap">${r.work_order || '—'}</td>
-            <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.2);font-size:11px;white-space:nowrap">${r.work_code || '—'}</td>
-            <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.2);font-size:11px;color:#64748b;max-width:200px;overflow:hidden;text-overflow:ellipsis" title="${(r.task_content||'').replace(/"/g,'&quot;')}">${taskContent || '—'}</td>
-            <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.2);font-size:11px;white-space:nowrap">${r.account_type || '—'}</td>
-            <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right">${discStr}</td>
-            <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;color:${isDis?'#94a3b8':'#e2e8f0'};font-weight:700">${orig.toFixed(2)}</td>
-            <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;font-weight:800;color:${isDis?'#10b981':'#e2e8f0'}">${rest.toFixed(2)}</td>
-            <td style="padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:center">${badge}</td>
-          </tr>`;
-        }).join('')}
-        <tr style="background:#1e293b;border-top:2px solid #374151">
-          <td colspan="6" style="padding:8px 10px;font-weight:700;color:#94a3b8">合計（${_verifyRows.length} 筆）</td>
-          <td style="padding:8px 10px;text-align:right;font-weight:800;color:#94a3b8">${(s?.sum_original_hours||0).toFixed(2)}</td>
-          <td style="padding:8px 10px;text-align:right;font-weight:900;color:#10b981">${(s?.sum_restored_hours||0).toFixed(2)}</td>
-          <td></td>
-        </tr>
-      </tbody>`;
-  } catch(e) {
-    sumEl.innerHTML = `<span style="color:#ef4444">查詢失敗：${e.message}</span>`;
-  }
-}
-
-function closeVerifyModal() {
-  document.getElementById('techHoursVerifyModal').style.display = 'none';
-  document.body.style.overflow = '';
-}
-
-function exportVerifyCSV() {
-  if (!_verifyRows.length) return;
-  const cols = [
-    ['dispatch_date','日期'],['work_order','工單號'],['work_code','工資代碼'],
-    ['task_content','作業內容'],['account_type','帳類'],['discount','折扣率'],
-    ['original_hours','原始工時(H)'],['restored_hours','回推後工時(H)'],['was_discounted','有折扣'],
-  ];
-  const header = cols.map(c => c[1]).join(',');
-  const rows = _verifyRows.map(r => cols.map(([k]) => {
-    const v = r[k] == null ? '' : String(r[k]);
-    return v.includes(',') || v.includes('"') ? '"' + v.replace(/"/g,'""') + '"' : v;
-  }).join(','));
-  const titleEl = document.getElementById('verifyModalTitle');
-  const fname = (titleEl.textContent || 'verify').replace(/[🔍\s—]/g,'_').slice(0,40);
-  const csv = '\uFEFF' + [header, ...rows].join('\r\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url; a.download = fname + '.csv'; a.click();
-  URL.revokeObjectURL(url);
-}
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    const m = document.getElementById('techHoursVerifyModal');
-    if (m && m.style.display !== 'none') closeVerifyModal();
-  }
+// ══ Init ══
+document.addEventListener('DOMContentLoaded',async()=>{
+  await loadPeriods();
+  switchTab('repair');
+  await loadAll();
 });
 </script>
 </body>
