@@ -1111,9 +1111,17 @@ async function renderProgressContent() {
       return match.amount||0;
     }
 
+    // ★ 偵測哪些 dept_code 跨廠衝突（同代碼出現在 2+ 個廠）
+    var conflictedDeptCodes={};
+    sortedFc.forEach(function(f){
+      Object.keys(byFactory[f]).forEach(function(dk){
+        conflictedDeptCodes[dk]=(conflictedDeptCodes[dk]||0)+1;
+      });
+    });
+
     // ★ 過濾此部門適用的指標
-    // branch_override 控制「顯示給哪個廠」，revenue 的 branch 只控制「抓哪個廠的數字」
     function getMetricIdsForDept(dkey, fcName) {
+      var isConflicted=(conflictedDeptCodes[dkey]||0)>1;
       return allMetricIds.filter(function(mId){
         var metric=metaById[mId].metric;
         var codes=(metric.target_dept_codes||[]);
@@ -1123,15 +1131,22 @@ async function renderProgressContent() {
         var deptMatch = codes.length===0 || codes.indexOf(dkey)!==-1;
         if (!deptMatch) return false;
 
-        // ★ 若有 branch_override，只對 matching factory 顯示
-        // （用來解決同部門代碼跨廠問題，如零件部 05700 同時在 AMA/AMD）
+        // branch_override 邏輯
         var brOv=(filters.find(function(f){return f.type==='branch_override';}))||null;
         if (brOv && brOv.value && ['AMA','AMC','AMD'].indexOf(brOv.value)!==-1) {
+          // 有 branch_override：必須完全匹配
           if (fcName !== brOv.value) return false;
+        } else if (isConflicted && ['AMA','AMC','AMD'].indexOf(fcName)!==-1) {
+          // ★ 無 branch_override 但部門代碼衝突（跨廠）：
+          // 嘗試從指標名稱推測廠別（例如名稱含 AMA/AMD/AMC）
+          var mName=metric.metric_name||'';
+          var nameHasBranch=['AMA','AMC','AMD'].some(function(b){ return mName.indexOf(b)!==-1; });
+          if (nameHasBranch) {
+            // 名稱有廠別關鍵字：只在對應廠顯示
+            if (mName.indexOf(fcName)===-1) return false;
+          }
+          // 名稱沒有廠別關鍵字也沒有 branch_override：全廠顯示（留給使用者編輯修正）
         }
-
-        // revenue 的 branch filter 只控制「抓哪個廠的數字」，不影響顯示對象
-        // 所以不在這裡過濾 revenue branch
 
         return true;
       });
