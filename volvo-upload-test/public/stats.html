@@ -214,6 +214,8 @@
         <option value="AMA">AMA</option>
         <option value="AMC">AMC</option>
         <option value="AMD">AMD</option>
+        <option value="鈑烤">鈑烤廠</option>
+        <option value="聯合">聯合服務中心</option>
       </select>
       <button class="btn btn-primary" onclick="loadAll()">查詢</button>
       <span id="lastUpdate" style="margin-left:auto;font-size:11px;color:#64748b;white-space:nowrap"></span>
@@ -495,42 +497,9 @@
         </div>
       </div>
 
-      <!-- ② 各據點額外工時 -->
+      <!-- ② 產能利用率設定 -->
       <div style="background:#0f172a;border:1px solid #2d3f56;border-radius:10px;padding:14px 16px;margin-bottom:16px">
-        <div style="font-size:13px;font-weight:800;color:#e2e8f0;margin-bottom:4px">② 各據點額外工時（名單外固定項目）</div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:12px;line-height:1.7">
-          系統會<strong style="color:#94a3b8">自動偵測</strong> tech_performance 中無法匹配名冊的技師（見下方「⚠️ 名單外技師」區塊）。<br>
-          此處設定的是<strong style="color:#94a3b8">固定加計項目</strong>，如：外包工時、跨廠支援、不計入名冊的特殊人員等，每月固定顯示。
-        </div>
-        <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-          <button id="exTabBtn-AMA" onclick="switchExTab('AMA')"
-            style="padding:6px 16px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:#3b82f6;color:#fff">AMA</button>
-          <button id="exTabBtn-AMC" onclick="switchExTab('AMC')"
-            style="padding:6px 16px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:#64748b;border:1px solid #2d3f56">AMC</button>
-          <button id="exTabBtn-AMD" onclick="switchExTab('AMD')"
-            style="padding:6px 16px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:#64748b;border:1px solid #2d3f56">AMD</button>
-        </div>
-        <div id="exPanel-AMA"></div>
-        <div id="exPanel-AMC" style="display:none"></div>
-        <div id="exPanel-AMD" style="display:none"></div>
-        <!-- 新增列 -->
-        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center">
-          <input type="text" id="exNewName" placeholder="名稱（如：外包技師）"
-            style="background:#1e293b;border:1px solid #2d3f56;color:#e2e8f0;padding:7px 10px;border-radius:6px;font-size:13px;flex:1;min-width:130px;outline:none">
-          <input type="number" id="exNewHours" placeholder="工時（H）" min="0" step="0.5"
-            style="background:#1e293b;border:1px solid #2d3f56;color:#e2e8f0;padding:7px 10px;border-radius:6px;font-size:13px;width:110px;outline:none">
-          <input type="text" id="exNewNote" placeholder="備註（選填）"
-            style="background:#1e293b;border:1px solid #2d3f56;color:#e2e8f0;padding:7px 10px;border-radius:6px;font-size:13px;flex:1;min-width:100px;outline:none">
-          <button onclick="addExRow()"
-            style="padding:7px 14px;background:#253347;color:#cbd5e1;border:1px solid #2d3f56;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">
-            ＋ 加入
-          </button>
-        </div>
-      </div>
-
-      <!-- ③ 產能利用率設定 -->
-      <div style="background:#0f172a;border:1px solid #2d3f56;border-radius:10px;padding:14px 16px;margin-bottom:16px">
-        <div style="font-size:13px;font-weight:800;color:#e2e8f0;margin-bottom:4px">③ 各職務產能利用率</div>
+        <div style="font-size:13px;font-weight:800;color:#e2e8f0;margin-bottom:4px">② 各職務產能利用率</div>
         <div style="font-size:12px;color:#64748b;margin-bottom:12px;line-height:1.7">
           月工時目標 = 工作天 × 8H × 利用率。鈑金/烤漆可超過 1.0（如 1.8 = 180%）。領班設 0 表示不計目標。
         </div>
@@ -543,11 +512,14 @@
             style="padding:7px 18px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:#64748b">🔨 鈑金科</button>
           <button id="trTabBtn-paint"    onclick="switchTrTab('paint')"
             style="padding:7px 18px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:#64748b">🎨 烤漆科</button>
+          <button id="trTabBtn-beauty"   onclick="switchTrTab('beauty')"
+            style="padding:7px 18px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:#64748b">💅 美容部</button>
         </div>
 
         <div id="trPanel-engine"></div>
         <div id="trPanel-bodywork" style="display:none"></div>
         <div id="trPanel-paint"    style="display:none"></div>
+        <div id="trPanel-beauty"   style="display:none"></div>
 
         <!-- 新增自訂職務 -->
         <div style="margin-top:14px;padding-top:12px;border-top:1px solid #2d3f56">
@@ -583,11 +555,9 @@
 <script>
 // ══ 技師工時產能設定 ══
 const TR_DEPT_COLORS = { engine:'#8b5cf6', bodywork:'#f97316', paint:'#06b6d4' };
-const TR_BR_COLORS   = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b' };
-const TR_JOB_ORDER   = ['領班','副領班','L4技師','L3技師','L2技師','L1技師','L0技師','實習生','default'];
-let _trConfig      = null;
-let _trCurrentTab  = 'engine';
-let _exCurrentBr   = 'AMA';
+const TR_JOB_ORDER = ['領班','副領班','L4技師','L3技師','L2技師','L1技師','L0技師','實習生','default'];
+let _trConfig     = null;
+let _trCurrentTab = 'engine';
 
 async function openTechHoursConfig() {
   document.getElementById('techHoursConfigModal').style.display = 'flex';
@@ -604,12 +574,11 @@ async function loadTechCapacityConfig() {
     _trConfig = await fetch('/api/tech-capacity-config').then(r => r.json());
     syncResignedRadio();
     renderAllTrTables();
-    renderAllExPanels();
   } catch(e) { setTrMsg('載入失敗：' + e.message, '#ef4444'); }
 }
 
 async function resetTechRatesToDefault() {
-  if (!confirm('確定還原所有科別利用率為預設值？（離職設定與額外工時不受影響）')) return;
+  if (!confirm('確定還原所有科別利用率為預設值？')) return;
   try {
     const def = await fetch('/api/tech-capacity-config/default').then(r => r.json());
     if (!_trConfig) _trConfig = {};
@@ -642,102 +611,13 @@ function updateResignedLabelStyle(val) {
   if (trueEl)  trueEl.style.borderColor  =  val ? '#f97316' : '#2d3f56';
 }
 
-// ── ② 額外工時 ──
-function switchExTab(br) {
-  _exCurrentBr = br;
-  ['AMA','AMC','AMD'].forEach(b => {
-    const btn   = document.getElementById('exTabBtn-' + b);
-    const panel = document.getElementById('exPanel-' + b);
-    const col   = TR_BR_COLORS[b];
-    if (btn) {
-      if (b === br) {
-        btn.style.background  = col;
-        btn.style.color       = '#fff';
-        btn.style.border      = 'none';
-      } else {
-        btn.style.background  = 'transparent';
-        btn.style.color       = '#64748b';
-        btn.style.border      = '1px solid #2d3f56';
-      }
-    }
-    if (panel) panel.style.display = b === br ? '' : 'none';
-  });
-}
-
-function renderExPanel(br) {
-  const el = document.getElementById('exPanel-' + br);
-  if (!el || !_trConfig) return;
-  const list = (_trConfig.manual_extra_hours || {})[br] || [];
-  const col  = TR_BR_COLORS[br];
-  if (!list.length) {
-    el.innerHTML = `<div style="font-size:12px;color:#475569;padding:10px 0">尚未設定固定額外工時</div>`;
-    return;
-  }
-  let html = `<div style="overflow-x:auto;border-radius:6px;border:1px solid #2d3f56;margin-bottom:8px">
-    <table style="width:100%;border-collapse:collapse;font-size:12px">
-    <thead><tr>
-      <th style="text-align:left;padding:8px 12px;background:#090f1a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56">名稱</th>
-      <th style="text-align:right;padding:8px 12px;background:#090f1a;color:${col};font-size:11px;border-bottom:1px solid #2d3f56">工時 (H)</th>
-      <th style="text-align:left;padding:8px 12px;background:#090f1a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56">備註</th>
-      <th style="padding:8px 12px;background:#090f1a;border-bottom:1px solid #2d3f56;width:50px"></th>
-    </tr></thead><tbody>`;
-  list.forEach((item, idx) => {
-    html += `<tr>
-      <td style="padding:8px 12px;border-bottom:1px solid rgba(45,63,86,.3);font-weight:700;color:#e2e8f0">${item.name}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;font-weight:800;color:${col}">${item.hours} H</td>
-      <td style="padding:8px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:#64748b">${item.note || '—'}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center">
-        <button onclick="removeExRow('${br}',${idx})"
-          style="background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.25);
-                 padding:2px 8px;border-radius:5px;font-size:11px;cursor:pointer">刪除</button>
-      </td>
-    </tr>`;
-  });
-  const total = list.reduce((s, e) => s + parseFloat(e.hours || 0), 0);
-  html += `<tr style="background:rgba(${br==='AMA'?'59,130,246':br==='AMC'?'16,185,129':'245,158,11'},.06)">
-    <td colspan="1" style="padding:8px 12px;font-weight:700;color:${col}">合計</td>
-    <td style="padding:8px 12px;text-align:right;font-weight:900;color:${col}">${total.toFixed(1)} H</td>
-    <td colspan="2"></td>
-  </tr>`;
-  html += '</tbody></table></div>';
-  el.innerHTML = html;
-}
-
-function renderAllExPanels() {
-  ['AMA','AMC','AMD'].forEach(b => renderExPanel(b));
-}
-
-function addExRow() {
-  const br    = _exCurrentBr;
-  const name  = document.getElementById('exNewName').value.trim();
-  const hours = parseFloat(document.getElementById('exNewHours').value);
-  const note  = document.getElementById('exNewNote').value.trim();
-  if (!name)          { setTrMsg('請輸入名稱', '#ef4444'); return; }
-  if (isNaN(hours) || hours <= 0) { setTrMsg('請輸入正確工時', '#ef4444'); return; }
-  if (!_trConfig) _trConfig = {};
-  if (!_trConfig.manual_extra_hours) _trConfig.manual_extra_hours = { AMA:[], AMC:[], AMD:[] };
-  if (!_trConfig.manual_extra_hours[br]) _trConfig.manual_extra_hours[br] = [];
-  _trConfig.manual_extra_hours[br].push({ name, hours: Math.round(hours * 10) / 10, note });
-  document.getElementById('exNewName').value  = '';
-  document.getElementById('exNewHours').value = '';
-  document.getElementById('exNewNote').value  = '';
-  renderExPanel(br);
-  setTrMsg(`已加入 ${br} 額外工時「${name}」，請按「儲存設定」確認`, '#f59e0b');
-}
-
-function removeExRow(br, idx) {
-  if (!_trConfig?.manual_extra_hours?.[br]) return;
-  _trConfig.manual_extra_hours[br].splice(idx, 1);
-  renderExPanel(br);
-}
-
-// ── ③ 利用率 ──
+// ── ② 利用率 ──
 function switchTrTab(dept) {
   _trCurrentTab = dept;
-  ['engine','bodywork','paint'].forEach(d => {
+  ['engine','bodywork','paint','beauty'].forEach(d => {
     const btn   = document.getElementById('trTabBtn-' + d);
     const panel = document.getElementById('trPanel-'  + d);
-    const col   = TR_DEPT_COLORS[d];
+    const col   = TR_DEPT_COLORS[d] || '#94a3b8';
     if (btn) { btn.style.background = d === dept ? col : 'transparent'; btn.style.color = d === dept ? '#fff' : '#64748b'; }
     if (panel) panel.style.display = d === dept ? '' : 'none';
   });
@@ -829,7 +709,7 @@ function applyTrValue(dept, key, val) {
   if (mEl) mEl.textContent = monthH + ' H';
 }
 
-function renderAllTrTables() { ['engine','bodywork','paint'].forEach(d => renderTrTable(d)); }
+function renderAllTrTables() { ['engine','bodywork','paint','beauty'].forEach(d => renderTrTable(d)); }
 
 function addTrRow() {
   const dept  = document.getElementById('trNewDept').value;
@@ -1512,11 +1392,13 @@ function exportWipModalCSV(){
 }
 
 // ══ 技師工時 ══
-const DT_COLORS_TH = { engine:'#8b5cf6', bodywork:'#f97316', paint:'#06b6d4' };
-const DT_ICONS_TH  = { engine:'🔧', bodywork:'🔨', paint:'🎨' };
-const DT_LABELS_TH = { engine:'引擎維護科', bodywork:'鈑金科', paint:'烤漆科' };
-const DT_ORDER_TH  = ['engine','bodywork','paint'];
-const FC_COLORS_TH = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b' };
+const DT_COLORS_TH = { engine:'#8b5cf6', bodywork:'#f97316', paint:'#06b6d4', beauty:'#ec4899' };
+const DT_ICONS_TH  = { engine:'🔧', bodywork:'🔨', paint:'🎨', beauty:'💅' };
+const DT_LABELS_TH = { engine:'引擎維護科', bodywork:'鈑金科', paint:'烤漆科', beauty:'美容部' };
+const DT_ORDER_TH  = ['engine','bodywork','paint','beauty'];
+const FC_COLORS_TH = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b', '鈑烤':'#f97316', '聯合':'#8b5cf6' };
+const FC_LABELS_TH = { AMA:'AMA 內湖', AMC:'AMC 仁愛', AMD:'AMD 士林', '鈑烤':'鈑烤廠', '聯合':'聯合服務中心' };
+const FC_ORDER_TH  = ['AMA','AMD','AMC','鈑烤','聯合'];
 
 function pctColorTH(v) {
   if (v === null) return '#64748b';
@@ -1539,7 +1421,8 @@ async function loadTechHours(period, branch) {
     if (data.error) throw new Error(data.error);
 
     const branches = Object.keys(data.branches || {}).sort((a,b) =>
-      ['AMA','AMD','AMC'].indexOf(a) - ['AMA','AMD','AMC'].indexOf(b)
+      (FC_ORDER_TH.indexOf(a) < 0 ? 99 : FC_ORDER_TH.indexOf(a)) -
+      (FC_ORDER_TH.indexOf(b) < 0 ? 99 : FC_ORDER_TH.indexOf(b))
     );
 
     if (!branches.length) {
@@ -1569,7 +1452,7 @@ async function loadTechHours(period, branch) {
       const brPplLabel = brResigned > 0
         ? `${brAct.toFixed(0)} / ${brTgt.toFixed(0)} H · ${brPpl} 人<span style="color:#ef4444;font-size:10px"> (+${brResigned}離)</span>`
         : `${brAct.toFixed(0)} / ${brTgt.toFixed(0)} H · ${brPpl} 人`;
-      kpiHtml += `<div class="kpi-card"><div class="kpi-label" style="color:${col}">${br} 達成率</div>
+      kpiHtml += `<div class="kpi-card"><div class="kpi-label" style="color:${col}">${FC_LABELS_TH[br] || br} 達成率</div>
         <div class="kpi-value" style="color:${pctColorTH(brPct)}">${brPct !== null ? brPct.toFixed(1)+'%' : '—'}</div>
         <div class="kpi-sub">${brPplLabel}</div></div>`;
     });
@@ -1610,7 +1493,7 @@ async function loadTechHours(period, branch) {
 
       html += `<div class="card" style="border-left:3px solid ${col}">
         <div class="card-title" style="color:${col}">
-          ${br}
+          ${FC_LABELS_TH[br] || br}
           <span style="font-size:12px;font-weight:400;color:#64748b;margin-left:4px">${fcPplLabel}</span>
           <span style="font-size:11px;color:#475569;margin-left:auto">${rosterLabel}</span>
           <span style="font-size:15px;font-weight:800;margin-left:12px;color:${pctColorTH(fcPct)}">${fcPct !== null ? fcPct.toFixed(1)+'%' : '—'}</span>
@@ -1658,26 +1541,32 @@ async function loadTechHours(period, branch) {
                   const isZero = t.actual_hours === 0;
                   const isResigned   = t.status === '離職';
                   const isUnpaid     = t.status === '留職停薪';
+                  const isDmsOnly    = t.is_dms_only === true;
                   const targetExcl   = t.target_excluded === true;
                   const rowOpacity   = isResigned ? 'opacity:.7' : isUnpaid ? 'opacity:.85' : '';
-                  const statusBadge  = isResigned
+                  const rowBgExtra   = isDmsOnly ? 'background:rgba(236,72,153,.04)' : '';
+                  const statusBadge  = isDmsOnly
+                    ? `<span style="display:inline-block;margin-left:5px;padding:1px 6px;border-radius:5px;font-size:10px;font-weight:700;background:rgba(236,72,153,.15);color:#ec4899">DMS彙總</span>`
+                    : isResigned
                     ? `<span style="display:inline-block;margin-left:5px;padding:1px 6px;border-radius:5px;font-size:10px;font-weight:700;background:rgba(239,68,68,.15);color:#ef4444">離職${t.resign_date?(' '+t.resign_date.slice(5)):''}</span>`
                       + (targetExcl ? `<span style="display:inline-block;margin-left:3px;padding:1px 6px;border-radius:5px;font-size:10px;font-weight:700;background:rgba(100,116,139,.15);color:#64748b">不計目標</span>` : '')
                     : isUnpaid
                     ? `<span style="display:inline-block;margin-left:5px;padding:1px 6px;border-radius:5px;font-size:10px;font-weight:700;background:rgba(245,158,11,.15);color:#f59e0b">留停</span>`
                     : '';
-                  const targetDisplay = targetExcl
+                  const targetDisplay = (targetExcl || isDmsOnly)
                     ? `<span style="color:#334155;font-size:11px">—</span>`
                     : `${t.target_hours.toFixed(1)}`;
-                  return `<tr style="${rowOpacity}">
+                  return `<tr style="${rowOpacity}${rowBgExtra ? ';'+rowBgExtra : ''}">
                     <td style="font-weight:700">${t.emp_name}${statusBadge}</td>
                     <td><span class="badge badge-gray" style="font-size:11px">${t.job_title}</span></td>
                     <td class="num"><span style="color:${dtCol};font-weight:700">${Math.round(t.utilization*100)}%</span></td>
-                    <td class="num" style="color:${targetExcl?'#334155':'#94a3b8'}">${targetDisplay}</td>
-                    <td class="num" style="color:${pct !== null ? clr : '#475569'};font-weight:${isZero ? '400' : '700'}">${t.actual_hours.toFixed(1)}</td>
+                    <td class="num" style="color:${(targetExcl||isDmsOnly)?'#334155':'#94a3b8'}">${targetDisplay}</td>
+                    <td class="num" style="color:${isDmsOnly?'#ec4899':pct !== null ? clr : '#475569'};font-weight:${isZero ? '400' : '700'}">${t.actual_hours.toFixed(1)}</td>
                     <td>
-                      ${targetExcl
-                        ? `<span style="color:#475569;font-size:11px">僅計實績</span>`
+                      ${(targetExcl || isDmsOnly)
+                        ? (isDmsOnly
+                            ? `<span style="color:#ec4899;font-size:11px;font-weight:600">僅記實績</span>`
+                            : `<span style="color:#475569;font-size:11px">僅計實績</span>`)
                         : pct !== null ? `<div style="display:flex;align-items:center;gap:8px">
                         <div style="flex:1;background:#0f172a;border-radius:3px;height:5px;min-width:40px">
                           <div style="width:${fillW}%;height:5px;border-radius:3px;background:${clr}"></div>
@@ -1712,45 +1601,6 @@ async function loadTechHours(period, branch) {
         html += `<div style="padding:24px;text-align:center;color:#64748b;font-size:13px">
           此廠無符合條件的技師部門（需部門名稱含「引擎」「鈑金」「烤漆」）
         </div>`;
-      }
-
-      // ── 名單外技師（自動偵測） ──
-      const extraRoster = bd.extra_from_roster || [];
-      const manualExtra = bd.manual_extra       || [];
-      const extraTotalH = [...extraRoster, ...manualExtra].reduce((s,e) => s + (e.hours || 0), 0);
-
-      if (extraRoster.length || manualExtra.length) {
-        const thS = 'text-align:left;padding:7px 12px;background:#090f1a;color:#64748b;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;white-space:nowrap;';
-        html += `<div style="margin-top:12px;border:1px solid rgba(245,158,11,.3);border-radius:8px;overflow:hidden">
-          <div style="background:rgba(245,158,11,.08);padding:9px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <span style="font-size:12px;font-weight:700;color:#f59e0b">⚠️ 名單外工時</span>
-            <span style="font-size:11px;color:#64748b">（不列入目標分母，僅計入實績）</span>
-            <span style="margin-left:auto;font-size:13px;font-weight:800;color:#f59e0b">${extraTotalH.toFixed(1)} H</span>
-          </div>
-          <table style="width:100%;border-collapse:collapse;font-size:12px">
-          <thead><tr>
-            <th style="${thS}">技師 / 項目</th>
-            <th style="${thS}">來源</th>
-            <th style="text-align:right;padding:7px 12px;background:#090f1a;color:#f59e0b;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;white-space:nowrap">實績工時 (H)</th>
-            <th style="${thS}">備註</th>
-          </tr></thead><tbody>`;
-        extraRoster.forEach(e => {
-          html += `<tr>
-            <td style="padding:7px 12px;border-bottom:1px solid rgba(45,63,86,.2);font-weight:600;color:#e2e8f0">${e.tech_name}</td>
-            <td style="padding:7px 12px;border-bottom:1px solid rgba(45,63,86,.2)"><span style="background:rgba(245,158,11,.15);color:#f59e0b;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">自動偵測</span></td>
-            <td style="text-align:right;padding:7px 12px;border-bottom:1px solid rgba(45,63,86,.2);font-weight:700;color:#f59e0b">${e.hours.toFixed(1)}</td>
-            <td style="padding:7px 12px;border-bottom:1px solid rgba(45,63,86,.2);color:#475569;font-size:11px">tech_performance 有記錄，名冊無對應</td>
-          </tr>`;
-        });
-        manualExtra.forEach(e => {
-          html += `<tr>
-            <td style="padding:7px 12px;border-bottom:1px solid rgba(45,63,86,.2);font-weight:600;color:#e2e8f0">${e.name}</td>
-            <td style="padding:7px 12px;border-bottom:1px solid rgba(45,63,86,.2)"><span style="background:rgba(59,130,246,.15);color:#3b82f6;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">手動設定</span></td>
-            <td style="text-align:right;padding:7px 12px;border-bottom:1px solid rgba(45,63,86,.2);font-weight:700;color:#f59e0b">${e.hours.toFixed(1)}</td>
-            <td style="padding:7px 12px;border-bottom:1px solid rgba(45,63,86,.2);color:#475569;font-size:11px">${e.note || '—'}</td>
-          </tr>`;
-        });
-        html += `</tbody></table></div>`;
       }
 
       html += `</div>`;
