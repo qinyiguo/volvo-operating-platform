@@ -1246,34 +1246,114 @@ async function loadWip(period,branch){
     _wipData=data;
     const{rows,summary}=data;const{total,exclPdi,byAccountType,byRepairType}=summary;
     const T=total,E=exclPdi;
+    const{byBranch}=summary;
+    const branchColors={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
+    // KPI 大卡
     kpiEl.innerHTML=`
       <div class="kpi-card" style="border-color:#f97316">
         <div class="kpi-label" style="color:#f97316">WIP 總件數</div>
         <div class="kpi-value kpi-orange">${T.count.toLocaleString()}</div>
-        <div class="kpi-sub">（含PDI）扣PDI: ${E.count}</div>
+        <div class="kpi-sub">扣PDI: ${E.count} 件</div>
       </div>
       <div class="kpi-card" style="border-color:#ef4444">
-        <div class="kpi-label" style="color:#ef4444">逾30天工單</div>
+        <div class="kpi-label" style="color:#ef4444">逾30天</div>
         <div class="kpi-value kpi-red">${T.cOver30.toLocaleString()}</div>
         <div class="kpi-sub">30天內: ${T.c30} | 扣PDI逾30: ${E.cOver30}</div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-label">工資總額</div>
+      <div class="kpi-card" style="border-color:#3b82f6">
+        <div class="kpi-label" style="color:#3b82f6">工資（labor_fee）</div>
         <div class="kpi-value kpi-blue">${fmtK(T.wage)}</div>
-        <div class="kpi-sub">K元（扣PDI: ${fmtK(E.wage)}K）</div>
+        <div class="kpi-sub">扣PDI: ${fmtK(E.wage)}K</div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-label">預估總額（repair_amount）</div>
-        <div class="kpi-value">${fmtK(T.sales)}</div>
-        <div class="kpi-sub">K元（扣PDI: ${fmtK(E.sales)}K）</div>
+      <div class="kpi-card" style="border-color:#8b5cf6">
+        <div class="kpi-label" style="color:#8b5cf6">維修材料（repair_material）</div>
+        <div class="kpi-value kpi-purple">${fmtK(T.mat)}</div>
+        <div class="kpi-sub">扣PDI: ${fmtK(E.mat)}K</div>
+      </div>
+      <div class="kpi-card" style="border-color:#10b981">
+        <div class="kpi-label" style="color:#10b981">預估總額（repair_amount）</div>
+        <div class="kpi-value kpi-green">${fmtK(T.sales)}</div>
+        <div class="kpi-sub">扣PDI: ${fmtK(E.sales)}K</div>
       </div>`;
-    let html=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">`;
-    html+=`<div class="card"><div class="card-title">📆 依進廠月份</div><div class="table-wrap"><table><thead><tr><th>進廠月份</th><th class="num">件數</th><th class="num">工資</th><th class="num">逾30天</th></tr></thead><tbody>`;
-    byAccountType.forEach(r=>{html+=`<tr onclick="openWipModal('period','${r.label}')" style="cursor:pointer"><td>${r.label}</td><td class="num">${r.count}</td><td class="num">${fmtK(r.wage)}K</td><td class="num" style="color:${r.cOver30>0?'#ef4444':'#64748b'}">${r.cOver30}</td></tr>`;});
+
+    // 據點小卡
+    let brHtml='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:16px">';
+    byBranch.forEach(br=>{
+      const col=branchColors[br.label]||'#94a3b8';
+      const over30pct=br.count>0?(br.cOver30/br.count*100).toFixed(0):0;
+      brHtml+=`
+        <div style="background:#1a2332;border:1px solid ${col}44;border-radius:10px;padding:14px 16px">
+          <div style="font-size:13px;font-weight:800;color:${col};margin-bottom:10px">${br.label}
+            <span style="font-size:11px;font-weight:400;color:#64748b;margin-left:6px">${br.count} 件</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px">
+            <div><div style="color:#64748b;font-size:10px;margin-bottom:2px">逾30天</div>
+              <div style="font-weight:800;color:${br.cOver30>0?'#ef4444':'#475569'}">${br.cOver30} <span style="font-size:10px;color:#475569">(${over30pct}%)</span></div></div>
+            <div><div style="color:#64748b;font-size:10px;margin-bottom:2px">30天內</div>
+              <div style="font-weight:700;color:#94a3b8">${br.c30}</div></div>
+            <div><div style="color:#64748b;font-size:10px;margin-bottom:2px">工資 (K)</div>
+              <div style="font-weight:700;color:#3b82f6">${fmtK(br.wage)}</div></div>
+            <div><div style="color:#64748b;font-size:10px;margin-bottom:2px">材料 (K)</div>
+              <div style="font-weight:700;color:#8b5cf6">${fmtK(br.mat)}</div></div>
+            <div style="grid-column:1/-1"><div style="color:#64748b;font-size:10px;margin-bottom:2px">預估總額 repair_amount (K)</div>
+              <div style="font-weight:800;color:#10b981;font-size:14px">${fmtK(br.sales)}</div></div>
+          </div>
+          <div style="margin-top:8px;background:#0f172a;border-radius:3px;height:4px">
+            <div style="width:${over30pct}%;height:4px;background:#ef4444;border-radius:3px"></div>
+          </div>
+          <div style="font-size:10px;color:#475569;margin-top:3px">${over30pct}% 逾30天</div>
+        </div>`;
+    });
+    brHtml+='</div>';
+
+    // 三欄表格區
+    let html=`${brHtml}<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">`;
+
+    // 依進廠月份
+    html+=`<div class="card"><div class="card-title">📆 依進廠月份</div><div class="table-wrap"><table>
+      <thead><tr>
+        <th>進廠月份</th><th class="num">件數</th>
+        <th class="num" style="color:#3b82f6">工資K</th>
+        <th class="num" style="color:#8b5cf6">材料K</th>
+        <th class="num" style="color:#10b981">總額K</th>
+        <th class="num">30天內</th><th class="num" style="color:#ef4444">逾30天</th>
+      </tr></thead><tbody>`;
+    byAccountType.forEach(r=>{
+      html+=`<tr onclick="openWipModal('period','${r.label}')" style="cursor:pointer">
+        <td>${r.label}</td>
+        <td class="num">${r.count}</td>
+        <td class="num" style="color:#3b82f6">${fmtK(r.wage)}</td>
+        <td class="num" style="color:#8b5cf6">${fmtK(r.mat)}</td>
+        <td class="num" style="color:#10b981;font-weight:700">${fmtK(r.sales)}</td>
+        <td class="num" style="color:#64748b">${r.c30}</td>
+        <td class="num" style="color:${r.cOver30>0?'#ef4444':'#64748b'};font-weight:${r.cOver30>0?700:400}">${r.cOver30}</td>
+      </tr>`;
+    });
     html+=`</tbody></table></div></div>`;
-    html+=`<div class="card"><div class="card-title">🔧 依維修類型</div><div class="table-wrap"><table><thead><tr><th>維修類型</th><th class="num">件數</th><th class="num">工資</th><th class="num">逾30天</th></tr></thead><tbody>`;
-    byRepairType.forEach(r=>{const isPdi=/PDI/i.test(r.label);html+=`<tr onclick="openWipModal('type','${r.label}')" style="cursor:pointer"><td>${isPdi?`<span class="badge badge-yellow">${r.label}</span>`:r.label}</td><td class="num">${r.count}</td><td class="num">${fmtK(r.wage)}K</td><td class="num" style="color:${r.cOver30>0?'#ef4444':'#64748b'}">${r.cOver30}</td></tr>`;});
+
+    // 依維修類型
+    html+=`<div class="card"><div class="card-title">🔧 依維修類型</div><div class="table-wrap"><table>
+      <thead><tr>
+        <th>維修類型</th><th class="num">件數</th>
+        <th class="num" style="color:#3b82f6">工資K</th>
+        <th class="num" style="color:#8b5cf6">材料K</th>
+        <th class="num" style="color:#10b981">總額K</th>
+        <th class="num">30天內</th><th class="num" style="color:#ef4444">逾30天</th>
+      </tr></thead><tbody>`;
+    byRepairType.forEach(r=>{
+      const isPdi=/PDI/i.test(r.label);
+      html+=`<tr onclick="openWipModal('type','${r.label}')" style="cursor:pointer">
+        <td>${isPdi?`<span class="badge badge-yellow">${r.label}</span>`:r.label}</td>
+        <td class="num">${r.count}</td>
+        <td class="num" style="color:#3b82f6">${fmtK(r.wage)}</td>
+        <td class="num" style="color:#8b5cf6">${fmtK(r.mat)}</td>
+        <td class="num" style="color:#10b981;font-weight:700">${fmtK(r.sales)}</td>
+        <td class="num" style="color:#64748b">${r.c30}</td>
+        <td class="num" style="color:${r.cOver30>0?'#ef4444':'#64748b'};font-weight:${r.cOver30>0?700:400}">${r.cOver30}</td>
+      </tr>`;
+    });
     html+=`</tbody></table></div></div></div>`;
+
     html+=`<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px"><div style="font-size:13px;font-weight:700">📋 全部工單 (${rows.length})</div><button onclick="openWipModal('all','')" style="padding:5px 12px;background:rgba(59,130,246,.15);color:#3b82f6;border:1px solid rgba(59,130,246,.3);border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">🔍 查看明細</button></div><div style="font-size:12px;color:#64748b">點擊上方分類列可依月份或維修類型篩選工單明細。</div></div>`;
     summaryEl.innerHTML=html;
   }catch(e){summaryEl.innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;}
@@ -1299,8 +1379,10 @@ function renderWipModal(){
   document.getElementById('wipModalCount').textContent=`共 ${filtered.length} 筆`;
   const totalWage=filtered.reduce((s,r)=>s+parseFloat(r.wage||0),0);
   const over30=filtered.filter(r=>r.days_open!==null&&parseFloat(r.days_open)>30).length;
-  document.getElementById('wipModalStats').textContent=`工資合計：${fmt(totalWage)} 元 ｜ 逾30天：${over30} 筆`;
-  const cols=[{k:'branch',l:'據點'},{k:'work_order',l:'工單號'},{k:'open_period',l:'進廠月'},{k:'plate_no',l:'車牌'},{k:'repair_type',l:'維修類型'},{k:'service_advisor',l:'SA'},{k:'wage',l:'工資',num:true},{k:'sales_amt',l:'銷售',num:true},{k:'days_open',l:'開單天數',num:true}];
+  const totalMat=filtered.reduce((s,r)=>s+parseFloat(r.cost_amt||0),0);
+  const totalSalesAmt=filtered.reduce((s,r)=>s+parseFloat(r.sales_amt||0),0);
+  document.getElementById('wipModalStats').textContent=`工資: ${fmtK(totalWage)}K ｜ 材料: ${fmtK(totalMat)}K ｜ 預估總額: ${fmtK(totalSalesAmt)}K ｜ 逾30天: ${over30} 筆`;
+  const cols=[{k:'branch',l:'據點'},{k:'work_order',l:'工單號'},{k:'open_period',l:'進廠月'},{k:'plate_no',l:'車牌'},{k:'repair_type',l:'維修類型'},{k:'service_advisor',l:'SA'},{k:'wage',l:'工資(labor)',num:true},{k:'cost_amt',l:'材料(repair_mat)',num:true},{k:'sales_amt',l:'總額(repair_amt)',num:true},{k:'days_open',l:'開單天數',num:true}];
   let html=`<thead style="position:sticky;top:0;z-index:2"><tr>${cols.map(c=>`<th style="padding:9px 12px;text-align:${c.num?'right':'left'};font-size:11px;color:#64748b;background:#0f172a;border-bottom:1px solid #2d3f56;white-space:nowrap">${c.l}</th>`).join('')}</tr></thead><tbody>`;
   filtered.forEach(r=>{const days=r.days_open!==null?parseFloat(r.days_open):null;const over=days!==null&&days>30;const bg=r.is_pdi?'rgba(245,158,11,.06)':over?'rgba(239,68,68,.05)':'';html+=`<tr style="background:${bg}">${cols.map(c=>{const v=r[c.k];let disp=v===null||v===undefined||v===''?'—':c.num&&!isNaN(v)?Math.round(parseFloat(v)).toLocaleString():v;if(c.k==='days_open'&&days!==null){disp=`<span style="color:${over?'#ef4444':days>15?'#f59e0b':'#64748b'};font-weight:${over?700:400}">${Math.round(days)}</span>`;}if(c.k==='work_order'&&r.is_pdi){disp=`${v} <span class="badge badge-yellow" style="font-size:10px">PDI</span>`;}return`<td style="padding:7px 12px;border-bottom:1px solid rgba(45,63,86,.3);font-size:11px;${c.num?'text-align:right;font-variant-numeric:tabular-nums':''}">${disp}</td>`;}).join('')}</tr>`;});
   document.getElementById('wipModalTable').innerHTML=html+'</tbody>';
@@ -1312,8 +1394,8 @@ function exportWipModalCSV(){
   let filtered=_wipData.rows;
   if(filterType==='period')filtered=filtered.filter(r=>(r.open_period||'（未知）')===filterVal);
   else if(filterType==='type')filtered=filtered.filter(r=>(r.repair_type||'（未知）')===filterVal);
-  const header=['據點','工單號','進廠月','車牌','維修類型','SA','工資','銷售金額','開單天數'];
-  const rows=filtered.map(r=>[r.branch,r.work_order,r.open_period,r.plate_no,r.repair_type,r.service_advisor,Math.round(r.wage||0),Math.round(r.sales_amt||0),r.days_open!==null?Math.round(r.days_open):''].map(v=>JSON.stringify(v??'')).join(','));
+  const header=['據點','工單號','進廠月','車牌','維修類型','SA','工資(labor_fee)','材料(repair_material_fee)','預估總額(repair_amount)','開單天數'];
+  const rows=filtered.map(r=>[r.branch,r.work_order,r.open_period,r.plate_no,r.repair_type,r.service_advisor,Math.round(r.wage||0),Math.round(r.cost_amt||0),Math.round(r.sales_amt||0),r.days_open!==null?Math.round(r.days_open):''].map(v=>JSON.stringify(v??'')).join(','));
   const csv='\uFEFF'+[header.join(','),...rows].join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=`wip_${filterVal||'all'}.csv`;a.click();
 }
