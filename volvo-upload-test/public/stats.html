@@ -1672,14 +1672,17 @@ document.addEventListener('keydown', e => {
 });
 
 // ══ 個人業績 ══
+ // ══ 個人業績 ══
+// v6: 更強指標比對、實績無小數、拖曳排序、顯示總權重
 
 let _ppMetrics  = [];
-let _ppDeptData = {}; // key: "branch-deptKey" → { branch, deptKey, personNames, metricIds }
+let _ppDeptData = {}; // key: "branch-deptKey"
+let _ppDragSrc  = null;
 
 async function loadPersonPerfDashboard() {
   const period = getPeriod();
   const branch = document.getElementById('selBranch').value;
-  const el = document.getElementById('ppContent');
+  const el     = document.getElementById('ppContent');
   if (!el) return;
   if (!period) { el.innerHTML = '<div class="empty">請先選擇期間後按查詢</div>'; return; }
   el.innerHTML = '<div class="loading"><span class="spinner"></span>載入中...</div>';
@@ -1705,7 +1708,7 @@ async function loadPersonPerfDashboard() {
     const isBoutique   = m => m.metric_type === 'boutique' ||
       m.metric_name.includes('精品') || m.metric_name.includes('配件');
 
-    _ppDeptData = {}; // 清空舊的
+    _ppDeptData = {};
 
     const branchData = {};
     await Promise.all(BRANCHES.map(async br => {
@@ -1715,12 +1718,18 @@ async function loadPersonPerfDashboard() {
       const roster客服 = roster.filter(p => p.dept_name?.includes('客戶服務') && p.status !== '離職');
       if (!roster維修.length && !roster客服.length) return;
 
+      // ── 指標銷售矩陣（sales_person 視角）──
       const saMatrix = await fetch(
         `/api/stats/sa-sales-matrix?period=${period}&branch=${br}&view=sales_person`
       ).then(r => r.json()).catch(() => ({ configs: [], rows: [] }));
 
-      const saActuals = {}; // saActuals[metricId][rosterName] = actual
+      // 先把 configs 印出來方便 debug
+      console.log(`[pp] ${br} saMatrix configs:`, saMatrix.configs?.map(c => c.config_name));
+
+      // saActuals[metricId][rosterName] = actual
+      const saActuals = {};
       const allNames  = [...roster維修, ...roster客服].map(p => p.emp_name);
+
       saMatrix.rows.forEach(row => {
         const name = _ppFuzzyMatch(row.sa_name, allNames) || row.sa_name;
         _ppMetrics.forEach(m => {
@@ -1728,14 +1737,16 @@ async function loadPersonPerfDashboard() {
           if (idx === null) return;
           const cell = row.configs[idx];
           if (!cell) return;
+          // 優先取 sales，若為 0 再取 qty，再取 cnt
           const val = m.stat_field === 'qty'   ? (cell.qty   || 0)
                     : m.stat_field === 'count'  ? (cell.cnt   || 0)
-                    :                             (cell.sales || 0);
+                    : (cell.sales || cell.qty || cell.cnt || 0);
           if (!saActuals[m.id]) saActuals[m.id] = {};
           saActuals[m.id][name] = (saActuals[m.id][name] || 0) + val;
         });
       });
 
+      // ── 已儲存個人權重 ──
       const ptMap = {};
       await Promise.all(_ppMetrics.map(async m => {
         const rows = await fetch(
@@ -1750,7 +1761,7 @@ async function loadPersonPerfDashboard() {
         });
       }));
 
-      branchData[br] = { roster維修, roster客服, saActuals, ptMap };
+      branchData[br] = { roster維修, roster客服, saActuals, ptMap, branchTargets };
     }));
 
     let html = '';
@@ -1761,11 +1772,11 @@ async function loadPersonPerfDashboard() {
       const metrics維修 = _ppMetrics.filter(m => !isBoutique(m));
       const metrics客服 = _ppMetrics.filter(m =>  isBoutique(m));
 
-      // 存到全域 map，供按鈕呼叫
+      // 存全域資料（供儲存、拖曳、重繪使用）
       const keyR = `${br}-repair`;
       const keyS = `${br}-service`;
-      _ppDeptData[keyR] = { branch: br, deptKey: 'repair',  personNames: roster維修.map(p => p.emp_name), metricIds: metrics維修.map(m => m.id) };
-      _ppDeptData[keyS] = { branch: br, deptKey: 'service', personNames: roster客服.map(p => p.emp_name), metricIds: metrics客服.map(m => m.id) };
+      _ppDeptData[keyR] = { branch: br, deptKey: 'repair',  roster: [...roster維修], metrics: metrics維修, saActuals, ptMap, branchTargets, metricIds: metrics維修.map(m => m.id) };
+      _ppDeptData[keyS] = { branch: br, deptKey: 'service', roster: [...roster客服], metrics: metrics客服, saActuals, ptMap, branchTargets, metricIds: metrics客服.map(m => m.id) };
 
       html += `<div style="margin-bottom:28px">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
@@ -1784,12 +1795,8 @@ async function loadPersonPerfDashboard() {
             👥 接待部客戶服務科 (${roster客服.length}人)
           </button>
         </div>
-        <div id="ppview-${br}-repair">
-          ${_ppBuildTable(br, 'repair',  roster維修, metrics維修, branchTargets, saActuals, ptMap)}
-        </div>
-        <div id="ppview-${br}-service" style="display:none">
-          ${_ppBuildTable(br, 'service', roster客服, metrics客服, branchTargets, saActuals, ptMap)}
-        </div>
+        <div id="ppview-${br}-repair">${_ppBuildTable(keyR)}</div>
+        <div id="ppview-${br}-service" style="display:none">${_ppBuildTable(keyS)}</div>
       </div>`;
     }
 
@@ -1800,12 +1807,30 @@ async function loadPersonPerfDashboard() {
   }
 }
 
+// ── 指標名稱比對（加強版）──
 function _ppFindSaConfigIdx(metricName, configs) {
   if (!configs?.length) return null;
-  let i = configs.findIndex(c => c.config_name === metricName);
+  const mn = String(metricName).trim();
+  // 1. 完全一致
+  let i = configs.findIndex(c => c.config_name === mn);
   if (i >= 0) return i;
-  i = configs.findIndex(c => c.config_name.includes(metricName) || metricName.includes(c.config_name));
-  return i >= 0 ? i : null;
+  // 2. 包含關係
+  i = configs.findIndex(c => c.config_name.includes(mn) || mn.includes(c.config_name));
+  if (i >= 0) return i;
+  // 3. 移除括號/空格後比對
+  const clean = s => s.replace(/[（）()「」\s]/g, '');
+  i = configs.findIndex(c => clean(c.config_name) === clean(mn));
+  if (i >= 0) return i;
+  // 4. 任意 2 字以上連續子串匹配
+  for (let k = 0; k < configs.length; k++) {
+    const cn = configs[k].config_name;
+    for (let len = Math.min(mn.length, cn.length); len >= 2; len--) {
+      for (let s = 0; s <= mn.length - len; s++) {
+        if (cn.includes(mn.slice(s, s + len))) return k;
+      }
+    }
+  }
+  return null;
 }
 
 function _ppFuzzyMatch(dmsName, rosterNames) {
@@ -1829,21 +1854,29 @@ function _ppSwitchDept(branch, dept) {
   });
 }
 
-function _ppBuildTable(branch, deptKey, roster, metrics, branchTargets, saActuals, ptMap) {
+// ── 建立表格（從 _ppDeptData[dKey] 讀取）──
+function _ppBuildTable(dKey) {
+  const d = _ppDeptData[dKey];
+  if (!d) return '';
+  const { branch, deptKey, roster, metrics, saActuals, ptMap, branchTargets } = d;
+
   const TH = 'padding:9px 10px;background:#0c1524;color:#64748b;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;';
   const TD = 'padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);vertical-align:middle;';
+
   if (!roster.length)  return '<div style="color:#64748b;font-size:13px;padding:12px 0">此科別無在職人員</div>';
   if (!metrics.length) return '<div style="color:#64748b;font-size:13px;padding:12px 0">此科別無對應指標</div>';
 
   const bt        = branchTargets[branch] || {};
   const isAmt     = m => !['count', 'qty'].includes(m.stat_field);
   const rateColor = r => r === null ? '#475569' : r >= 100 ? '#10b981' : r >= 80 ? '#f59e0b' : '#ef4444';
+
+  // 實績：四捨五入，無小數
   const fmtV = (v, m) => {
-    const n = parseFloat(v || 0);
+    const n = Math.round(parseFloat(v || 0));
     if (!n || isNaN(n)) return '—';
     return isAmt(m) && n >= 1000 ? Math.round(n / 1000).toLocaleString() + 'K' : n.toLocaleString();
   };
-  // 目標專用：無條件進位，不顯示小數
+  // 目標：無條件進位，無小數
   const fmtT = (v, m) => {
     const n = parseFloat(v || 0);
     if (!n || isNaN(n)) return '未設';
@@ -1860,17 +1893,20 @@ function _ppBuildTable(branch, deptKey, roster, metrics, branchTargets, saActual
     return '';
   };
 
+  // 科別總權重
   const deptTotalW = roster.reduce((sum, p) => {
     const w = parseFloat(getSavedW(p.emp_name) || 0);
     return sum + (isNaN(w) ? 0 : w);
   }, 0);
 
+  // 表頭
   const thMetrics = metrics.map(m => `
     <th style="${TH}text-align:right;min-width:110px;border-right:1px solid #1e3050">
       <div style="color:#8b5cf6;font-weight:800">${m.metric_name}</div>
       <div style="color:#475569;font-size:10px;font-weight:400;margin-top:1px">廠目標 ${fmtT(bt[m.id], m)}</div>
     </th>`).join('');
 
+  // 行
   let rows = '';
   roster.forEach((person, ni) => {
     const name   = person.emp_name;
@@ -1878,7 +1914,7 @@ function _ppBuildTable(branch, deptKey, roster, metrics, branchTargets, saActual
     const sCol   = person.status === '在職' ? '#10b981' : person.status === '留職停薪' ? '#f59e0b' : '#ef4444';
     const savedW = getSavedW(name);
     const myW    = parseFloat(savedW) || 0;
-    const pct    = myW > 0 && deptTotalW > 0 ? (myW / deptTotalW * 100).toFixed(1) + '%' : '未設';
+    const pct    = myW > 0 && deptTotalW > 0 ? (myW / deptTotalW * 100).toFixed(1) + '%' : '—';
 
     const metricCells = metrics.map(m => {
       const actual = saActuals[m.id]?.[name] || 0;
@@ -1904,19 +1940,27 @@ function _ppBuildTable(branch, deptKey, roster, metrics, branchTargets, saActual
       </td>`;
     }).join('');
 
-    // 注意：onclick 只傳 key string，不傳 JSON，避免引號斷裂
-    const dKey = `${branch}-${deptKey}`;
-    rows += `<tr>
+    rows += `<tr draggable="true"
+      ondragstart="_ppDragStart(event,'${esc(dKey)}',${ni})"
+      ondragover="_ppDragOver(event)"
+      ondrop="_ppDrop(event,'${esc(dKey)}',${ni})"
+      ondragend="_ppDragEnd(event)"
+      style="cursor:grab">
       <td style="${TD}background:${bg};border-right:1px solid #2d3f56;position:sticky;left:0;z-index:1;min-width:120px">
-        <div style="font-weight:700;font-size:13px;color:#e2e8f0">${name}</div>
-        <div style="font-size:10px;color:#64748b;margin-top:1px">${person.job_title || '—'}</div>
-        <span style="font-size:10px;padding:1px 5px;border-radius:4px;background:${sCol}22;color:${sCol}">${person.status}</span>
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="color:#334155;font-size:14px;cursor:grab" title="拖曳排序">⠿</span>
+          <div>
+            <div style="font-weight:700;font-size:13px;color:#e2e8f0">${name}</div>
+            <div style="font-size:10px;color:#64748b;margin-top:1px">${person.job_title || '—'}</div>
+            <span style="font-size:10px;padding:1px 5px;border-radius:4px;background:${sCol}22;color:${sCol}">${person.status}</span>
+          </div>
+        </div>
       </td>
       <td style="${TD}background:${bg};border-right:1px solid #2d3f56;text-align:center;min-width:90px">
         <div style="display:flex;align-items:center;gap:3px;justify-content:center">
           <input type="number" value="${savedW}" min="0" step="0.1" placeholder="—"
             id="ppW-${branch}-${deptKey}-${ni}"
-            title="相對權重（任意數值）— 個人目標 = 廠目標 × 個人 ÷ 科別總和"
+            title="相對權重 — 個人目標 = 廠目標 × 個人 ÷ 科別總和"
             style="background:#0f172a;border:1px solid #2d3f56;color:#3b82f6;padding:3px 7px;border-radius:5px;font-size:13px;font-weight:800;width:62px;text-align:right;outline:none"
             onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#2d3f56'">
         </div>
@@ -1933,6 +1977,7 @@ function _ppBuildTable(branch, deptKey, roster, metrics, branchTargets, saActual
     </tr>`;
   });
 
+  // 合計列
   const totalCells = metrics.map(m => {
     const total = roster.reduce((sum, p) => sum + (saActuals[m.id]?.[p.emp_name] || 0), 0);
     return `<td style="${TD}background:#1e293b;border-right:1px solid #1a2535;text-align:right">
@@ -1940,12 +1985,11 @@ function _ppBuildTable(branch, deptKey, roster, metrics, branchTargets, saActual
     </td>`;
   }).join('');
 
-  const dKey = `${branch}-${deptKey}`;
   return `<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;border:1px solid rgba(100,116,139,.25)">
     <div style="display:flex;align-items:center;padding:8px 12px;background:#0c1524;border-bottom:1px solid #2d3f56;gap:8px;flex-wrap:wrap">
       <span style="font-size:11px;color:#475569;flex:1">
-        💡 <strong style="color:#3b82f6">相對權重</strong>（任意數值，無需加總 100）：
-        個人目標 = 廠別目標 × 個人權重 ÷ 科別總和
+        💡 <strong style="color:#3b82f6">相對權重</strong>：個人目標 = 廠別目標 × 個人權重 ÷ 科別總和
+        &nbsp;｜&nbsp; ⠿ 可拖曳調整排序
       </span>
       <div id="ppdeptmsg-${dKey}" style="font-size:12px;min-height:18px"></div>
       <button onclick="_ppSaveDept('${esc(dKey)}')"
@@ -1960,12 +2004,15 @@ function _ppBuildTable(branch, deptKey, roster, metrics, branchTargets, saActual
           <th style="${TH}text-align:center;border-right:1px solid #2d3f56;min-width:90px">
             <div style="color:#3b82f6">相對權重</div>
             <div style="font-size:10px;font-weight:400;color:#475569;margin-top:1px">目標=廠目標×我÷總</div>
+            <div style="font-size:10px;color:#64748b;margin-top:2px;border-top:1px solid #1e3050;padding-top:2px">
+              合計 <strong style="color:#3b82f6">${deptTotalW % 1 === 0 ? deptTotalW : deptTotalW.toFixed(1)}</strong>
+            </div>
           </th>
           ${thMetrics}
           <th style="${TH}width:54px"></th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="pptbody-${dKey}">
         ${rows}
         <tr>
           <td colspan="2" style="${TD}font-weight:800;color:#64748b;border-right:1px solid #2d3f56;font-size:12px;background:#1e293b">全科合計實績</td>
@@ -1977,10 +2024,59 @@ function _ppBuildTable(branch, deptKey, roster, metrics, branchTargets, saActual
   </div>`;
 }
 
+// ── 拖曳排序 ──
+function _ppDragStart(e, dKey, ni) {
+  _ppDragSrc = { dKey, ni };
+  e.dataTransfer.effectAllowed = 'move';
+  e.currentTarget.style.opacity = '0.4';
+}
+function _ppDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.style.background = 'rgba(59,130,246,0.08)';
+}
+function _ppDragEnd(e) {
+  e.currentTarget.style.opacity = '';
+  e.currentTarget.style.background = '';
+}
+function _ppDrop(e, dKey, ni) {
+  e.preventDefault();
+  e.currentTarget.style.background = '';
+  if (!_ppDragSrc || _ppDragSrc.dKey !== dKey || _ppDragSrc.ni === ni) {
+    _ppDragSrc = null; return;
+  }
+  const d = _ppDeptData[dKey];
+  if (!d) return;
+  const from = _ppDragSrc.ni;
+  const to   = ni;
+  // 先讀取當前所有 input 值，存回 ptMap（避免拖曳後 input 值遺失）
+  d.roster.forEach((p, i) => {
+    const wEl = document.getElementById(`ppW-${d.branch}-${d.deptKey}-${i}`);
+    if (wEl) {
+      const rawW = parseFloat(wEl.value);
+      if (!isNaN(rawW) && rawW > 0) {
+        d.metrics.forEach(m => {
+          if (!d.ptMap[p.emp_name]) d.ptMap[p.emp_name] = {};
+          if (!d.ptMap[p.emp_name][m.id]) d.ptMap[p.emp_name][m.id] = {};
+          d.ptMap[p.emp_name][m.id].weight = rawW;
+        });
+      }
+    }
+  });
+  // 重新排序
+  const [moved] = d.roster.splice(from, 1);
+  d.roster.splice(to, 0, moved);
+  d.metricIds = d.metrics.map(m => m.id);
+  // 重繪此科別
+  const viewEl = document.getElementById(`ppview-${d.branch}-${d.deptKey}`);
+  if (viewEl) viewEl.innerHTML = _ppBuildTable(dKey);
+  _ppDragSrc = null;
+}
+
 // ── 儲存單人 ──
 async function _ppSaveRow(dKey, ni, personName) {
   const d = _ppDeptData[dKey];
-  if (!d) { console.error('_ppSaveRow: no deptData for', dKey); return; }
+  if (!d) return;
   const { branch, deptKey, metricIds } = d;
   const msgEl  = document.getElementById(`ppRowMsg-${dKey}-${ni}`);
   const wInput = document.getElementById(`ppW-${branch}-${deptKey}-${ni}`);
@@ -1999,61 +2095,55 @@ async function _ppSaveRow(dKey, ni, personName) {
         target_value: e.target_value != null ? parseFloat(e.target_value) : null,
         note: e.note || '',
       }));
-      if (!existing.find(e => e.person_name === personName)) {
+      if (!existing.find(e => e.person_name === personName))
         entries.push({ person_name: personName, weight, target_value: null, note: '' });
-      }
       await fetch('/api/person-targets/batch', {
-        method:  'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ metric_id: parseInt(mid), period, branch, entries }),
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ metric_id: parseInt(mid), period, branch, entries }),
       });
     }
     if (msgEl) { msgEl.textContent = '✅'; msgEl.style.color = '#10b981'; }
-    // 儲存成功後刷新整個面板
     await loadPersonPerfDashboard();
   } catch (e) {
-    if (msgEl) { msgEl.textContent = '❌ 失敗'; msgEl.style.color = '#ef4444'; }
-    console.error('_ppSaveRow error', e);
+    if (msgEl) { msgEl.textContent = '❌'; msgEl.style.color = '#ef4444'; }
+    console.error('_ppSaveRow', e);
   }
 }
 
-// ── 儲存全科（從全域 _ppDeptData 讀取，不依賴 onclick 傳參）──
+// ── 儲存全科 ──
 async function _ppSaveDept(dKey) {
   const d = _ppDeptData[dKey];
-  if (!d) { console.error('_ppSaveDept: no deptData for', dKey); return; }
-  const { branch, deptKey, personNames, metricIds } = d;
+  if (!d) { console.error('_ppSaveDept: no data for', dKey); return; }
+  const { branch, deptKey, roster, metricIds } = d;
   const msgEl = document.getElementById(`ppdeptmsg-${dKey}`);
   if (msgEl) { msgEl.textContent = '儲存中...'; msgEl.style.color = '#64748b'; }
   const period = getPeriod();
   let saved = 0;
   try {
     for (const mid of metricIds) {
-      const entries = personNames
-        .map((name, ni) => {
+      const entries = roster
+        .map((p, ni) => {
           const wInput = document.getElementById(`ppW-${branch}-${deptKey}-${ni}`);
           const rawW   = wInput ? parseFloat(wInput.value) : NaN;
           const weight = (!isNaN(rawW) && rawW > 0) ? rawW : null;
-          return { person_name: name, weight, target_value: null, note: '' };
+          return { person_name: p.emp_name, weight, target_value: null, note: '' };
         })
         .filter(e => e.weight !== null);
       if (!entries.length) continue;
       const res = await fetch('/api/person-targets/batch', {
-        method:  'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ metric_id: parseInt(mid), period, branch, entries }),
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ metric_id: parseInt(mid), period, branch, entries }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       saved++;
     }
-    if (msgEl) { msgEl.textContent = saved ? `✅ 已儲存 ${saved} 個指標` : '⚠️ 無有效權重'; msgEl.style.color = saved ? '#10b981' : '#f59e0b'; }
-    // 儲存成功後刷新整個面板
+    if (msgEl) { msgEl.textContent = saved ? `✅ 已儲存` : '⚠️ 無有效權重'; msgEl.style.color = saved ? '#10b981' : '#f59e0b'; }
     await loadPersonPerfDashboard();
   } catch (e) {
     if (msgEl) { msgEl.textContent = '❌ ' + e.message; msgEl.style.color = '#ef4444'; }
-    console.error('_ppSaveDept error', e);
+    console.error('_ppSaveDept', e);
   }
 }
-
  
 // ══ Init ══
 document.addEventListener('DOMContentLoaded',async()=>{
