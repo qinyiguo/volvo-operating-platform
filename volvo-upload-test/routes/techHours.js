@@ -141,15 +141,29 @@ router.get('/stats/tech-hours', async (req, res) => {
       }
 
       // 2. 技師名單（依部門名稱判斷類型）
+      //    納入條件：在職 OR 留職停薪 OR 當月離職（resign_date >= 該月1日）
+      //    這樣 3月中離職的技師，3月報表仍會顯示其目標與實績
+      const periodStart = `${period.slice(0,4)}-${period.slice(4,6)}-01`;
       const rosterRes = await pool.query(
-        `SELECT emp_id, emp_name, job_title, dept_code, dept_name, factory
+        `SELECT emp_id, emp_name, job_title, dept_code, dept_name, factory,
+                status, resign_date
          FROM staff_roster
          WHERE period=$1
            AND (factory=$2 OR (factory IS NULL AND dept_name ILIKE $3))
-           AND status='在職'
            AND COALESCE(job_category,'') NOT ILIKE '%計時%'
-         ORDER BY dept_code, emp_id`,
-        [rosterPeriod, br, `%${br}%`]
+           AND (
+             status = '在職'
+             OR status = '留職停薪'
+             OR (
+               status = '離職'
+               AND resign_date IS NOT NULL
+               AND resign_date >= $4::date
+             )
+           )
+         ORDER BY dept_code,
+           CASE status WHEN '在職' THEN 0 WHEN '留職停薪' THEN 1 ELSE 2 END,
+           emp_id`,
+        [rosterPeriod, br, `%${br}%`, periodStart]
       );
 
       // 按 deptType 分組
@@ -191,6 +205,8 @@ router.get('/stats/tech-hours', async (req, res) => {
               emp_name:     t.emp_name,
               job_title:    t.job_title || '—',
               dept_name:    t.dept_name,
+              status:       t.status || '在職',
+              resign_date:  t.resign_date ? t.resign_date.toISOString().slice(0,10) : null,
               utilization:  rate,
               target_hours: targetHours,
               actual_hours: Math.round(actualHours * 10) / 10,
