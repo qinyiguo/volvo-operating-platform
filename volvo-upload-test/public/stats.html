@@ -224,6 +224,7 @@
       <div class="tabs">
         <button class="tab active" onclick="switchTab('repair')">&#x1F527; 維修收入</button>
         <button class="tab" onclick="switchTab('tech')">&#x1F697; 單車銷售額</button>
+        <button class="tab" onclick="switchTab('person-perf')">&#x1F464; 個人業績</button>
         <button class="tab" onclick="switchTab('parts')">&#x1F529; 零件銷售</button>
         <button class="tab" onclick="switchTab('boutique')">&#x1F48E; 精品配件</button>
         <button class="tab" onclick="switchTab('sa-sales')">&#x1F4CB; 指標銷售</button>
@@ -231,7 +232,7 @@
         <button class="tab" onclick="switchTab('daily')">&#x1F4C5; 每日進廠</button>
         <button class="tab" onclick="switchTab('wip')">&#x1F527; WIP 未結工單</button>
         <button class="tab" onclick="switchTab('tech-hours')">&#x23F1;&#xFE0F; 技師工時</button>
-        <button class="tab" onclick="switchTab('person-perf')">&#x1F464; 個人業績</button>
+        
 
 
       </div>
@@ -877,7 +878,7 @@ const GROUP_META={
 
 function switchTab(tab){
   currentTab=tab;
-  const tabs=['repair','tech','parts','boutique','sa-sales','trend','daily','wip','tech-hours','person-perf'];
+  const tabs=['repair','tech','person-perf','parts','boutique','sa-sales','trend','daily','wip','tech-hours'];
   document.querySelectorAll('.tab').forEach((t,i)=>{t.classList.toggle('active',tabs[i]===tab);});
    if (tab === 'person-perf') loadPersonPerfDashboard();
   tabs.forEach(t=>{document.getElementById(`tab-${t}`).style.display=t===tab?'':'none';});
