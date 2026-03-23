@@ -184,6 +184,14 @@
     .btn { padding: 6px 10px; font-size: 11px; }
     .page-btn { width: 26px; height: 26px; font-size: 11px; }
   }
+
+ body.light-theme .card { background:#fff; border-color:#e2e8f0; }
+body.light-theme th { background:#f8fafc !important; color:#64748b; border-color:#e2e8f0; }
+body.light-theme td { border-color:rgba(203,213,225,.5); color:#1e293b; }
+body.light-theme tr:hover td { background:rgba(241,245,249,.8); }
+body.light-theme .filter-bar select, body.light-theme .filter-bar input { background:#fff; border-color:#e2e8f0; color:#1e293b; }
+body.light-theme .btn-secondary { background:#f1f5f9; color:#475569; border-color:#e2e8f0; }
+body.light-theme #summaryBar > div > div { background:#fff !important; border-color:#e2e8f0 !important; }
 </style>
 </head>
 <body>
@@ -196,6 +204,7 @@
     <a href="/query.html" class="nav-link active">🔍 資料查詢</a>
     <a href="/bonus.html" class="nav-link">💰 獎金表</a>
     <a href="/settings.html" class="nav-link">⚙️ 設定</a>
+   <button id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleTheme()" title="切換主題">☀️</button>
   </nav>
   <div class="header-inner">
 
@@ -847,6 +856,10 @@ document.getElementById('txtSearchMobile').addEventListener('input', ()=>{
   buildColMenu();
   await doQuery();
 })();
+ function initTheme(){const s=localStorage.getItem('volvo_theme')||'dark';applyTheme(s,false);}
+function applyTheme(t,re){if(t==='light')document.body.classList.add('light-theme');else document.body.classList.remove('light-theme');const b=document.getElementById('themeToggleBtn');if(b)b.textContent=t==='light'?'🌙':'☀️';localStorage.setItem('volvo_theme',t);}
+function toggleTheme(){applyTheme(document.body.classList.contains('light-theme')?'dark':'light',true);}
+initTheme();
 </script>
 </body>
 </html>
