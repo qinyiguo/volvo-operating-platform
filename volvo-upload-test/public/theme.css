@@ -1,0 +1,358 @@
+/* ═══════════════════════════════════════════════════
+   Volvo DMS — 共用淺色主題覆蓋
+   引入方式：<link rel="stylesheet" href="/theme.css">
+   ═══════════════════════════════════════════════════ */
+
+/* ── CSS 變數（深色預設） ── */
+:root {
+  --bg-base:      #0f172a;
+  --bg-card:      #1a2332;
+  --bg-card2:     #1e293b;
+  --bg-input:     #0f172a;
+  --bg-table-hd:  #0f172a;
+  --border:       #2d3f56;
+  --border2:      #334155;
+  --text-primary: #e2e8f0;
+  --text-muted:   #94a3b8;
+  --text-dim:     #64748b;
+  --text-dimmer:  #475569;
+}
+
+body.light-theme {
+  --bg-base:      #f1f5f9;
+  --bg-card:      #ffffff;
+  --bg-card2:     #ffffff;
+  --bg-input:     #ffffff;
+  --bg-table-hd:  #f8fafc;
+  --border:       #e2e8f0;
+  --border2:      #cbd5e1;
+  --text-primary: #1e293b;
+  --text-muted:   #475569;
+  --text-dim:     #64748b;
+  --text-dimmer:  #64748b;
+}
+
+/* ═══════════════════════════════════════════════
+   淺色主題全域修正
+   ═══════════════════════════════════════════════ */
+
+/* 基底背景 */
+body.light-theme { background: #f1f5f9 !important; color: #1e293b !important; }
+
+/* ── 導覽列 ── */
+body.light-theme .nav               { background: #ffffff !important; border-color: #e2e8f0 !important; box-shadow: 0 2px 12px rgba(0,0,0,.08) !important; }
+body.light-theme .nav-brand         { color: #1e293b !important; }
+body.light-theme .nav-link          { color: #64748b !important; }
+body.light-theme .nav-link:hover    { color: #1e293b !important; }
+body.light-theme .nav-link.active   { color: #3b82f6 !important; }
+body.light-theme .sticky-header     { background: #f1f5f9 !important; }
+
+/* ── Filter / Header Bar ── */
+body.light-theme .filter-bar        { background: #ffffff !important; border-color: #e2e8f0 !important; }
+body.light-theme .filter-bar label  { color: #475569 !important; }
+body.light-theme .filter-bar select,
+body.light-theme .filter-bar input  { background: #ffffff !important; border-color: #cbd5e1 !important; color: #1e293b !important; }
+body.light-theme .header-inner      { background: #f1f5f9 !important; border-color: #e2e8f0 !important; }
+body.light-theme .sel               { background: #ffffff !important; border-color: #cbd5e1 !important; color: #1e293b !important; }
+
+/* ── 卡片 ── */
+body.light-theme .card              { background: #ffffff !important; border-color: #e2e8f0 !important; box-shadow: 0 1px 4px rgba(0,0,0,.06) !important; }
+body.light-theme .card-title        { color: #1e293b !important; }
+body.light-theme .card-title-note   { color: #64748b !important; }
+
+/* ── KPI 卡片 ── */
+body.light-theme .kpi-card          { background: #ffffff !important; border-color: #e2e8f0 !important; box-shadow: 0 1px 4px rgba(0,0,0,.06) !important; }
+body.light-theme .kpi-label         { color: #64748b !important; }
+body.light-theme .kpi-value         { color: #1e293b !important; }
+body.light-theme .kpi-sub           { color: #94a3b8 !important; }
+/* 保留語義色（不覆蓋） */
+body.light-theme .kpi-green  { color: #059669 !important; }
+body.light-theme .kpi-blue   { color: #2563eb !important; }
+body.light-theme .kpi-yellow { color: #b45309 !important; }
+body.light-theme .kpi-purple { color: #7c3aed !important; }
+body.light-theme .kpi-red    { color: #dc2626 !important; }
+body.light-theme .kpi-orange { color: #ea580c !important; }
+body.light-theme .kpi-teal   { color: #0d9488 !important; }
+
+/* ── 表格 ── */
+body.light-theme table              { background: transparent !important; }
+body.light-theme th                 { background: #f8fafc !important; color: #475569 !important; border-color: #e2e8f0 !important; }
+body.light-theme td                 { color: #1e293b !important; border-color: rgba(203,213,225,.5) !important; }
+body.light-theme tr:hover td        { background: rgba(241,245,249,.8) !important; }
+body.light-theme .table-wrap        { border-color: #e2e8f0 !important; }
+body.light-theme .num               { color: #1e293b !important; }
+/* 特殊行 */
+body.light-theme tr.cost-row td     { background: rgba(100,116,139,.06) !important; color: #1e293b !important; }
+body.light-theme tr.subtotal-row td { background: rgba(234,88,12,.07) !important;   color: #1e293b !important; }
+body.light-theme tr.total-row td    { background: rgba(59,130,246,.07) !important;  color: #1e293b !important; }
+/* 保留語義數字色 */
+body.light-theme .num.up    { color: #059669 !important; }
+body.light-theme .num.down  { color: #dc2626 !important; }
+
+/* ── 按鈕 ── */
+body.light-theme .btn-primary    { background: #3b82f6 !important; color: #ffffff !important; }
+body.light-theme .btn-secondary  { background: #f1f5f9 !important; color: #475569 !important; border-color: #e2e8f0 !important; }
+body.light-theme .btn-danger     { background: rgba(220,38,38,.08) !important; color: #dc2626 !important; border-color: rgba(220,38,38,.2) !important; }
+body.light-theme .btn-green      { background: rgba(5,150,105,.1) !important; color: #059669 !important; border-color: rgba(5,150,105,.25) !important; }
+
+/* ── Badges ── */
+body.light-theme .badge-blue   { background: rgba(59,130,246,.12) !important; color: #1d4ed8 !important; }
+body.light-theme .badge-green  { background: rgba(5,150,105,.12)  !important; color: #065f46 !important; }
+body.light-theme .badge-yellow { background: rgba(217,119,6,.12)  !important; color: #92400e !important; }
+body.light-theme .badge-purple { background: rgba(124,58,237,.12) !important; color: #5b21b6 !important; }
+body.light-theme .badge-red    { background: rgba(220,38,38,.12)  !important; color: #991b1b !important; }
+body.light-theme .badge-teal   { background: rgba(13,148,136,.12) !important; color: #134e4a !important; }
+body.light-theme .badge-orange { background: rgba(234,88,12,.12)  !important; color: #9a3412 !important; }
+body.light-theme .badge-gray   { background: rgba(100,116,139,.12)!important; color: #374151 !important; }
+
+/* ── 分頁 Tabs ── */
+body.light-theme .tabs           { background: #ffffff !important; }
+body.light-theme .tab            { color: #64748b !important; }
+body.light-theme .tab:hover      { background: #f1f5f9 !important; color: #1e293b !important; }
+body.light-theme .tab.active     { background: #3b82f6 !important; color: #ffffff !important; }
+body.light-theme .tab-btn        { color: #64748b !important; }
+body.light-theme .tab-btn.active { background: #3b82f6 !important; color: #ffffff !important; }
+body.light-theme .tab-bar        { background: #f1f5f9 !important; border-color: #e2e8f0 !important; }
+body.light-theme .tabs-wrap .tabs { background: #f8fafc !important; border: 1px solid #e2e8f0; border-radius: 8px; }
+
+/* ── 期間選擇器 ── */
+body.light-theme .period-btn                     { background: #ffffff !important; border-color: #cbd5e1 !important; color: #1e293b !important; }
+body.light-theme .period-btn .pb-year            { color: #94a3b8 !important; }
+body.light-theme .period-btn .pb-month           { color: #1e293b !important; }
+body.light-theme .period-btn.open                { border-color: #3b82f6 !important; }
+body.light-theme .period-dropdown                { background: #ffffff !important; border-color: #e2e8f0 !important; box-shadow: 0 8px 24px rgba(0,0,0,.12) !important; }
+body.light-theme .period-dd-year-label           { color: #64748b !important; }
+body.light-theme .period-dd-mo .mo-num           { color: #475569 !important; }
+body.light-theme .period-dd-mo .mo-label         { color: #94a3b8 !important; }
+body.light-theme .period-dd-mo:hover             { background: rgba(59,130,246,.08) !important; }
+body.light-theme .period-dd-mo.has-data .mo-num  { color: #1e293b !important; }
+body.light-theme .period-dd-mo.selected          { background: rgba(59,130,246,.15) !important; border-color: #3b82f6 !important; }
+body.light-theme .period-dd-mo.selected .mo-num  { color: #2563eb !important; }
+body.light-theme .period-dd-search input         { background: #f8fafc !important; border-color: #e2e8f0 !important; color: #1e293b !important; }
+
+/* ── 表單輸入 ── */
+body.light-theme .form-input       { background: #ffffff !important; border-color: #cbd5e1 !important; color: #1e293b !important; }
+body.light-theme .form-select      { background: #ffffff !important; border-color: #cbd5e1 !important; color: #1e293b !important; }
+body.light-theme .form-input:focus { border-color: #3b82f6 !important; }
+body.light-theme select            { background: #ffffff !important; color: #1e293b !important; }
+
+/* ── Sidebar（設定頁）── */
+body.light-theme .sidebar          { background: #ffffff !important; border-color: #e2e8f0 !important; }
+body.light-theme .sidebar-label    { color: #94a3b8 !important; }
+body.light-theme .sidebar-item     { color: #64748b !important; }
+body.light-theme .sidebar-item:hover  { background: #f1f5f9 !important; color: #1e293b !important; }
+body.light-theme .sidebar-item.active { background: rgba(59,130,246,.1) !important; color: #2563eb !important; }
+
+/* ── Modal ── */
+body.light-theme .modal-backdrop   { background: rgba(0,0,0,.4) !important; }
+body.light-theme .modal-window,
+body.light-theme .modal-win        { background: #ffffff !important; border-color: #e2e8f0 !important; box-shadow: 0 24px 64px rgba(0,0,0,.15) !important; }
+body.light-theme .modal-header,
+body.light-theme .modal-head       { border-color: #e2e8f0 !important; }
+body.light-theme .modal-header-title,
+body.light-theme .modal-title      { color: #1e293b !important; }
+body.light-theme .modal-close      { background: #f1f5f9 !important; border-color: #e2e8f0 !important; color: #64748b !important; }
+body.light-theme .modal-footer     { border-color: #e2e8f0 !important; background: #ffffff !important; }
+body.light-theme .modal-body       { color: #1e293b !important; }
+
+/* ── Loading / Empty ── */
+body.light-theme .loading  { color: #64748b !important; }
+body.light-theme .empty    { color: #64748b !important; }
+body.light-theme .spinner  { border-color: #e2e8f0 !important; border-top-color: #3b82f6 !important; }
+
+/* ── 收入分類卡片（stats.html）── */
+body.light-theme .income-cat-card                     { background: #ffffff !important; border-color: #e2e8f0 !important; }
+body.light-theme .income-cat-label                    { color: #64748b !important; }
+/* 語義顏色保留 */
+body.light-theme .income-cat-card.type-general   .income-cat-value { color: #1d4ed8 !important; }
+body.light-theme .income-cat-card.type-insurance .income-cat-value { color: #065f46 !important; }
+body.light-theme .income-cat-card.type-extended  .income-cat-value { color: #5b21b6 !important; }
+body.light-theme .income-cat-card.type-voucher   .income-cat-value { color: #92400e !important; }
+body.light-theme .income-cat-card.type-external  .income-cat-value { color: #134e4a !important; }
+body.light-theme .income-cat-card.type-paid      .income-cat-value { color: #c2410c !important; }
+body.light-theme .income-cat-card.type-grand     .income-cat-value { color: #1e293b !important; }
+body.light-theme .income-cat-card.type-internal  .income-cat-value { color: #374151 !important; }
+
+/* ── 進度條底色 ── */
+body.light-theme .bar-bg  { background: #e2e8f0 !important; }
+body.light-theme .wd-track { background: #e2e8f0 !important; }
+
+/* ── 工作天日曆 ── */
+body.light-theme .wd-day-cell       { background: #f8fafc !important; border-color: #e2e8f0 !important; color: #475569 !important; }
+body.light-theme .wd-day-cell:hover { border-color: #3b82f6 !important; color: #2563eb !important; }
+body.light-theme .wd-day-cell.work  { background: rgba(5,150,105,.12) !important; border-color: #059669 !important; color: #065f46 !important; }
+
+/* ── SA 矩陣 subtab ── */
+body.light-theme .sa-subtab-bar     { background: #ffffff !important; border-color: #e2e8f0 !important; }
+body.light-theme .sa-subtab         { color: #64748b !important; }
+body.light-theme .sa-subtab.active  { background: #3b82f6 !important; color: #ffffff !important; }
+
+/* ── 查詢頁 Summary Bar ── */
+body.light-theme #summaryBar > div > div { background: #ffffff !important; border-color: #e2e8f0 !important; }
+
+/* ── 獎金表 / Bonus ── */
+body.light-theme .factory-section   { border-color: #e2e8f0 !important; }
+body.light-theme .factory-header    { background: #f8fafc !important; }
+body.light-theme .dept-header       { background: #ffffff !important; color: #475569 !important; }
+body.light-theme .emp-table th      { background: #f8fafc !important; color: #475569 !important; border-color: #e2e8f0 !important; }
+body.light-theme .emp-table td      { color: #1e293b !important; border-color: rgba(203,213,225,.4) !important; }
+body.light-theme .emp-table tr:hover td { background: rgba(241,245,249,.8) !important; }
+
+/* ── 鎖定畫面（密碼輸入）── */
+body.light-theme #lockScreen        { background: #f1f5f9 !important; }
+
+/* ── 分隔線文字 ── */
+body.light-theme .divider-label     { color: #64748b !important; }
+body.light-theme .divider-label::after { background: #e2e8f0 !important; }
+
+/* ── Hint 提示框 ── */
+body.light-theme .hint { background: rgba(59,130,246,.05) !important; border-color: rgba(59,130,246,.2) !important; color: #374151 !important; }
+body.light-theme .logic-hint { background: #f8fafc !important; border-color: #e2e8f0 !important; color: #374151 !important; }
+
+/* ── 捲軸 ── */
+body.light-theme ::-webkit-scrollbar       { background: #f1f5f9; }
+body.light-theme ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+body.light-theme ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ── Count Card（設定頁）── */
+body.light-theme .count-card  { background: #f8fafc !important; border-color: #e2e8f0 !important; }
+body.light-theme .count-label { color: #64748b !important; }
+
+/* ── 個人業績科別表格 ── */
+body.light-theme #ppContent       { color: #1e293b !important; }
+body.light-theme #ppContent table th { background: #f8fafc !important; color: #475569 !important; }
+body.light-theme #ppContent table td { color: #1e293b !important; }
+
+/* ── Inline 深色背景覆蓋（JS 生成內容）── */
+/* 常見的深色小卡 */
+body.light-theme [style*="background:#0f172a"],
+body.light-theme [style*="background: #0f172a"]  { background: #f8fafc !important; }
+body.light-theme [style*="background:#1a2332"],
+body.light-theme [style*="background: #1a2332"]  { background: #ffffff !important; }
+body.light-theme [style*="background:#1e293b"],
+body.light-theme [style*="background: #1e293b"]  { background: #ffffff !important; }
+body.light-theme [style*="background:#131f2e"],
+body.light-theme [style*="background: #131f2e"]  { background: #f8fafc !important; }
+body.light-theme [style*="background:#0c1524"],
+body.light-theme [style*="background: #0c1524"]  { background: #f8fafc !important; }
+body.light-theme [style*="background:#090f1a"],
+body.light-theme [style*="background: #090f1a"]  { background: #f8fafc !important; }
+body.light-theme [style*="background:#111827"],
+body.light-theme [style*="background: #111827"]  { background: #f9fafb !important; }
+body.light-theme [style*="background:#0e1a29"],
+body.light-theme [style*="background: #0e1a29"]  { background: #f9fafb !important; }
+body.light-theme [style*="background:#0b1422"],
+body.light-theme [style*="background: #0b1422"]  { background: #f8fafc !important; }
+
+/* 深色文字覆蓋（讓淡色文字在白底上可讀）*/
+body.light-theme [style*="color:#e2e8f0"]  { color: #1e293b !important; }
+body.light-theme [style*="color: #e2e8f0"] { color: #1e293b !important; }
+body.light-theme [style*="color:#cbd5e1"]  { color: #334155 !important; }
+body.light-theme [style*="color: #cbd5e1"] { color: #334155 !important; }
+body.light-theme [style*="color:#94a3b8"]  { color: #475569 !important; }
+body.light-theme [style*="color: #94a3b8"] { color: #475569 !important; }
+body.light-theme [style*="color:#64748b"]  { color: #64748b !important; }
+body.light-theme [style*="color:#475569"]  { color: #64748b !important; }
+body.light-theme [style*="color:#374151"]  { color: #374151 !important; }
+body.light-theme [style*="color:#334155"]  { color: #475569 !important; }
+body.light-theme [style*="color:#253347"]  { color: #e2e8f0 !important; } /* 按鈕背景色出現在文字位置 */
+body.light-theme [style*="color:#2d3f56"]  { color: #94a3b8 !important; }
+body.light-theme [style*="color:#2d4060"]  { color: #94a3b8 !important; }
+body.light-theme [style*="color:#1e3050"]  { color: #94a3b8 !important; }
+body.light-theme [style*="color:#1a2535"]  { color: #94a3b8 !important; }
+
+/* 深色邊框 */
+body.light-theme [style*="border-color:#2d3f56"]  { border-color: #e2e8f0 !important; }
+body.light-theme [style*="border-color: #2d3f56"] { border-color: #e2e8f0 !important; }
+body.light-theme [style*="border-color:#374151"]  { border-color: #e2e8f0 !important; }
+
+/* ── 特定元件精確修正 ── */
+
+/* WIP Modal */
+body.light-theme #wipDetailModal > div       { background: #ffffff !important; border-color: #e2e8f0 !important; }
+body.light-theme #wipModalTable th           { background: #f8fafc !important; color: #475569 !important; }
+body.light-theme #wipModalTable td           { color: #1e293b !important; }
+
+/* Tech Hours Modal */
+body.light-theme #techHoursConfigModal > div { background: #ffffff !important; border-color: #e2e8f0 !important; }
+body.light-theme #techHoursDetailModal > div { background: #ffffff !important; border-color: #e2e8f0 !important; }
+
+/* Stats page grand KPI */
+body.light-theme #grandKPI .kpi-card         { background: #ffffff !important; border-color: #cbd5e1 !important; }
+body.light-theme #repairKPI .kpi-card        { background: #ffffff !important; border-color: #e2e8f0 !important; }
+
+/* Performance page */
+body.light-theme .perf-block                 { border-color: #e2e8f0 !important; }
+body.light-theme .perf-block-header          { background: #f8fafc !important; }
+body.light-theme .perf-cell                  { border-color: #e2e8f0 !important; }
+
+/* Achieve bar */
+body.light-theme .achieve-bar                { background: #f8fafc !important; border-color: #e2e8f0 !important; }
+body.light-theme .achieve-chip               { background: #ffffff !important; border-color: #e2e8f0 !important; }
+
+/* Revenue KPI 卡片 */
+body.light-theme #revenueKPISection > div    { background: #ffffff !important; }
+
+/* Working days progress cards */
+body.light-theme .wd-card                    { background: #ffffff !important; border-color: #e2e8f0 !important; }
+
+/* Query page table wrap */
+body.light-theme .table-wrap                 { background: #ffffff !important; }
+body.light-theme .card-head                  { background: #f8fafc !important; border-color: #e2e8f0 !important; }
+body.light-theme .row-count                  { background: #f1f5f9 !important; border-color: #e2e8f0 !important; color: #475569 !important; }
+body.light-theme .page-btn                   { background: #ffffff !important; border-color: #e2e8f0 !important; color: #64748b !important; }
+body.light-theme .page-btn:hover             { border-color: #3b82f6 !important; color: #2563eb !important; }
+body.light-theme .page-btn.active            { background: #3b82f6 !important; border-color: #3b82f6 !important; color: #ffffff !important; }
+body.light-theme .page-info                  { color: #64748b !important; }
+
+/* Col toggle dropdown */
+body.light-theme .col-toggle-dropdown        { background: #ffffff !important; border-color: #e2e8f0 !important; }
+body.light-theme .col-toggle-item            { color: #64748b !important; }
+body.light-theme .col-toggle-item:hover      { background: rgba(59,130,246,.06) !important; color: #1e293b !important; }
+
+/* Period dropdown在query頁 */
+body.light-theme .period-dd-year             { color: #64748b !important; }
+body.light-theme .period-dd-mo              { color: #475569 !important; }
+body.light-theme .period-dd-mo.has-data     { color: #1e293b !important; }
+body.light-theme .period-dd-mo.selected     { background: rgba(59,130,246,.15) !important; border-color: #3b82f6 !important; color: #1d4ed8 !important; }
+
+/* Settings page */
+body.light-theme .layout                     { background: #f1f5f9 !important; }
+body.light-theme .main                       { background: #f1f5f9 !important; }
+body.light-theme .page-title                 { color: #1e293b !important; }
+body.light-theme .page-sub                   { color: #64748b !important; }
+body.light-theme .section-label,
+body.light-theme .modal-section-label        { color: #64748b !important; border-color: #e2e8f0 !important; }
+body.light-theme .config-item                { background: #f8fafc !important; border-color: #e2e8f0 !important; }
+body.light-theme .config-item:hover          { border-color: #3b82f6 !important; }
+body.light-theme .config-item-name          { color: #1e293b !important; }
+body.light-theme .config-item-desc          { color: #64748b !important; }
+body.light-theme .upload-zone               { border-color: #cbd5e1 !important; color: #475569 !important; }
+body.light-theme .upload-zone:hover         { border-color: #3b82f6 !important; background: rgba(59,130,246,.04) !important; }
+body.light-theme .filter-tag-row            { background: #f8fafc !important; border-color: #e2e8f0 !important; }
+body.light-theme .stat-radio-item           { background: #f8fafc !important; border-color: #e2e8f0 !important; color: #475569 !important; }
+body.light-theme .stat-radio-item.selected  { background: rgba(59,130,246,.07) !important; border-color: #3b82f6 !important; }
+body.light-theme .stat-radio-name           { color: #1e293b !important; }
+body.light-theme .part-type-chip            { background: #f8fafc !important; border-color: #e2e8f0 !important; color: #475569 !important; }
+body.light-theme .part-type-chip.checked    { background: rgba(234,88,12,.08) !important; border-color: #ea580c !important; color: #c2410c !important; }
+body.light-theme .lookup-input              { background: #ffffff !important; border-color: #cbd5e1 !important; color: #1e293b !important; }
+body.light-theme .lookup-dropdown           { background: #ffffff !important; border-color: #e2e8f0 !important; box-shadow: 0 8px 24px rgba(0,0,0,.1) !important; }
+body.light-theme .lookup-item               { color: #1e293b !important; border-color: rgba(203,213,225,.4) !important; }
+body.light-theme .lookup-item:hover         { background: rgba(59,130,246,.06) !important; }
+body.light-theme .lookup-item-sub           { color: #64748b !important; }
+body.light-theme #mobileSectionNav          { background: #ffffff !important; border-color: #e2e8f0 !important; }
+body.light-theme .mob-sec-btn               { color: #64748b !important; }
+body.light-theme .mob-sec-btn.active        { background: rgba(59,130,246,.1) !important; color: #2563eb !important; }
+body.light-theme .wd-existing-item          { background: #f8fafc !important; border-color: #e2e8f0 !important; }
+body.light-theme .wd-existing-item .name    { color: #1e293b !important; }
+body.light-theme .wd-existing-item .sub     { color: #64748b !important; }
+
+/* Bonus page 特有 */
+body.light-theme .metric-card               { background: #f8fafc !important; border-color: #e2e8f0 !important; }
+body.light-theme .tier-input                { background: #ffffff !important; border-color: #cbd5e1 !important; color: #1e293b !important; }
+body.light-theme .role-tag                  { background: rgba(59,130,246,.1) !important; border-color: rgba(59,130,246,.25) !important; color: #1d4ed8 !important; }
+body.light-theme .dept-chip                 { background: #f8fafc !important; border-color: #e2e8f0 !important; color: #475569 !important; }
+
+/* ── 主題切換按鈕 ── */
+body.light-theme .theme-toggle-btn          { border-color: #e2e8f0 !important; color: #475569 !important; }
+body.light-theme .theme-toggle-btn:hover    { background: #f1f5f9 !important; }
