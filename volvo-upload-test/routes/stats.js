@@ -144,19 +144,58 @@ router.get('/stats/daily', async (req, res) => {
       }
     }
 
+// ── 以現在時間點計算「已過工作天」，不依賴有無開單 ──
+    const nowTW = new Date(Date.now() + 8 * 60 * 60 * 1000); // UTC+8
+    const todayStr = nowTW.toISOString().slice(0, 10);        // YYYY-MM-DD
+
     const summary = autoSummary.rows.map(r => {
-      const configured      = wdMap[r.branch] || null;
-      const configuredDays  = configured ? configured.length : null;
-      const workingDays     = configuredDays !== null ? configuredDays : parseInt(r.auto_working_days || 0);
-      const totalCars       = parseInt(r.total_cars || 0);
+      const configured     = wdMap[r.branch] || null;
+      const configuredDays = configured ? configured.length : null;
+      const totalCars      = parseInt(r.total_cars || 0);
+
+      // 本月全月工作天（分母）
+      const workingDays = configuredDays !== null
+        ? configuredDays
+        : parseInt(r.auto_working_days || 0);
+
+      // 已過工作天（分子）—— 依今天日期決定，與有無開單無關
+      let elapsedDays;
+      if (configured && configured.length > 0) {
+        // 手動設定曆：算有幾個設定日 <= 今天
+        elapsedDays = configured.filter(d => d <= todayStr).length;
+      } else if (period) {
+        // 無手動設定：算本月月初到今天（或月底，若已過）的平日數
+        const y  = parseInt(period.slice(0, 4));
+        const mo = parseInt(period.slice(4)) - 1; // 0-indexed
+        const monthStart = new Date(Date.UTC(y, mo, 1));
+        const monthEnd   = new Date(Date.UTC(y, mo + 1, 0));
+        const todayUTC   = new Date(todayStr + 'T00:00:00Z');
+        const cutoff     = todayUTC <= monthEnd ? todayUTC : monthEnd;
+        let cnt = 0;
+        const d = new Date(monthStart);
+        while (d <= cutoff) {
+          const dow = d.getUTCDay();
+          if (dow !== 0 && dow !== 6) cnt++;
+          d.setUTCDate(d.getUTCDate() + 1);
+        }
+        elapsedDays = cnt;
+      } else {
+        // fallback：只有在沒有 period 參數時才用舊邏輯
+        elapsedDays = parseInt(r.auto_working_days || 0);
+      }
+
       return {
-        branch: r.branch, total_cars: totalCars, working_days: workingDays,
-        auto_working_days: parseInt(r.auto_working_days || 0),
+        branch: r.branch,
+        total_cars: totalCars,
+        working_days: workingDays,
+        auto_working_days: elapsedDays,          // ← 現在代表「今天為止已過幾個工作天」
         configured_working_days: configuredDays,
-        daily_avg: workingDays > 0 ? (totalCars / workingDays).toFixed(1) : '0',
-        max_day: r.max_day, min_day: r.min_day,
+        daily_avg: elapsedDays > 0 ? (totalCars / elapsedDays).toFixed(1) : '0',
+        max_day: r.max_day,
+        min_day: r.min_day,
       };
     });
+    
     res.json({ daily: daily.rows, summary });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
