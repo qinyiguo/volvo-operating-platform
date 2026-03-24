@@ -2893,7 +2893,7 @@ if (showCarCount || showRevenue) {
       <div style="font-size:10px;color:#475569;margin-top:2px">目標：暫無</div>
     </td>`;
   roster.forEach(p => {
-    const cnt = (saCarCount&&saCarCount[p.emp_name])||0;
+    const cnt = saCarCount ? Math.round(getRevActual(saCarCount, p.emp_name) || 0) : 0;
     tbody += `<td style="padding:10px 8px;${TD}text-align:center;border-right:1px solid #1a2535;">
       <div style="font-size:18px;font-weight:900;color:${cnt>0?'#3b82f6':'#475569'}">${cnt>0?cnt:'—'}</div>
     </td>`;
