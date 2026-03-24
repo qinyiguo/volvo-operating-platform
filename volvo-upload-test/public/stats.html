@@ -760,7 +760,7 @@ function renderTrTable(dept) {
   });
 
   let html = `<div style="overflow-x:auto;border-radius:8px;border:1px solid #2d3f56">
-    <table style="width:100%;border-collapse:collapse;font-size:12px">
+    <table style="width:100%;border-collapse:separate;border-spacing:0;font-size:12px">
     <thead><tr>
       <th style="text-align:left;padding:8px 12px;background:#090f1a;color:#64748b;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;white-space:nowrap">職務</th>
       <th style="padding:8px 12px;background:#090f1a;color:${col};font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;min-width:240px">產能利用率</th>
@@ -1835,7 +1835,7 @@ async function loadTechHoursDetail(period, branch, empName) {
 
     const thS = 'padding:8px 10px;background:#090f1a;color:#64748b;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;white-space:nowrap;text-align:left;';
     const thN = thS + 'text-align:right;';
-    let html = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
+    let html = `<div style="overflow-x:auto">font-size:12px">
       <thead><tr>
         <th style="${thS}">出廠日期</th>
         <th style="${thS}">工單號</th>
@@ -2816,12 +2816,12 @@ const fmtV = (v, m) => {
 };
 const fmtT = (v, m) => v ? fmtV(v, m) : '—';
 const LABEL_W = 175;
-const TH = `background:#0c1524;color:#64748b;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;`;
+const TH = `background:#0c1524;color:#64748b;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;position:sticky;top:0;z-index:3;`;
 const TD = `border-bottom:1px solid rgba(45,63,86,.2);vertical-align:middle;`;
 
   // ════ 表頭：人員欄 ════
   let thead = `<thead><tr>
-    <th style="padding:10px 12px;${TH}position:sticky;left:0;z-index:4;min-width:${LABEL_W}px;border-right:2px solid #374151;">
+    <th style="padding:10px 12px;${TH}position:sticky;top:0;left:0;z-index:6;min-width:${LABEL_W}px;border-right:2px solid #374151;">
       <div style="display:flex;align-items:center;gap:6px">
         <span style="color:#94a3b8">品項 / 人員</span>
         <button onclick="event.stopPropagation();openPPDeptConfig('${esc(dKey)}')"
@@ -2837,7 +2837,7 @@ const TD = `border-bottom:1px solid rgba(45,63,86,.2);vertical-align:middle;`;
         ondragleave="_ppColDragLeave(event)"
         ondrop="_ppColDrop(event,'${esc(dKey)}',${ni})"
         ondragend="_ppColDragEnd(event)"
-        style="padding:9px 8px;${TH}text-align:center;min-width:110px;border-right:1px solid #1e3050;cursor:grab;">
+        style="padding:9px 8px;${TH}text-align:center;min-width:110px;border-right:1px solid #1e3050;cursor:grab;top:0;z-index:4;">
         <div style="font-size:9px;color:#2d4a6b;margin-bottom:2px;letter-spacing:.05em">⠿ 拖曳排序</div>
         <div style="font-weight:800;font-size:12px;color:#e2e8f0">${p.emp_name}</div>
         <div style="font-size:10px;color:#64748b;margin-top:1px">${p.job_title||'—'}</div>
