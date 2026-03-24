@@ -2834,12 +2834,16 @@ function _ppBuildTable(dKey) {
 
   
  // ── 營業區 header ──
-  tbody += `<tr><td colspan="${roster.length+2}"
-    style="padding:4px 12px;background:rgba(249,115,22,.12);border-bottom:1px solid rgba(249,115,22,.35);">
-    <span style="font-size:10px;font-weight:900;color:#f97316;letter-spacing:.06em">📊 營業區</span>
-  </td></tr>`;
+if (showCarCount || showRevenue) {
+    tbody += `<tr><td colspan="${roster.length+2}"
+      style="padding:4px 12px;background:rgba(249,115,22,.12);border-bottom:1px solid rgba(249,115,22,.35);">
+      <span style="font-size:10px;font-weight:900;color:#f97316;letter-spacing:.06em">📊 營業區</span>
+    </td></tr>`;
+  }
+  if (showCarCount) { /* 進廠台數列 */ }
+  if (showRevenue)  { /* 營收列 */ }
 
- if (showCarCount) { 
+ 
  // 進廠台數
   const carTotal = roster.reduce((s,p)=>s+((saCarCount&&saCarCount[p.emp_name])||0),0);
   tbody += `<tr style="background:rgba(59,130,246,.03)">
@@ -2854,9 +2858,8 @@ function _ppBuildTable(dKey) {
     </td>`;
   });
   tbody += `<td style="padding:10px 8px;${TD}text-align:right;border-left:2px solid #374151;font-weight:900;color:#3b82f6;">${carTotal>0?carTotal:'—'}</td></tr>`;
-  }
+  
  
- if (showCarCount) {
   // 營收列
   const revTotal = roster.reduce((s,p)=>s+(revMap[p.emp_name]||0),0);
   tbody += `<tr style="background:rgba(249,115,22,.04)">
@@ -2886,7 +2889,7 @@ function _ppBuildTable(dKey) {
     </td>`;
   });
   tbody += `<td style="padding:10px 8px;${TD}text-align:right;border-left:2px solid #374151;font-weight:900;color:#f97316;">${fmtRev(revTotal)}</td></tr>`;
- }
+
   // ── 品項區 ──
   if (visMetrics.length > 0) {
     tbody += `<tr><td colspan="${roster.length+2}"
