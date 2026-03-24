@@ -2936,33 +2936,6 @@ if (showCarCount || showRevenue) {
     tbody += `<td style="padding:10px 8px;${TD}text-align:right;border-left:2px solid #374151;font-weight:900;color:${rColor};">${fmtRev(revTotal)}</td></tr>`;
   });
 }
-  tbody += `<tr style="background:rgba(249,115,22,.04)">
-    <td style="padding:10px 12px;${TD}position:sticky;left:0;z-index:2;background:#1a1200;border-right:2px solid #374151;min-width:${LABEL_W}px;">
-      <div style="font-weight:800;font-size:13px;color:#f97316">${REV_LABEL[revType]||'有費營收'}</div>
-      <div style="font-size:10px;color:#475569;margin-top:2px">廠目標 ${fmtRev(branchRevTarget)}</div>
-    </td>`;
-  roster.forEach(p => {
-    const name   = p.emp_name;
-    const actual = revMap[name]||0;
-    const myW    = parseFloat(getSavedW(name))||0;
-    const calcT  = myW>0&&deptTotalW>0&&branchRevTarget>0 ? branchRevTarget*deptAllocRatio*myW/deptTotalW : null;
-    const rate   = calcT&&calcT>0 ? actual/calcT*100 : null;
-    const rCol   = rateColor(rate);
-    const barW   = rate!==null ? Math.min(100,rate).toFixed(0) : 0;
-    tbody += `<td style="padding:10px 8px;${TD}text-align:center;border-right:1px solid #1a2535;background:rgba(249,115,22,.02);">
-      <div style="font-size:15px;font-weight:900;color:${actual>0?'#f97316':'#475569'}">${fmtRev(actual)}</div>
-      <div style="font-size:10px;color:#64748b;margin-top:1px">目標 ${calcT?fmtRev(calcT):'—'}</div>
-      ${rate!==null
-        ?`<div style="display:flex;align-items:center;gap:4px;margin-top:3px">
-            <div style="flex:1;background:#0f172a;border-radius:2px;height:3px">
-              <div style="width:${barW}%;height:3px;border-radius:2px;background:${rCol}"></div>
-            </div>
-            <span style="font-size:10px;font-weight:800;color:${rCol};min-width:36px;text-align:right">${rate.toFixed(1)}%</span>
-          </div>`
-        :'<div style="font-size:10px;color:#334155;margin-top:3px">—</div>'}
-    </td>`;
-  });
-  tbody += `<td style="padding:10px 8px;${TD}text-align:right;border-left:2px solid #374151;font-weight:900;color:#f97316;">${fmtRev(revTotal)}</td></tr>`;
 
   // ── 品項區 ──
   if (visMetrics.length > 0) {
