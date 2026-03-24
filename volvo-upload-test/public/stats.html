@@ -3064,6 +3064,7 @@ function _ppDrop(e,dKey,ni){
   _ppDragSrc=null;
 }
 
+function esc(s) { return String(s).replace(/'/g,"\\'"); }
 function _ppOnAllocChange(dKey) {
   const d = _ppDeptData[dKey]; if (!d) return;
   const allocEl = document.getElementById(`ppAlloc-${dKey}`);
