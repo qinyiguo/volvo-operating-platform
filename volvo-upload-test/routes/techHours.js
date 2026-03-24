@@ -537,4 +537,116 @@ router.put('/tech-capacity-config', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// ══════════════════════════════════════════════
+// GET /api/stats/tech-turnover  引電技師施工周轉率
+//
+// 引電台次 = repair_income 中，排除鈑烤（bodywork/paint > 0）
+//            和保險鈑烤（account_type ILIKE '%保險%'）的
+//            distinct (plate_no, settle_date) 筆數
+//
+// 技師人數 = staff_roster 引擎科，排除領班
+//
+// 周轉率 = 總台次 / 技師人數 / 工作天數  (台/人/天)
+// ══════════════════════════════════════════════
+router.get('/stats/tech-turnover', async (req, res) => {
+  const { period, branch } = req.query;
+  if (!period) return res.status(400).json({ error: 'period 為必填' });
+  try {
+    const rosterRes = await pool.query(
+      `SELECT DISTINCT period FROM staff_roster ORDER BY period DESC LIMIT 1`
+    );
+    const rosterPeriod = rosterRes.rows[0]?.period || null;
+    const BRANCHES = branch && STD_BRANCHES.has(branch) ? [branch] : ['AMA','AMC','AMD'];
+    const result = {};
+
+    for (const br of BRANCHES) {
+      // ── 工作天數 ──
+      let workingDays = 0;
+      const wdRes = await pool.query(
+        `SELECT work_dates FROM working_days_config WHERE branch=$1 AND period=$2`,
+        [br, period]
+      );
+      if (wdRes.rows[0]?.work_dates?.length) {
+        workingDays = wdRes.rows[0].work_dates.length;
+      } else {
+        const r = await pool.query(
+          `SELECT COUNT(DISTINCT open_time::date) AS cnt
+           FROM business_query WHERE period=$1 AND branch=$2 AND open_time IS NOT NULL`,
+          [period, br]
+        );
+        workingDays = parseInt(r.rows[0]?.cnt || 0);
+      }
+
+      // ── 引電技師人數（不含領班）──
+      let techNames = [];
+      if (rosterPeriod) {
+        const periodStart = `${period.slice(0,4)}-${period.slice(4,6)}-01`;
+        const r = await pool.query(`
+          SELECT emp_name, job_title, status FROM staff_roster
+          WHERE period=$1 AND factory=$2
+            AND dept_name ILIKE '%引擎%'
+            AND job_title NOT ILIKE '%領班%'
+            AND COALESCE(job_category,'') NOT ILIKE '%計時%'
+            AND (status='在職' OR status='留職停薪'
+                 OR (status='離職' AND resign_date IS NOT NULL AND resign_date >= $3::date))
+          ORDER BY job_title, emp_name
+        `, [rosterPeriod, br, periodStart]);
+        techNames = r.rows;
+      }
+      const techCount = techNames.length;
+
+      // ── 引電台次（排除鈑烤、自費鈑烤）──
+      //   distinct (plate_no, settle_date) = 每天每輛車算 1 台次
+      const visitsRes = await pool.query(`
+        SELECT COUNT(*) AS total_visits FROM (
+          SELECT DISTINCT plate_no, settle_date
+          FROM repair_income
+          WHERE period=$1 AND branch=$2
+            AND COALESCE(plate_no,'') != ''
+            AND settle_date IS NOT NULL
+            AND account_type NOT ILIKE '%保險%'
+            AND COALESCE(bodywork_income,0) = 0
+            AND COALESCE(paint_income,0) = 0
+        ) sub
+      `, [period, br]);
+      const totalVisits = parseInt(visitsRes.rows[0]?.total_visits || 0);
+
+      // ── 每日台數 ──
+      const dailyRes = await pool.query(`
+        SELECT settle_date AS work_date, COUNT(DISTINCT plate_no) AS vehicle_count
+        FROM repair_income
+        WHERE period=$1 AND branch=$2
+          AND settle_date IS NOT NULL
+          AND COALESCE(plate_no,'') != ''
+          AND account_type NOT ILIKE '%保險%'
+          AND COALESCE(bodywork_income,0) = 0
+          AND COALESCE(paint_income,0) = 0
+        GROUP BY settle_date ORDER BY settle_date
+      `, [period, br]);
+
+      const dailyAvg = workingDays > 0
+        ? Math.round(totalVisits / workingDays * 10) / 10
+        : 0;
+      const turnoverRate = (techCount > 0 && workingDays > 0)
+        ? Math.round(totalVisits / techCount / workingDays * 100) / 100
+        : null;
+
+      result[br] = {
+        branch: br,
+        working_days: workingDays,
+        tech_count: techCount,
+        tech_names: techNames,
+        total_visits: totalVisits,
+        daily_avg: dailyAvg,
+        turnover_rate: turnoverRate,
+        daily: dailyRes.rows,
+      };
+    }
+
+    res.json({ branches: result, rosterPeriod, period });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;
+
+
