@@ -770,4 +770,56 @@ router.get('/stats/revenue-per-vehicle', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── SA 進廠台數 ──
+router.get('/stats/sa-car-count', async (req, res) => {
+  const { period, branch } = req.query;
+  if (!period) return res.status(400).json({ error: 'period 為必填' });
+  try {
+    const params = [period]; let idx = 2;
+    const bc = branch ? ` AND branch=$${idx++}` : '';
+    if (branch) params.push(branch);
+    const r = await pool.query(`
+      SELECT service_advisor, COUNT(DISTINCT plate_no) AS car_count
+      FROM repair_income
+      WHERE period=$1${bc}
+        AND service_advisor IS NOT NULL AND service_advisor != ''
+      GROUP BY service_advisor
+    `, params);
+    const map = {};
+    r.rows.forEach(row => { map[row.service_advisor] = parseInt(row.car_count || 0); });
+    res.json(map);
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── SA 各類型營收 ──
+router.get('/stats/sa-paid-revenue', async (req, res) => {
+  const { period, branch, rev_type } = req.query;
+  if (!period) return res.status(400).json({ error: 'period 為必填' });
+  try {
+    const params = [period]; let idx = 2;
+    const bc = branch ? ` AND branch=$${idx++}` : '';
+    if (branch) params.push(branch);
+    let extra = '';
+    if (rev_type === 'bodywork') {
+      extra = ` AND (account_type ILIKE '%保險%' OR (account_type ILIKE '%一般%' AND (COALESCE(bodywork_income,0)>0 OR COALESCE(paint_income,0)>0)))`;
+    } else if (rev_type === 'general') {
+      extra = ` AND account_type ILIKE '%一般%' AND COALESCE(bodywork_income,0)=0 AND COALESCE(paint_income,0)=0`;
+    } else if (rev_type === 'extended') {
+      extra = ` AND account_type ILIKE '%延保%'`;
+    } else {
+      extra = ` AND account_type NOT ILIKE '%內結%' AND account_type NOT ILIKE '%保固%' AND account_type NOT ILIKE '%VSA%' AND account_type NOT ILIKE '%善意%'`;
+    }
+    const r = await pool.query(`
+      SELECT service_advisor, COALESCE(SUM(total_untaxed),0) AS revenue
+      FROM repair_income
+      WHERE period=$1${bc}${extra}
+        AND service_advisor IS NOT NULL AND service_advisor != ''
+      GROUP BY service_advisor
+    `, params);
+    const map = {};
+    r.rows.forEach(row => { map[row.service_advisor] = parseFloat(row.revenue || 0); });
+    res.json(map);
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;
