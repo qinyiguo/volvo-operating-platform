@@ -960,11 +960,34 @@
       </div>
     </div>
 
-   <div class="sidebar-item" onclick="showSection('bay-config')" id="menu-bay-config">
-  <span class="icon">🔧</span> 工位設定
+   <!-- ── 工位設定 ── -->
+<div class="section-page" id="section-bay-config">
+  <div class="page-title">🔧 工位設定</div>
+  <p class="page-sub">設定各據點引擎科、鈑金科、烤漆科的工位數，用於計算工位承接率</p>
+  <div class="card">
+    <div class="card-title">各廠工位數設定</div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>據點</th>
+            <th style="text-align:center;color:#8b5cf6">🔧 引擎工位</th>
+            <th style="text-align:center;color:#f97316">🔨 鈑金工位</th>
+            <th style="text-align:center;color:#06b6d4">🎨 烤漆工位</th>
+            <th style="text-align:center;color:#10b981">合計</th>
+          </tr>
+        </thead>
+        <tbody id="bayConfigBody"></tbody>
+      </table>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:14px">
+      <div id="bayConfigMsg" style="font-size:13px;flex:1;min-height:20px"></div>
+      <button class="btn btn-primary" onclick="saveBayConfig()">💾 儲存工位設定</button>
+    </div>
+  </div>
 </div>
-
-    <!-- ── 管理員密碼 ── -->
+   
+   <!-- ── 管理員密碼 ── -->
     <div class="section-page" id="section-password">
       <div class="page-title">🔑 管理員密碼</div>
       <div class="card" style="max-width:460px">
