@@ -20,6 +20,7 @@ const parseRepairIncome = (rows, branch, period) => rows
     period, branch,
     work_order:           String(pick(r, '工作單號', '工單號')).trim(),
     settle_date:          parseDate(pick(r, '結算日期')),
+    clear_date:           parseDate(pick(r, '結清日期')),
     customer:             String(pick(r, '客戶名稱', '客戶') || '').trim(),
     plate_no:             String(pick(r, '車牌號碼', '車牌') || '').trim(),
     account_type_code:    String(pick(r, '帳類代碼') || '').trim(),
