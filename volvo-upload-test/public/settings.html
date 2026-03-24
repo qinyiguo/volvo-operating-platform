@@ -960,6 +960,10 @@
       </div>
     </div>
 
+   <div class="sidebar-item" onclick="showSection('bay-config')" id="menu-bay-config">
+  <span class="icon">🔧</span> 工位設定
+</div>
+
     <!-- ── 管理員密碼 ── -->
     <div class="section-page" id="section-password">
       <div class="page-title">🔑 管理員密碼</div>
@@ -1415,6 +1419,89 @@ function hideLock(){document.getElementById('lockScreen').style.display='none';l
 async function doLogin(){const pwd=document.getElementById('lockInput').value,errEl=document.getElementById('lockError'),btn=document.getElementById('lockBtn');if(!pwd){errEl.textContent='請輸入密碼';return;}btn.disabled=true;btn.textContent='驗證中...';errEl.textContent='';try{const res=await fetch('/api/auth/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pwd})});const data=await res.json();if(res.ok&&data.token){sessionStorage.setItem(SETTINGS_TOKEN_KEY,data.token);document.getElementById('lockInput').value='';hideLock();}else{errEl.textContent=data.error||'密碼錯誤';document.getElementById('lockInput').value='';document.getElementById('lockInput').focus();}}catch(e){errEl.textContent='連線失敗，請重試';}finally{btn.disabled=false;btn.textContent='進入設定';}}
 async function changePassword(){const current=document.getElementById('pwdCurrent').value,newPwd=document.getElementById('pwdNew').value,confirm=document.getElementById('pwdConfirm').value,msgEl=document.getElementById('pwdMsg'),btn=document.getElementById('pwdBtn'),token=sessionStorage.getItem(SETTINGS_TOKEN_KEY);msgEl.textContent='';msgEl.style.color='#ef4444';if(!current){msgEl.textContent='請輸入目前密碼';return;}if(!newPwd){msgEl.textContent='請輸入新密碼';return;}if(newPwd.length<4){msgEl.textContent='新密碼至少需要 4 個字元';return;}if(newPwd!==confirm){msgEl.textContent='兩次輸入的新密碼不一致';return;}btn.disabled=true;btn.textContent='儲存中...';try{const res=await fetch('/api/auth/settings/password',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,currentPassword:current,newPassword:newPwd})});const data=await res.json();if(res.ok){msgEl.style.color='#10b981';msgEl.textContent='✅ 密碼已修改，請用新密碼重新登入';['pwdCurrent','pwdNew','pwdConfirm'].forEach(id=>document.getElementById(id).value='');sessionStorage.removeItem(SETTINGS_TOKEN_KEY);setTimeout(()=>{showLock();msgEl.textContent='';},1800);}else{msgEl.textContent=data.error||'修改失敗';}}catch(e){msgEl.textContent='連線失敗，請重試';}finally{btn.disabled=false;btn.textContent='儲存新密碼';}}
 
+ // ══ 工位設定 ══
+let _bayConfig = {};
+
+async function loadBayConfig() {
+  try {
+    _bayConfig = await fetch('/api/tech-bay-config').then(r => r.json());
+    renderBayConfigTable();
+  } catch(e) {}
+}
+
+function renderBayConfigTable() {
+  const BRANCHES = ['AMA','AMC','AMD'];
+  const brColors = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b' };
+  document.getElementById('bayConfigBody').innerHTML = BRANCHES.map(br => {
+    const b  = _bayConfig[br] || {};
+    const e  = b.engine   || 0;
+    const bw = b.bodywork || 0;
+    const p  = b.paint    || 0;
+    const col = brColors[br];
+    return `<tr>
+      <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3)">
+        <span style="background:${col}22;color:${col};padding:3px 10px;border-radius:6px;font-size:12px;font-weight:700">${br}</span>
+      </td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center">
+        <input type="number" id="bay-${br}-engine" value="${e}" min="0" max="99"
+          style="background:#0f172a;border:1px solid #2d3f56;color:#8b5cf6;padding:6px 10px;border-radius:6px;font-size:14px;font-weight:800;width:70px;text-align:center;outline:none"
+          oninput="updateBayTotal('${br}')">
+      </td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center">
+        <input type="number" id="bay-${br}-bodywork" value="${bw}" min="0" max="99"
+          style="background:#0f172a;border:1px solid #2d3f56;color:#f97316;padding:6px 10px;border-radius:6px;font-size:14px;font-weight:800;width:70px;text-align:center;outline:none"
+          oninput="updateBayTotal('${br}')">
+      </td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center">
+        <input type="number" id="bay-${br}-paint" value="${p}" min="0" max="99"
+          style="background:#0f172a;border:1px solid #2d3f56;color:#06b6d4;padding:6px 10px;border-radius:6px;font-size:14px;font-weight:800;width:70px;text-align:center;outline:none"
+          oninput="updateBayTotal('${br}')">
+      </td>
+      <td id="bay-${br}-total"
+        style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center;font-size:16px;font-weight:800;color:#10b981">
+        ${e + bw + p}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function updateBayTotal(br) {
+  const e  = parseInt(document.getElementById(`bay-${br}-engine`)?.value   || 0);
+  const bw = parseInt(document.getElementById(`bay-${br}-bodywork`)?.value || 0);
+  const p  = parseInt(document.getElementById(`bay-${br}-paint`)?.value    || 0);
+  const el = document.getElementById(`bay-${br}-total`);
+  if (el) el.textContent = e + bw + p;
+}
+
+async function saveBayConfig() {
+  const BRANCHES = ['AMA','AMC','AMD'];
+  const cfg = {};
+  BRANCHES.forEach(br => {
+    cfg[br] = {
+      engine:   parseInt(document.getElementById(`bay-${br}-engine`)?.value   || 0),
+      bodywork: parseInt(document.getElementById(`bay-${br}-bodywork`)?.value || 0),
+      paint:    parseInt(document.getElementById(`bay-${br}-paint`)?.value    || 0),
+    };
+  });
+  const msgEl = document.getElementById('bayConfigMsg');
+  try {
+    const r = await fetch('/api/tech-bay-config', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cfg),
+    }).then(r => r.json());
+    if (r.error) throw new Error(r.error);
+    _bayConfig = cfg;
+    msgEl.textContent = '✅ 工位設定已儲存';
+    msgEl.style.color = '#10b981';
+    setTimeout(() => { msgEl.textContent = ''; }, 2000);
+  } catch(e) {
+    msgEl.textContent = '❌ ' + e.message;
+    msgEl.style.color = '#ef4444';
+  }
+}
+
+ 
 // ══ 初始化 ══
 checkAuth();
 </script>
