@@ -638,31 +638,25 @@ if (isCurrentMonth) {
       // 新的
 const visitsRes = await pool.query(`
   SELECT COUNT(*) AS total_visits FROM (
-    SELECT DISTINCT plate_no, clear_date
-    FROM repair_income
+    SELECT DISTINCT plate_no, open_time::date
+    FROM business_query
     WHERE period=$1 AND branch=$2
       AND COALESCE(plate_no,'') != ''
-      AND clear_date IS NOT NULL
-      AND TO_CHAR(clear_date,'YYYYMM') = $1
-      AND account_type NOT ILIKE '%保險%'
-      AND COALESCE(bodywork_income,0) = 0
-      AND COALESCE(paint_income,0) = 0
+      AND open_time IS NOT NULL
+      AND COALESCE(repair_type,'') NOT IN ('PDI','鈑噴','事故保險')
   ) sub
 `, [period, br]);
       const totalVisits = parseInt(visitsRes.rows[0]?.total_visits || 0);
 
       // ── 每日台數 ──
 const dailyRes = await pool.query(`
-  SELECT clear_date AS work_date, COUNT(DISTINCT plate_no) AS vehicle_count
-  FROM repair_income
+  SELECT open_time::date AS work_date, COUNT(DISTINCT plate_no) AS vehicle_count
+  FROM business_query
   WHERE period=$1 AND branch=$2
-    AND clear_date IS NOT NULL
-    AND TO_CHAR(clear_date,'YYYYMM') = $1
+    AND open_time IS NOT NULL
     AND COALESCE(plate_no,'') != ''
-    AND account_type NOT ILIKE '%保險%'
-    AND COALESCE(bodywork_income,0) = 0
-    AND COALESCE(paint_income,0) = 0
-  GROUP BY clear_date ORDER BY clear_date
+    AND COALESCE(repair_type,'') NOT IN ('PDI','鈑噴','事故保險')
+  GROUP BY open_time::date ORDER BY open_time::date
 `, [period, br]);
 
       const dailyAvg = elapsedDays > 0
@@ -682,16 +676,15 @@ const totalBays    = engineBays + bodyworkBays + paintBays;
 // 鈑烤台次（保險鈑烤 + 自費鈑烤）
 const bwVisitsRes = await pool.query(`
   SELECT COUNT(*) AS cnt FROM (
-    SELECT DISTINCT plate_no, clear_date
-    FROM repair_income
+    SELECT DISTINCT plate_no, open_time::date
+    FROM business_query
     WHERE period=$1 AND branch=$2
       AND COALESCE(plate_no,'') != ''
-      AND clear_date IS NOT NULL
-      AND TO_CHAR(clear_date,'YYYYMM') = $1
-      AND (account_type ILIKE '%保險%'
-           OR (COALESCE(bodywork_income,0) > 0 OR COALESCE(paint_income,0) > 0))
+      AND open_time IS NOT NULL
+      AND repair_type IN ('鈑噴','事故保險')
   ) sub
 `, [period, br]);
+      
 const bwVisits = parseInt(bwVisitsRes.rows[0]?.cnt || 0);
 
 const engineBayRate  = (engineBays   > 0 && elapsedDays > 0)
