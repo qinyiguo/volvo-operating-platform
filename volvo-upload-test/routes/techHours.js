@@ -577,6 +577,41 @@ router.get('/stats/tech-turnover', async (req, res) => {
         workingDays = parseInt(r.rows[0]?.cnt || 0);
       }
 
+      // ── 已過工作天（當月才需要，歷史月份 = 全月）──
+const nowTW = new Date(Date.now() + 8 * 60 * 60 * 1000);
+const todayStr = nowTW.toISOString().slice(0, 10);
+const currentPeriod = `${nowTW.getFullYear()}${String(nowTW.getMonth()+1).padStart(2,'0')}`;
+const isCurrentMonth = period === currentPeriod;
+
+let elapsedDays = workingDays; // 歷史月份直接用全月
+
+if (isCurrentMonth) {
+  const wdRow = await pool.query(
+    `SELECT work_dates FROM working_days_config WHERE branch=$1 AND period=$2`,
+    [br, period]
+  );
+  const configured = wdRow.rows[0]?.work_dates || null;
+
+  if (configured && configured.length > 0) {
+    // 手動設定曆：算今天之前（含）有幾個工作日
+    elapsedDays = configured.filter(d => d <= todayStr).length;
+  } else {
+    // 自動：算本月月初到今天的平日數
+    const y  = parseInt(period.slice(0, 4));
+    const mo = parseInt(period.slice(4)) - 1;
+    const monthStart = new Date(Date.UTC(y, mo, 1));
+    const todayUTC   = new Date(todayStr + 'T00:00:00Z');
+    let cnt = 0;
+    const d = new Date(monthStart);
+    while (d <= todayUTC) {
+      const dow = d.getUTCDay();
+      if (dow !== 0 && dow !== 6) cnt++;
+      d.setUTCDate(d.getUTCDate() + 1);
+    }
+    elapsedDays = cnt;
+  }
+}
+
       // ── 引電技師人數（不含領班）──
       let techNames = [];
       if (rosterPeriod) {
@@ -627,16 +662,17 @@ const dailyRes = await pool.query(`
   GROUP BY clear_date ORDER BY clear_date
 `, [period, br]);
 
-      const dailyAvg = workingDays > 0
-        ? Math.round(totalVisits / workingDays * 10) / 10
+      const dailyAvg = elapsedDays > 0
+        ? Math.round(totalVisits / elapsedDays * 10) / 10
         : 0;
-      const turnoverRate = (techCount > 0 && workingDays > 0)
-        ? Math.round(totalVisits / techCount / workingDays * 100) / 100
+      const turnoverRate = (techCount > 0 && elapsedDays > 0)
+        ? Math.round(totalVisits / techCount / elapsedDays * 100) / 100
         : null;
 
       result[br] = {
         branch: br,
         working_days: workingDays,
+        elapsed_days: elapsedDays,
         tech_count: techCount,
         tech_names: techNames,
         total_visits: totalVisits,
