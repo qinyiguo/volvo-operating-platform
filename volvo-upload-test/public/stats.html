@@ -2105,6 +2105,95 @@ async function loadTechTurnover(period, branch) {
   }
 }
 
+ function _renderTurnoverChart(BRANCHES, bd, sortedDates, branchColors) {
+  var wrap = document.getElementById('turnoverDailyChart');
+  if (!wrap || !sortedDates.length) return;
+  var isLight = document.body.classList.contains('light-theme');
+  var DOW_CN  = ['日','一','二','三','四','五','六'];
+  var isMob   = window.innerWidth <= 768;
+  var chartH  = isMob ? 160 : 240;
+  var topPad  = 20, xLH = 36, leftP = 50, rightP = 24;
+  var gap     = 6;
+  var brCount = BRANCHES.length;
+
+  // 建立 dayMap
+  var dayMap = {};
+  BRANCHES.forEach(function(br) {
+    (bd[br] && bd[br].daily || []).forEach(function(d) {
+      var dt = String(d.work_date).slice(0,10);
+      if (!dayMap[dt]) dayMap[dt] = {};
+      dayMap[dt][br] = parseInt(d.vehicle_count || 0);
+    });
+  });
+
+  var maxVal = 0;
+  sortedDates.forEach(function(d) {
+    BRANCHES.forEach(function(br) { var v = (dayMap[d] && dayMap[d][br]) || 0; if (v > maxVal) maxVal = v; });
+  });
+  if (!maxVal) maxVal = 1;
+
+  var availW  = Math.min((wrap.clientWidth || 700) - leftP - rightP, 900);
+  var groupW  = Math.max(20, Math.floor(availW / Math.max(sortedDates.length, 1)));
+  var barW    = Math.max(6, Math.min(32, Math.floor((groupW - gap) / Math.max(brCount, 1))));
+  var actualGW= brCount * barW + gap;
+  var svgW    = Math.max(wrap.clientWidth || 700, leftP + sortedDates.length * actualGW + rightP);
+  var svgH    = topPad + chartH + xLH;
+  var yScale  = function(v) { return maxVal > 0 ? topPad + chartH * (1 - v / maxVal) : topPad + chartH; };
+  var axCol   = isLight ? '#94a3b8' : '#475569';
+  var gridCol = isLight ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,0.05)';
+  var lblCol  = isLight ? '#475569' : '#94a3b8';
+
+  var svg = '<svg width="' + svgW + '" height="' + svgH + '" xmlns="http://www.w3.org/2000/svg" style="display:block">';
+
+  for (var ti = 0; ti <= 4; ti++) {
+    var ytv = Math.round(maxVal * ti / 4), yy = yScale(ytv);
+    svg += '<line x1="' + leftP + '" y1="' + yy + '" x2="' + (svgW - rightP) + '" y2="' + yy + '" stroke="' + (ti === 0 ? axCol : gridCol) + '" stroke-width="' + (ti === 0 ? 1.5 : 0.5) + '"/>';
+    svg += '<text x="' + (leftP - 6) + '" y="' + (yy + 4) + '" text-anchor="end" font-size="10" fill="' + axCol + '">' + ytv + '</text>';
+  }
+
+  var cx = leftP;
+  sortedDates.forEach(function(date) {
+    var dow    = new Date(date + 'T00:00:00').getDay();
+    var dayNum = parseInt(date.slice(8));
+    var midX   = cx + brCount * barW / 2;
+    if (dow === 0 || dow === 6) svg += '<rect x="' + cx + '" y="' + topPad + '" width="' + (brCount * barW) + '" height="' + chartH + '" fill="' + (isLight ? 'rgba(0,0,0,0.025)' : 'rgba(255,255,255,0.025)') + '"/>';
+
+    BRANCHES.forEach(function(br, bi) {
+      var cnt = (dayMap[date] && dayMap[date][br]) || 0;
+      var col = branchColors[br] || '#94a3b8';
+      var bx  = cx + bi * barW;
+      if (cnt > 0) {
+        var barH = Math.max(3, chartH * cnt / maxVal);
+        var by   = topPad + chartH - barH;
+        var gid  = 'tg_' + bi + '_' + date.replace(/-/g,'');
+        svg += '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="' + col + '" stop-opacity="1"/><stop offset="100%" stop-color="' + col + '" stop-opacity="0.6"/></linearGradient></defs>';
+        svg += '<rect x="' + bx + '" y="' + by + '" width="' + Math.max(1, barW - 1) + '" height="' + barH + '" fill="url(#' + gid + ')" rx="2"/>';
+        if (barH > 18) {
+          svg += '<text x="' + (bx + barW / 2) + '" y="' + (by + 13) + '" text-anchor="middle" font-size="10" font-weight="700" fill="rgba(255,255,255,0.9)">' + cnt + '</text>';
+        } else {
+          svg += '<text x="' + (bx + barW / 2) + '" y="' + Math.max(topPad + 12, by - 3) + '" text-anchor="middle" font-size="10" font-weight="700" fill="' + col + '">' + cnt + '</text>';
+        }
+      }
+    });
+
+    var dowC = dow === 0 ? '#ef4444' : dow === 6 ? '#60a5fa' : lblCol;
+    svg += '<text x="' + midX + '" y="' + (topPad + chartH + 14) + '" text-anchor="middle" font-size="10" font-weight="' + (dow === 0 || dow === 6 ? 700 : 400) + '" fill="' + dowC + '">' + dayNum + '</text>';
+    svg += '<text x="' + midX + '" y="' + (topPad + chartH + 26) + '" text-anchor="middle" font-size="9" fill="' + dowC + '">' + DOW_CN[dow] + '</text>';
+    cx += actualGW;
+  });
+
+  // 圖例
+  BRANCHES.forEach(function(br, bi) {
+    var col = branchColors[br] || '#94a3b8';
+    var lx  = leftP + bi * 60;
+    svg += '<rect x="' + lx + '" y="' + (svgH - 10) + '" width="10" height="9" fill="' + col + '" rx="2"/>';
+    svg += '<text x="' + (lx + 14) + '" y="' + (svgH - 2) + '" font-size="10" font-weight="700" fill="' + col + '">' + br + '</text>';
+  });
+
+  svg += '</svg>';
+  wrap.innerHTML = svg;
+}
+
 // ── 鈑烤每日台數柱狀圖（集團合計，橘色）──
 function _renderBwChart(daily, dateList) {
   const wrap = document.getElementById('turnoverBwChart');
