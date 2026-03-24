@@ -539,15 +539,16 @@
 
 <!-- ══ Main Layout ══ -->
 <div id="mobileSectionNav" style="display:none">
-  <button class="mob-sec-btn active" id="mob-menu-upload"           onclick="showSection('upload')">📤 上傳</button>
-  <button class="mob-sec-btn"        id="mob-menu-dbstatus"         onclick="showSection('dbstatus')">🗄️ 資料庫</button>
-  <button class="mob-sec-btn"        id="mob-menu-sa-config"        onclick="showSection('sa-config')">📋 指標銷售</button>
-  <button class="mob-sec-btn"        id="mob-menu-working-days"     onclick="showSection('working-days')">📅 工作天</button>
-  <button class="mob-sec-btn"        id="mob-menu-tech-wage-config" onclick="showSection('tech-wage-config')">🔧 工資碼</button>
-  <button class="mob-sec-btn"        id="mob-menu-revenue-targets"  onclick="showSection('revenue-targets')">📈 營收目標</button>
-  <button class="mob-sec-btn"        id="mob-menu-performance"      onclick="showSection('performance')">🛒 精品銷售</button>
-  <button class="mob-sec-btn"        id="mob-menu-person-targets"   onclick="showSection('person-targets')">👤 個人目標</button>
-  <button class="mob-sec-btn"        id="mob-menu-password"         onclick="showSection('password')">🔑 密碼</button>
+  <button class="mob-sec-btn active" id="mob-menu-upload" onclick="showSection('upload')">📤 上傳</button>
+  <button class="mob-sec-btn" id="mob-menu-dbstatus" onclick="showSection('dbstatus')">🗄️ 資料庫</button>
+  <button class="mob-sec-btn" id="mob-menu-sa-config" onclick="showSection('sa-config')">📋 指標銷售</button>
+  <button class="mob-sec-btn" id="mob-menu-working-days" onclick="showSection('working-days')">📅 工作天</button>
+  <button class="mob-sec-btn" id="mob-menu-tech-wage-config" onclick="showSection('tech-wage-config')">🔧 工資碼</button>
+  <button class="mob-sec-btn" id="mob-menu-revenue-targets" onclick="showSection('revenue-targets')">📈 營收目標</button>
+  <button class="mob-sec-btn" id="mob-menu-performance" onclick="showSection('performance')">🛒 精品銷售</button>
+  <button class="mob-sec-btn" id="mob-menu-person-targets" onclick="showSection('person-targets')">👤 個人目標</button>
+  <button class="mob-sec-btn" id="mob-menu-bay-config" onclick="showSection('bay-config')">🔧 工位</button>
+  <button class="mob-sec-btn" id="mob-menu-password" onclick="showSection('password')">🔑 密碼</button>
 </div>
 <div class="layout">
   <div class="sidebar">
@@ -580,6 +581,9 @@
       <div class="sidebar-item" onclick="showSection('person-targets')" id="menu-person-targets">
         <span class="icon">👤</span> 個人業績目標
       </div>
+     <div class="sidebar-item" onclick="showSection('bay-config')" id="menu-bay-config">
+     <span class="icon">🔧</span> 工位設定
+     </div>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label">系統</div>
@@ -1000,7 +1004,7 @@ document.addEventListener('keydown',e=>{
 });
 
 // ══ Sidebar ══
-const sections=['upload','dbstatus','sa-config','working-days','tech-wage-config','revenue-targets','performance','person-targets','password'];
+const sections=['upload','dbstatus','sa-config','working-days','tech-wage-config','revenue-targets','performance','person-targets','bay-config','password'];
 function showSection(id){
   sections.forEach(s=>{
     document.getElementById(`section-${s}`).classList.toggle('active',s===id);
@@ -1019,6 +1023,7 @@ function showSection(id){
   if(id==='revenue-targets'){loadRevPeriods();loadRevList();}
   if(id==='performance'){loadPerfMetrics();loadPerfTgtPeriods();initPerfUpYear();}
   if(id==='person-targets'){initPtSelectors();}
+  if(id==='bay-config') loadBayConfig();
 }
 
 // ══ Upload ══
