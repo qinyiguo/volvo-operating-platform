@@ -1806,29 +1806,51 @@ function closeWipModal(){document.getElementById('wipDetailModal').style.display
 
 function renderWipModal(){
   if(!_wipData)return;
+
+  // ── 主題色系 ──
+  const isLight=document.body.classList.contains('light-theme');
+  const C={
+    bg:        isLight?'#ffffff':'#0d1b2e',
+    bgRow:     isLight?'#f8fafc':'#0d1b2e',
+    bgRowHov:  isLight?'rgba(241,245,249,.9)':'rgba(37,51,71,.5)',
+    bgHd:      isLight?'#f1f5f9':'#0c1524',
+    bgEdit:    isLight?'#f8fafc':'#0a1628',
+    bgInput:   isLight?'#ffffff':'#1e293b',
+    bgToolbar: isLight?'#f8fafc':'#0c1524',
+    border:    isLight?'#e2e8f0':'#1e3050',
+    borderEd:  isLight?'#3b82f6':'#1d4ed8',
+    text:      isLight?'#1e293b':'#e2e8f0',
+    textSub:   isLight?'#475569':'#94a3b8',
+    textDim:   isLight?'#94a3b8':'#475569',
+    textMono:  isLight?'#2563eb':'#93c5fd',
+    badge:     isLight?'rgba(59,130,246,.12)':'rgba(59,130,246,.15)',
+    badgeTxt:  isLight?'#1d4ed8':'#60a5fa',
+    inputBd:   isLight?'#cbd5e1':'#2d3f56',
+    rowOver30: isLight?'rgba(239,68,68,.08)':'rgba(239,68,68,.03)',
+    rowUrgent: isLight?'rgba(239,68,68,.12)':'rgba(239,68,68,.07)',
+    rowPdi:    isLight?'rgba(245,158,11,.06)':'rgba(245,158,11,.04)',
+  };
+
   const{filterType,filterVal}=_wipModal;
   let filtered=_wipData.rows;
 
-  if(filterType==='period')        filtered=filtered.filter(r=>(r.open_period||'（未知）')===filterVal);
-  else if(filterType==='type')     filtered=filtered.filter(r=>(r.repair_type||'（未知）')===filterVal);
-  else if(filterType==='status')   filtered=filtered.filter(r=>(r.wip_status||'未填寫')===filterVal);
+  if(filterType==='period')         filtered=filtered.filter(r=>(r.open_period||'（未知）')===filterVal);
+  else if(filterType==='type')      filtered=filtered.filter(r=>(r.repair_type||'（未知）')===filterVal);
+  else if(filterType==='status')    filtered=filtered.filter(r=>(r.wip_status||'未填寫')===filterVal);
   else if(filterType==='status_group'){
-    if(filterVal==='watch')   filtered=filtered.filter(r=>r.wip_status==='待修'||r.wip_status==='待客確認');
-    else if(filterVal==='hold')   filtered=filtered.filter(r=>['等料','施工中','暫緩'].includes(r.wip_status));
-    else if(filterVal==='urgent')  filtered=filtered.filter(r=>r.wip_status==='已可結帳');
-    else if(filterVal==='unknown') filtered=filtered.filter(r=>!r.wip_status||r.wip_status==='未填寫');
+    if(filterVal==='watch')    filtered=filtered.filter(r=>r.wip_status==='待修'||r.wip_status==='待客確認');
+    else if(filterVal==='hold')    filtered=filtered.filter(r=>['等料','施工中','暫緩'].includes(r.wip_status));
+    else if(filterVal==='urgent')   filtered=filtered.filter(r=>r.wip_status==='已可結帳');
+    else if(filterVal==='unknown')  filtered=filtered.filter(r=>!r.wip_status||r.wip_status==='未填寫');
   }
   else if(filterType==='single_wo') filtered=filtered.filter(r=>r.work_order===filterVal);
 
-  // 狀態篩選
   if(_wipModalStatusFilter!=='all') filtered=filtered.filter(r=>(r.wip_status||'未填寫')===_wipModalStatusFilter);
 
-  // SA 篩選
   const saFilterEl=document.getElementById('wipModalSAFilter');
   const saFilter=saFilterEl?saFilterEl.value:'';
   if(saFilter) filtered=filtered.filter(r=>(r.service_advisor||'').includes(saFilter));
 
-  // 關鍵字搜尋
   const searchEl=document.getElementById('wipModalSearch');
   const searchQ=(searchEl?searchEl.value:'').trim().toLowerCase();
   if(searchQ) filtered=filtered.filter(r=>
@@ -1848,43 +1870,176 @@ function renderWipModal(){
   document.getElementById('wipModalTitle').textContent=title;
   document.getElementById('wipModalCount').textContent=`共 ${filtered.length} 筆`;
 
-  // 統計
   const totalWage=filtered.reduce((s,r)=>s+parseFloat(r.wage||0),0);
   const over30=filtered.filter(r=>r.days_open!==null&&parseFloat(r.days_open)>30).length;
   const totalMat=filtered.reduce((s,r)=>s+parseFloat(r.cost_amt||0),0);
   const totalSalesAmt=filtered.reduce((s,r)=>s+parseFloat(r.sales_amt||0),0);
   const urgentCnt=filtered.filter(r=>r.wip_status==='已可結帳').length;
   document.getElementById('wipModalStats').innerHTML=
-    `工資: ${fmtK(totalWage)}K ｜ 材料: ${fmtK(totalMat)}K ｜ 預估: ${fmtK(totalSalesAmt)}K ｜ 逾30天: ${over30} ｜ <span style="color:#ef4444;font-weight:700">應結帳: ${urgentCnt}</span>`;
+    `<span style="color:${C.textSub}">工資: ${fmtK(totalWage)}K ｜ 材料: ${fmtK(totalMat)}K ｜ 預估: ${fmtK(totalSalesAmt)}K ｜ 逾30天: ${over30}</span> ｜ <span style="color:#ef4444;font-weight:700">應結帳: ${urgentCnt}</span>`;
 
-  // ── 狀態快捷篩選列 ──
+  // ── 狀態 tab ──
   const STATUS_TABS=[
-    {v:'all',      l:'全部',     bg:'#334155', ac:'#e2e8f0'},
-    {v:'已可結帳', l:'💳 應結帳', bg:'#7f1d1d', ac:'#fca5a5'},
-    {v:'等料',     l:'📦 等料',  bg:'#1e3a5f', ac:'#93c5fd'},
-    {v:'施工中',   l:'🔧 施工中', bg:'#064e3b', ac:'#6ee7b7'},
-    {v:'待修',     l:'⏳ 待修',  bg:'#78350f', ac:'#fcd34d'},
-    {v:'待客確認', l:'📞 待確認', bg:'#7c2d12', ac:'#fdba74'},
-    {v:'暫緩',     l:'⏸️ 暫緩',  bg:'#1e293b', ac:'#94a3b8'},
-    {v:'未填寫',   l:'❓ 未標記', bg:'#1e293b', ac:'#64748b'},
+    {v:'all',      l:'全部',     c:'#64748b'},
+    {v:'已可結帳', l:'💳 應結帳', c:'#ef4444'},
+    {v:'等料',     l:'📦 等料',  c:'#3b82f6'},
+    {v:'施工中',   l:'🔧 施工中', c:'#10b981'},
+    {v:'待修',     l:'⏳ 待修',  c:'#f59e0b'},
+    {v:'待客確認', l:'📞 待確認', c:'#f97316'},
+    {v:'暫緩',     l:'⏸️ 暫緩',  c:'#64748b'},
+    {v:'未填寫',   l:'❓ 未標記', c:'#94a3b8'},
   ];
   const allRows=_wipData.rows;
   const tabsHtml=STATUS_TABS.map(t=>{
     const cnt=t.v==='all'?allRows.length:allRows.filter(r=>(r.wip_status||'未填寫')===t.v).length;
     const active=_wipModalStatusFilter===t.v;
     return`<button onclick="_wipSetFilter('${t.v}')"
-      style="padding:5px 12px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:${active?700:500};
+      style="padding:5px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:${active?700:500};
              white-space:nowrap;transition:all .12s;
-             background:${active?t.bg:'transparent'};
-             color:${active?t.ac:'#64748b'};
-             outline:${active?'2px solid '+t.ac+'55':'none'};
-             outline-offset:1px">
-      ${t.l} <span style="opacity:.75;font-size:11px">${cnt}</span>
+             border:1.5px solid ${active?t.c:(isLight?'#e2e8f0':'#2d3f56')};
+             background:${active?(isLight?t.c+'18':t.c+'22'):(isLight?'#ffffff':'transparent')};
+             color:${active?t.c:(isLight?'#475569':'#64748b')}">
+      ${t.l} <span style="opacity:.65;font-size:11px">${cnt}</span>
     </button>`;
   }).join('');
   const filterBarEl=document.getElementById('wipModalFilterBar');
-  if(filterBarEl)filterBarEl.innerHTML=tabsHtml;
+  if(filterBarEl){
+    filterBarEl.style.background=isLight?'#f8fafc':'rgba(12,21,36,.6)';
+    filterBarEl.style.borderBottom=`1px solid ${C.border}`;
+    filterBarEl.innerHTML=tabsHtml;
+  }
 
+  // ── 工具列（首次建立）──
+  const allSAs=[...new Set(allRows.map(r=>r.service_advisor||'').filter(Boolean))].sort();
+  const saOptsHtml='<option value="">所有 SA</option>'+allSAs.map(s=>`<option value="${s}" ${s===saFilter?'selected':''}>${s}</option>`).join('');
+
+  const toolbarEl=document.getElementById('wipModalToolbar');
+  if(toolbarEl){
+    toolbarEl.style.background=C.bgToolbar;
+    toolbarEl.style.borderBottom=`1px solid ${C.border}`;
+    if(!toolbarEl.dataset.built){
+      toolbarEl.dataset.built='1';
+      toolbarEl.innerHTML=`
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 18px">
+          <div style="position:relative;flex:1;min-width:160px">
+            <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:${C.textDim};font-size:13px;pointer-events:none">🔍</span>
+            <input type="text" id="wipModalSearch" placeholder="工單號 / 車牌 / SA / 備註..."
+              style="width:100%;background:${C.bgInput};border:1px solid ${C.inputBd};color:${C.text};
+                     padding:6px 10px 6px 30px;border-radius:7px;font-size:12px;outline:none"
+              oninput="renderWipModal()"
+              onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='${C.inputBd}'">
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+            <span style="font-size:11px;color:${C.textSub};white-space:nowrap">SA：</span>
+            <select id="wipModalSAFilter" onchange="renderWipModal()"
+              style="background:${C.bgInput};border:1px solid ${C.inputBd};color:${C.text};
+                     padding:6px 10px;border-radius:7px;font-size:12px;outline:none;max-width:160px">
+              ${saOptsHtml}
+            </select>
+          </div>
+          <span id="wipFilterResultCount" style="font-size:11px;color:${C.textDim};white-space:nowrap"></span>
+        </div>`;
+    } else {
+      // 只更新不重建（保留 focus）
+      const srEl=document.getElementById('wipModalSearch');
+      if(srEl&&document.activeElement!==srEl) srEl.value=searchQ;
+      const saEl=document.getElementById('wipModalSAFilter');
+      if(saEl) saEl.innerHTML=saOptsHtml;
+    }
+    const rcEl=document.getElementById('wipFilterResultCount');
+    if(rcEl) rcEl.textContent=searchQ||saFilter?`找到 ${filtered.length} 筆`:'';
+  }
+
+  // ── 表格 ──
+  const TH=`padding:9px 12px;font-size:11px;font-weight:700;color:${C.textSub};background:${C.bgHd};border-bottom:1px solid ${C.border};white-space:nowrap;`;
+  const THR=TH+'text-align:right;';
+
+  let html=`<thead style="position:sticky;top:0;z-index:3">
+    <tr>
+      <th style="${TH}min-width:130px">工單號</th>
+      <th style="${TH}">據點</th>
+      <th style="${TH}">進廠月</th>
+      <th style="${TH}">車牌</th>
+      <th style="${TH}">維修類型</th>
+      <th style="${TH}min-width:100px">SA</th>
+      <th style="${THR}">工資</th>
+      <th style="${THR}min-width:80px">金額</th>
+      <th style="${THR}">天數</th>
+      <th style="${TH}min-width:120px">WIP 狀態</th>
+      <th style="${TH}min-width:160px">原因 / 預計完成</th>
+    </tr>
+  </thead><tbody>`;
+
+  filtered.forEach(r=>{
+    const days=r.days_open!==null?parseFloat(r.days_open):null;
+    const over=days!==null&&days>30;
+    const isPdi=r.is_pdi;
+    const status=r.wip_status||'未填寫';
+    const m=getWipStatusMeta(status);
+
+    const rowBg=
+      status==='已可結帳'&&over ? C.rowUrgent :
+      status==='已可結帳'       ? (isLight?'rgba(239,68,68,.06)':'rgba(239,68,68,.05)') :
+      isPdi                     ? C.rowPdi :
+      over                      ? C.rowOver30 : '';
+
+    const TD=`padding:8px 12px;border-bottom:1px solid ${C.border};font-size:12px;color:${C.text};`;
+    const TDR=TD+'text-align:right;font-variant-numeric:tabular-nums;';
+    const brKey=r.branch.replace(/\s/g,'_');
+
+    html+=`<tr style="background:${rowBg}"
+      onmouseover="this.style.background='${C.bgRowHov}'"
+      onmouseout="this.style.background='${rowBg}'">
+      <td style="${TD}font-family:monospace;font-size:11px;color:${C.textMono}">
+        ${r.work_order}${isPdi?`<span style="margin-left:5px;font-size:9px;background:${isLight?'rgba(245,158,11,.15)':'rgba(245,158,11,.2)'};color:#f59e0b;padding:1px 5px;border-radius:3px;font-weight:700">PDI</span>`:''}
+      </td>
+      <td style="${TD}">
+        <span style="background:${C.badge};color:${C.badgeTxt};padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700">${r.branch}</span>
+      </td>
+      <td style="${TD}color:${C.textSub};font-size:11px">${r.open_period||'—'}</td>
+      <td style="${TD}font-weight:600">${r.plate_no||'—'}</td>
+      <td style="${TD}color:${C.textSub};font-size:11px">${r.repair_type||'—'}</td>
+      <td style="${TD}font-weight:600;font-size:11px">${r.service_advisor||'—'}</td>
+      <td style="${TDR}color:${C.textSub}">${Math.round(r.wage||0).toLocaleString()}</td>
+      <td style="${TDR}color:${parseFloat(r.sales_amt||0)>0?(isLight?'#059669':'#34d399'):C.textDim};font-weight:${parseFloat(r.sales_amt||0)>0?700:400}">
+        ${Math.round(r.sales_amt||0).toLocaleString()}
+      </td>
+      <td style="${TDR}">
+        ${days!==null
+          ?`<span style="color:${over?(isLight?'#dc2626':'#f87171'):days>15?(isLight?'#b45309':'#fbbf24'):C.textDim};font-weight:${over?700:400}">${Math.round(days)}</span>`
+          :`<span style="color:${C.textDim}">—</span>`}
+      </td>
+      <td style="${TD}">
+        <button onclick="_openWipStatusEdit('${r.work_order}','${r.branch}')"
+          style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:6px;
+                 border:1.5px solid ${m.color}${isLight?'99':'66'};
+                 background:${isLight?m.color+'18':m.bg};
+                 color:${isLight?m.color:m.color};
+                 font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">
+          ${m.icon} ${status}
+        </button>
+      </td>
+      <td style="${TD}color:${C.textSub};font-size:11px">
+        ${r.wip_reason?`<span>${r.wip_reason}</span>`:''}
+        ${r.eta_date?`<span style="color:${isLight?'#2563eb':'#60a5fa'};margin-left:${r.wip_reason?4:0}px;font-size:10px">📅 ${String(r.eta_date).slice(0,10)}</span>`:''}
+        ${!r.wip_reason&&!r.eta_date?`<span style="color:${C.textDim}">—</span>`:''}
+      </td>
+    </tr>
+    <tr id="wipStatusEditRow-${r.work_order}-${brKey}" style="display:none">
+      <td colspan="11" style="padding:0;background:${C.bgEdit};border-bottom:2px solid ${C.borderEd}">
+        <div id="wipStatusEditPanel-${r.work_order}-${brKey}" style="padding:12px 20px"></div>
+      </td>
+    </tr>`;
+  });
+
+  if(!filtered.length) html+=`<tr><td colspan="11"
+    style="padding:36px;text-align:center;color:${C.textDim};font-size:13px">
+    ${searchQ||saFilter?'🔍 無符合條件的工單':'無工單資料'}
+  </td></tr>`;
+  html+='</tbody>';
+  document.getElementById('wipModalTable').innerHTML=html;
+}
+ 
   // ── SA 選項清單 ──
   const allSAs=[...new Set(allRows.map(r=>r.service_advisor||'').filter(Boolean))].sort();
   const saOptsHtml='<option value="">所有 SA</option>'+allSAs.map(s=>`<option value="${s}" ${s===saFilter?'selected':''}>${s}</option>`).join('');
