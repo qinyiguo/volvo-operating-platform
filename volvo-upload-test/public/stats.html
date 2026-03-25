@@ -1992,6 +1992,94 @@ window._selectWipStatus=function(workOrder,branch,status){
   if(row)row.dataset.pendingStatus=status;
 };
 
+function _refreshWipKPI(){
+  if(!_wipData)return;
+  const rows=_wipData.rows;
+  const branchColors={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
+  const statusCounts={等料:0,施工中:0,待修:0,待客確認:0,已可結帳:0,暫緩:0,未填寫:0};
+  rows.forEach(r=>{
+    const s=r.wip_status||'未填寫';
+    if(statusCounts[s]!==undefined)statusCounts[s]++;else statusCounts['未填寫']++;
+  });
+  const hold=statusCounts['等料']+statusCounts['施工中']+statusCounts['暫緩'];
+  const watch=statusCounts['待修']+statusCounts['待客確認'];
+  const urgent=statusCounts['已可結帳'];
+  const unknown=statusCounts['未填寫'];
+  const filled=rows.length-unknown;
+  const fillPct=rows.length>0?Math.round(filled/rows.length*100):0;
+  const T=_wipData.summary.total,E=_wipData.summary.exclPdi;
+
+  // 更新 KPI 卡片
+  const kpiEl=document.getElementById('wipKPI');
+  if(kpiEl)kpiEl.innerHTML=`
+    <div class="kpi-card" style="border-color:#f97316">
+      <div class="kpi-label" style="color:#f97316">WIP 總件數</div>
+      <div class="kpi-value kpi-orange">${T.count.toLocaleString()}</div>
+      <div class="kpi-sub">扣PDI: ${E.count} 件</div>
+    </div>
+    <div class="kpi-card" style="border-color:#ef4444;cursor:pointer" onclick="openWipModal('status','已可結帳')">
+      <div class="kpi-label" style="color:#ef4444">💳 應結帳（已可結帳）</div>
+      <div class="kpi-value kpi-red">${urgent}</div>
+      <div class="kpi-sub">點擊查看清單 →</div>
+    </div>
+    <div class="kpi-card" style="border-color:#3b82f6">
+      <div class="kpi-label" style="color:#3b82f6">⏸️ 暫緩有因</div>
+      <div class="kpi-value kpi-blue">${hold}</div>
+      <div class="kpi-sub">等料/施工中/暫緩</div>
+    </div>
+    <div class="kpi-card" style="border-color:#f59e0b">
+      <div class="kpi-label" style="color:#f59e0b">⚠️ 需追蹤</div>
+      <div class="kpi-value kpi-yellow">${watch}</div>
+      <div class="kpi-sub">待修/待客確認</div>
+    </div>
+    <div class="kpi-card" style="border-color:#475569">
+      <div class="kpi-label">❓ 未標記狀態</div>
+      <div class="kpi-value">${unknown}</div>
+      <div class="kpi-sub">填寫率 ${fillPct}%
+        <div style="background:#2d3f56;border-radius:3px;height:3px;margin-top:3px">
+          <div style="width:${fillPct}%;height:3px;border-radius:3px;background:${fillPct>80?'#10b981':fillPct>50?'#f59e0b':'#ef4444'}"></div>
+        </div>
+      </div>
+    </div>
+    <div class="kpi-card" style="border-color:#ef4444">
+      <div class="kpi-label" style="color:#ef4444">逾30天</div>
+      <div class="kpi-value kpi-red">${T.cOver30.toLocaleString()}</div>
+      <div class="kpi-sub">30天內: ${T.c30} | 扣PDI逾30: ${E.cOver30}</div>
+    </div>
+    <div class="kpi-card" style="border-color:#8b5cf6">
+      <div class="kpi-label" style="color:#8b5cf6">預估總額(repair_amount)</div>
+      <div class="kpi-value kpi-purple">${fmtK(T.sales)}</div>
+      <div class="kpi-sub">扣PDI: ${fmtK(E.sales)}K</div>
+    </div>`;
+
+  // 更新應結帳清單區塊
+  const summaryEl=document.getElementById('wipSummaryWrap');
+  if(!summaryEl)return;
+  const urgentRows=rows.filter(r=>r.wip_status==='已可結帳');
+  const watchRows=rows.filter(r=>r.wip_status==='待修'||r.wip_status==='待客確認');
+
+  // 只更新應結帳和需追蹤這兩塊（找到舊的替換）
+  const urgentEl=summaryEl.querySelector('[data-wip-urgent]');
+  const watchEl=summaryEl.querySelector('[data-wip-watch]');
+
+  const newUrgentHtml=urgentRows.length?`<div data-wip-urgent style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:14px 18px;margin-bottom:14px">
+    <div style="font-size:13px;font-weight:800;color:#ef4444;margin-bottom:10px">💳 應結帳清單（${urgentRows.length} 件）
+      <button onclick="openWipModal('status','已可結帳')" style="margin-left:10px;padding:3px 10px;background:rgba(239,68,68,.2);color:#ef4444;border:1px solid rgba(239,68,68,.4);border-radius:5px;font-size:11px;cursor:pointer">查看全部</button>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      ${urgentRows.slice(0,12).map(r=>`<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:7px;padding:6px 12px;cursor:pointer;font-size:12px" onclick="openWipModal('single_wo','${r.work_order}')">
+        <span style="font-weight:700;color:#ef4444">${r.work_order}</span>
+        <span style="color:#64748b;margin-left:6px">${r.branch}</span>
+        <span style="color:#94a3b8;margin-left:4px">${r.plate_no||'—'}</span>
+      </div>`).join('')}
+      ${urgentRows.length>12?`<span style="font-size:11px;color:#ef4444;align-self:center">+${urgentRows.length-12}筆…</span>`:''}
+    </div>
+  </div>`:'';
+
+  if(urgentEl){urgentEl.outerHTML=newUrgentHtml||'<div data-wip-urgent></div>';}
+  if(watchEl&&!watchRows.length){watchEl.outerHTML='<div data-wip-watch></div>';}
+}
+ 
 // 儲存狀態
 window._saveWipStatus=async function(workOrder,branch){
   const brKey=branch.replace(/\s/g,'_');
@@ -2016,7 +2104,7 @@ window._saveWipStatus=async function(workOrder,branch){
     if(wipRow){wipRow.wip_status=status;wipRow.wip_reason=reason;wipRow.eta_date=eta||null;wipRow.wip_updated_by=by;}
     const key=`${workOrder}|||${branch}`;
     _wipStatusMap[key]={work_order:workOrder,branch,wip_status:status,reason,eta_date:eta||null,updated_by:by};
-    if(msgEl){msgEl.textContent='✅ 已儲存';msgEl.style.color='#10b981';setTimeout(()=>{row.style.display='none';renderWipModal();},800);}
+    if(msgEl){msgEl.textContent='✅ 已儲存';msgEl.style.color='#10b981';setTimeout(()=>{row.style.display='none';_refreshWipKPI();renderWipModal();},800);}
   }catch(e){if(msgEl){msgEl.textContent='❌ '+e.message;msgEl.style.color='#ef4444';}}
 };
 
