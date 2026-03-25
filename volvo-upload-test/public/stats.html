@@ -7,6 +7,12 @@
 <title>Volvo 營運統計</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
+ .nav { background: #1e293b; border-bottom: 1px solid #2d3f56; padding: 0 24px; display: flex; align-items: center; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+ .nav::-webkit-scrollbar { display: none; }
+ .nav-brand { font-size: 15px; font-weight: 700; color: #fff; padding: 16px 0; margin-right: 24px; white-space: nowrap; flex-shrink: 0; }
+ .nav-link { padding: 16px 16px; color: #64748b; font-size: 13px; font-weight: 600; text-decoration: none; border-bottom: 2px solid transparent; white-space: nowrap; flex-shrink: 0; }
+ .nav-link:hover { color: #e2e8f0; }
+ .nav-link.active { color: #3b82f6; border-bottom-color: #3b82f6; }
   body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
    .sticky-header {
        position: sticky; top: 0; z-index: 200;
@@ -285,7 +291,7 @@
 <body>
 
 <div class="sticky-header">
-  <nav class="nav" style="padding:0 20px">
+  <nav class="nav">
     <span class="nav-brand">🚗 Volvo DMS</span>
     <a href="/performance.html" class="nav-link">🎯 業績指標</a>
     <a href="/stats.html"       class="nav-link active">📊 各廠明細</a>
