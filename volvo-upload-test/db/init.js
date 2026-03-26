@@ -211,6 +211,22 @@ const initDatabase = async () => {
         UNIQUE(branch, period)
       )`);
 
+        await client.query(`
+      CREATE TABLE IF NOT EXISTS revenue_estimate_history (
+        id                SERIAL PRIMARY KEY,
+        period            VARCHAR(6)   NOT NULL,
+        week_key          VARCHAR(10)  NOT NULL,
+        week_label        VARCHAR(30)  DEFAULT '',
+        branch            VARCHAR(10)  NOT NULL,
+        paid_estimate     NUMERIC(15,2),
+        bodywork_estimate NUMERIC(15,2),
+        general_estimate  NUMERIC(15,2),
+        extended_estimate NUMERIC(15,2),
+        submitted_at      TIMESTAMPTZ  DEFAULT NOW(),
+        note              TEXT         DEFAULT '',
+        UNIQUE(period, week_key, branch)
+      )`);
+
     // ── 人員名冊 ──
     await client.query(`
       CREATE TABLE IF NOT EXISTS staff_roster (
