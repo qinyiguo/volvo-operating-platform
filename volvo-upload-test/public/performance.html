@@ -876,9 +876,16 @@ function renderEstInputTab(ws) {
     +'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px;min-width:560px">'
     +'<thead><tr>'
     +'<th style="padding:9px 12px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:left">據點</th>'
-    +KEYS.map(function(k){return '<th style="padding:9px 12px;background:#0f172a;color:'+k.col+';font-size:11px;font-weight:800;border-bottom:1px solid #2d3f56;text-align:right">'+k.label+' (K)</th>';}).join('')
+    +KEYS.map(function(k){
+      const isAuto = k.key==='paid';
+      return '<th style="padding:9px 12px;background:#0f172a;color:'+k.col+';font-size:11px;font-weight:800;border-bottom:1px solid #2d3f56;text-align:right">'
+        +k.label+' (K)'
+        +(isAuto?'<div style="font-size:9px;color:#475569;font-weight:400;margin-top:2px">一般+鈑烤+延保</div>':'')
+        +'</th>';
+    }).join('')
     +'<th style="padding:9px 12px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:center;min-width:90px">狀態</th>'
     +'</tr></thead><tbody>';
+
   BRANCHES.forEach(function(br) {
     const sub    = ws.submissions[br];
     const locked = !!sub;
@@ -886,20 +893,37 @@ function renderEstInputTab(ws) {
     html += '<tr style="background:'+(locked?'rgba(16,185,129,.03)':'transparent')+'">'
       +'<td style="padding:12px;border-bottom:1px solid rgba(45,63,86,.3)">'
       +'<span style="background:'+col+'22;color:'+col+';padding:4px 12px;border-radius:6px;font-size:12px;font-weight:800">'+br+'</span></td>';
+
     KEYS.forEach(function(k) {
       const raw = sub ? Math.round((sub[k.key+'_estimate']||0)/1000) : '';
       if (locked) {
         html += '<td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right">'
           +'<span style="color:'+k.col+';font-weight:700;font-size:14px">'+(raw||'—')+'</span></td>';
       } else {
-        html += '<td style="padding:7px 8px;border-bottom:1px solid rgba(45,63,86,.3)">'
-          +'<div style="display:flex;align-items:center;gap:4px;justify-content:flex-end">'
+        const isPaid = k.key==='paid';
+        // 有費欄位：底色稍深，加上自動標籤
+        const inputBg = isPaid ? '#1a1200' : '#0f172a';
+        const inputBorder = isPaid ? '#f97316' : '#2d3f56';
+        const autoTag = isPaid
+          ? '<div id="paidAutoTag-'+br+'" style="font-size:9px;color:#f97316;margin-top:2px;text-align:right;min-height:12px">自動加總</div>'
+          : '';
+        html += '<td style="padding:7px 8px;border-bottom:1px solid rgba(45,63,86,.3)'+(isPaid?';background:rgba(249,115,22,.04)':'')+'">'
+          +'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:0">'
+          +'<div style="display:flex;align-items:center;gap:4px">'
           +'<input type="number" id="weekEst-'+k.key+'-'+br+'" value="'+(raw||'')+'" placeholder="—" min="0" step="1" '
-          +'style="background:#0f172a;border:1px solid #2d3f56;color:'+k.col+';padding:7px 8px;border-radius:5px;font-size:13px;font-weight:700;width:96px;text-align:right;outline:none" '
-          +'onfocus="this.style.borderColor=\''+k.col+'\'" onblur="this.style.borderColor=\'#2d3f56\'">'
-          +'<span style="font-size:10px;color:#475569">K</span></div></td>';
+          +'style="background:'+inputBg+';border:1.5px solid '+inputBorder+';color:'+k.col+';padding:7px 8px;border-radius:5px;font-size:13px;font-weight:700;width:96px;text-align:right;outline:none" '
+          +(isPaid
+            ? 'oninput="_estPaidManual[\''+br+'\']=true;_estUpdatePaidTag(\''+br+'\')" '
+            : 'oninput="_estAutoCalcPaid(\''+br+'\')" '
+          )
+          +'onfocus="this.style.borderColor=\''+k.col+'\'" onblur="this.style.borderColor=\''+inputBorder+'\'">'
+          +'<span style="font-size:10px;color:#475569">K</span></div>'
+          +autoTag
+          +'</div></td>';
       }
     });
+
+    // 狀態欄
     if (locked) {
       const ts = new Date(sub.submitted_at).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
       html += '<td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center">'
@@ -912,14 +936,47 @@ function renderEstInputTab(ws) {
     }
     html += '</tr>';
   });
+
   html += '</tbody></table></div>';
   if (allLocked) {
     html += '<div style="margin-top:14px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:8px;padding:10px 14px;font-size:12px;color:#10b981;text-align:center">'
       +'✅ 本週三個據點均已提交完畢，下週可再次提交更新版預估。</div>';
   }
+
   document.getElementById('estTabContent-input').innerHTML = html;
+
+  // 初始化「是否手動覆蓋有費」旗標
+  window._estPaidManual = {};
+
+  // 初始化後對已有數值的列觸發一次自動加總
+  ['AMA','AMC','AMD'].forEach(function(br) {
+    if (!ws.submissions[br]) _estAutoCalcPaid(br);
+  });
+
   const btn = document.getElementById('btnSubmitEst');
   if (btn) btn.style.display = allLocked ? 'none' : '';
+}
+
+// 自動計算有費 = 一般 + 鈑烤 + 延保
+function _estAutoCalcPaid(br) {
+  if (window._estPaidManual && window._estPaidManual[br]) return; // 使用者手動輸入，不覆蓋
+  const g = parseFloat((document.getElementById('weekEst-general-'+br)||{}).value)||0;
+  const b = parseFloat((document.getElementById('weekEst-bodywork-'+br)||{}).value)||0;
+  const e = parseFloat((document.getElementById('weekEst-extended-'+br)||{}).value)||0;
+  const paidEl = document.getElementById('weekEst-paid-'+br);
+  if (!paidEl) return;
+  const sum = g + b + e;
+  paidEl.value = sum > 0 ? sum : '';
+  _estUpdatePaidTag(br);
+}
+
+// 更新有費欄標籤（自動加總 or 手動）
+function _estUpdatePaidTag(br) {
+  const tag = document.getElementById('paidAutoTag-'+br);
+  if (!tag) return;
+  const isManual = window._estPaidManual && window._estPaidManual[br];
+  tag.textContent = isManual ? '✏️ 手動輸入' : '自動加總';
+  tag.style.color  = isManual ? '#f59e0b' : '#f97316';
 }
 
 function renderEstHistoryTab(history) {
