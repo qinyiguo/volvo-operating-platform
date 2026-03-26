@@ -5,6 +5,24 @@ const pool   = require('../db/pool');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
+// ── Week helpers ──
+function getCurrentWeekMonday() {
+  const now = new Date(Date.now() + 8 * 60 * 60 * 1000); // Taiwan UTC+8
+  const dow = now.getUTCDay();                             // 0=Sun
+  const daysFromMon = (dow + 6) % 7;
+  const monday = new Date(now);
+  monday.setUTCDate(now.getUTCDate() - daysFromMon);
+  return monday.toISOString().slice(0, 10);                // YYYY-MM-DD
+}
+
+function getWeekLabel(mondayStr) {
+  const mon = new Date(mondayStr + 'T00:00:00Z');
+  const sun = new Date(mon);
+  sun.setUTCDate(mon.getUTCDate() + 6);
+  const fmt = d => `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
+  return `${fmt(mon)}-${fmt(sun)}`;
+}
+
 // ── 營收目標 CRUD ──
 router.get('/revenue-targets', async (req, res) => {
   const { period, branch } = req.query;
@@ -217,7 +235,7 @@ router.post('/upload-revenue-targets-native', upload.single('file'), async (req,
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── 業績預估 ──
+// ── 業績預估（即時讀取，供主頁顯示）──
 router.get('/revenue-estimates', async (req, res) => {
   const { period, branch } = req.query;
   try {
@@ -252,6 +270,102 @@ router.put('/revenue-estimates/batch', async (req, res) => {
     res.json({ ok: true });
   } catch(err) { await client.query('ROLLBACK'); res.status(500).json({ error: err.message }); }
   finally { client.release(); }
+});
+
+// ════════════════════════════════════════════
+// ── 週次預估 API ──
+// ════════════════════════════════════════════
+
+// GET /api/revenue-estimates/week-status?period=YYYYMM
+// 回傳本週 week_key 和各據點是否已提交
+router.get('/revenue-estimates/week-status', async (req, res) => {
+  const { period } = req.query;
+  if (!period) return res.status(400).json({ error: 'period 為必填' });
+  const week_key   = getCurrentWeekMonday();
+  const week_label = getWeekLabel(week_key);
+  try {
+    const r = await pool.query(
+      `SELECT * FROM revenue_estimate_history WHERE period=$1 AND week_key=$2`,
+      [period, week_key]
+    );
+    const submissions = {};
+    r.rows.forEach(row => { submissions[row.branch] = row; });
+    res.json({ week_key, week_label, submissions });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/revenue-estimates/history?period=YYYYMM&branch=AMA
+// 取得歷史提交紀錄
+router.get('/revenue-estimates/history', async (req, res) => {
+  const { period, branch } = req.query;
+  try {
+    const conds = []; const params = []; let idx = 1;
+    if (period) { conds.push(`period=$${idx++}`); params.push(period); }
+    if (branch) { conds.push(`branch=$${idx++}`); params.push(branch); }
+    const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
+    const r = await pool.query(
+      `SELECT * FROM revenue_estimate_history ${where} ORDER BY week_key DESC, branch`,
+      params
+    );
+    res.json(r.rows);
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/revenue-estimates/weekly-submit
+// 提交本週預估（每週每據點只能提交一次）
+router.post('/revenue-estimates/weekly-submit', async (req, res) => {
+  const { period, entries, note } = req.body;
+  if (!period || !Array.isArray(entries) || !entries.length)
+    return res.status(400).json({ error: '參數不完整' });
+
+  const week_key   = getCurrentWeekMonday();
+  const week_label = getWeekLabel(week_key);
+  const client     = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const inserted = [];
+    const skipped  = [];
+
+    for (const e of entries) {
+      if (!e.branch) continue;
+
+      // 檢查本週是否已提交
+      const check = await client.query(
+        `SELECT id FROM revenue_estimate_history WHERE period=$1 AND week_key=$2 AND branch=$3`,
+        [period, week_key, e.branch]
+      );
+      if (check.rows.length) { skipped.push(e.branch); continue; }
+
+      // 寫入歷史
+      await client.query(`
+        INSERT INTO revenue_estimate_history
+          (period, week_key, week_label, branch,
+           paid_estimate, bodywork_estimate, general_estimate, extended_estimate, note)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      `, [period, week_key, week_label, e.branch,
+          e.paid || null, e.bodywork || null, e.general || null, e.extended || null,
+          note || '']);
+
+      // 更新即時預估表（供主頁顯示）
+      await client.query(`
+        INSERT INTO revenue_estimates
+          (branch,period,paid_estimate,bodywork_estimate,general_estimate,extended_estimate,updated_at)
+        VALUES ($1,$2,$3,$4,$5,$6,NOW())
+        ON CONFLICT (branch,period) DO UPDATE SET
+          paid_estimate=$3, bodywork_estimate=$4,
+          general_estimate=$5, extended_estimate=$6, updated_at=NOW()
+      `, [e.branch, period,
+          e.paid || null, e.bodywork || null, e.general || null, e.extended || null]);
+
+      inserted.push(e.branch);
+    }
+
+    await client.query('COMMIT');
+    res.json({ ok: true, week_key, week_label, inserted, skipped });
+  } catch(err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: err.message });
+  } finally { client.release(); }
 });
 
 module.exports = router;
