@@ -981,54 +981,73 @@ function _estUpdatePaidTag(br) {
 
 function renderEstHistoryTab(history) {
   const el = document.getElementById('estTabContent-history');
-  if (!history||!history.length) {
-    el.innerHTML='<div style="padding:40px;text-align:center;color:#64748b">📭 此期間尚無歷史預估紀錄</div>';
+  if (!history || !history.length) {
+    el.innerHTML = '<div style="padding:40px;text-align:center;color:#64748b">📭 此期間尚無歷史預估紀錄</div>';
     return;
   }
-  const weeks={};
-  history.forEach(function(h){
-    if(!weeks[h.week_key]) weeks[h.week_key]={week_key:h.week_key,week_label:h.week_label,branches:{}};
-    weeks[h.week_key].branches[h.branch]=h;
+  const weeks = {};
+  history.forEach(function(h) {
+    if (!weeks[h.week_key]) weeks[h.week_key] = { week_key: h.week_key, week_label: h.week_label, branches: {} };
+    weeks[h.week_key].branches[h.branch] = h;
   });
-  const BRANCHES=['AMA','AMC','AMD'];
-  const brColors={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
-  const fmtK=function(v){return v?Math.round(parseFloat(v)/1000).toLocaleString():'—';};
-  const fmtTs=function(v){return new Date(v).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});};
-  const sorted=Object.values(weeks).sort(function(a,b){return b.week_key.localeCompare(a.week_key);});
-  let html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px;min-width:680px">'
-    +'<thead><tr>'
-    +'<th rowspan="2" style="padding:9px 12px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:left;min-width:110px">週次</th>'
-    +BRANCHES.map(function(br){return '<th colspan="5" style="padding:8px;background:#0f172a;color:'+brColors[br]+';font-size:11px;font-weight:800;border-bottom:1px solid #1e3050;text-align:center">'+br+'</th>';}).join('')
-    +'</tr><tr>'
-    +BRANCHES.map(function(){return '<th style="padding:6px 7px;background:#0c1524;color:#475569;font-size:10px;border-bottom:1px solid #2d3f56;text-align:right">有費K</th>'
-      +'<th style="padding:6px 7px;background:#0c1524;color:#475569;font-size:10px;border-bottom:1px solid #2d3f56;text-align:right">一般K</th>'
-      +'<th style="padding:6px 7px;background:#0c1524;color:#475569;font-size:10px;border-bottom:1px solid #2d3f56;text-align:right">鈑烤K</th>'
-      +'<th style="padding:6px 7px;background:#0c1524;color:#475569;font-size:10px;border-bottom:1px solid #2d3f56;text-align:right">延保K</th>'
-      +'<th style="padding:6px 7px;background:#0c1524;color:#475569;font-size:10px;border-bottom:1px solid #2d3f56;white-space:nowrap">提交時間</th>';}).join('')
-    +'</tr></thead><tbody>';
-  sorted.forEach(function(week,wi){
-    const bg=wi%2===0?'transparent':'rgba(255,255,255,.02)';
-    html+='<tr style="background:'+bg+'">'
-      +'<td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2)">'
-      +'<div style="font-weight:700;color:#e2e8f0">'+week.week_label+'</div>'
-      +'<div style="font-size:10px;color:#475569;margin-top:2px">'+week.week_key+'</div></td>';
-    BRANCHES.forEach(function(br){
-      const sub=week.branches[br];
-      if(sub){
-        const c=brColors[br];
-        html+='<td style="padding:10px 7px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;color:'+c+';font-weight:700">'+fmtK(sub.paid_estimate)+'</td>'
-          +'<td style="padding:10px 7px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;color:#3b82f6">'+fmtK(sub.general_estimate)+'</td>'
-          +'<td style="padding:10px 7px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;color:#8b5cf6">'+fmtK(sub.bodywork_estimate)+'</td>'
-          +'<td style="padding:10px 7px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;color:#10b981">'+fmtK(sub.extended_estimate)+'</td>'
-          +'<td style="padding:10px 7px;border-bottom:1px solid rgba(45,63,86,.2);color:#475569;font-size:10px;white-space:nowrap">'+fmtTs(sub.submitted_at)+'</td>';
+  const BRANCHES = ['AMA', 'AMC', 'AMD'];
+  const brColors = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b' };
+  const fmtK = function(v) { return v ? Math.round(parseFloat(v) / 1000).toLocaleString() : '—'; };
+  const fmtTs = function(v) {
+    return new Date(v).toLocaleString('zh-TW', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+  };
+  const sorted = Object.values(weeks).sort(function(a, b) { return b.week_key.localeCompare(a.week_key); });
+
+  const TH = 'padding:8px 12px;background:#0c1524;color:#475569;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;white-space:nowrap;';
+  const THR = TH + 'text-align:right;';
+
+  let html = '';
+  sorted.forEach(function(week, wi) {
+    const allSubmitted = BRANCHES.every(function(br) { return !!week.branches[br]; });
+    html += '<div style="margin-bottom:14px;border:1px solid ' + (allSubmitted ? 'rgba(16,185,129,.3)' : '#2d3f56') + ';border-radius:10px;overflow:hidden">'
+      + '<div style="padding:10px 16px;background:' + (allSubmitted ? 'rgba(16,185,129,.07)' : 'rgba(255,255,255,.02)') + ';display:flex;align-items:center;gap:10px;border-bottom:1px solid #2d3f56">'
+        + '<div>'
+          + '<span style="font-size:13px;font-weight:800;color:#e2e8f0">' + week.week_label + '</span>'
+          + '<span style="font-size:11px;color:#475569;margin-left:8px">' + week.week_key + '</span>'
+        + '</div>'
+        + (allSubmitted ? '<span style="margin-left:auto;font-size:11px;background:rgba(16,185,129,.15);color:#10b981;padding:2px 8px;border-radius:5px;font-weight:700">✅ 三站已提交</span>' : '<span style="margin-left:auto;font-size:11px;background:rgba(245,158,11,.1);color:#f59e0b;padding:2px 8px;border-radius:5px;font-weight:700">⚠️ 部分未提交</span>')
+      + '</div>'
+      + '<table style="width:100%;border-collapse:collapse;font-size:12px">'
+      + '<thead><tr>'
+        + '<th style="' + TH + 'width:60px">據點</th>'
+        + '<th style="' + THR + 'color:#f97316">有費 K</th>'
+        + '<th style="' + THR + 'color:#3b82f6">一般 K</th>'
+        + '<th style="' + THR + 'color:#8b5cf6">鈑烤 K</th>'
+        + '<th style="' + THR + 'color:#10b981">延保 K</th>'
+        + '<th style="' + TH + 'text-align:center;color:#64748b">提交時間</th>'
+      + '</tr></thead><tbody>';
+
+    BRANCHES.forEach(function(br, bi) {
+      const sub = week.branches[br];
+      const col = brColors[br];
+      const bg = bi % 2 === 0 ? 'transparent' : 'rgba(255,255,255,.02)';
+      const TD = 'padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);';
+      const TDR = TD + 'text-align:right;font-variant-numeric:tabular-nums;font-weight:700;';
+      html += '<tr style="background:' + bg + '">'
+        + '<td style="' + TD + '">'
+          + '<span style="background:' + col + '22;color:' + col + ';padding:3px 10px;border-radius:5px;font-size:12px;font-weight:800">' + br + '</span>'
+        + '</td>';
+      if (sub) {
+        html += '<td style="' + TDR + 'color:#f97316">' + fmtK(sub.paid_estimate) + '</td>'
+          + '<td style="' + TDR + 'color:#3b82f6">' + fmtK(sub.general_estimate) + '</td>'
+          + '<td style="' + TDR + 'color:#8b5cf6">' + fmtK(sub.bodywork_estimate) + '</td>'
+          + '<td style="' + TDR + 'color:#10b981">' + fmtK(sub.extended_estimate) + '</td>'
+          + '<td style="' + TD + 'text-align:center;color:#475569;font-size:11px">' + fmtTs(sub.submitted_at) + '</td>';
       } else {
-        html+='<td colspan="5" style="padding:10px 7px;border-bottom:1px solid rgba(45,63,86,.2);text-align:center;color:#2d4060">—</td>';
+        html += '<td colspan="5" style="' + TD + 'text-align:center;color:#334155;font-size:11px">— 未提交 —</td>';
       }
+      html += '</tr>';
     });
-    html+='</tr>';
+
+    html += '</tbody></table></div>';
   });
-  html+='</tbody></table></div>';
-  el.innerHTML=html;
+
+  el.innerHTML = html;
 }
 
 async function submitWeeklyEstimate() {
