@@ -211,6 +211,9 @@
     </div>
     <div class="tab-bar-wrap">
       <button id="tab-btn-progress" class="tab-btn active" onclick="switchPerfTab('progress')">📊 業績進度</button>
+      <button id="tab-btn-vctl" class="tab-btn" onclick="switchPerfTab('vctl')">📐 VCTL指標</button>
+    </div>
+     
     </div>
   </div>
 </div>
@@ -241,6 +244,34 @@
     </div>
   </div>
 </div>
+
+ <!-- ════ VCTL 商務政策指標 Tab ════ -->
+  <div id="tab-vctl" style="display:none">
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title">
+        📐 VCTL 商務政策指標
+        <span id="vctlPeriodLabel" class="card-title-note"></span>
+      </div>
+      <div id="vctlResults">
+        <div class="empty" style="padding:32px;color:#64748b">尚未設定任何指標，請在下方「指標設定」中新增</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="cursor:pointer;user-select:none" onclick="toggleVCTLConfig()">
+        ⚙️ 指標設定管理
+        <span id="vctlConfigArrow" style="font-size:11px;color:#64748b;margin-left:6px;transition:transform .2s;display:inline-block">▶</span>
+        <button onclick="event.stopPropagation();openVCTLModal(null)"
+          style="margin-left:auto;padding:5px 14px;background:#3b82f6;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">
+          ＋ 新增指標
+        </button>
+      </div>
+      <div id="vctlConfigBody" style="display:none;margin-top:4px">
+        <div id="vctlMetricList">
+          <div style="color:#64748b;font-size:13px;padding:8px 0"><span class="spinner"></span>載入中</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
 <script>
 const n    = (v) => parseFloat(v || 0);
@@ -315,8 +346,16 @@ async function loadPeriods(){
 }
 
 function switchPerfTab(tab){
-  document.getElementById('tab-progress').style.display='';
-  document.getElementById('tab-btn-progress').classList.add('active');
+  ['progress','vctl'].forEach(function(t){
+    var el=document.getElementById('tab-'+t);
+    var btn=document.getElementById('tab-btn-'+t);
+    if(el)  el.style.display  = t===tab ? '' : 'none';
+    if(btn) btn.classList.toggle('active', t===tab);
+  });
+  if(tab==='vctl'){
+    var p=getPeriod(), b=document.getElementById('selBranch').value;
+    loadVCTL(p,b);
+  }
 }
 
 // ══════════════════════════════════════════════
@@ -1162,6 +1201,282 @@ document.addEventListener('keydown', function(e) {
                border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">
         🚀 提交本週預估
       </button>
+    </div>
+  </div>
+</div>
+
+<script>
+let _vctlMetrics=[], _vctlResults=[], _vctlEditingId=null, _vctlEditingFilters=[];
+const VCTL_PAYCODES=['一般','保險','延保','票劵','保固','內結','善意維修','VSA'];
+
+function toggleVCTLConfig(){
+  var body=document.getElementById('vctlConfigBody'),arrow=document.getElementById('vctlConfigArrow');
+  if(!body)return;
+  var open=body.style.display!=='none';
+  body.style.display=open?'none':'';
+  arrow.style.transform=open?'rotate(0deg)':'rotate(90deg)';
+}
+async function loadVCTL(period,branch){
+  if(!period)return;
+  var resultsEl=document.getElementById('vctlResults'),labelEl=document.getElementById('vctlPeriodLabel');
+  if(!resultsEl)return;
+  resultsEl.innerHTML='<div class="loading"><span class="spinner"></span>載入中</div>';
+  try{
+    var [metrics,statsData]=await Promise.all([
+      fetch('/api/vctl/metrics').then(r=>r.json()),
+      fetch('/api/stats/vctl?period='+period+(branch?'&branch='+branch:'')).then(r=>r.json()),
+    ]);
+    _vctlMetrics=Array.isArray(metrics)?metrics:[];
+    _vctlResults=(statsData&&statsData.results)?statsData.results:[];
+    if(labelEl)labelEl.textContent=period.slice(0,4)+'年'+parseInt(period.slice(4))+'月';
+    _renderVCTLMetricList();
+    _renderVCTLResults(branch);
+  }catch(e){resultsEl.innerHTML='<div style="color:#ef4444;padding:16px">❌ '+e.message+'</div>';}
+}
+function _renderVCTLMetricList(){
+  var el=document.getElementById('vctlMetricList');if(!el)return;
+  if(!_vctlMetrics.length){el.innerHTML='<div style="color:#475569;font-size:13px;padding:8px 0">尚無指標設定</div>';return;}
+  var SL={parts:'🔩 零件',accessories:'📦 配件',boutique:'💎 精品',wage:'🔧 工資'};
+  var CL={amount:'實際售價',cost:'成本',qty:'數量',count:'筆數',hours:'標準工時'};
+  el.innerHTML=_vctlMetrics.map(function(m){
+    var acs=(m.account_types||[]).join('/')||'全部';
+    return '<div style="display:flex;align-items:center;gap:10px;background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:10px 14px;margin-bottom:7px">'
+      +'<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13px;color:#e2e8f0">'+m.metric_name+'</div>'
+      +(m.description?'<div style="font-size:11px;color:#64748b;margin-top:2px">'+m.description+'</div>':'')
+      +'<div style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap">'
+      +'<span style="font-size:10px;background:rgba(59,130,246,.15);color:#3b82f6;padding:1px 7px;border-radius:4px">'+(SL[m.source_type]||m.source_type)+'</span>'
+      +'<span style="font-size:10px;background:rgba(16,185,129,.15);color:#10b981;padding:1px 7px;border-radius:4px">'+(CL[m.calc_method]||m.calc_method)+'</span>'
+      +'<span style="font-size:10px;background:rgba(245,158,11,.12);color:#f59e0b;padding:1px 7px;border-radius:4px">帳類: '+acs+'</span>'
+      +((m.filters||[]).length?'<span style="font-size:10px;background:rgba(139,92,246,.12);color:#8b5cf6;padding:1px 7px;border-radius:4px">篩選: '+(m.filters||[]).length+'條</span>':'')
+      +'</div></div>'
+      +'<button onclick="openVCTLModal('+m.id+')" style="flex-shrink:0;padding:4px 10px;background:#253347;color:#cbd5e1;border:1px solid #2d3f56;border-radius:5px;font-size:12px;cursor:pointer">✏️ 編輯</button>'
+      +'<button onclick="deleteVCTLMetric('+m.id+',\''+m.metric_name.replace(/'/g,"\\'")+'\')" style="flex-shrink:0;padding:4px 10px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.25);border-radius:5px;font-size:12px;cursor:pointer">刪除</button>'
+      +'</div>';
+  }).join('');
+}
+function _renderVCTLResults(branch){
+  var el=document.getElementById('vctlResults');if(!el)return;
+  if(!_vctlMetrics.length){el.innerHTML='<div class="empty" style="padding:32px">尚未設定任何指標，請在下方新增</div>';return;}
+  var BRANCHES=branch?[branch]:['AMA','AMC','AMD'];
+  var BC={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
+  var SL={parts:'零件',accessories:'配件',boutique:'精品',wage:'工資'};
+  var CL={amount:'售價',cost:'成本',qty:'數量',count:'筆數',hours:'工時H'};
+  var fmtK=function(v){var n=parseFloat(v||0);if(!n)return'—';return n>=1000?Math.round(n/1000).toLocaleString()+'K':Math.round(n).toLocaleString();};
+  var fmtV=function(v,c){var n=parseFloat(v||0);if(!n)return'—';if(c==='qty'||c==='count')return n.toLocaleString(undefined,{maximumFractionDigits:1});if(c==='hours')return n.toFixed(1)+'H';return n>=1000?Math.round(n/1000).toLocaleString()+'K':Math.round(n).toLocaleString();};
+  var metricMap={};_vctlResults.forEach(function(r){metricMap[r.metric_id]=r;});
+  var TH='padding:10px 12px;background:#0f172a;font-size:11px;font-weight:700;color:#64748b;border-bottom:1px solid #2d3f56;white-space:nowrap;';
+  var hasMulti=BRANCHES.length>1;
+  var html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px;min-width:500px"><thead><tr>'
+    +'<th style="'+TH+'text-align:left;min-width:160px">指標名稱</th>';
+  BRANCHES.forEach(function(br){html+='<th style="'+TH+'text-align:center;color:'+BC[br]+'">'+br+'<div style="font-size:9px;font-weight:400;color:#475569;margin-top:1px">售價 / 成本</div></th>';});
+  if(hasMulti)html+='<th style="'+TH+'text-align:right;border-left:1px solid #374151;min-width:90px">集團合計</th>';
+  html+='</tr></thead><tbody>';
+  _vctlMetrics.forEach(function(m,mi){
+    var r=metricMap[m.id]||{branches:{}};
+    var bg=mi%2===0?'transparent':'rgba(255,255,255,.015)';
+    var TD='padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);background:'+bg+';';
+    var isWage=m.source_type==='wage';
+    var showCost=!isWage&&m.calc_method!=='qty'&&m.calc_method!=='count';
+    var groupTotal=0;
+    var cells=BRANCHES.map(function(br){
+      var d=r.branches[br]||{amount:0,cost:0,qty:0,cnt:0};
+      var pRaw=m.calc_method==='cost'?d.cost:m.calc_method==='qty'?d.qty:m.calc_method==='count'?d.cnt:m.calc_method==='hours'?d.cost:d.amount;
+      groupTotal+=parseFloat(pRaw||0);
+      var col=BC[br];var hasV=parseFloat(pRaw||0)>0;
+      var cell='<td style="'+TD+'text-align:center"><div style="font-size:16px;font-weight:900;color:'+(hasV?col:'#334155')+'">'+(hasV?fmtV(pRaw,m.calc_method):'—')+'</div>';
+      if(showCost&&(d.amount>0||d.cost>0)){
+        cell+='<div style="font-size:10px;color:#475569;margin-top:3px">售 '+fmtV(d.amount,'amount')+' / 成 '+fmtK(d.cost)+'</div>';
+        var margin=d.amount>0?((d.amount-d.cost)/d.amount*100):null;
+        if(margin!==null)cell+='<div style="font-size:10px;color:'+(margin>=30?'#10b981':margin>=15?'#f59e0b':'#ef4444')+';font-weight:700">毛利 '+margin.toFixed(1)+'%</div>';
+      }
+      if(isWage&&d.cost>0)cell+='<div style="font-size:10px;color:#8b5cf6;margin-top:2px">'+d.cost.toFixed(1)+'H</div>';
+      return cell+'</td>';
+    }).join('');
+    html+='<tr><td style="'+TD+'"><div style="font-weight:700;color:#e2e8f0;font-size:13px">'+m.metric_name+'</div>'
+      +'<div style="font-size:10px;color:#475569;margin-top:2px">'+(SL[m.source_type]||m.source_type)+' → '+(CL[m.calc_method]||m.calc_method)+((m.account_types||[]).length?' | '+(m.account_types||[]).join('/'):'')+'</div></td>'
+      +cells+(hasMulti?'<td style="'+TD+'text-align:right;border-left:1px solid #374151;font-weight:900;font-size:15px;color:'+(groupTotal>0?'#10b981':'#334155')+'">'+fmtV(groupTotal,m.calc_method)+'</td>':'')+'</tr>';
+  });
+  html+='</tbody></table></div><div style="font-size:11px;color:#475569;margin-top:8px;padding:0 2px">💡 售價 / 成本均為未稅；工資來源顯示工資金額(K) 與標準工時(H)</div>';
+  el.innerHTML=html;
+}
+function openVCTLModal(id){
+  _vctlEditingId=id||null;
+  var m=id?_vctlMetrics.find(function(x){return x.id===id;}):null;
+  document.getElementById('vctlModalTitle').textContent=id?'編輯 VCTL 指標':'新增 VCTL 指標';
+  document.getElementById('vctlMName').value=m?m.metric_name:'';
+  document.getElementById('vctlMDesc').value=m?(m.description||''):'';
+  document.getElementById('vctlMOrder').value=m?(m.sort_order||0):0;
+  document.getElementById('vctlMSource').value=m?(m.source_type||'parts'):'parts';
+  onVCTLSourceChange(m?(m.calc_method||'amount'):null);
+  _buildVCTLAccountChips(m?m.source_type:'parts',m?(m.account_types||[]):[]);
+  _vctlEditingFilters=m?[...(m.filters||[])]:[];
+  _renderVCTLFilterList();
+  document.getElementById('vctlModal').style.display='flex';
+  document.body.style.overflow='hidden';
+  setTimeout(function(){document.getElementById('vctlMName').focus();},80);
+}
+function closeVCTLModal(){
+  document.getElementById('vctlModal').style.display='none';
+  document.body.style.overflow='';
+  _vctlEditingFilters=[];
+}
+function onVCTLSourceChange(restoreCalc){
+  var src=document.getElementById('vctlMSource').value;
+  var isWage=src==='wage';
+  var calcSel=document.getElementById('vctlMCalc');
+  var curCalc=restoreCalc||calcSel.value;
+  if(isWage){
+    calcSel.innerHTML='<option value="amount">💰 工資金額（元）</option><option value="hours">⏱️ 標準工時（H）</option><option value="count">🚗 台數</option>';
+  }else{
+    calcSel.innerHTML='<option value="amount">💰 實際售價（元）</option><option value="cost">📉 成本（元）</option><option value="qty">📦 數量（件）</option><option value="count">🧾 筆數</option>';
+  }
+  if(curCalc&&[...calcSel.options].some(function(o){return o.value===curCalc;}))calcSel.value=curCalc;
+  var fw=document.getElementById('vctlFTypeWrap');if(fw)fw.style.display=isWage?'none':'';
+  var hint=document.getElementById('vctlFilterHint');if(hint)hint.textContent=isWage?'工資代碼（精確如 17300，或範圍如 00030-00033）':'類別碼/功能碼/零件編號 篩選條件（AND 邏輯）';
+  var atl=document.getElementById('vctlATLabel');if(atl)atl.textContent=isWage?'帳類篩選（account_type，留空=全部）':'Paycode 篩選（part_type，留空=全部）';
+  _buildVCTLAccountChips(src,[]);
+}
+function _buildVCTLAccountChips(src,selectedVals){
+  var el=document.getElementById('vctlAccountChips');if(!el)return;
+  var isWage=src==='wage';var chipCol=isWage?'#3b82f6':'#f97316';
+  el.innerHTML=['一般','保險','延保','票劵','保固','內結','善意維修','VSA'].map(function(t){
+    var on=selectedVals.indexOf(t)!==-1;
+    return '<label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;padding:5px 11px;border-radius:6px;margin:2px;border:1.5px solid '+(on?chipCol:'#2d3f56')+';background:'+(on?chipCol+'22':'transparent')+';font-size:12px;font-weight:700;color:'+(on?chipCol:'#64748b')+'" onclick="toggleVCTLChip(this,\''+chipCol+'\')">'
+      +'<input type="checkbox" value="'+t+'" '+(on?'checked':'')+' style="display:none">'+t+'</label>';
+  }).join('');
+}
+function toggleVCTLChip(el,col){
+  var cb=el.querySelector('input');cb.checked=!cb.checked;
+  el.style.borderColor=cb.checked?col:'#2d3f56';el.style.background=cb.checked?col+'22':'transparent';el.style.color=cb.checked?col:'#64748b';
+}
+function _renderVCTLFilterList(){
+  var el=document.getElementById('vctlFilterList');if(!el)return;
+  if(!_vctlEditingFilters.length){el.innerHTML='<div style="color:#64748b;font-size:12px;padding:3px 0">尚未新增篩選條件</div>';return;}
+  var TL={category_code:'類別碼',function_code:'功能碼',part_number:'零件編號',work_code:'工資代碼',part_type:'Paycode'};
+  var TC={category_code:'#3b82f6',function_code:'#8b5cf6',part_number:'#10b981',work_code:'#f59e0b',part_type:'#f97316'};
+  el.innerHTML=_vctlEditingFilters.map(function(f,i){
+    var col=TC[f.type]||'#64748b';
+    return '<div style="display:flex;align-items:center;gap:8px;background:#1e293b;border:1px solid #2d3f56;border-radius:7px;padding:6px 12px;margin-bottom:5px">'
+      +'<span style="font-size:11px;background:'+col+'22;color:'+col+';padding:1px 7px;border-radius:4px;white-space:nowrap">'+(TL[f.type]||f.type)+'</span>'
+      +'<span style="flex:1;font-size:12px;font-weight:600;color:#e2e8f0">'+f.value+'</span>'
+      +'<button onclick="_vctlRemoveFilter('+i+')" style="background:none;border:none;color:#475569;cursor:pointer;font-size:18px;padding:0;line-height:1">×</button></div>';
+  }).join('');
+}
+function _vctlRemoveFilter(i){_vctlEditingFilters.splice(i,1);_renderVCTLFilterList();}
+function addVCTLFilter(){
+  var src=document.getElementById('vctlMSource').value;
+  var isWage=src==='wage';
+  var type=isWage?'work_code':(document.getElementById('vctlFType')?.value||'category_code');
+  var value=(document.getElementById('vctlFValue')?.value||'').trim();
+  if(!value)return;
+  if(_vctlEditingFilters.some(function(f){return f.type===type&&f.value===value;}))return;
+  _vctlEditingFilters.push({type,value});
+  if(document.getElementById('vctlFValue'))document.getElementById('vctlFValue').value='';
+  _renderVCTLFilterList();
+}
+async function saveVCTLMetric(){
+  var metric_name=document.getElementById('vctlMName').value.trim();
+  if(!metric_name){alert('請輸入指標名稱');return;}
+  var source_type=document.getElementById('vctlMSource').value;
+  var calc_method=document.getElementById('vctlMCalc').value;
+  var sort_order=parseInt(document.getElementById('vctlMOrder').value)||0;
+  var description=document.getElementById('vctlMDesc').value.trim();
+  var account_types=[...document.querySelectorAll('#vctlAccountChips input:checked')].map(function(cb){return cb.value;});
+  var filters=_vctlEditingFilters.map(function(f){return{type:f.type,value:f.value};});
+  var btn=document.getElementById('vctlBtnSave');btn.disabled=true;btn.textContent='儲存中...';
+  try{
+    var url=_vctlEditingId?'/api/vctl/metrics/'+_vctlEditingId:'/api/vctl/metrics';
+    var method=_vctlEditingId?'PUT':'POST';
+    var data=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify({metric_name,description,source_type,calc_method,account_types,filters,sort_order})}).then(r=>r.json());
+    if(data.error)throw new Error(data.error);
+    closeVCTLModal();
+    await loadVCTL(getPeriod(),document.getElementById('selBranch').value);
+  }catch(e){alert('儲存失敗：'+e.message);}
+  finally{btn.disabled=false;btn.textContent='儲存指標';}
+}
+async function deleteVCTLMetric(id,name){
+  if(!confirm('確定刪除「'+name+'」？'))return;
+  await fetch('/api/vctl/metrics/'+id,{method:'DELETE'});
+  await loadVCTL(getPeriod(),document.getElementById('selBranch').value);
+}
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){var m=document.getElementById('vctlModal');if(m&&m.style.display!=='none')closeVCTLModal();}
+});
+</script>
+
+<!-- ════ VCTL 指標設定 Modal ════ -->
+<div id="vctlModal"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:800;
+         align-items:center;justify-content:center;padding:16px;overflow-y:auto"
+  onclick="if(event.target===this)closeVCTLModal()">
+  <div style="background:#1a2740;border:1px solid #2d4060;border-radius:14px;
+              width:100%;max-width:700px;box-shadow:0 24px 64px rgba(0,0,0,.88);margin:auto">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #2d3f56">
+      <div id="vctlModalTitle" style="font-size:15px;font-weight:800;color:#fff;flex:1">新增 VCTL 指標</div>
+      <button onclick="closeVCTLModal()" style="width:30px;height:30px;border-radius:7px;border:1px solid #2d3f56;background:#0f172a;color:#64748b;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
+    </div>
+    <div style="padding:18px 20px;overflow-y:auto;max-height:72vh">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div>
+          <label style="display:block;font-size:12px;color:#64748b;font-weight:600;margin-bottom:5px">指標名稱 <span style="color:#ef4444">*</span></label>
+          <input type="text" id="vctlMName" placeholder="例：精品銷售額" style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:8px 12px;border-radius:6px;font-size:13px;outline:none">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;color:#64748b;font-weight:600;margin-bottom:5px">說明（選填）</label>
+          <input type="text" id="vctlMDesc" placeholder="例：含型錄零件精品" style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:8px 12px;border-radius:6px;font-size:13px;outline:none">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 80px;gap:10px;margin-bottom:16px">
+        <div>
+          <label style="display:block;font-size:12px;color:#64748b;font-weight:600;margin-bottom:5px">資料來源</label>
+          <select id="vctlMSource" onchange="onVCTLSourceChange()" style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:8px 10px;border-radius:6px;font-size:13px;outline:none">
+            <option value="parts">🔩 零件（parts_sales）</option>
+            <option value="accessories">📦 配件（parts_catalog 配件）</option>
+            <option value="boutique">💎 精品（parts_catalog 精品）</option>
+            <option value="wage">🔧 工資（tech_performance）</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;color:#64748b;font-weight:600;margin-bottom:5px">計算方式</label>
+          <select id="vctlMCalc" style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:8px 10px;border-radius:6px;font-size:13px;outline:none">
+            <option value="amount">💰 實際售價（元）</option>
+            <option value="cost">📉 成本（元）</option>
+            <option value="qty">📦 數量（件）</option>
+            <option value="count">🧾 筆數</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;color:#64748b;font-weight:600;margin-bottom:5px">排序</label>
+          <input type="number" id="vctlMOrder" value="0" min="0" style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:8px;border-radius:6px;font-size:13px;outline:none;text-align:center">
+        </div>
+      </div>
+      <div style="margin-bottom:16px">
+        <label id="vctlATLabel" style="display:block;font-size:12px;color:#64748b;font-weight:600;margin-bottom:7px">Paycode 篩選（part_type，留空=全部）</label>
+        <div id="vctlAccountChips" style="display:flex;flex-wrap:wrap;gap:3px;background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:10px 12px;min-height:44px"></div>
+      </div>
+      <div style="margin-bottom:6px">
+        <label style="display:block;font-size:12px;color:#64748b;font-weight:600;margin-bottom:3px">篩選條件</label>
+        <div id="vctlFilterHint" style="font-size:11px;color:#475569;margin-bottom:8px">類別碼/功能碼/零件編號 篩選條件（AND 邏輯）</div>
+        <div id="vctlFilterList" style="margin-bottom:8px"></div>
+        <div style="display:flex;gap:8px;align-items:stretch;flex-wrap:wrap">
+          <div id="vctlFTypeWrap">
+            <select id="vctlFType" style="background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:8px 10px;border-radius:6px;font-size:12px;outline:none;height:100%">
+              <option value="category_code">零件類別碼</option>
+              <option value="function_code">功能碼</option>
+              <option value="part_number">零件編號</option>
+              <option value="part_type">Paycode</option>
+            </select>
+          </div>
+          <input type="text" id="vctlFValue" placeholder="輸入值（工資: 17300 或 00030-00033）"
+            style="flex:1;min-width:160px;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:8px 10px;border-radius:6px;font-size:12px;outline:none"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();addVCTLFilter();}">
+          <button onclick="addVCTLFilter()" style="padding:8px 16px;background:#253347;color:#cbd5e1;border:1px solid #2d3f56;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">＋ 加入</button>
+        </div>
+      </div>
+    </div>
+    <div style="padding:12px 20px 16px;border-top:1px solid #2d3f56;display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="closeVCTLModal()" style="padding:7px 16px;background:#253347;color:#cbd5e1;border:1px solid #2d3f56;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">取消</button>
+      <button id="vctlBtnSave" onclick="saveVCTLMetric()" style="padding:7px 18px;background:#3b82f6;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">儲存指標</button>
     </div>
   </div>
 </div>
