@@ -320,7 +320,7 @@ const initDatabase = async () => {
         UNIQUE(work_order, branch)
       )`);
 
-    // ── VCTL 商務政策指標 ──
+// ── VCTL 商務政策指標 ──
     await client.query(`
       CREATE TABLE IF NOT EXISTS vctl_metrics (
         id            SERIAL PRIMARY KEY,
