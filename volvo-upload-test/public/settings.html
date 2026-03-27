@@ -161,6 +161,8 @@
   /* person targets table */
   .pt-input { background: #0f172a; border: 1px solid #2d3f56; color: #e2e8f0; padding: 5px 8px; border-radius: 5px; font-size: 12px; font-weight: 700; text-align: right; outline: none; }
   .pt-input:focus { border-color: #3b82f6; }
+  .theme-toggle-btn { margin-left: auto; background: transparent; border: 1px solid #2d3f56; color: #64748b; border-radius: 6px; padding: 5px 9px; font-size: 15px; cursor: pointer; transition: all .15s; line-height: 1; flex-shrink: 0; }
+  .theme-toggle-btn:hover { background: #1e293b; color: #e2e8f0; }
  /* ════ MOBILE ════ */
 @media (max-width: 768px) {
   .nav { padding: 0 16px; }
@@ -238,6 +240,7 @@
   <a href="/query.html" class="nav-link">🔍 資料查詢</a>
   <a href="/bonus.html" class="nav-link">💰 獎金表</a>
   <a href="/settings.html" class="nav-link active">⚙️ 設定</a>
+  <button id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleTheme()" title="切換主題">☀️</button>
 </nav>
 
 <!-- ══ MODAL #1 — 指標銷售設定編輯器 ══ -->
@@ -1527,6 +1530,10 @@ async function saveBayConfig() {
  
 // ══ 初始化 ══
 checkAuth();
+function initTheme(){const s=localStorage.getItem('volvo_theme')||'dark';applyTheme(s,false);}
+function applyTheme(t,re){if(t==='light')document.body.classList.add('light-theme');else document.body.classList.remove('light-theme');const b=document.getElementById('themeToggleBtn');if(b)b.textContent=t==='light'?'🌙':'☀️';localStorage.setItem('volvo_theme',t);}
+function toggleTheme(){applyTheme(document.body.classList.contains('light-theme')?'dark':'light',true);}
+initTheme();
 </script>
 </body>
 </html>
