@@ -24,6 +24,8 @@ app.use('/api', require('./routes/bonus'));
 app.use('/api', require('./routes/techHours'));
 app.use('/api', require('./routes/personTargets'));
 app.use('/api', require('./routes/wip'));
+app.use('/api', require('./routes/vctl'));
+
 
 // ── 啟動 ──
 initDatabase()
