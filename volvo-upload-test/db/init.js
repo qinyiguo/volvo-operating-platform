@@ -211,7 +211,7 @@ const initDatabase = async () => {
         UNIQUE(branch, period)
       )`);
 
-        await client.query(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS revenue_estimate_history (
         id                SERIAL PRIMARY KEY,
         period            VARCHAR(6)   NOT NULL,
@@ -308,17 +308,33 @@ const initDatabase = async () => {
       )`);
 
     await client.query(`
-  CREATE TABLE IF NOT EXISTS wip_status_notes (
-    id          SERIAL PRIMARY KEY,
-    work_order  VARCHAR(50) NOT NULL,
-    branch      VARCHAR(10) NOT NULL,
-    wip_status  VARCHAR(20) NOT NULL DEFAULT '未填寫',
-    eta_date    DATE,
-    reason      TEXT DEFAULT '',
-    updated_by  VARCHAR(50) DEFAULT '',
-    updated_at  TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(work_order, branch)
-  )`);
+      CREATE TABLE IF NOT EXISTS wip_status_notes (
+        id          SERIAL PRIMARY KEY,
+        work_order  VARCHAR(50) NOT NULL,
+        branch      VARCHAR(10) NOT NULL,
+        wip_status  VARCHAR(20) NOT NULL DEFAULT '未填寫',
+        eta_date    DATE,
+        reason      TEXT DEFAULT '',
+        updated_by  VARCHAR(50) DEFAULT '',
+        updated_at  TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(work_order, branch)
+      )`);
+
+    // ── VCTL 商務政策指標 ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS vctl_metrics (
+        id            SERIAL PRIMARY KEY,
+        metric_name   VARCHAR(100) NOT NULL,
+        description   TEXT DEFAULT '',
+        source_type   VARCHAR(20) NOT NULL DEFAULT 'parts',
+        calc_method   VARCHAR(20) NOT NULL DEFAULT 'amount',
+        account_types JSONB NOT NULL DEFAULT '[]',
+        filters       JSONB NOT NULL DEFAULT '[]',
+        unit          VARCHAR(20) DEFAULT '',
+        sort_order    INTEGER DEFAULT 0,
+        created_at    TIMESTAMPTZ DEFAULT NOW(),
+        updated_at    TIMESTAMPTZ DEFAULT NOW()
+      )`);
 
     console.log('[initDB] ✅ 所有表格建立完成');
   } catch (err) {
