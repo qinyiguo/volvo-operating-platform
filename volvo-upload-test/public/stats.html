@@ -2051,7 +2051,6 @@ function renderWipModal(){
       <td style="${TD}color:${C.textSub};font-size:11px">${r.open_period||'—'}</td>
       <td style="${TD}font-weight:600">${r.plate_no||'—'}</td>
       <td style="${TD}color:${C.textSub};font-size:11px">${r.repair_type||'—'}</td>
-      <td style="${TD}color:${C.text};font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.repair_item||''}">${r.repair_item||'—'}</td>
       <td style="${TD}font-weight:600;font-size:11px">${r.service_advisor||'—'}</td>
       <td style="${TDR}color:${C.textSub}">${Math.round(r.wage||0).toLocaleString()}</td>
       <td style="${TDR}color:${parseFloat(r.sales_amt||0)>0?(isLight?'#059669':'#34d399'):C.textDim};font-weight:${parseFloat(r.sales_amt||0)>0?700:400}">
@@ -2073,6 +2072,7 @@ function renderWipModal(){
         </button>
       </td>
       <td style="${TD}color:${C.textSub};font-size:11px">
+      <td style="${TD}color:${C.text};font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.repair_item||''}">${r.repair_item||'—'}</td>
         ${r.wip_reason?`<span>${r.wip_reason}</span>`:''}
         ${r.eta_date?`<span style="color:${isLight?'#2563eb':'#60a5fa'};margin-left:${r.wip_reason?4:0}px;font-size:10px">📅 ${String(r.eta_date).slice(0,10)}</span>`:''}
         ${!r.wip_reason&&!r.eta_date?`<span style="color:${C.textDim}">—</span>`:''}
