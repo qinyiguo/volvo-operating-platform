@@ -2072,7 +2072,6 @@ function renderWipModal(){
         </button>
       </td>
       <td style="${TD}color:${C.textSub};font-size:11px">
-      <td style="${TD}color:${C.text};font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.repair_item||''}">${r.repair_item||'—'}</td>
         ${r.wip_reason?`<span>${r.wip_reason}</span>`:''}
         ${r.eta_date?`<span style="color:${isLight?'#2563eb':'#60a5fa'};margin-left:${r.wip_reason?4:0}px;font-size:10px">📅 ${String(r.eta_date).slice(0,10)}</span>`:''}
         ${!r.wip_reason&&!r.eta_date?`<span style="color:${C.textDim}">—</span>`:''}
