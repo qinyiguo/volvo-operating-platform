@@ -2071,6 +2071,7 @@ function renderWipModal(){
           ${m.icon} ${status}
         </button>
       </td>
+      <td style="${TD}font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(r.repair_item||'').replace(/"/g,'&quot;')}">${r.repair_item||'—'}</td>
       <td style="${TD}color:${C.textSub};font-size:11px">
         ${r.wip_reason?`<span>${r.wip_reason}</span>`:''}
         ${r.eta_date?`<span style="color:${isLight?'#2563eb':'#60a5fa'};margin-left:${r.wip_reason?4:0}px;font-size:10px">📅 ${String(r.eta_date).slice(0,10)}</span>`:''}
