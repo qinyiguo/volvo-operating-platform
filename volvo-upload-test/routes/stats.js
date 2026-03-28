@@ -828,4 +828,86 @@ router.get('/stats/sa-paid-revenue', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// WIP 上月結清率比較
+router.get('/wip/last-month-comparison', async (req, res) => {
+  const { branch } = req.query;
+  try {
+    const now = new Date();
+    // 上個月的年月
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lmYear  = lastMonth.getFullYear();
+    const lmMonth = String(lastMonth.getMonth() + 1).padStart(2, '0');
+    const lmPrefix = `${lmYear}${lmMonth}`; // e.g. '202602'
+
+    const branchCond = branch && branch !== '全部' ? `AND bq.branch = $1` : '';
+    const params = branch && branch !== '全部' ? [branch] : [];
+
+    // 上個月所有進廠工單（排除 PV 外賣）
+    const totalSql = `
+      SELECT COUNT(*) AS total
+      FROM business_query bq
+      WHERE TO_CHAR(bq.open_time, 'YYYYMM') = '${lmPrefix}'
+        AND COALESCE(bq.account_type,'') NOT IN ('PV','外賣訂單')
+        ${branchCond}
+    `;
+
+    // 上個月工單中，已出現在 repair_income（代表已結帳）的數量
+    const settledSql = `
+      SELECT COUNT(DISTINCT bq.work_order || '|||' || bq.branch) AS settled,
+             SUM(ri.total_untaxed) AS settled_amt
+      FROM business_query bq
+      JOIN repair_income ri
+        ON ri.work_order = bq.work_order AND ri.branch = bq.branch
+      WHERE TO_CHAR(bq.open_time, 'YYYYMM') = '${lmPrefix}'
+        AND COALESCE(bq.account_type,'') NOT IN ('PV','外賣訂單')
+        ${branchCond}
+    `;
+
+    // 上個月工單中，至今仍在 WIP（未出現在 repair_income）的數量
+    const stillWipSql = `
+      SELECT COUNT(*) AS still_wip,
+             SUM(bq.sales) AS still_wip_amt
+      FROM business_query bq
+      WHERE TO_CHAR(bq.open_time, 'YYYYMM') = '${lmPrefix}'
+        AND COALESCE(bq.account_type,'') NOT IN ('PV','外賣訂單')
+        AND NOT EXISTS (
+          SELECT 1 FROM repair_income ri
+          WHERE ri.work_order = bq.work_order AND ri.branch = bq.branch
+        )
+        AND COALESCE((
+          SELECT wsn.wip_status FROM wip_status_notes wsn
+          WHERE wsn.work_order = bq.work_order AND wsn.branch = bq.branch
+        ), '未填寫') != '已結清'
+        ${branchCond}
+    `;
+
+    const [r1, r2, r3] = await Promise.all([
+      pool.query(totalSql, params),
+      pool.query(settledSql, params),
+      pool.query(stillWipSql, params),
+    ]);
+
+    const total      = parseInt(r1.rows[0].total) || 0;
+    const settled    = parseInt(r2.rows[0].settled) || 0;
+    const settledAmt = parseFloat(r2.rows[0].settled_amt) || 0;
+    const stillWip   = parseInt(r3.rows[0].still_wip) || 0;
+    const stillAmt   = parseFloat(r3.rows[0].still_wip_amt) || 0;
+    const rate       = total > 0 ? Math.round(settled / total * 100) : 0;
+
+    res.json({
+      ok: true,
+      lmPrefix,
+      total,
+      settled,
+      settledAmt,
+      stillWip,
+      stillAmt,
+      rate,
+    });
+  } catch (e) {
+    console.error('wip last-month-comparison error:', e);
+    res.json({ ok: false, error: e.message });
+  }
+});
+
 module.exports = router;
