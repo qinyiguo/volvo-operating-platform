@@ -1675,43 +1675,68 @@ async function loadWip(period,branch){
    // 金額分組計算
    const canSettleRows  = rows.filter(r=>(r.wip_status||'未填寫')==='已可結帳');
    const cantSettleRows = rows.filter(r=>(r.wip_status||'未填寫')==='暫緩');
-   const within30Rows   = rows.filter(r=>(r.days||0)<=30);
-   const over30Rows     = rows.filter(r=>(r.days||0)>30);
+   const within30Rows   = rows.filter(r=>r.days_open===null||r.days_open===undefined||(parseFloat(r.days_open)||0)<=30);
+   const over30Rows     = rows.filter(r=>r.days_open!==null&&r.days_open!==undefined&&(parseFloat(r.days_open)||0)>30);
    
-   const canSettleAmt  = canSettleRows.reduce((s,r)=>s+(+r.sales||0),0);
-   const cantSettleAmt = cantSettleRows.reduce((s,r)=>s+(+r.sales||0),0);
-   const within30Amt   = within30Rows.reduce((s,r)=>s+(+r.sales||0),0);
-   const over30Amt     = over30Rows.reduce((s,r)=>s+(+r.sales||0),0);
+   const canSettleAmt  = canSettleRows.reduce((s,r)=>s+(parseFloat(r.sales_amt)||0),0);
+   const cantSettleAmt = cantSettleRows.reduce((s,r)=>s+(parseFloat(r.sales_amt)||0),0);
+   const within30Amt   = within30Rows.reduce((s,r)=>s+(parseFloat(r.sales_amt)||0),0);
+   const over30Amt     = over30Rows.reduce((s,r)=>s+(parseFloat(r.sales_amt)||0),0);
    const canSettleCnt  = canSettleRows.length;
    const cantSettleCnt = cantSettleRows.length;
    
     // KPI 大卡 + 狀態分類卡
+const _wa = v => { const nv=parseFloat(v||0); return nv>0 ? fmtK(nv) : '—'; };
   kpiEl.innerHTML = `
-    <div style="width:100%;box-sizing:border-box;grid-column:1/-1">
+  <div style="width:100%;box-sizing:border-box;grid-column:1/-1">
     <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:10px">
       <div style="background:linear-gradient(135deg,rgba(239,68,68,.18),rgba(239,68,68,.06));border:2px solid #ef4444;border-radius:12px;padding:16px;cursor:pointer" onclick="openWipModal('status','已可結帳')">
-        <div style="font-size:10px;font-weight:700;color:#ef4444;margin-bottom:4px">💳 應結帳（立即處理）</div>
-        <div style="font-size:40px;font-weight:900;color:#ef4444;line-height:1.1">${canSettleCnt}</div>
-        <div style="font-size:13px;color:#f87171;margin-top:4px;font-weight:600">${fmtK(canSettleAmt)} K</div>
-        <div style="font-size:10px;color:#94a3b8;margin-top:2px">點擊查看工單 →</div>
+        <div style="font-size:10px;font-weight:700;color:#ef4444;margin-bottom:8px">💳 應結帳（立即處理）</div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px">
+          <span style="font-size:44px;font-weight:900;color:#ef4444;line-height:1">${canSettleCnt}</span>
+          <span style="font-size:13px;color:#94a3b8">件</span>
+        </div>
+        <div style="background:rgba(239,68,68,.15);border-radius:6px;padding:6px 10px;margin-bottom:4px">
+          <div style="font-size:10px;color:#f87171;margin-bottom:2px">預估金額</div>
+          <div style="font-size:20px;font-weight:900;color:#f87171">${_wa(canSettleAmt)}</div>
+        </div>
+        <div style="font-size:10px;color:#94a3b8">點擊查看工單 →</div>
       </div>
       <div style="background:#1a2332;border:1px solid rgba(59,130,246,.4);border-radius:12px;padding:16px;cursor:pointer" onclick="openWipModal('status','暫緩')">
-        <div style="font-size:10px;font-weight:700;color:#3b82f6;margin-bottom:4px">⏸️ 暫緩（無法結帳）</div>
-        <div style="font-size:40px;font-weight:900;color:#3b82f6;line-height:1.1">${cantSettleCnt}</div>
-        <div style="font-size:13px;color:#60a5fa;margin-top:4px;font-weight:600">${fmtK(cantSettleAmt)} K</div>
-        <div style="font-size:10px;color:#64748b;margin-top:2px">佔總額 ${T.sales>0?Math.round(cantSettleAmt/T.sales*100):0}%</div>
+        <div style="font-size:10px;font-weight:700;color:#3b82f6;margin-bottom:8px">⏸️ 暫緩（無法結帳）</div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px">
+          <span style="font-size:44px;font-weight:900;color:#3b82f6;line-height:1">${cantSettleCnt}</span>
+          <span style="font-size:13px;color:#94a3b8">件</span>
+        </div>
+        <div style="background:rgba(59,130,246,.1);border-radius:6px;padding:6px 10px;margin-bottom:4px">
+          <div style="font-size:10px;color:#60a5fa;margin-bottom:2px">預估金額</div>
+          <div style="font-size:20px;font-weight:900;color:#60a5fa">${_wa(cantSettleAmt)}</div>
+        </div>
+        <div style="font-size:10px;color:#64748b">佔總額 ${T.sales>0?Math.round(cantSettleAmt/T.sales*100):0}%</div>
       </div>
       <div style="background:#1a2332;border:1px solid rgba(16,185,129,.35);border-radius:12px;padding:16px">
-        <div style="font-size:10px;font-weight:700;color:#10b981;margin-bottom:4px">✅ 30天內</div>
-        <div style="font-size:40px;font-weight:900;color:#10b981;line-height:1.1">${within30Rows.length}</div>
-        <div style="font-size:13px;color:#34d399;margin-top:4px;font-weight:600">${fmtK(within30Amt)} K</div>
-        <div style="font-size:10px;color:#64748b;margin-top:2px">佔總件 ${T.count>0?Math.round(within30Rows.length/T.count*100):0}%</div>
+        <div style="font-size:10px;font-weight:700;color:#10b981;margin-bottom:8px">✅ ≤30天</div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px">
+          <span style="font-size:44px;font-weight:900;color:#10b981;line-height:1">${within30Rows.length}</span>
+          <span style="font-size:13px;color:#94a3b8">件</span>
+        </div>
+        <div style="background:rgba(16,185,129,.1);border-radius:6px;padding:6px 10px;margin-bottom:4px">
+          <div style="font-size:10px;color:#34d399;margin-bottom:2px">預估金額</div>
+          <div style="font-size:20px;font-weight:900;color:#34d399">${_wa(within30Amt)}</div>
+        </div>
+        <div style="font-size:10px;color:#64748b">佔總件 ${T.count>0?Math.round(within30Rows.length/T.count*100):0}%</div>
       </div>
       <div style="background:#1a2332;border:1px solid rgba(239,68,68,.4);border-radius:12px;padding:16px">
-        <div style="font-size:10px;font-weight:700;color:#ef4444;margin-bottom:4px">🔴 逾30天</div>
-        <div style="font-size:40px;font-weight:900;color:#ef4444;line-height:1.1">${T.cOver30}</div>
-        <div style="font-size:13px;color:#f87171;margin-top:4px;font-weight:600">${fmtK(over30Amt)} K</div>
-        <div style="font-size:10px;color:#64748b;margin-top:2px">佔總件 ${T.count>0?Math.round(T.cOver30/T.count*100):0}%</div>
+        <div style="font-size:10px;font-weight:700;color:#ef4444;margin-bottom:8px">🔴 逾30天</div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px">
+          <span style="font-size:44px;font-weight:900;color:#ef4444;line-height:1">${T.cOver30}</span>
+          <span style="font-size:13px;color:#94a3b8">件</span>
+        </div>
+        <div style="background:rgba(239,68,68,.1);border-radius:6px;padding:6px 10px;margin-bottom:4px">
+          <div style="font-size:10px;color:#f87171;margin-bottom:2px">預估金額</div>
+          <div style="font-size:20px;font-weight:900;color:#f87171">${_wa(over30Amt)}</div>
+        </div>
+        <div style="font-size:10px;color:#64748b">佔總件 ${T.count>0?Math.round(T.cOver30/T.count*100):0}%</div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr);gap:10px;margin-bottom:10px">
@@ -1719,7 +1744,7 @@ async function loadWip(period,branch){
         <div style="font-size:10px;font-weight:700;color:#94a3b8;margin-bottom:6px">📋 WIP 總件數</div>
         <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px">
           <span style="font-size:34px;font-weight:900;color:#f97316">${T.count.toLocaleString()}</span>
-          <span style="font-size:11px;color:#64748b">扣PDI: ${E.count}　預估: ${fmtK(T.sales)} K</span>
+          <span style="font-size:11px;color:#64748b">扣PDI: ${E.count} 件</span>
         </div>
         <div style="display:flex;gap:5px;flex-wrap:wrap">
           <span style="font-size:11px;background:rgba(59,130,246,.15);color:#3b82f6;padding:3px 10px;border-radius:10px;cursor:pointer" onclick="openWipModal('status_group','hold')">⏸️ 暫緩 ${hold}</span>
@@ -1728,9 +1753,9 @@ async function loadWip(period,branch){
         </div>
       </div>
       <div style="background:#1a2332;border:1px solid rgba(139,92,246,.4);border-radius:12px;padding:16px;display:flex;flex-direction:column;justify-content:center">
-        <div style="font-size:10px;color:#8b5cf6;font-weight:700;margin-bottom:4px">💰 預估總額</div>
-        <div style="font-size:26px;font-weight:900;color:#8b5cf6">${fmtK(T.sales)} K</div>
-        <div style="font-size:10px;color:#64748b;margin-top:4px">扣PDI: ${fmtK(E.sales)} K</div>
+        <div style="font-size:10px;color:#8b5cf6;font-weight:700;margin-bottom:8px">💰 WIP 合計金額</div>
+        <div style="font-size:28px;font-weight:900;color:#8b5cf6">${_wa(T.sales)}</div>
+        <div style="font-size:11px;color:#64748b;margin-top:6px">扣PDI: <span style="color:#a78bfa;font-weight:700">${_wa(E.sales)}</span></div>
       </div>
       <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:12px;padding:16px;display:flex;flex-direction:column;justify-content:center">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
