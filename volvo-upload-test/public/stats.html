@@ -1673,42 +1673,60 @@ async function loadWip(period,branch){
     const fillPct=rows.length>0?Math.round(filled/rows.length*100):0;
 
     // KPI 大卡 + 狀態分類卡
-    kpiEl.innerHTML=`
-      <div class="kpi-card" style="border-color:#f97316">
-        <div class="kpi-label" style="color:#f97316">WIP 總件數</div>
-        <div class="kpi-value kpi-orange">${T.count.toLocaleString()}</div>
-        <div class="kpi-sub">扣PDI: ${E.count} 件</div>
+kpiEl.innerHTML=`
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+    <div style="background:linear-gradient(135deg,rgba(239,68,68,.15),rgba(239,68,68,.05));border:2px solid #ef4444;border-radius:12px;padding:18px 20px;cursor:pointer;display:flex;align-items:center;gap:16px" onclick="openWipModal('status','已可結帳')">
+      <div style="font-size:40px">💳</div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#ef4444;margin-bottom:4px">應結帳清單 — 立即處理！</div>
+        <div style="font-size:36px;font-weight:900;color:#ef4444;line-height:1">${urgent}</div>
+        <div style="font-size:11px;color:#64748b;margin-top:3px">點擊查看工單 →</div>
       </div>
-      <div class="kpi-card" style="border-color:#ef4444;cursor:pointer" onclick="openWipModal('status','已可結帳')" title="點擊查看應結帳工單">
-        <div class="kpi-label" style="color:#ef4444">💳 應結帳（已可結帳）</div>
-        <div class="kpi-value kpi-red">${urgent}</div>
-        <div class="kpi-sub">點擊查看清單 →</div>
+    </div>
+    <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:12px;padding:18px 20px;display:flex;align-items:center;gap:16px">
+      <div style="font-size:40px">📋</div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:8px">WIP 總件數</div>
+        <div style="font-size:32px;font-weight:900;color:#f97316;line-height:1">${T.count.toLocaleString()}</div>
+        <div style="font-size:11px;color:#64748b;margin-top:3px">扣PDI: ${E.count} 件</div>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          <span style="font-size:10px;background:rgba(59,130,246,.15);color:#3b82f6;padding:2px 8px;border-radius:10px">暫緩 ${hold}</span>
+          <span style="font-size:10px;background:rgba(245,158,11,.15);color:#f59e0b;padding:2px 8px;border-radius:10px">追蹤 ${watch}</span>
+          <span style="font-size:10px;background:rgba(100,116,139,.15);color:#94a3b8;padding:2px 8px;border-radius:10px">未標記 ${unknown}</span>
+        </div>
       </div>
-      <div class="kpi-card" style="border-color:#3b82f6">
-        <div class="kpi-label" style="color:#3b82f6">⏸️ 暫緩有因</div>
-        <div class="kpi-value kpi-blue">${hold}</div>
-        <div class="kpi-sub">等料/施工中/暫緩</div>
-      </div>
-      <div class="kpi-card" style="border-color:#f59e0b">
-        <div class="kpi-label" style="color:#f59e0b">⚠️ 需追蹤</div>
-        <div class="kpi-value kpi-yellow">${watch}</div>
-        <div class="kpi-sub">待修/待客確認</div>
-      </div>
-      <div class="kpi-card" style="border-color:#475569">
-        <div class="kpi-label">❓ 未標記狀態</div>
-        <div class="kpi-value">${unknown}</div>
-        <div class="kpi-sub">填寫率 ${fillPct}%<div style="background:#2d3f56;border-radius:3px;height:3px;margin-top:3px"><div style="width:${fillPct}%;height:3px;border-radius:3px;background:${fillPct>80?'#10b981':fillPct>50?'#f59e0b':'#ef4444'}"></div></div></div>
-      </div>
-      <div class="kpi-card" style="border-color:#ef4444">
-        <div class="kpi-label" style="color:#ef4444">逾30天</div>
-        <div class="kpi-value kpi-red">${T.cOver30.toLocaleString()}</div>
-        <div class="kpi-sub">30天內: ${T.c30} | 扣PDI逾30: ${E.cOver30}</div>
-      </div>
-      <div class="kpi-card" style="border-color:#8b5cf6">
-        <div class="kpi-label" style="color:#8b5cf6">預估總額(repair_amount)</div>
-        <div class="kpi-value kpi-purple">${fmtK(T.sales)}</div>
-        <div class="kpi-sub">扣PDI: ${fmtK(E.sales)}K</div>
-      </div>`;
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px">
+    <div class="kpi-card" style="border-color:#3b82f6">
+      <div class="kpi-label" style="color:#3b82f6">⏸️ 暫緩有因</div>
+      <div class="kpi-value kpi-blue">${hold}</div>
+      <div class="kpi-sub">等料/施工中/暫緩</div>
+    </div>
+    <div class="kpi-card" style="border-color:#f59e0b;cursor:pointer" onclick="openWipModal('status_group','watch')">
+      <div class="kpi-label" style="color:#f59e0b">⚠️ 需追蹤</div>
+      <div class="kpi-value kpi-yellow">${watch}</div>
+      <div class="kpi-sub">待修/待客確認</div>
+    </div>
+    <div class="kpi-card" style="border-color:#ef4444">
+      <div class="kpi-label" style="color:#ef4444">🔴 逾30天</div>
+      <div class="kpi-value kpi-red">${T.cOver30.toLocaleString()}</div>
+      <div class="kpi-sub">30天內: ${T.c30} | 扣PDI逾30: ${E.cOver30}</div>
+    </div>
+    <div class="kpi-card" style="border-color:#8b5cf6">
+      <div class="kpi-label" style="color:#8b5cf6">💰 預估總額</div>
+      <div class="kpi-value kpi-purple">${fmtK(T.sales)}</div>
+      <div class="kpi-sub">扣PDI: ${fmtK(E.sales)}K</div>
+    </div>
+  </div>
+  <div style="background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:10px 14px;margin-bottom:4px;display:flex;align-items:center;gap:8px">
+    <span style="font-size:11px;color:#475569">填寫率</span>
+    <div style="flex:1;background:#1e293b;border-radius:4px;height:8px">
+      <div style="width:${fillPct}%;height:8px;border-radius:4px;background:${fillPct>80?'#10b981':fillPct>50?'#f59e0b':'#ef4444'};transition:width .5s"></div>
+    </div>
+    <span style="font-size:12px;font-weight:800;color:${fillPct>80?'#10b981':fillPct>50?'#f59e0b':'#ef4444'}">${fillPct}%</span>
+    <span style="font-size:11px;color:#64748b">已標記 ${filled} / ${rows.length} 件</span>
+  </div>`;
 
     // 狀態分布圖
     const statusBarHtml = Object.entries(statusCounts)
@@ -1798,15 +1816,24 @@ async function loadWip(period,branch){
       ${watchHtml}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
         <div class="card"><div class="card-title">📆 依進廠月份</div><div class="table-wrap"><table>
-          <thead><tr><th>進廠月份</th><th class="num">件數</th><th class="num" style="color:#3b82f6">工資K</th><th class="num" style="color:#10b981">金額K</th><th class="num">30天內</th><th class="num" style="color:#ef4444">逾30</th></tr></thead>
+          <thead><tr><th>進廠月份</th><th class="num">件數</th><th class="num" style="color:#3b82f6">工資K</th><th class="num" style="color:#10b981">金額K</th><th class="num">30天內</th><th class="num" style="color:#ef4444">逾30</th><th>佔比</th></tr></thead>
           <tbody>
-          ${byAccountType.map(r=>`<tr onclick="openWipModal('period','${r.label}')" style="cursor:pointer">
-            <td>${r.label}</td><td class="num">${r.count}</td>
-            <td class="num" style="color:#3b82f6">${fmtK(r.wage)}</td>
-            <td class="num" style="color:#10b981;font-weight:700">${fmtK(r.sales)}</td>
-            <td class="num" style="color:#64748b">${r.c30}</td>
-            <td class="num" style="color:${r.cOver30>0?'#ef4444':'#64748b'};font-weight:${r.cOver30>0?700:400}">${r.cOver30}</td>
-          </tr>`).join('')}
+      ${byAccountType.map(r=>{
+        const pct=T.count>0?(r.count/T.count*100).toFixed(0):0;
+        const over30col=r.cOver30>0?'#ef4444':'#10b981';
+        return`<tr onclick="openWipModal('period','${r.label}')" style="cursor:pointer">
+          <td>${r.label}</td>
+          <td class="num">${r.count}</td>
+          <td class="num" style="color:#3b82f6">${fmtK(r.wage)}</td>
+          <td class="num" style="color:#10b981;font-weight:700">${fmtK(r.sales)}</td>
+          <td class="num" style="color:#64748b">${r.c30}</td>
+          <td class="num" style="color:${over30col};font-weight:${r.cOver30>0?700:400}">${r.cOver30}</td>
+          <td style="min-width:80px">
+            <div style="background:#0f172a;border-radius:3px;height:5px">
+              <div style="width:${pct}%;height:5px;border-radius:3px;background:#3b82f6"></div>
+            </div>
+          </td>
+        </tr>`;}).join('')}
           </tbody></table></div></div>
 
         <div class="card"><div class="card-title">🔧 依維修類型</div><div class="table-wrap"><table>
@@ -2006,21 +2033,21 @@ function renderWipModal(){
   const THR=TH+'text-align:right;';
 
   let html=`<thead style="position:sticky;top:0;z-index:3">
-    <tr>
-      <th style="${TH}min-width:130px">工單號</th>
-      <th style="${TH}">據點</th>
-      <th style="${TH}">進廠月</th>
-      <th style="${TH}">車牌</th>
-      <th style="${TH}">維修類型</th>
-      <th style="${TH}min-width:100px">SA</th>
-      <th style="${THR}">工資</th>
-      <th style="${THR}min-width:80px">金額</th>
-      <th style="${THR}">天數</th>
-      <th style="${TH}min-width:120px">WIP 狀態</th>
-      <th style="${TH}min-width:180px">交修項目</th>
-      <th style="${TH}min-width:160px">原因 / 預計完成</th>
-    </tr>
-  </thead><tbody>`;
+      <tr>
+        <th style="padding:9px 12px;${TH}min-width:130px">工單號</th>
+        <th style="${TH}">據點</th>
+        <th style="${THR}min-width:60px;color:#ef4444">天數</th>
+        <th style="${TH}">進廠月</th>
+        <th style="${TH}">車牌</th>
+        <th style="${TH}">維修類型</th>
+        <th style="${TH}min-width:100px">SA</th>
+        <th style="${THR}">工資</th>
+        <th style="${THR}min-width:80px">金額</th>
+        <th style="${TH}min-width:120px">WIP 狀態</th>
+        <th style="${TH}min-width:180px">交修項目</th>
+        <th style="${TH}min-width:160px">原因 / 預計完成</th>
+      </tr>
+    </thead><tbody>`;
 
   filtered.forEach(r=>{
     const days=r.days_open!==null?parseFloat(r.days_open):null;
@@ -2039,51 +2066,51 @@ function renderWipModal(){
     const TDR=TD+'text-align:right;font-variant-numeric:tabular-nums;';
     const brKey=r.branch.replace(/\s/g,'_');
 
-    html+=`<tr style="background:${rowBg}"
-      onmouseover="this.style.background='${C.bgRowHov}'"
-      onmouseout="this.style.background='${rowBg}'">
-      <td style="${TD}font-family:monospace;font-size:11px;color:${C.textMono}">
-        ${r.work_order}${isPdi?`<span style="margin-left:5px;font-size:9px;background:${isLight?'rgba(245,158,11,.15)':'rgba(245,158,11,.2)'};color:#f59e0b;padding:1px 5px;border-radius:3px;font-weight:700">PDI</span>`:''}
-      </td>
-      <td style="${TD}">
-        <span style="background:${C.badge};color:${C.badgeTxt};padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700">${r.branch}</span>
-      </td>
-      <td style="${TD}color:${C.textSub};font-size:11px">${r.open_period||'—'}</td>
-      <td style="${TD}font-weight:600">${r.plate_no||'—'}</td>
-      <td style="${TD}color:${C.textSub};font-size:11px">${r.repair_type||'—'}</td>
-      <td style="${TD}font-weight:600;font-size:11px">${r.service_advisor||'—'}</td>
-      <td style="${TDR}color:${C.textSub}">${Math.round(r.wage||0).toLocaleString()}</td>
-      <td style="${TDR}color:${parseFloat(r.sales_amt||0)>0?(isLight?'#059669':'#34d399'):C.textDim};font-weight:${parseFloat(r.sales_amt||0)>0?700:400}">
-        ${Math.round(r.sales_amt||0).toLocaleString()}
-      </td>
-      <td style="${TDR}">
-        ${days!==null
-          ?`<span style="color:${over?(isLight?'#dc2626':'#f87171'):days>15?(isLight?'#b45309':'#fbbf24'):C.textDim};font-weight:${over?700:400}">${Math.round(days)}</span>`
-          :`<span style="color:${C.textDim}">—</span>`}
-      </td>
-      <td style="${TD}">
-        <button onclick="_openWipStatusEdit('${r.work_order}','${r.branch}')"
-          style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:6px;
-                 border:1.5px solid ${m.color}${isLight?'99':'66'};
-                 background:${isLight?m.color+'18':m.bg};
-                 color:${isLight?m.color:m.color};
-                 font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">
-          ${m.icon} ${status}
-        </button>
-      </td>
-      <td style="${TD}font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(r.repair_item||'').replace(/"/g,'&quot;')}">${r.repair_item||'—'}</td>
-      <td style="${TD}color:${C.textSub};font-size:11px">
-        ${r.wip_reason?`<span>${r.wip_reason}</span>`:''}
-        ${r.eta_date?`<span style="color:${isLight?'#2563eb':'#60a5fa'};margin-left:${r.wip_reason?4:0}px;font-size:10px">📅 ${String(r.eta_date).slice(0,10)}</span>`:''}
-        ${!r.wip_reason&&!r.eta_date?`<span style="color:${C.textDim}">—</span>`:''}
-      </td>
-    </tr>
-    <tr id="wipStatusEditRow-${r.work_order}-${brKey}" style="display:none">
-        <td colspan="12" style="padding:0;background:${C.bgEdit};border-bottom:2px solid ${C.borderEd}">
-        <div id="wipStatusEditPanel-${r.work_order}-${brKey}" style="padding:12px 20px"></div>
-      </td>
-    </tr>`;
-  });
+   html+=`<tr style="background:${rowBg}"
+         onmouseover="this.style.background='${C.bgRowHov}'"
+         onmouseout="this.style.background='${rowBg}'">
+         <td style="${TD}font-family:monospace;font-size:11px;color:${C.textMono}">
+           ${r.work_order}${isPdi?`<span style="margin-left:5px;font-size:9px;background:rgba(245,158,11,.2);color:#f59e0b;padding:1px 5px;border-radius:3px;font-weight:700">PDI</span>`:''}
+         </td>
+         <td style="${TD}">
+           <span style="background:${C.badge};color:${C.badgeTxt};padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700">${r.branch}</span>
+         </td>
+         <td style="${TDR}">
+           ${days!==null
+             ?`<span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:13px;font-weight:900;background:${over?(isLight?'rgba(239,68,68,.12)':'rgba(239,68,68,.2)'):(isLight?'rgba(16,185,129,.1)':'rgba(16,185,129,.15)')};color:${over?(isLight?'#dc2626':'#f87171'):(isLight?'#059669':'#34d399')}">${Math.round(days)}</span>`
+             :`<span style="color:${C.textDim}">—</span>`}
+         </td>
+         <td style="${TD}color:${C.textSub};font-size:11px">${r.open_period||'—'}</td>
+         <td style="${TD}font-weight:600">${r.plate_no||'—'}</td>
+         <td style="${TD}color:${C.textSub};font-size:11px">${r.repair_type||'—'}</td>
+         <td style="${TD}font-weight:600;font-size:11px">${r.service_advisor||'—'}</td>
+         <td style="${TDR}color:${C.textSub}">${Math.round(r.wage||0).toLocaleString()}</td>
+         <td style="${TDR}color:${parseFloat(r.sales_amt||0)>0?(isLight?'#059669':'#34d399'):C.textDim};font-weight:${parseFloat(r.sales_amt||0)>0?700:400}">
+           ${Math.round(r.sales_amt||0).toLocaleString()}
+         </td>
+         <td style="${TD}">
+           <button onclick="_openWipStatusEdit('${r.work_order}','${r.branch}')"
+             style="display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:6px;
+                    border:1.5px solid ${m.color}${isLight?'99':'66'};
+                    background:${isLight?m.color+'18':m.bg};
+                    color:${m.color};
+                    font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">
+             ${m.icon} ${status}
+           </button>
+         </td>
+         <td style="${TD}font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(r.repair_item||'').replace(/"/g,'&quot;')}">${r.repair_item||'—'}</td>
+         <td style="${TD}color:${C.textSub};font-size:11px">
+           ${r.wip_reason?`<span>${r.wip_reason}</span>`:''}
+           ${r.eta_date?`<span style="color:${isLight?'#2563eb':'#60a5fa'};margin-left:${r.wip_reason?4:0}px;font-size:10px">📅 ${String(r.eta_date).slice(0,10)}</span>`:''}
+           ${!r.wip_reason&&!r.eta_date?`<span style="color:${C.textDim}">—</span>`:''}
+         </td>
+       </tr>
+       <tr id="wipStatusEditRow-${r.work_order}-${brKey}" style="display:none">
+         <td colspan="12" style="padding:0;background:${C.bgEdit};border-bottom:2px solid ${C.borderEd}">
+           <div id="wipStatusEditPanel-${r.work_order}-${brKey}" style="padding:12px 20px"></div>
+         </td>
+       </tr>`;
+     });
 
   if (!filtered.length) html+=`<tr><td colspan="12"
     style="padding:36px;text-align:center;color:${C.textDim};font-size:13px">
