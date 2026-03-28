@@ -532,7 +532,7 @@
       &#x1F527; <strong>未結工單定義</strong>：截至選定月份月底，所有在 business_query 有進廠紀錄、但在 repair_income 尚未結算的工單（跨月累計，已排除 PV 外賣訂單）。<br>
       &#x1F4A1; PDI 工單包含在內並以 <span style="background:rgba(245,158,11,.15);color:#f59e0b;padding:1px 5px;border-radius:3px;font-size:11px;font-weight:700">PDI</span> 標記，KPI 卡片同時顯示含PDI與扣PDI數字。依進廠月份分類可看出老 WIP 積壓情況。
     </div>
-    <div id="wipKPI" class="kpi-grid"></div>
+  <div id="wipKPI"></div>
     <div class="card">
       <div class="card-title">
         &#x1F4CB; 未結工單統計
@@ -1687,7 +1687,7 @@ async function loadWip(period,branch){
    
     // KPI 大卡 + 狀態分類卡
   kpiEl.innerHTML = `
-  <div style="width:100%;box-sizing:border-box">
+    <div style="width:100%;box-sizing:border-box;grid-column:1/-1">
     <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:10px">
       <div style="background:linear-gradient(135deg,rgba(239,68,68,.18),rgba(239,68,68,.06));border:2px solid #ef4444;border-radius:12px;padding:16px;cursor:pointer" onclick="openWipModal('status','已可結帳')">
         <div style="font-size:10px;font-weight:700;color:#ef4444;margin-bottom:4px">💳 應結帳（立即處理）</div>
