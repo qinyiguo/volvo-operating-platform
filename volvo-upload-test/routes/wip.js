@@ -2,7 +2,7 @@ const router = require('express').Router();
 const pool   = require('../db/pool');
 
 // ── WIP 狀態常數 ──
-const WIP_STATUSES = ['等料', '施工中', '待修', '待客確認', '已可結帳', '暫緩', '未填寫'];
+const WIP_STATUSES = ['等料', '施工中', '待修', '待客確認', '已可結帳', '暫緩', '已結清', '未填寫'];
 
 // GET /api/wip/status?period=YYYYMM&branch=AMA
 // 取得指定 period/branch 的 WIP 工單狀態備註
@@ -25,10 +25,11 @@ router.get('/wip/status', async (req, res) => {
         AND COALESCE(bq.repair_type, '') NOT ILIKE '%PV%'
         AND NOT EXISTS (
           SELECT 1 FROM repair_income ri
-          WHERE ri.work_order = bq.work_order AND ri.branch = bq.branch
+          WHERE ri.work_order = bq.work_order
+            AND ri.branch     = bq.branch
         )
-      )
-      ORDER BY wsn.updated_at DESC
+        AND COALESCE(wsn.wip_status, '未填寫') != '已結清'
+      ORDER BY bq.branch, bq.open_time NULLS LAST, bq.work_order
     `, params);
 
     // 回傳為 { work_order|||branch: {...} } 格式方便前端查詢
