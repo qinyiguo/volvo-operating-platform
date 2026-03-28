@@ -1623,8 +1623,8 @@ async function loadWip(period,branch){
     ]);
     if(data.error)throw new Error(data.error);
 
-    _wipData=data;
-    _wipStatusMap = statusRes.statusMap || {};
+   _wipData=data;
+   _wipData.rows=_wipData.rows.filter(r=>(r.wip_status||'未填寫')!=='已結清');
 
     // 將狀態合併到 rows
     _wipData.rows.forEach(row=>{
