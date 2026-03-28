@@ -2017,6 +2017,7 @@ function renderWipModal(){
       <th style="${THR}min-width:80px">金額</th>
       <th style="${THR}">天數</th>
       <th style="${TH}min-width:120px">WIP 狀態</th>
+      <th style="${TH}min-width:180px">交修項目</th>
       <th style="${TH}min-width:160px">原因 / 預計完成</th>
     </tr>
   </thead><tbody>`;
@@ -2050,6 +2051,7 @@ function renderWipModal(){
       <td style="${TD}color:${C.textSub};font-size:11px">${r.open_period||'—'}</td>
       <td style="${TD}font-weight:600">${r.plate_no||'—'}</td>
       <td style="${TD}color:${C.textSub};font-size:11px">${r.repair_type||'—'}</td>
+      <td style="${TD}color:${C.text};font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.repair_item||''}">${r.repair_item||'—'}</td>
       <td style="${TD}font-weight:600;font-size:11px">${r.service_advisor||'—'}</td>
       <td style="${TDR}color:${C.textSub}">${Math.round(r.wage||0).toLocaleString()}</td>
       <td style="${TDR}color:${parseFloat(r.sales_amt||0)>0?(isLight?'#059669':'#34d399'):C.textDim};font-weight:${parseFloat(r.sales_amt||0)>0?700:400}">
