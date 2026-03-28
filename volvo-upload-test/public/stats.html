@@ -2107,8 +2107,7 @@ window._openWipStatusEdit=function(workOrder,branch){
     label:  isLightEdit?'#475569':'#94a3b8',
   };
  
-  const statusOpts=['等料','施工中','待修','待客確認','已可結帳','暫緩','未填寫'];
-  const optsHtml=statusOpts.map(s=>{
+  const statusOpts=['等料','施工中','待修','待客確認','已可結帳','暫緩','已結清','未填寫'];  const optsHtml=statusOpts.map(s=>{
     const m2=getWipStatusMeta(s);
     const sel=s===curStatus;
     return`<button onclick="_selectWipStatus('${workOrder}','${branch}','${s}')"
@@ -2158,7 +2157,7 @@ window._openWipStatusEdit=function(workOrder,branch){
 // 點擊狀態按鈕（視覺更新，還沒儲存）
 window._selectWipStatus=function(workOrder,branch,status){
   // 更新按鈕樣式
-  const statusOpts=['等料','施工中','待修','待客確認','已可結帳','暫緩','未填寫'];
+  const statusOpts=['等料','施工中','待修','待客確認','已可結帳','暫緩','已結清','未填寫'];
   statusOpts.forEach(s=>{
     const m=getWipStatusMeta(s);
     const btn=document.getElementById(`wipStatusBtn-${workOrder}-${s.replace(/[^a-zA-Z\u4e00-\u9fff]/g,'')}`);
