@@ -1504,8 +1504,8 @@ function calcPromoBonus(unused1, unused2, branch, personName, jobTitle) {
             // ★ auto 指標：即使沒有手動設定目標，也用 autoRate
 var eff0=te0?te0.rate:(meta00.useAuto?meta00.autoRate:null);
             if (eff0!==null) pTotal0+=calcBonus(eff0,p0.job_title||'',meta00.tiers,meta00.roles);
-            pTotal0 += calcPromoBonus(null, null, fc, p0.emp_name, p0.job_title||'')
           }
+          pTotal0 += calcPromoBonus(null, null, fc, p0.emp_name, p0.job_title||'');
           if (pTotal0>0) fcBonusPpl++;
           fcTotalBonus+=pTotal0;
         }
@@ -1527,24 +1527,23 @@ var eff0=te0?te0.rate:(meta00.useAuto?meta00.autoRate:null);
         var deptMetricIds=getMetricIdsForDept(dkey, fc), deptHasMetrics=deptMetricIds.length>0;
         var deptTotalBonus=0, deptBonusPpl=0, memberRows=[];
 
-        for (var mi3=0;mi3<dept.members.length;mi3++) {
-          var person3=dept.members[mi3], personBonuses={}, personTotal=0;
-          for (var mii2=0;mii2<deptMetricIds.length;mii2++) {
-            var mId3=deptMetricIds[mii2], meta3=metaById[mId3];
-            var te3=(empTargets[person3.emp_id]&&empTargets[person3.emp_id][mId3])?empTargets[person3.emp_id][mId3]:(deptTargets[person3.dept_code]&&deptTargets[person3.dept_code][mId3])?deptTargets[person3.dept_code][mId3]:null;
-            // ★ auto 指標自動套用全員，無需手動設定目標
-            var effectiveRate=te3?te3.rate:(meta3.useAuto?meta3.autoRate:null);
-            var effectiveHasTarget=!!te3||meta3.useAuto;
-            var bonusAmt=effectiveHasTarget?calcBonus(effectiveRate,person3.job_title||'',meta3.tiers,meta3.roles):0;
-            // 促銷獎金：不需要設定目標，只要有銷售就計算
-            var promoBonus = calcPromoBonus(null, null, fc, person3.emp_name, person3.job_title||'')
-
-            personBonuses[mId3]={bonus:bonusAmt,promoBonus:promoBonus,rate:effectiveRate,hasTarget:effectiveHasTarget};
-            personTotal += bonusAmt + promoBonus;
-          }
-          if (personTotal>0) deptBonusPpl++;
-          deptTotalBonus+=personTotal;
-          memberRows.push({person:person3,bonuses:personBonuses,total:personTotal});
+      for (var mi3=0;mi3<dept.members.length;mi3++) {
+                var person3=dept.members[mi3], personBonuses={}, personTotal=0;
+                var personPromoBonus = calcPromoBonus(null, null, fc, person3.emp_name, person3.job_title||'');
+                for (var mii2=0;mii2<deptMetricIds.length;mii2++) {
+                  var mId3=deptMetricIds[mii2], meta3=metaById[mId3];
+                  var te3=(empTargets[person3.emp_id]&&empTargets[person3.emp_id][mId3])?empTargets[person3.emp_id][mId3]:(deptTargets[person3.dept_code]&&deptTargets[person3.dept_code][mId3])?deptTargets[person3.dept_code][mId3]:null;
+                  // ★ auto 指標自動套用全員，無需手動設定目標
+                  var effectiveRate=te3?te3.rate:(meta3.useAuto?meta3.autoRate:null);
+                  var effectiveHasTarget=!!te3||meta3.useAuto;
+                  var bonusAmt=effectiveHasTarget?calcBonus(effectiveRate,person3.job_title||'',meta3.tiers,meta3.roles):0;
+                  personBonuses[mId3]={bonus:bonusAmt,promoBonus:0,rate:effectiveRate,hasTarget:effectiveHasTarget};
+                  personTotal += bonusAmt;
+                }
+                personTotal += personPromoBonus;
+                if (personTotal>0) deptBonusPpl++;
+                deptTotalBonus+=personTotal;
+                memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonus,total:personTotal});;
         }
         memberRows.sort(function(a,b){return b.total-a.total;});
 
@@ -1600,7 +1599,8 @@ var eff0=te0?te0.rate:(meta00.useAuto?meta00.autoRate:null);
         }
 
         if (!deptHasMetrics) html+='<th style="'+thBase+'min-width:120px;text-align:center;color:#334155">（尚無獎金指標）</th>';
-        html+='<th style="'+thBase+'min-width:80px;text-align:right;background:#0c1524;color:#f59e0b'+(deptHasMetrics?'':';display:none')+'">總獎金</th>'
+       html+='<th style="'+thBase+'min-width:100px;text-align:right;background:#0c1524;color:#10b981">🎁 促銷獎金</th>'
+    +'<th style="'+thBase+'min-width:80px;text-align:right;background:#0c1524;color:#f59e0b'+(deptHasMetrics?'':';display:none')+'">總獎金</th>'
           +'</tr></thead><tbody>';
 
         for (var pri=0;pri<memberRows.length;pri++) {
@@ -1624,7 +1624,10 @@ var eff0=te0?te0.rate:(meta00.useAuto?meta00.autoRate:null);
             +'</td>';
           }
 
-          if (!deptHasMetrics) html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:center;color:#334155;font-size:11px">—</td>';
+        if (!deptHasMetrics) html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:center;color:#334155;font-size:11px">—</td>';
+          html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;background:rgba(16,185,129,.03);font-weight:900;">'
+            +(mRow.promoBonus>0?'<span style="color:#10b981;font-size:14px">'+mRow.promoBonus.toLocaleString()+'<span style="font-size:9px;margin-left:1px">元</span></span>':'<span style="color:#2d4060">—</span>')
+          +'</td>';
           html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;background:rgba(245,158,11,.04);font-weight:900;'+(deptHasMetrics?'':'display:none')+';">'
             +(mRow.total>0?'<span style="color:#f59e0b;font-size:14px">'+mRow.total.toLocaleString()+'<span style="font-size:9px;margin-left:1px">元</span></span>':'<span style="color:#2d4060">—</span>')
           +'</td></tr>';
@@ -1637,6 +1640,8 @@ var eff0=te0?te0.rate:(meta00.useAuto?meta00.autoRate:null);
             var mId6=deptMetricIds[msi], dMB=memberRows.reduce(function(s,r){return s+(r.bonuses[mId6]?r.bonuses[mId6].bonus:0);},0);
             html+='<td style="padding:7px 10px;text-align:center;border-right:1px solid #1a2535;font-weight:700;color:'+(dMB>0?'#f59e0b':'#334155')+'">'+(dMB>0?dMB.toLocaleString()+'元':'—')+'</td>';
           }
+        var deptPromoTotal=memberRows.reduce(function(s,r){return s+(r.promoBonus||0);},0);
+          html+='<td style="padding:7px 10px;text-align:right;font-weight:900;color:'+(deptPromoTotal>0?'#10b981':'#334155')+'">'+(deptPromoTotal>0?deptPromoTotal.toLocaleString()+' 元':'—')+'</td>';
           html+='<td style="padding:7px 10px;text-align:right;font-weight:900;color:'+(deptTotalBonus>0?'#f59e0b':'#334155')+'">'+(deptTotalBonus>0?deptTotalBonus.toLocaleString()+' 元':'—')+'</td></tr>';
         }
 
