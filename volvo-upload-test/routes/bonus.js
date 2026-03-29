@@ -688,6 +688,7 @@ actual = totalActual;
         } catch(e) {}
       }
       } catch(e) { actual = null; }
+      }
 
       const myTargets = targets.filter(t => t.metric_id === m.id);
       results.push({ metric: m, targets: myTargets, actual, perfTarget, effectiveBranch });
