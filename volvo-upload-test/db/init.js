@@ -358,6 +358,18 @@ const initDatabase = async () => {
         updated_at TIMESTAMPTZ DEFAULT NOW()
       )`);
 
+    await pool.query(`
+    CREATE TABLE IF NOT EXISTS manager_review (
+      id         SERIAL PRIMARY KEY,
+      period     VARCHAR(6)  NOT NULL,
+      emp_id     VARCHAR(20) NOT NULL,
+      amount     INTEGER     NOT NULL DEFAULT 0,
+      note       TEXT,
+      updated_at TIMESTAMP   DEFAULT NOW(),
+      UNIQUE(period, emp_id)
+    )
+  `);
+
     console.log('[initDB] ✅ 所有表格建立完成');
   } catch (err) {
     console.error('[initDB] ❌ 失敗:', err.message);
