@@ -1308,6 +1308,7 @@ async function renderProgressContent() {
       metaById[m0.id]={metric:m0,actual:null,autoPT:null,useAuto:false,autoRate:null,tiers:(m0.bonus_rule||{}).tiers||[],roles:(m0.bonus_rule||{}).roles||[]};
     }
 
+      var allMetricIds=Object.keys(metaById);
 // promo_rules 需要的 SA 銷售矩陣（per-person qty）
       var promoActuals = {}; // { metric_id: { branch: { person_name: actual } } }
       try {
@@ -1351,9 +1352,6 @@ async function renderProgressContent() {
         }
       }
     } catch(apiErr){ console.warn('progress API error:',apiErr); }
-
-    var allMetricIds=Object.keys(metaById);
-    var hasMetrics=allMetricIds.length>0;
 
    // ── 促銷獎金計算 ──
 function calcPromoBonus(promoRules, promoActualsMap, branch, personName, jobTitle) {
