@@ -2079,9 +2079,28 @@ function _mrAdjust(btn, delta) {
 
 var _mrDebounceTimers = {};
 function _mrDebounce(el) {
-  var empId = el.dataset.empid || '';
+  var empId = el.dataset.empid;
+  var isNote = !!el.dataset.notefield;
+
+  if (!isNote) {
+    // 立即更新記憶體 → 合計馬上變
+    var newVal = parseInt(el.value) || 0;
+    if (!_managerReviewMap[empId]) _managerReviewMap[empId] = {};
+    _managerReviewMap[empId].mrBonus = newVal;
+    renderProgressContent();
+    // 重新渲染後恢復輸入焦點
+    requestAnimationFrame(function() {
+      var inp = document.querySelector('input[type="number"][data-empid="' + empId + '"]');
+      if (inp) inp.focus();
+    });
+  }
+
+  // debounce 儲存到 DB（0.8 秒後）
   clearTimeout(_mrDebounceTimers[empId]);
-  _mrDebounceTimers[empId] = setTimeout(function(){ _saveMR(el); }, 700);
+  _mrDebounceTimers[empId] = setTimeout(function() {
+    var inp = document.querySelector('input[type="number"][data-empid="' + empId + '"]');
+    if (inp) _saveMR(inp);
+  }, 800);
 }
 
 // ══ 主管考核 ══
