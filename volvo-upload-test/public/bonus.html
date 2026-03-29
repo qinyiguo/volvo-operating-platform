@@ -2083,24 +2083,77 @@ function _mrDebounce(el) {
   var isNote = !!el.dataset.notefield;
 
   if (!isNote) {
-    // 立即更新記憶體 → 合計馬上變
     var newVal = parseInt(el.value) || 0;
     if (!_managerReviewMap[empId]) _managerReviewMap[empId] = {};
     _managerReviewMap[empId].mrBonus = newVal;
-    renderProgressContent();
-    // 重新渲染後恢復輸入焦點
-    requestAnimationFrame(function() {
-      var inp = document.querySelector('input[type="number"][data-empid="' + empId + '"]');
-      if (inp) inp.focus();
-    });
+
+    // 1. 更新 badge（輸入框正上方）
+    var td = el.closest('td');
+    if (td) {
+      var badge = td.querySelector('span[data-mrbadge]');
+      if (newVal) {
+        var color = newVal > 0 ? 'rgba(167,139,250,.18)' : 'rgba(239,68,68,.15)';
+        var textColor = newVal > 0 ? '#c4b5fd' : '#f87171';
+        var prefix = newVal > 0 ? '＋' : '';
+        if (!badge) {
+          var div = document.createElement('div');
+          div.style.cssText = 'text-align:center;margin-bottom:4px';
+          div.innerHTML = '<span data-mrbadge="1" style="display:inline-flex;align-items:baseline;gap:2px;padding:2px 10px;border-radius:20px;font-size:13px;font-weight:900;background:'+color+';color:'+textColor+'"></span>';
+          td.insertBefore(div, td.firstChild);
+          badge = td.querySelector('span[data-mrbadge]');
+        }
+        badge.style.background = color;
+        badge.style.color = textColor;
+        badge.innerHTML = prefix + newVal.toLocaleString() + '<span style="font-size:9px;margin-left:2px">元</span>';
+      } else if (badge && badge.parentElement) {
+        badge.parentElement.remove();
+      }
+
+      // 2. 更新同列總獎金（最後一個 td）
+      var tr = td.closest('tr');
+      if (tr) {
+        var cells = tr.querySelectorAll('td');
+        var lastTd = cells[cells.length - 1];
+        // 重新計算此人總獎金：從現有 td 抓績效+促銷再加主管考核
+        var perfTd = cells[3]; // 績效獎金欄
+        var promoTd = cells[4]; // 促銷獎金欄
+        var perfVal = 0, promoVal = 0;
+        if (perfTd) { var m = perfTd.innerText.replace(/,/g,'').match(/-?\d+/); if(m) perfVal=parseInt(m[0])||0; }
+        if (promoTd) { var m2 = promoTd.innerText.replace(/,/g,'').match(/-?\d+/); if(m2) promoVal=parseInt(m2[0])||0; }
+        var total = perfVal + promoVal + newVal;
+        if (lastTd) lastTd.innerHTML = '<span style="color:#f59e0b;font-weight:900;font-size:14px">'+total.toLocaleString()+'<span style="font-size:9px;margin-left:1px">元</span></span>';
+      }
+    }
+
+    // 3. 小計 + 上層合計 → 整個 section 重算較簡單，用輕量 re-render
+    // 只重算數字，不動 input 焦點
+    _updateSectionTotals();
   }
 
-  // debounce 儲存到 DB（0.8 秒後）
+  // debounce 存 DB（0.8 秒）
   clearTimeout(_mrDebounceTimers[empId]);
   _mrDebounceTimers[empId] = setTimeout(function() {
     var inp = document.querySelector('input[type="number"][data-empid="' + empId + '"]');
     if (inp) _saveMR(inp);
   }, 800);
+}
+
+function _updateSectionTotals() {
+  // 重新掃 DOM 中所有小計列和集團合計，直接算 _managerReviewMap
+  var mrTotal = 0;
+  Object.values(_managerReviewMap).forEach(function(r){ mrTotal += (r.mrBonus||0); });
+  // 用現有 renderProgressContent 但這裡只需要更新數字 span
+  // 最省事：只重跑 renderProgressContent（輸入框不在焦點內所以不影響）
+  var active = document.activeElement;
+  renderProgressContent();
+  // 重新取回焦點到剛才的 empId input
+  if (active && active.tagName === 'INPUT') {
+    var empId2 = active.dataset && active.dataset.empid;
+    if (empId2) {
+      var restored = document.querySelector('input[type="number"][data-empid="'+empId2+'"]');
+      if (restored) { restored.focus(); var v=restored.value; restored.value=''; restored.value=v; }
+    }
+  }
 }
 
 // ══ 主管考核 ══
