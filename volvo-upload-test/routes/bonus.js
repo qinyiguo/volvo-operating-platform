@@ -622,8 +622,70 @@ router.get('/bonus/progress', async (req, res) => {
           }
 actual = totalActual;
         } catch(e) { actual = null; }
-      }
-        } catch(e) { actual = null; }
+
+        // ── 自動計算工時目標（roster × 利用率 × 工作天）──
+        try {
+          const cfgR = await pool.query(`SELECT value FROM app_settings WHERE key='tech_capacity_config'`);
+          const tCfg = cfgR.rows[0]?.value ? JSON.parse(cfgR.rows[0].value) : {};
+          const utilR    = tCfg.utilization_rates    || {};
+          const resignOk = tCfg.resigned_count_target === true;
+
+          const rpR2  = await pool.query(`SELECT DISTINCT period FROM staff_roster ORDER BY period DESC LIMIT 1`);
+          const rp2   = rpR2.rows[0]?.period;
+          const pSt2  = `${actualPeriod.slice(0,4)}-${actualPeriod.slice(4,6)}-01`;
+          const BRS2  = brF ? [brF] : ['AMA','AMC','AMD'];
+          let tgtTotal = 0;
+
+          for (const brr of BRS2) {
+            let wd = 0;
+            const wdR = await pool.query(`SELECT work_dates FROM working_days_config WHERE branch=$1 AND period=$2`, [brr, actualPeriod]);
+            if (wdR.rows[0]?.work_dates?.length) wd = wdR.rows[0].work_dates.length;
+            else {
+              const r2 = await pool.query(`SELECT COUNT(DISTINCT open_time::date) AS cnt FROM business_query WHERE period=$1 AND branch=$2 AND open_time IS NOT NULL`, [actualPeriod, brr]);
+              wd = parseInt(r2.rows[0]?.cnt || 0);
+            }
+            if (!wd || !rp2) continue;
+
+            if (deptTypes.length) {
+              for (const dt of deptTypes) {
+                const pats = (DEPT_PATTERNS[dt]||[]).map(p=>`%${p}%`);
+                if (!pats.length) continue;
+                const tR = await pool.query(
+                  `SELECT job_title, status FROM staff_roster WHERE period=$1 AND (factory=$2 OR factory IS NULL) AND (${pats.map((_,i)=>`dept_name ILIKE $${i+3}`).join(' OR ')}) AND COALESCE(job_category,'') NOT ILIKE '%計時%' AND (status!='離職' OR (resign_date IS NOT NULL AND resign_date >= $${pats.length+3}::date))`,
+                  [rp2, brr, ...pats, pSt2]
+                );
+                for (const t2 of tR.rows) {
+                  const tRates = utilR[dt] || {};
+                  let u = tRates[t2.job_title] !== undefined ? tRates[t2.job_title] : (tRates.default ?? 0.8);
+                  if (t2.status === '離職' && !resignOk) u = 0;
+                  tgtTotal += wd * 8 * u;
+                }
+              }
+            } else if (deptCodes.length) {
+              const tR = await pool.query(
+                `SELECT job_title, status FROM staff_roster WHERE period=$1 AND dept_code=ANY($2) AND (factory=$3 OR factory IS NULL) AND COALESCE(job_category,'') NOT ILIKE '%計時%' AND (status!='離職' OR (resign_date IS NOT NULL AND resign_date >= $4::date))`,
+                [rp2, deptCodes, brr, pSt2]
+              );
+              for (const t2 of tR.rows) {
+                const tRates = utilR['engine'] || {};
+                let u = tRates[t2.job_title] !== undefined ? tRates[t2.job_title] : (tRates.default ?? 0.8);
+                if (t2.status === '離職' && !resignOk) u = 0;
+                tgtTotal += wd * 8 * u;
+              }
+            }
+          }
+          if (tgtTotal > 0) perfTarget = Math.round(tgtTotal * 10) / 10;
+        } catch(e) { console.warn('[tech_hours target]', e.message); }
+
+        // ── 手動實績覆蓋 ──
+        try {
+          const overR = await pool.query(
+            `SELECT actual_value FROM bonus_actual_overrides WHERE metric_id=$1 AND period=$2 AND COALESCE(branch,'')=$3 LIMIT 1`,
+            [m.id, actualPeriod, effectiveBranch || '']
+          );
+          if (overR.rows.length && overR.rows[0].actual_value != null)
+            actual = parseFloat(overR.rows[0].actual_value);
+        } catch(e) {}
       }
 
       const myTargets = targets.filter(t => t.metric_id === m.id);
@@ -662,6 +724,45 @@ router.get('/bonus/departments', async (req, res) => {
   try {
     const r = await pool.query(`SELECT DISTINCT dept_code, dept_name, factory FROM staff_roster WHERE period=$1 ${f.cond} ORDER BY factory NULLS LAST, dept_code`, [period, f.param]);
     res.json(r.rows);
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── 手動實績覆蓋 CRUD ──
+router.get('/bonus/actual-override', async (req, res) => {
+  const { metric_id, period, branch } = req.query;
+  if (!metric_id || !period) return res.status(400).json({ error: '參數不完整' });
+  try {
+    const r = await pool.query(
+      `SELECT * FROM bonus_actual_overrides WHERE metric_id=$1 AND period=$2 AND COALESCE(branch,'')=$3`,
+      [metric_id, period, branch || '']
+    );
+    res.json(r.rows[0] || null);
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.put('/bonus/actual-override', async (req, res) => {
+  const { metric_id, period, branch, actual_value, note } = req.body;
+  if (!metric_id || !period) return res.status(400).json({ error: '參數不完整' });
+  try {
+    await pool.query(`
+      INSERT INTO bonus_actual_overrides (metric_id, period, branch, actual_value, note, updated_at)
+      VALUES ($1,$2,$3,$4,$5,NOW())
+      ON CONFLICT (metric_id, period, COALESCE(branch,''))
+      DO UPDATE SET actual_value=$4, note=$5, updated_at=NOW()
+    `, [metric_id, period, branch||'', actual_value!=null?parseFloat(actual_value):null, note||'']);
+    res.json({ ok: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/bonus/actual-override', async (req, res) => {
+  const { metric_id, period, branch } = req.query;
+  if (!metric_id || !period) return res.status(400).json({ error: '參數不完整' });
+  try {
+    await pool.query(
+      `DELETE FROM bonus_actual_overrides WHERE metric_id=$1 AND period=$2 AND COALESCE(branch,'')=$3`,
+      [metric_id, period, branch||'']
+    );
+    res.json({ ok: true });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
