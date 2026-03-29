@@ -227,6 +227,7 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
             <option value="repair_income">🔧 維修收入</option>
             <option value="tech_wage">👨‍🔧 技師工資</option>
             <option value="parts_sales">🔩 零件銷售</option>
+            <option value="tech_hours">⏱️ 技師工時</option>
             <option value="performance">🎯 連結業績指標</option>
             <option value="revenue">💰 連結營收目標</option>
           </select>
@@ -1137,19 +1138,59 @@ function onMSourceChange() {
   document.getElementById('mStatFieldArea').style.display=(src!=='manual'&&src!=='performance'&&src!=='revenue')?'':'none';
   document.getElementById('mPerfArea').style.display=src==='performance'?'':'none';
   document.getElementById('mRevenueArea').style.display=src==='revenue'?'':'none';
-  // 計算據點：DMS來源 或 連結業績指標 時顯示（revenue有自己的branch選擇所以不需要）
   document.getElementById('mBranchOverrideArea').style.display=(src!=='manual'&&src!=='revenue')?'':'none';
   if (src!=='manual'&&src!=='performance'&&src!=='revenue') {
     const m=_editingMetricId?(_metrics.find(x=>x.id===_editingMetricId)||{}):{};
-    document.getElementById('mStatField').value=m.stat_field||'amount';
-    let fHtml='<div class="form-group" style="margin-top:8px"><label>帳類篩選（留空=全部）</label><input type="text" id="mFilterAccountType" class="form-input" placeholder="例：一般,保險,延保" value=""></div>';
-    if (src==='tech_wage') fHtml+='<div class="form-group"><label>工資代碼範圍（留空=全部）</label><input type="text" id="mFilterWorkCode" class="form-input" placeholder="例：17300 或 00030-00033" value=""></div>';
-    document.getElementById('mFiltersContent').innerHTML=fHtml;
     const ef=_editingMetricId?(_metrics.find(x=>x.id===_editingMetricId)?.filters||[]):[];
-    const acEl=document.getElementById('mFilterAccountType');
-    if(acEl) acEl.value=ef.filter(f=>f.type==='account_type').map(f=>f.value).join(',');
-    if(src==='tech_wage'){ const wcEl=document.getElementById('mFilterWorkCode'); if(wcEl) wcEl.value=ef.filter(f=>f.type==='work_code').map(f=>f.value).join(','); }
+    if (src==='tech_hours') {
+      // 技師工時：選科別 + 帳類
+      document.getElementById('mStatField').value='hours';
+      const DEPT_OPTS=[
+        {v:'engine',l:'🔧 引擎維護科'},
+        {v:'bodywork',l:'🔨 鈑金科'},
+        {v:'paint',l:'🎨 烤漆科'},
+        {v:'beauty',l:'💅 美容部'},
+      ];
+      const selDepts=ef.filter(f=>f.type==='dept_type').map(f=>f.value);
+      const selAC=ef.filter(f=>f.type==='account_type').map(f=>f.value);
+      let fHtml='<div class="form-group" style="margin-top:8px"><label>科別篩選（勾選後只抓該科技師，留空=全部）</label>';
+      fHtml+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">';
+      DEPT_OPTS.forEach(d=>{
+        const on=selDepts.includes(d.v);
+        fHtml+=`<label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 12px;border-radius:6px;background:${on?'rgba(139,92,246,.15)':'#1e293b'};border:1.5px solid ${on?'#8b5cf6':'#2d3f56'};font-size:13px;font-weight:700;color:${on?'#a78bfa':'#94a3b8'}" onclick="toggleTechHoursDeptChip(this)"><input type="checkbox" name="techHoursDept" value="${d.v}" ${on?'checked':''} style="display:none">${d.l}</label>`;
+      });
+      fHtml+='</div></div>';
+      fHtml+='<div class="form-group"><label>帳類篩選（留空=全部）</label><input type="text" id="mFilterAccountType" class="form-input" placeholder="例：一般,保險" value="'+ef.filter(f=>f.type==='account_type').map(f=>f.value).join(',')+'"></div>';
+      document.getElementById('mFiltersContent').innerHTML=fHtml;
+      // 技師工時只支援 hours / count
+      document.getElementById('mStatField').innerHTML=`
+        <option value="hours">⏱️ 標準工時（小時）</option>
+        <option value="amount">💰 工資金額（元）</option>
+        <option value="count">🚗 台數</option>`;
+      document.getElementById('mStatField').value=m.stat_field||'hours';
+    } else {
+      document.getElementById('mStatField').innerHTML=`
+        <option value="amount">💰 金額（元）</option>
+        <option value="count">🔢 台數 / 筆數</option>
+        <option value="qty">📦 數量（件）</option>
+        <option value="hours">⏱️ 標準工時（小時）</option>`;
+      document.getElementById('mStatField').value=m.stat_field||'amount';
+      let fHtml='<div class="form-group" style="margin-top:8px"><label>帳類篩選（留空=全部）</label><input type="text" id="mFilterAccountType" class="form-input" placeholder="例：一般,保險,延保" value=""></div>';
+      if (src==='tech_wage') fHtml+='<div class="form-group"><label>工資代碼範圍（留空=全部）</label><input type="text" id="mFilterWorkCode" class="form-input" placeholder="例：17300 或 00030-00033" value=""></div>';
+      document.getElementById('mFiltersContent').innerHTML=fHtml;
+      if(acEl) acEl.value=ef.filter(f=>f.type==='account_type').map(f=>f.value).join(',');
+      const acEl=document.getElementById('mFilterAccountType');
+      if(acEl) acEl.value=ef.filter(f=>f.type==='account_type').map(f=>f.value).join(',');
+      if(src==='tech_wage'){ const wcEl=document.getElementById('mFilterWorkCode'); if(wcEl) wcEl.value=ef.filter(f=>f.type==='work_code').map(f=>f.value).join(','); }
+    }
   }
+}
+
+function toggleTechHoursDeptChip(el) {
+  const cb=el.querySelector('input');cb.checked=!cb.checked;
+  el.style.background=cb.checked?'rgba(139,92,246,.15)':'#1e293b';
+  el.style.borderColor=cb.checked?'#8b5cf6':'#2d3f56';
+  el.style.color=cb.checked?'#a78bfa':'#94a3b8';
 }
 
 function _buildPromoConfigSelect() {
@@ -1209,9 +1250,12 @@ async function saveMetric() {
   const metric_name=document.getElementById('mName').value.trim();
   if (!metric_name){ alert('請輸入指標名稱'); return; }
   const src=document.getElementById('mSource').value, filters=[];
-  if (src!=='manual'&&src!=='performance'&&src!=='revenue') {
+if (src!=='manual'&&src!=='performance'&&src!=='revenue') {
     (document.getElementById('mFilterAccountType')?.value||'').split(',').map(s=>s.trim()).filter(Boolean).forEach(v=>filters.push({type:'account_type',value:v}));
     if (src==='tech_wage') (document.getElementById('mFilterWorkCode')?.value||'').split(',').map(s=>s.trim()).filter(Boolean).forEach(v=>filters.push({type:'work_code',value:v}));
+    if (src==='tech_hours') {
+      [...document.querySelectorAll('input[name="techHoursDept"]:checked')].forEach(cb=>filters.push({type:'dept_type',value:cb.value}));
+    }
   }
   if (src==='performance') {
     const perfId=document.getElementById('mPerfMetricId').value;
