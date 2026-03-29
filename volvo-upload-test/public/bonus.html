@@ -1524,8 +1524,28 @@ var eff0=te0?te0.rate:(meta00.useAuto?meta00.autoRate:null);
 
       for (var di=0;di<deptKeys.length;di++) {
         var dkey=deptKeys[di], dept=fcDepts[dkey];
-        var deptMetricIds=getMetricIdsForDept(dkey, fc), deptHasMetrics=deptMetricIds.length>0;
+var deptMetricIds=getMetricIdsForDept(dkey, fc), deptHasMetrics=deptMetricIds.length>0;
         var deptTotalBonus=0, deptBonusPpl=0, memberRows=[];
+        var isTeamDept=_ppGetTeamMode(fc, dkey);
+        // ── 團體制：預先計算各指標的獎金池 ──
+        var teamPoolMap={};
+        if(isTeamDept){
+          deptMetricIds.forEach(function(mId){
+            var meta=metaById[mId];
+            var dRate=meta.useAuto?meta.autoRate:
+              (deptTargets[dkey]&&deptTargets[dkey][mId]?deptTargets[dkey][mId].rate:null);
+            if(dRate===null){teamPoolMap[mId]=null;return;}
+            var pool=0,totalW=0;
+            dept.members.forEach(function(p){
+              var baseB=calcBonus(dRate,p.job_title||'',meta.tiers,meta.roles);
+              var wtRaw=empTargets[p.emp_id]&&empTargets[p.emp_id][mId]
+                        ?parseFloat(empTargets[p.emp_id][mId].target_value||0):0;
+              pool+=baseB;
+              totalW+=(wtRaw>0?wtRaw:(baseB||1));
+            });
+            teamPoolMap[mId]={pool:Math.round(pool),totalW:totalW,dRate:dRate};
+          });
+        }
 
       for (var mi3=0;mi3<dept.members.length;mi3++) {
                 var person3=dept.members[mi3], personBonuses={}, personTotal=0;
@@ -1536,9 +1556,20 @@ var eff0=te0?te0.rate:(meta00.useAuto?meta00.autoRate:null);
                   // ★ auto 指標自動套用全員，無需手動設定目標
                   var effectiveRate=te3?te3.rate:(meta3.useAuto?meta3.autoRate:null);
                   var effectiveHasTarget=!!te3||meta3.useAuto;
-                  var bonusAmt=effectiveHasTarget?calcBonus(effectiveRate,person3.job_title||'',meta3.tiers,meta3.roles):0;
-                  personBonuses[mId3]={bonus:bonusAmt,promoBonus:0,rate:effectiveRate,hasTarget:effectiveHasTarget};
-                  personTotal += bonusAmt;
+                  var bonusAmt=0,dispRate=effectiveRate,dispHasTgt=effectiveHasTarget;
+                            if(isTeamDept&&teamPoolMap[mId3]){
+                              var tp=teamPoolMap[mId3];
+                              var baseB3=calcBonus(tp.dRate,person3.job_title||'',meta3.tiers,meta3.roles);
+                              var wtRaw3=empTargets[person3.emp_id]&&empTargets[person3.emp_id][mId3]
+                                         ?parseFloat(empTargets[person3.emp_id][mId3].target_value||0):0;
+                              var wt3=wtRaw3>0?wtRaw3:(baseB3||1);
+                              bonusAmt=tp.totalW>0?Math.round(tp.pool*wt3/tp.totalW):0;
+                              dispRate=tp.dRate; dispHasTgt=true;
+                            } else if(effectiveHasTarget){
+                              bonusAmt=calcBonus(effectiveRate,person3.job_title||'',meta3.tiers,meta3.roles);
+                            }
+                            personBonuses[mId3]={bonus:bonusAmt,promoBonus:0,rate:dispRate,hasTarget:dispHasTgt};
+                            personTotal += bonusAmt;
                 }
                 personTotal += personPromoBonus;
                 if (personTotal>0) deptBonusPpl++;
@@ -1573,8 +1604,13 @@ var eff0=te0?te0.rate:(meta00.useAuto?meta00.autoRate:null);
 
         html+='<div style="border-top:1px solid '+fcColor+'22">'
           +'<div style="background:#0b1422;padding:8px 18px 8px 28px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
-            +'<span style="font-size:12px;font-weight:800;color:#cbd5e1">📂 '+displayDeptName+'</span>'
-            +'<span style="font-size:11px;color:#475569;background:#0f172a;padding:1px 7px;border-radius:6px">'+dept.members.length+' 人</span>'
+          +'<span style="font-size:12px;font-weight:800;color:#cbd5e1">📂 '+displayDeptName+'</span>'
+          +'<span onclick="event.stopPropagation();_toggleTeamMode(\''+fc+'\',\''+dkey+'\','+isTeamDept+')"'
+          +' style="font-size:10px;padding:3px 10px;border-radius:5px;font-weight:700;cursor:pointer;user-select:none;border:1.5px solid '+(isTeamDept?'#10b981':'#64748b')+';background:'+(isTeamDept?'rgba(16,185,129,.15)':'transparent')+';color:'+(isTeamDept?'#10b981':'#64748b')+';transition:all .15s"'
+          +' title="點擊切換計算模式">'
+          +(isTeamDept?'👥 團體制':'👤 個人制')
+          +'</span>'
+          +'<span style="font-size:11px;color:#475569;background:#0f172a;padding:1px 7px;border-radius:6px">'+dept.members.length+' 人</span>'
             +(deptBonusPpl>0?'<span style="font-size:11px;color:#10b981">'+deptBonusPpl+' 人有獎金</span>':'')
             +deptTagsHtml
             +'<button onclick="event.stopPropagation();openNewMetricForDept(\''+dkey+'\',\''+displayDeptName.replace(/'/g,"\\'")+'\',\''+fc+'\',\''+autoBranch+'\')" '
@@ -1591,9 +1627,11 @@ var eff0=te0?te0.rate:(meta00.useAuto?meta00.autoRate:null);
           var isAmtM=meta4.metric.stat_field==='amount'||meta4.useAuto;
           var fv4=(function(isAmt){return function(v){return v===null||v===undefined?'—':isAmt?Math.round(parseFloat(v)/1000).toLocaleString()+'K':Math.round(parseFloat(v)).toLocaleString();};})(isAmtM);
           var rc4=meta4.autoRate===null?'#64748b':meta4.autoRate>=100?'#10b981':meta4.autoRate>=80?'#f59e0b':'#ef4444';
+          var tp4=isTeamDept?teamPoolMap[mId4]:null;
           html+='<th style="'+thBase+'min-width:110px;text-align:center;background:#0c1524;border-bottom:1px solid #1e2d40">'
-            +'<div style="font-size:11px;font-weight:800;color:#e2e8f0;margin-bottom:2px">'+meta4.metric.metric_name+'</div>'
+            +'<div style="font-size:11px;font-weight:800;color:#e2e8f0;margin-bottom:2px">'+(isTeamDept?'👥 ':'')+meta4.metric.metric_name+'</div>'
             +(meta4.useAuto&&meta4.autoRate!==null?'<div style="font-size:10px;color:#64748b;margin-bottom:2px"><span>'+fv4(meta4.actual)+'</span> <span style="color:'+rc4+';font-weight:700">'+meta4.autoRate.toFixed(1)+'%</span></div>':'')
+            +(tp4?'<div style="font-size:10px;color:#f59e0b;font-weight:800;margin-bottom:2px">池 '+tp4.pool.toLocaleString()+' 元</div>':'')
             +'<button onclick="event.stopPropagation();openMetricModal('+mId4+')" style="background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.25);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">✏️ 編輯指標</button>'
           +'</th>';
         }
@@ -1879,6 +1917,23 @@ async function deletePromoCfg(id, name) {
   await loadPromoConfigs();
   var inner = document.getElementById('progressInner');
   if (inner) { inner.innerHTML = '<div class="loading"><span class="spinner"></span>重新計算中</div>'; await renderProgressContent(); }
+}
+
+  // ── 團體/個人模式 localStorage helpers ──
+function _ppGetTeamMode(fc, dkey) {
+  try {
+    var v = localStorage.getItem('bonus-team-'+fc+'-'+dkey);
+    if (v !== null) return v === '1';
+  } catch(e) {}
+  return false; // 預設全部個人制，由使用者手動開啟
+}
+function _ppSetTeamMode(fc, dkey, isTeam) {
+  try { localStorage.setItem('bonus-team-'+fc+'-'+dkey, isTeam?'1':'0'); } catch(e) {}
+}
+function _toggleTeamMode(fc, dkey, current) {
+  _ppSetTeamMode(fc, dkey, !current);
+  var inner = document.getElementById('progressInner');
+  if (inner) { inner.innerHTML = '<div class="loading"><span class="spinner"></span>重新計算中</div>'; renderProgressContent(); }
 }
 </script>
 </body>
