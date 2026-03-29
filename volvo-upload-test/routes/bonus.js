@@ -509,7 +509,7 @@ router.get('/bonus/progress', async (req, res) => {
           actual     = await computeRevenueActual(actualPeriod, useBranch, revType); // 實績用 actualPeriod
           perfTarget = await getRevenueTarget(period, useBranch, revType);           // 目標用 period
         } catch(e) { actual = null; }
-      }
+      
         
 
       // ── 連結業績指標 ──
