@@ -692,10 +692,9 @@ actual = totalActual;
       const myTargets = targets.filter(t => t.metric_id === m.id);
       results.push({ metric: m, targets: myTargets, actual, perfTarget, effectiveBranch });
     }
-    res.json({ results, period, actualPeriod });
+res.json({ results, period, actualPeriod });
   } catch(err) { res.status(500).json({ error: err.message }); }
-);
-
+});
 // ── 可設定目標的人員/部門清單 ──
 router.get('/bonus/scope-members', async (req, res) => {
   const { period, scope_type, factory, dept_codes } = req.query;
