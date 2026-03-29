@@ -335,6 +335,28 @@ const initDatabase = async () => {
         created_at    TIMESTAMPTZ DEFAULT NOW(),
         updated_at    TIMESTAMPTZ DEFAULT NOW()
       )`);
+    
+// ──新建促銷獎金 
+        await client.query(`
+      CREATE TABLE IF NOT EXISTS promo_bonus_configs (
+        id SERIAL PRIMARY KEY,
+        rule_name VARCHAR(100) NOT NULL,
+        rule_type VARCHAR(20) NOT NULL DEFAULT 'sa_qty',
+        sa_config_id INTEGER,
+        per_qty NUMERIC(10,2) DEFAULT 1,
+        bonus_per_unit NUMERIC(12,2) DEFAULT 0,
+        part_catalog_types JSONB DEFAULT '[]',
+        paycode_types JSONB DEFAULT '[]',
+        discount_min NUMERIC(5,4),
+        discount_max NUMERIC(5,4),
+        bonus_pct NUMERIC(7,4) DEFAULT 0,
+        role_amounts JSONB DEFAULT '{}',
+        target_factories JSONB DEFAULT '[]',
+        active BOOLEAN DEFAULT true,
+        sort_order INTEGER DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )`);
 
     console.log('[initDB] ✅ 所有表格建立完成');
   } catch (err) {
