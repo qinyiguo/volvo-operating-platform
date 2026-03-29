@@ -1094,6 +1094,10 @@ async function openMetricModal(id) {
   renderTierTable();
   openModal('metricModal');
   await _ensureSaConfigs();
+  // 確保業績指標已載入
+  if (!_perfMetricsList.length) {
+    try { _perfMetricsList = await fetch('/api/performance-metrics').then(r => r.json()); } catch(e) {}
+  }
   _buildPromoConfigSelect();
   renderPromoRules();       // ← 確保開啟時就渲染現有促銷規則
   await loadDeptCheckboxes(m.target_dept_codes||[]);
