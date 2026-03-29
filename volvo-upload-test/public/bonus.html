@@ -1116,8 +1116,7 @@ async function saveMetric() {
   const target_dept_codes=getSelectedDeptCodes();
   const tiersData=getTiersData();
   // 整理促銷獎金（讀取最新 per_qty、bonus 值）
-  var promoData = _promoRules.map(function(rule) { return Object.assign({}, rule); });
-  const promoData=_promoRules.map(r=>({...r}));
+    const promoData=_promoRules.map(r=>({...r}));
   const bonus_rule={
     roles:   [..._tierRoles],
     tiers:   tiersData,
