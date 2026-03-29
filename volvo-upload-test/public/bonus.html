@@ -1367,7 +1367,13 @@ async function renderProgressContent() {
         _promoApiResults = await fetch('/api/promo-bonus/results?' + promoQs).then(function(r){return r.json();});
       } catch(e) {}
       
+      // ── 載入主管考核 ──
+      _managerReviewMap = {};
       try {
+        var mrRows = await fetch('/api/manager-review?period='+_actualPeriod).then(function(r){return r.json();});
+        mrRows.forEach(function(r){ _managerReviewMap[r.emp_id] = { amount: parseInt(r.amount)||0, note: r.note||'' }; });
+      } catch(e) {}
+    try {
         var params=new URLSearchParams({period:_actualPeriod,data_period:_actualPeriod});
         if (factory) params.set('factory',factory);
         var data=await fetch('/api/bonus/progress?'+params).then(function(r){return r.json();});
@@ -1570,10 +1576,12 @@ var deptMetricIds=getMetricIdsForDept(dkey, fc), deptHasMetrics=deptMetricIds.le
                             personBonuses[mId3]={bonus:bonusAmt,promoBonus:0,rate:dispRate,hasTarget:dispHasTgt};
                             personTotal += bonusAmt;
                 }
+                var personMR = (_managerReviewMap[person3.emp_id]&&_managerReviewMap[person3.emp_id].amount)||0;
                 personTotal += personPromoBonus;
+                personTotal += personMR;
                 if (personTotal>0) deptBonusPpl++;
                 deptTotalBonus+=personTotal;
-                memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonus,total:personTotal});;
+memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonus,mrBonus:personMR,total:personTotal});
         }
         memberRows.sort(function(a,b){return b.total-a.total;});
 
@@ -1644,7 +1652,8 @@ var deptMetricIds=getMetricIdsForDept(dkey, fc), deptHasMetrics=deptMetricIds.le
         }
 
         if (!deptHasMetrics) html+='<th style="'+thBase+'min-width:120px;text-align:center;color:#334155">（尚無獎金指標）</th>';
-       html+='<th style="'+thBase+'min-width:100px;text-align:right;background:#0c1524;color:#10b981">🎁 促銷獎金</th>'
+         html+='<th style="'+thBase+'min-width:110px;text-align:center;background:#0c1524;color:#a78bfa">🎯 主管考核</th>'
+        html+='<th style="'+thBase+'min-width:100px;text-align:right;background:#0c1524;color:#10b981">🎁 促銷獎金</th>'
     +'<th style="'+thBase+'min-width:80px;text-align:right;background:#0c1524;color:#f59e0b'+(deptHasMetrics?'':';display:none')+'">總獎金</th>'
           +'</tr></thead><tbody>';
 
@@ -1670,6 +1679,23 @@ var deptMetricIds=getMetricIdsForDept(dkey, fc), deptHasMetrics=deptMetricIds.le
           }
 
         if (!deptHasMetrics) html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:center;color:#334155;font-size:11px">—</td>';
+          var mrVal = mRow.mrBonus||0;
+          var mrNote = (_managerReviewMap[p4.emp_id]&&_managerReviewMap[p4.emp_id].note)||'';
+          var safeEmpId = p4.emp_id.replace(/'/g,"\\'");
+          html+='<td style="padding:6px 8px;border-bottom:1px solid rgba(45,63,86,.2);text-align:center;background:rgba(167,139,250,.03)">'
+            +'<div style="display:flex;align-items:center;gap:4px;justify-content:center">'
+            +'<input type="number" step="1" value="'+(mrVal||'')+'" placeholder="+加/-減"'
+            +' data-empid="'+safeEmpId+'" data-period="'+_actualPeriod+'"'
+            +' style="width:80px;background:#0f172a;border:1px solid #334155;border-radius:5px;color:#a78bfa;padding:3px 6px;font-size:12px;font-weight:700;text-align:center;outline:none"'
+            +' onchange="_saveMR(this)"'
+            +' title="'+(mrNote?'備註：'+mrNote:'')+'">'
+            +(mrNote?'<span title="'+mrNote.replace(/"/g,'&quot;')+'" style="font-size:10px;color:#64748b;cursor:default">📝</span>':'')
+            +'</div>'
+            +'<input type="text" value="'+mrNote+'" placeholder="備註（選填）"'
+            +' data-empid="'+safeEmpId+'" data-period="'+_actualPeriod+'" data-notefield="1"'
+            +' style="width:100%;margin-top:3px;background:transparent;border:none;border-bottom:1px solid #1e2d40;color:#64748b;padding:2px 4px;font-size:10px;outline:none"'
+            +' onchange="_saveMR(this)">'
+          +'</td>';
           html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;background:rgba(16,185,129,.03);font-weight:900;">'
             +(mRow.promoBonus>0?'<span style="color:#10b981;font-size:14px">'+mRow.promoBonus.toLocaleString()+'<span style="font-size:9px;margin-left:1px">元</span></span>':'<span style="color:#2d4060">—</span>')
           +'</td>';
@@ -1685,7 +1711,9 @@ var deptMetricIds=getMetricIdsForDept(dkey, fc), deptHasMetrics=deptMetricIds.le
             var mId6=deptMetricIds[msi], dMB=memberRows.reduce(function(s,r){return s+(r.bonuses[mId6]?r.bonuses[mId6].bonus:0);},0);
             html+='<td style="padding:7px 10px;text-align:center;border-right:1px solid #1a2535;font-weight:700;color:'+(dMB>0?'#f59e0b':'#334155')+'">'+(dMB>0?dMB.toLocaleString()+'元':'—')+'</td>';
           }
-        var deptPromoTotal=memberRows.reduce(function(s,r){return s+(r.promoBonus||0);},0);
+var deptPromoTotal=memberRows.reduce(function(s,r){return s+(r.promoBonus||0);},0);
+        var deptMRTotal=memberRows.reduce(function(s,r){return s+(r.mrBonus||0);},0);
+          html+='<td style="padding:7px 10px;text-align:center;font-weight:900;color:'+(deptMRTotal!==0?'#a78bfa':'#334155')+'">'+(deptMRTotal!==0?deptMRTotal.toLocaleString()+' 元':'—')+'</td>';
           html+='<td style="padding:7px 10px;text-align:right;font-weight:900;color:'+(deptPromoTotal>0?'#10b981':'#334155')+'">'+(deptPromoTotal>0?deptPromoTotal.toLocaleString()+' 元':'—')+'</td>';
           html+='<td style="padding:7px 10px;text-align:right;font-weight:900;color:'+(deptTotalBonus>0?'#f59e0b':'#334155')+'">'+(deptTotalBonus>0?deptTotalBonus.toLocaleString()+' 元':'—')+'</td></tr>';
         }
@@ -1761,6 +1789,7 @@ checkAuth();
   // ════════════════════════════════════════════
 // 促銷獎金獨立設定
 // ════════════════════════════════════════════
+let _managerReviewMap = {}; // { emp_id: { amount, note } }
 let _promoCfgs = [];
 let _editingPromoCfgId = null;
 const ALL_PAYCODES = ['一般','票劵','內結','保險','延保','保固','善意維修','VSA'];
@@ -2007,6 +2036,42 @@ function _saveWeightModal(fc, dkey) {
   var inner = document.getElementById('progressInner');
   if (inner) { inner.innerHTML = '<div class="loading"><span class="spinner"></span>重新計算中</div>'; renderProgressContent(); }
 }
+  function _saveWeightModal(fc, dkey) {
+  var inputs = document.querySelectorAll('#weightModalBg input[data-empid]');
+  var obj = {};
+  inputs.forEach(function(inp){
+    var val = parseFloat(inp.value);
+    obj[inp.getAttribute('data-empid')] = isNaN(val)||val<0 ? 0 : val;
+  });
+  _ppSetWeights(fc, dkey, obj);
+  document.getElementById('weightModalBg').remove();
+  var inner = document.getElementById('progressInner');
+  if (inner) { inner.innerHTML = '<div class="loading"><span class="spinner"></span>重新計算中</div>'; renderProgressContent(); }
+}
+
+// ══ 主管考核 ══
+async function _saveMR(el) {
+  var empId   = el.getAttribute('data-empid');
+  var period  = el.getAttribute('data-period');
+  var allInputs = document.querySelectorAll('[data-empid="'+empId+'"][data-period="'+period+'"]');
+  var amount = 0, note = '';
+  allInputs.forEach(function(inp){
+    if (inp.getAttribute('data-notefield')==='1') note = inp.value.trim();
+    else amount = parseInt(inp.value)||0;
+  });
+  _managerReviewMap[empId] = { amount: amount, note: note };
+  try {
+    await fetch('/api/manager-review', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ period: period, emp_id: empId, amount: amount, note: note })
+    });
+  } catch(e) { console.warn('主管考核儲存失敗', e); }
+}
+
+</script>
+</body>
+</html>
 </script>
 </body>
 </html>
