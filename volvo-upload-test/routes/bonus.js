@@ -620,7 +620,9 @@ router.get('/bonus/progress', async (req, res) => {
               totalActual += parseFloat(r.rows[0]?.v || 0);
             }
           }
-          actual = totalActual;
+actual = totalActual;
+        } catch(e) { actual = null; }
+      }
         } catch(e) { actual = null; }
       }
 
