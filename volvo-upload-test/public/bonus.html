@@ -297,7 +297,16 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
         <div id="mJobTitleChips" style="display:flex;flex-wrap:wrap;gap:5px"></div>
       </div>
 
-<!-- ══ 區塊一：達成率階梯獎金 ══ -->
+<!-- ══ 獎金頁籤 ══ -->
+<div style="display:flex;gap:2px;background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:3px;width:fit-content;margin:10px 0 14px">
+  <button id="bonusTab-perf" onclick="_switchBonusTab('perf')"
+    style="padding:7px 20px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:#3b82f6;color:#fff">🏆 績效獎金</button>
+  <button id="bonusTab-promo" onclick="_switchBonusTab('promo')"
+    style="padding:7px 20px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:#64748b">🎁 促銷獎金</button>
+</div>
+
+<!-- ══ 頁籤一：績效獎金 ══ -->
+<div id="bonusTabPanel-perf">
 <div class="section-label">🏆 達成率階梯獎金</div>
 <div style="background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:12px 14px;margin-bottom:14px">
   <div style="font-size:12px;color:#64748b;line-height:1.7;margin-bottom:10px">
@@ -332,7 +341,8 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
   <button class="btn btn-secondary btn-sm" onclick="addTier()" style="margin-bottom:4px">＋ 新增階梯</button>
 </div>
 
-<!-- ══ 區塊二：促銷獎金規則 ══ -->
+<!-- ══ 頁籤二：促銷獎金 ══ -->
+<div id="bonusTabPanel-promo" style="display:none">
 <div class="section-label">🎁 促銷獎金規則（依銷售數量）</div>
 <div style="background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:12px 14px;margin-bottom:14px">
   <div style="font-size:12px;color:#64748b;line-height:1.7;margin-bottom:10px">
@@ -371,10 +381,10 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
       <button class="btn btn-secondary btn-sm" onclick="addPromoRule()" style="white-space:nowrap">加入</button>
     </div>
     <div style="font-size:10px;color:#475569;margin-top:6px">
-      💡 若上方有設定職稱，加入後可在列表中分別調整各職稱金額
+        💡 若上方有設定職稱，加入後可在列表中分別調整各職稱金額
+      </div>
     </div>
-  </div>
-</div>
+</div><!-- end bonusTabPanel-promo -->
         <input type="text" id="mRuleNote" class="form-input" placeholder="例：需同時達成服務滿意度 ≥ 90 分">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -961,6 +971,18 @@ function renderPromoRules() {
   }).join('');
 }
 
+function _switchBonusTab(tab) {
+  ['perf','promo'].forEach(function(t) {
+    var panel = document.getElementById('bonusTabPanel-'+t);
+    var btn   = document.getElementById('bonusTab-'+t);
+    if (panel) panel.style.display = t === tab ? '' : 'none';
+    if (btn) {
+      btn.style.background = t === tab ? '#3b82f6' : 'transparent';
+      btn.style.color      = t === tab ? '#fff'    : '#64748b';
+    }
+  });
+}
+  
 function _syncPromoRoleAmt(el) {
   var i = parseInt(el.getAttribute('data-pi'));
   var role = el.getAttribute('data-role');
@@ -971,6 +993,7 @@ function _syncPromoRoleAmt(el) {
 
 function removePromoRule(i) {
   _promoRules.splice(i, 1);
+  _switchBonusTab('perf');
   renderPromoRules();
 }
 
