@@ -1556,12 +1556,12 @@ var deptMetricIds=getMetricIdsForDept(dkey, fc), deptHasMetrics=deptMetricIds.le
 
         // 收集本部門資料供主管考核 Modal 使用
         if (!_mrModalDepts) _mrModalDepts = {};
-        _mrModalDepts[fc+'-'+dkey] = dept.members.map(function(p){
+_mrModalDepts[fc+'-'+dkey] = dept.members.map(function(p){
           return {
             empId: p.emp_id,
             name:  p.emp_name,
             title: p.job_title||'',
-            val:   (_managerReviewMap[p.emp_id]&&_managerReviewMap[p.emp_id].mrBonus)||0,
+            val:   (_managerReviewMap[p.emp_id]&&_managerReviewMap[p.emp_id].amount)||0,
             note:  (_managerReviewMap[p.emp_id]&&_managerReviewMap[p.emp_id].note)||''
           };
         });
