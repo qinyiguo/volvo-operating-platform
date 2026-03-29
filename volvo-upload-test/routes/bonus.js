@@ -694,7 +694,7 @@ actual = totalActual;
     }
     res.json({ results, period, actualPeriod });
   } catch(err) { res.status(500).json({ error: err.message }); }
-});
+);
 
 // ── 可設定目標的人員/部門清單 ──
 router.get('/bonus/scope-members', async (req, res) => {
