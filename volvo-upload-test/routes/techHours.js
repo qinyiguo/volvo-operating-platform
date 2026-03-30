@@ -494,8 +494,8 @@ standard_hours        AS restored_hours,
            account_type,
            discount,
            wage,
-           ${ORIGINAL_EXPR}  AS original_hours,
-           ${RESTORE_EXPR}   AS restored_hours,
+           standard_hours        AS original_hours,
+           standard_hours        AS restored_hours,
            (${WAS_DISCOUNTED_EXPR}) AS was_discounted
          FROM tech_performance
          WHERE period=$1 AND tech_name_clean = ANY($2)
@@ -506,7 +506,7 @@ standard_hours        AS restored_hours,
 
     const rows    = rawRes.rows;
     const sumOrig = rows.reduce((s, r) => s + parseFloat(r.original_hours || 0), 0);
-    const sumRest = rows.reduce((s, r) => s + parseFloat(r.restored_hours  || 0), 0);
+    const sumRest = sumOrig;   // 直接用 standard_hours，無折扣差異
     const sumWage = rows.reduce((s, r) => s + parseFloat(r.wage            || 0), 0);
 
     res.json({
