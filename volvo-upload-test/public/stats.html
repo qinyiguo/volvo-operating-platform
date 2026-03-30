@@ -519,8 +519,15 @@
       <div class="card-title">&#x1F4CB; 每日明細</div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>日期</th><th>據點</th><th class="num">進廠台數</th><th>vs 日均</th></tr></thead>
-          <tbody id="tbDaily"><tr><td colspan="4" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
+<thead id="tbDailyHead"><tr>
+            <th style="min-width:70px">日期</th>
+            <th class="num" style="color:#3b82f6;min-width:90px">AMA</th>
+            <th class="num" style="color:#10b981;min-width:90px">AMC</th>
+            <th class="num" style="color:#f59e0b;min-width:90px">AMD</th>
+            <th class="num" style="color:#f97316;min-width:80px">合計</th>
+            <th class="num" style="color:#64748b;min-width:64px">累計</th>
+          </tr></thead>
+          <tbody id="tbDaily"><tr><td colspan="6" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -1444,8 +1451,75 @@ async function loadDaily(period,branch){
     const toggleBtns=branchList.map(b=>`<button id="avgToggle-${b}" onclick="window._toggleDailyAvg('${b}')" style="padding:4px 10px;border:1.5px solid ${branchColors[b]||'#94a3b8'};border-radius:6px;background:transparent;color:${branchColors[b]||'#94a3b8'};font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap">📈 ${b} 日均線</button>`).join('');
     document.getElementById('dailyChart').innerHTML=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap"><span style="font-size:11px;color:#64748b;font-weight:700">顯示日均線：</span>${toggleBtns}</div><div id="dailyChartSvgWrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch"></div>`;
     window._renderDailyChart();
-    document.getElementById('tbDaily').innerHTML=daily.length?daily.map(r=>{const cnt=parseInt(r.car_count||0),avg=avgMap[r.branch]||0,diff=cnt-avg,pct=avg>0?(diff/avg*100):0;return`<tr><td style="white-space:nowrap">${r.arrive_date?.slice(0,10)}</td><td><span class="badge badge-blue">${r.branch}</span></td><td class="num" style="font-weight:700">${cnt}</td><td class="num ${diff>=0?'up':'down'}">${diff>=0?'▲':'▼'}${Math.abs(diff).toFixed(1)}<span style="font-size:11px;color:#64748b">(${pct>=0?'+':''}${pct.toFixed(0)}%)</span></td></tr>`;}).join(''):'<tr><td colspan="4" class="empty">無資料</td></tr>';
-  }catch(e){document.getElementById('dailyKPI').innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;}
+(function(){
+      const DOW_CN=['日','一','二','三','四','五','六'];
+      const BC={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
+      const selBr=document.getElementById('selBranch').value;
+      const displayBranches=selBr?[selBr]:['AMA','AMC','AMD'];
+      // 重建 thead（單廠時只顯示該廠欄）
+      document.getElementById('tbDailyHead').innerHTML='<tr>'
+        +'<th style="min-width:70px">日期</th>'
+        +displayBranches.map(b=>`<th class="num" style="color:${BC[b]};min-width:90px">${b}</th>`).join('')
+        +'<th class="num" style="color:#f97316;min-width:80px">合計</th>'
+        +'<th class="num" style="color:#64748b;min-width:64px">累計</th>'
+        +'</tr>';
+      if(!daily.length){document.getElementById('tbDaily').innerHTML=`<tr><td colspan="${displayBranches.length+3}" class="empty">無資料</td></tr>`;return;}
+      // 依日期分組
+      const dateMap={};
+      daily.forEach(r=>{const d=r.arrive_date?.slice(0,10);if(!d)return;if(!dateMap[d])dateMap[d]={};dateMap[d][r.branch]=parseInt(r.car_count||0);});
+      const allDates=Object.keys(dateMap).sort();
+      const maxPerBranch={};
+      displayBranches.forEach(b=>{maxPerBranch[b]=Math.max(...allDates.map(d=>dateMap[d][b]||0),1);});
+      const maxTotal=Math.max(...allDates.map(d=>displayBranches.reduce((s,b)=>s+(dateMap[d][b]||0),0)),1);
+      let cumTotal=0;
+      const rows=allDates.map((d,ri)=>{
+        const dow=new Date(d+'T00:00:00').getDay();
+        const isWknd=dow===0||dow===6;
+        const dayNum=parseInt(d.slice(8));
+        const dowCol=dow===0?'#ef4444':dow===6?'#60a5fa':'';
+        const rowBg=isWknd?'rgba(255,255,255,.03)':(ri%2===0?'transparent':'rgba(255,255,255,.015)');
+        let rowTotal=0;
+        const cells=displayBranches.map(b=>{
+          const cnt=dateMap[d][b]||0;
+          const avg=avgMap[b]||0;
+          const diff=cnt-avg;
+          const pct=avg>0?(diff/avg*100):0;
+          const barW=Math.round(cnt/maxPerBranch[b]*100);
+          const col=BC[b]||'#94a3b8';
+          const dCol=diff>2?'#10b981':diff<-2?'#ef4444':'#475569';
+          rowTotal+=cnt;
+          return `<td style="padding:6px 10px;border-bottom:1px solid rgba(45,63,86,.18);text-align:right;vertical-align:middle">
+            ${cnt?`<div style="display:flex;align-items:center;gap:5px;justify-content:flex-end">
+              <div style="flex:1;max-width:44px;background:#0f172a;border-radius:2px;height:4px">
+                <div style="width:${barW}%;height:4px;border-radius:2px;background:${col};opacity:.75"></div>
+              </div>
+              <span style="font-size:15px;font-weight:900;color:${col};min-width:22px;text-align:right">${cnt}</span>
+            </div>
+            <div style="font-size:10px;color:${dCol};text-align:right;margin-top:1px;line-height:1">${diff>=0?'+':''}${diff.toFixed(1)}<span style="color:#334155"> (${pct>=0?'+':''}${pct.toFixed(0)}%)</span></div>`
+            :`<span style="color:#2d4060">—</span>`}
+          </td>`;
+        });
+        cumTotal+=rowTotal;
+        const totBarW=Math.round(rowTotal/maxTotal*100);
+        return `<tr style="background:${rowBg}">
+          <td style="padding:6px 10px;border-bottom:1px solid rgba(45,63,86,.18);white-space:nowrap">
+            <span style="font-size:16px;font-weight:800;color:${dowCol||'#e2e8f0'}">${dayNum}</span>
+            <span style="font-size:11px;font-weight:700;color:${dowCol||'#475569'};margin-left:4px">${DOW_CN[dow]}</span>
+          </td>
+          ${cells.join('')}
+          <td style="padding:6px 10px;border-bottom:1px solid rgba(45,63,86,.18);text-align:right;vertical-align:middle">
+            ${rowTotal?`<div style="display:flex;align-items:center;gap:5px;justify-content:flex-end">
+              <div style="background:#0f172a;border-radius:2px;height:5px;width:36px">
+                <div style="width:${totBarW}%;height:5px;border-radius:2px;background:#f97316"></div>
+              </div>
+              <span style="font-size:16px;font-weight:900;color:#f97316">${rowTotal}</span>
+            </div>`:`<span style="color:#2d4060">—</span>`}
+          </td>
+          <td style="padding:6px 10px;border-bottom:1px solid rgba(45,63,86,.18);text-align:right;font-size:12px;color:#64748b;font-weight:600">${cumTotal}</td>
+        </tr>`;
+      });
+      document.getElementById('tbDaily').innerHTML=rows.join('');
+    })();
 }
 
 window._toggleDailyAvg=function(branch){const s=window._dailyState;if(!s)return;s.showAvg[branch]=!s.showAvg[branch];const col=s.colors[branch]||'#94a3b8';const btn=document.getElementById(`avgToggle-${branch}`);if(btn){btn.style.background=s.showAvg[branch]?col+'28':'transparent';btn.style.borderWidth=s.showAvg[branch]?'2px':'1.5px';btn.style.fontWeight=s.showAvg[branch]?'800':'600';}window._renderDailyChart();};
