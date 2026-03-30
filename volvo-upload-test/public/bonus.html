@@ -2012,21 +2012,40 @@ async function deletePromoCfg(id, name) {
 }
 
 // ── 團體/個人模式 helpers ──
+// 新的（貼上）
+var _teamModeCache = {};
+
 function _ppGetTeamMode(fc, dkey) {
-  try {
-    var v = localStorage.getItem('bonus-team-'+fc+'-'+dkey);
-    if (v !== null) return v === '1';
-  } catch(e) {}
+  var cacheKey = fc + '-' + dkey;
+  if (_teamModeCache[cacheKey] !== undefined) return _teamModeCache[cacheKey];
+  // 首次沒快取時回傳 false，載入時由 _loadAllTeamModes 填充
   return false;
 }
-function _ppSetTeamMode(fc, dkey, isTeam) {
-  try { localStorage.setItem('bonus-team-'+fc+'-'+dkey, isTeam?'1':'0'); } catch(e) {}
+
+async function _loadAllTeamModes(deptKeys) {
+  await Promise.all(deptKeys.map(async function(key) {
+    var parts = key.split('-');
+    var fc = parts[0], dkey = parts.slice(1).join('-');
+    try {
+      var r = await fetch('/api/bonus/dept-mode?branch=' + fc + '&dept_code=' + encodeURIComponent(dkey)).then(function(r){return r.json();});
+      _teamModeCache[fc + '-' + dkey] = !!r.team_mode;
+    } catch(e) {}
+  }));
 }
-function _toggleTeamMode(fc, dkey, current) {
-  _ppSetTeamMode(fc, dkey, !current);
+
+async function _toggleTeamMode(fc, dkey, current) {
+  var newMode = !current;
+  _teamModeCache[fc + '-' + dkey] = newMode;
+  try {
+    await fetch('/api/bonus/dept-mode', {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ branch: fc, dept_code: dkey, team_mode: newMode })
+    });
+  } catch(e) {}
   var inner = document.getElementById('progressInner');
   if (inner) { inner.innerHTML = '<div class="loading"><span class="spinner"></span>重新計算中</div>'; renderProgressContent(); }
-}  
+}
 
 // ── 團體制權重 helpers ──
 function _ppGetWeights(fc, dkey) {
