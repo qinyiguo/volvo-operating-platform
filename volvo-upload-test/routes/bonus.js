@@ -614,6 +614,7 @@ router.get('/bonus/progress', async (req, res) => {
   } catch(e) { console.warn('[tech_hours target]', e.message); }
 } // end tech_hours
 } catch(e) { actual = null; }
+      }
 
         // ── 自動計算工時目標（roster × 利用率 × 工作天）──
         try {
