@@ -1520,6 +1520,9 @@ async function loadDaily(period,branch){
       });
       document.getElementById('tbDaily').innerHTML=rows.join('');
     })();
+  } catch(e) {
+    console.error('[loadDaily]', e);
+  }
 }
 
 window._toggleDailyAvg=function(branch){const s=window._dailyState;if(!s)return;s.showAvg[branch]=!s.showAvg[branch];const col=s.colors[branch]||'#94a3b8';const btn=document.getElementById(`avgToggle-${branch}`);if(btn){btn.style.background=s.showAvg[branch]?col+'28':'transparent';btn.style.borderWidth=s.showAvg[branch]?'2px':'1.5px';btn.style.fontWeight=s.showAvg[branch]?'800':'600';}window._renderDailyChart();};
