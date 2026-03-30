@@ -449,11 +449,22 @@ router.get('/stats/tech-hours-raw', async (req, res) => {
     // 依科別選取對應時薪
     const deptRate       = dept_type && hourlyRates[dept_type]
       ? parseFloat(hourlyRates[dept_type])
-      : hourlyRate;
-wage,
-standard_hours        AS original_hours,
-standard_hours        AS restored_hours,
-(${WAS_DISCOUNTED_EXPR}) AS was_discounted
+: hourlyRate;
+    let matchedNames = [emp_name];
+    let rawRes;
+    if (!branch) {
+      rawRes = await pool.query(
+        `SELECT
+           dispatch_date,
+           work_order,
+           work_code,
+           task_content,
+           account_type,
+           discount,
+           wage,
+           standard_hours        AS original_hours,
+           standard_hours        AS restored_hours,
+           (${WAS_DISCOUNTED_EXPR}) AS was_discounted
          FROM tech_performance
          WHERE period=$1 AND tech_name_clean=$2
          ORDER BY branch, dispatch_date, work_order`,
