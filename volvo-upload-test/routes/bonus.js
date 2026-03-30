@@ -575,47 +575,8 @@ router.get('/bonus/progress', async (req, res) => {
           }
         } catch(e) {}
         // 折扣還原工資 SQL 片段
-        const restoreWage = `CASE WHEN discount IS NOT NULL AND discount > 0 AND discount < 1 THEN wage / NULLIF(discount,0) WHEN discount IS NOT NULL AND discount >= 1 AND discount < 100 THEN wage / NULLIF(discount/100.0,0) ELSE wage END`;
-        const DEPT_PATTERNS = { engine:['引擎'], bodywork:['鈑金'], paint:['烤漆','噴漆'], beauty:['美容'] };
-        const brF = effectiveBranch;
-        try {
-          let totalActual = 0;
-          const BRANCHES = brF ? [brF] : ['AMA','AMC','AMD'];
-          for (const br of BRANCHES) {
-            if (deptTypes.length) {
-              // 依科別篩選人員 + 各科時薪換算
-              const rosterPeriodRes = await pool.query(`SELECT DISTINCT period FROM staff_roster ORDER BY period DESC LIMIT 1`);
-              const rp = rosterPeriodRes.rows[0]?.period;
-              for (const dt of deptTypes) {
-                const patterns = DEPT_PATTERNS[dt] || [];
-                const dtRate   = parseFloat(hourlyRates[dt] || 2150);
-                if (!rp || !patterns.length) continue;
-                const rosterRes = await pool.query(
-                  `SELECT emp_name FROM staff_roster WHERE period=$1 AND (factory=$2 OR factory IS NULL) AND (${patterns.map((_,i)=>`dept_name ILIKE $${i+3}`).join(' OR ')}) AND COALESCE(job_category,'') NOT ILIKE '%計時%' AND status!='離職'`,
-                  [rp, br, ...patterns.map(p=>`%${p}%`)]
-                );
-                const techNames = rosterRes.rows.map(r=>r.emp_name).filter(Boolean);
-                if (!techNames.length) continue;
-                const conds=[`period=$1`,`branch=$2`,`tech_name_clean=ANY($3)`];
-                const p=[actualPeriod, br, techNames]; let idx=4;
-                if (acTypes.length){conds.push(`account_type=ANY($${idx++})`);p.push(acTypes);}
-                let expr;
-                if (m.stat_field==='hours'){
-                  expr=`SUM(ROUND((${restoreWage}/${dtRate})::numeric,2))`;
-                } else if (m.stat_field==='count'){
-                  expr=`COUNT(DISTINCT work_order)`;
-                } else {
-                  expr=`SUM(${restoreWage})`;
-                }
-                const r = await pool.query(`SELECT COALESCE(${expr},0) AS v FROM tech_performance WHERE ${conds.join(' AND ')}`, p);
-                totalActual += parseFloat(r.rows[0]?.v || 0);
-              }
-            } else {
-              // 不限科別，全廠技師，用引擎時薪
-              const dtRate = parseFloat(hourlyRates.engine || 2150);
-              const conds=[`period=$1`,`branch=$2`]; const p=[actualPeriod,br]; let idx=3;
-              if (acTypes.length){conds.push(`account_type=ANY($${idx++})`);p.push(acTypes);}
-              let expr = m.stat_field==='hours'?`SUM(ROUND((${restoreWage}/${dtRate})::numeric,2))`:m.stat_field==='count'?'COUNT(DISTINCT work_order)':`SUM(${restoreWage})`;
+              expr = `SUM(standard_hours)`;   // hours
+              expr = `SUM(wage)`;              // amount（工資金額保持原樣）
               const r = await pool.query(`SELECT COALESCE(${expr},0) AS v FROM tech_performance WHERE ${conds.join(' AND ')}`, p);
               totalActual += parseFloat(r.rows[0]?.v || 0);
             }
