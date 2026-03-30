@@ -450,29 +450,10 @@ router.get('/stats/tech-hours-raw', async (req, res) => {
     const deptRate       = dept_type && hourlyRates[dept_type]
       ? parseFloat(hourlyRates[dept_type])
       : hourlyRate;
-    const ORIGINAL_EXPR  = buildOriginalExpr(deptRate);
-    const RESTORE_EXPR   = buildRestoreExpr(deptRate);
-
-    const isBeautyDms = /美容/.test(emp_name);
-    const isAmabDms   = AMAB_NAMES.includes(emp_name);
-    let rawRes;
-    let matchedNames = [];
-
-    if (isBeautyDms || isAmabDms) {
-      matchedNames = [emp_name];
-      rawRes = await pool.query(
-        `SELECT
-           branch,
-           dispatch_date,
-           work_order,
-           work_code,
-           task_content,
-           account_type,
-           discount,
-           wage,
-           ${ORIGINAL_EXPR}  AS original_hours,
-           ${RESTORE_EXPR}   AS restored_hours,
-           (${WAS_DISCOUNTED_EXPR}) AS was_discounted
+wage,
+standard_hours        AS original_hours,
+standard_hours        AS restored_hours,
+(${WAS_DISCOUNTED_EXPR}) AS was_discounted
          FROM tech_performance
          WHERE period=$1 AND tech_name_clean=$2
          ORDER BY branch, dispatch_date, work_order`,
