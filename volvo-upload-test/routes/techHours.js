@@ -149,15 +149,15 @@ function splitTechName(rawName) {
 function buildActualMap(rows) {
   const map = {};
   rows.forEach(r => {
-    const name = (r.tech_name_clean || '').trim();
-    const wage = parseFloat(r.restored_wage || 0);
+    const name  = (r.tech_name_clean || '').trim();
+    const hours = parseFloat(r.actual_hours || 0);
     if (!name) return;
-    if (!map[name]) map[name] = { wage: 0, rawName: name };
-    map[name].wage += wage;
+    if (!map[name]) map[name] = { hours: 0, rawName: name };
+    map[name].hours += hours;
     splitTechName(name).forEach(seg => {
       if (seg && seg !== name) {
-        if (!map[seg]) map[seg] = { wage: 0, rawName: name };
-        map[seg].wage += wage;
+        if (!map[seg]) map[seg] = { hours: 0, rawName: name };
+        map[seg].hours += hours;
       }
     });
   });
@@ -165,17 +165,15 @@ function buildActualMap(rows) {
 }
 
 // hourlyRate 為科別對應的時薪，將工資換算為工時
-function findActualHours(empName, actualMap, matchedSet, hourlyRate) {
+function findActualHours(empName, actualMap, matchedSet) {
   if (!empName) return 0;
-  const rate = parseFloat(hourlyRate) || 2150;
-  const toH  = w => Math.round(w / rate * 10000) / 10000;
   const name = empName.trim();
-  if (actualMap[name] !== undefined) { matchedSet.add(actualMap[name].rawName); return toH(actualMap[name].wage); }
+  if (actualMap[name] !== undefined) { matchedSet.add(actualMap[name].rawName); return Math.round(actualMap[name].hours * 10) / 10; }
   for (const [key, val] of Object.entries(actualMap)) {
-    if (key.includes(name)) { matchedSet.add(val.rawName); return toH(val.wage); }
+    if (key.includes(name)) { matchedSet.add(val.rawName); return Math.round(val.hours * 10) / 10; }
   }
   for (const [key, val] of Object.entries(actualMap)) {
-    if (key.length >= 2 && name.includes(key)) { matchedSet.add(val.rawName); return toH(val.wage); }
+    if (key.length >= 2 && name.includes(key)) { matchedSet.add(val.rawName); return Math.round(val.hours * 10) / 10; }
   }
   return 0;
 }
@@ -207,35 +205,33 @@ router.get('/stats/tech-hours', async (req, res) => {
 
     // ── 美容 DMS 工時（不限 branch）──
     const beautyRate    = parseFloat(hourlyRates.beauty || hourlyRate);
-    const beautyDmsRes  = await pool.query(
-      `SELECT tech_name_clean,
-              SUM(${RESTORE_WAGE_EXPR}) AS restored_wage
-       FROM tech_performance
-       WHERE period=$1 AND tech_name_clean ~ '美容'
-       GROUP BY tech_name_clean`,
-      [period]
-    );
-    const beautyDmsMap = {};
-    beautyDmsRes.rows.forEach(r => {
-      const wage = parseFloat(r.restored_wage || 0);
-      beautyDmsMap[r.tech_name_clean] = Math.round(wage / beautyRate * 10) / 10;
-    });
+const beautyDmsRes  = await pool.query(
+  `SELECT tech_name_clean,
+          SUM(standard_hours) AS actual_hours
+   FROM tech_performance
+   WHERE period=$1 AND tech_name_clean ~ '美容'
+   GROUP BY tech_name_clean`,
+  [period]
+);
+const beautyDmsMap = {};
+beautyDmsRes.rows.forEach(r => {
+  beautyDmsMap[r.tech_name_clean] = Math.round(parseFloat(r.actual_hours || 0) * 10) / 10;
+});
 
     // ── AMAB/AMAE/AMAP DMS 工時（不限 branch）──
     const bodyworkRate  = parseFloat(hourlyRates.bodywork || hourlyRate);
-    const amabDmsRes    = await pool.query(
-      `SELECT tech_name_clean,
-              SUM(${RESTORE_WAGE_EXPR}) AS restored_wage
-       FROM tech_performance
-       WHERE period=$1 AND tech_name_clean = ANY($2)
-       GROUP BY tech_name_clean`,
-      [period, AMAB_NAMES]
-    );
-    const amabDmsMap = {};
-    amabDmsRes.rows.forEach(r => {
-      const wage = parseFloat(r.restored_wage || 0);
-      amabDmsMap[r.tech_name_clean] = Math.round(wage / bodyworkRate * 10) / 10;
-    });
+const amabDmsRes    = await pool.query(
+  `SELECT tech_name_clean,
+          SUM(standard_hours) AS actual_hours
+   FROM tech_performance
+   WHERE period=$1 AND tech_name_clean = ANY($2)
+   GROUP BY tech_name_clean`,
+  [period, AMAB_NAMES]
+);
+const amabDmsMap = {};
+amabDmsRes.rows.forEach(r => {
+  amabDmsMap[r.tech_name_clean] = Math.round(parseFloat(r.actual_hours || 0) * 10) / 10;
+});
 
     const result = {};
 
@@ -320,7 +316,7 @@ router.get('/stats/tech-hours', async (req, res) => {
       if (STD_BRANCHES.has(br)) {
         actualRes = await pool.query(
           `SELECT tech_name_clean,
-                  SUM(${RESTORE_WAGE_EXPR}) AS restored_wage
+SUM(standard_hours) AS actual_hours
            FROM tech_performance
            WHERE period=$1 AND branch=$2
            GROUP BY tech_name_clean`,
@@ -329,7 +325,7 @@ router.get('/stats/tech-hours', async (req, res) => {
       } else {
         actualRes = await pool.query(
           `SELECT tech_name_clean,
-                  SUM(${RESTORE_WAGE_EXPR}) AS restored_wage
+SUM(standard_hours) AS actual_hours
            FROM tech_performance
            WHERE period=$1
            GROUP BY tech_name_clean`,
@@ -353,7 +349,7 @@ router.get('/stats/tech-hours', async (req, res) => {
             const isResigned    = t.status === '離職';
             const effectiveRate = (isResigned && !resignedCountTarget) ? 0 : rate;
             const targetHours   = Math.round(workingDays * 8 * effectiveRate * 10) / 10;
-            const actualHours   = findActualHours(t.emp_name, actualMap, matchedSet, deptHourlyRate);
+            const actualHours = findActualHours(t.emp_name, actualMap, matchedSet);
             const achieveRate   = targetHours > 0 ? Math.round(actualHours / targetHours * 1000) / 10 : null;
             return {
               emp_name:        t.emp_name,
