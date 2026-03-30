@@ -485,7 +485,7 @@ standard_hours        AS restored_hours,
         });
       }
 
-      rawRes = await pool.query(
+rawRes = await pool.query(
         `SELECT
            dispatch_date,
            work_order,
@@ -498,9 +498,9 @@ standard_hours        AS restored_hours,
            standard_hours        AS restored_hours,
            (${WAS_DISCOUNTED_EXPR}) AS was_discounted
          FROM tech_performance
-         WHERE period=$1 AND tech_name_clean = ANY($2)
-         ORDER BY dispatch_date, work_order`,
-        [period, matchedNames]
+         WHERE period=$1 AND tech_name_clean=$2
+         ORDER BY branch, dispatch_date, work_order`,
+        [period, emp_name]
       );
     }
 
