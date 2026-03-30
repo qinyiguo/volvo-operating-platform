@@ -767,4 +767,25 @@ router.delete('/bonus/actual-override', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+router.get('/bonus/dept-mode', async (req, res) => {
+  const { branch, dept_code } = req.query;
+  const key = `team_mode_${branch}_${dept_code}`;
+  try {
+    const r = await pool.query(`SELECT value FROM app_settings WHERE key=$1`, [key]);
+    res.json({ team_mode: r.rows[0]?.value === '1' });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.put('/bonus/dept-mode', async (req, res) => {
+  const { branch, dept_code, team_mode } = req.body;
+  const key = `team_mode_${branch}_${dept_code}`;
+  try {
+    await pool.query(`
+      INSERT INTO app_settings (key, value) VALUES ($1, $2)
+      ON CONFLICT (key) DO UPDATE SET value=$2
+    `, [key, team_mode ? '1' : '0']);
+    res.json({ ok: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;
