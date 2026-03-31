@@ -1738,7 +1738,7 @@ memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonu
 
         for (var mhi=0;mhi<deptMetricIds.length;mhi++) {
           var mId4=deptMetricIds[mhi], meta4=metaById[mId4];
-          var isAmtM=meta4.metric.stat_field==='amount'||meta4.useAuto;
+          var isAmtM=meta4.metric.stat_field==='amount';
           var fv4=(function(isAmt){return function(v){return v===null||v===undefined?'—':isAmt?Math.round(parseFloat(v)/1000).toLocaleString()+'K':Math.round(parseFloat(v)).toLocaleString();};})(isAmtM);
           var rc4=meta4.autoRate===null?'#64748b':meta4.autoRate>=100?'#10b981':meta4.autoRate>=80?'#f59e0b':'#ef4444';
           var tp4=isTeamDept?teamPoolMap[mId4]:null;
@@ -2443,6 +2443,16 @@ async function openActualOverrideModal(metricId, metricName, period, isManual) {
       <div style="font-size:15px;font-weight:800;color:#f59e0b;margin-bottom:4px">📝 ${isManual?'手動目標 / 實績':'手動填入實績'}</div>
       <div style="font-size:12px;color:#64748b;margin-bottom:16px">${metricName}｜${period.slice(0,4)}年${parseInt(period.slice(4))}月${branch?' ｜ '+branch:' ｜ 全廠'}</div>
       ${targetRow}
+      ${isManual ? `
+      <div style="font-size:11px;color:#64748b;margin-bottom:6px;display:flex;align-items:center;gap:10px">
+        <span>顯示格式</span>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:4px 10px;border-radius:5px;border:1px solid #2d3f56;font-size:12px">
+          <input type="radio" name="aoDisplayFmt" value="k" ${((_metrics.find(x=>x.id===metricId)||{}).stat_field||'amount')==='amount'?'checked':''} style="accent-color:#3b82f6"> 💰 K（千元）
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:4px 10px;border-radius:5px;border:1px solid #2d3f56;font-size:12px">
+          <input type="radio" name="aoDisplayFmt" value="raw" ${((_metrics.find(x=>x.id===metricId)||{}).stat_field||'amount')!=='amount'?'checked':''} style="accent-color:#3b82f6"> 🔢 直接顯示（分數/件數）
+        </label>
+      </div>` : ''}
       <div style="font-size:11px;color:#64748b;margin-bottom:4px">當月實績值（留空 = ${isManual?'不顯示達成率':'使用 DMS 自動計算'}）</div>
       <input type="number" id="aoValInput" value="${curVal}" min="0" step="0.1" placeholder="${isManual?'例：480（實際完成量）':'例：320（小時）'}"
         style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#f59e0b;padding:8px 12px;border-radius:6px;font-size:14px;font-weight:800;outline:none;margin-bottom:10px">
@@ -2485,6 +2495,22 @@ const tEntries = deptCodes.length
       body: JSON.stringify({ metric_id:metricId, period, branch, actual_value: val===''?null:parseFloat(val), note })
     }).then(r=>r.json());
     if (r.error) throw new Error(r.error);
+    // 若是 manual 指標，同步更新顯示格式
+  if (isManual) {
+    const fmtEl = document.querySelector('input[name="aoDisplayFmt"]:checked');
+    if (fmtEl) {
+      const newStatField = fmtEl.value === 'k' ? 'amount' : 'count';
+      const m = _metrics.find(x => x.id === metricId);
+      if (m && m.stat_field !== newStatField) {
+        const payload = Object.assign({}, m, { stat_field: newStatField });
+        await fetch('/api/bonus/metrics/' + metricId, {
+          method: 'PUT', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(payload)
+        });
+        m.stat_field = newStatField; // 更新本地快取
+      }
+    }
+  }
     msgEl.textContent = '✅ 已儲存'; msgEl.style.color = '#10b981';
     setTimeout(() => {
       document.getElementById('aoModalBg')?.remove();
