@@ -1622,9 +1622,11 @@ var deptMetricIds=getMetricIdsForDept(dkey, fc), deptHasMetrics=deptMetricIds.le
         // ── 團體制：預先計算各指標的獎金池 ──
         var teamPoolMap={};
         var savedWeights=isTeamDept?_ppGetWeights(fc, dkey):{};
-        if(isTeamDept){
+if(isTeamDept){
           deptMetricIds.forEach(function(mId){
             var meta=metaById[mId];
+            // ★ 只有部門整體目標（scope_type='dept'）才做團體加權分配
+            if(meta.metric.scope_type !== 'dept'){teamPoolMap[mId]=null;return;}
             var dRate=meta.useAuto?meta.autoRate:
               (deptTargets[dkey]&&deptTargets[dkey][mId]?deptTargets[dkey][mId].rate:null);
             if(dRate===null){teamPoolMap[mId]=null;return;}
@@ -1661,7 +1663,7 @@ _mrModalDepts[fc+'-'+dkey] = dept.members.map(function(p){
                   var effectiveRate=te3?te3.rate:(meta3.useAuto?meta3.autoRate:null);
                   var effectiveHasTarget=!!te3||meta3.useAuto;
                   var bonusAmt=0,dispRate=effectiveRate,dispHasTgt=effectiveHasTarget;
-                        if(isTeamDept&&teamPoolMap[mId3]){
+                        if(isTeamDept&&teamPoolMap[mId3]&&meta3.metric.scope_type==='dept'){
                           var tp=teamPoolMap[mId3];
                           // 使用手動設定的權重，未設定預設 1（等權重）
                           var wt3=savedWeights[person3.emp_id]!==undefined?savedWeights[person3.emp_id]:1;
