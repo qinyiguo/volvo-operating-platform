@@ -612,6 +612,30 @@ router.get('/bonus/progress', async (req, res) => {
     }
     if (tgtTotal > 0) perfTarget = Math.round(tgtTotal * 10) / 10;
   } catch(e) { console.warn('[tech_hours target]', e.message); }
+
+ // ★ NEW: manual 部門指標 — 從 bonus_actual_overrides 拿實績，從 bonus_targets 拿部門目標
+} else if (m.metric_source === 'manual' && m.scope_type === 'dept') {
+  try {
+    const overR = await pool.query(
+      `SELECT actual_value FROM bonus_actual_overrides
+       WHERE metric_id=$1 AND period=$2 AND COALESCE(branch,'')=$3 LIMIT 1`,
+      [m.id, actualPeriod, effectiveBranch || '']
+    );
+    if (overR.rows.length && overR.rows[0].actual_value != null)
+      actual = parseFloat(overR.rows[0].actual_value);
+  } catch(e) {}
+  if (deptCodes.length) {
+    try {
+      const tRes = await pool.query(
+        `SELECT target_value FROM bonus_targets
+         WHERE metric_id=$1 AND dept_code=ANY($2) AND target_value IS NOT NULL
+         ORDER BY updated_at DESC LIMIT 1`,
+        [m.id, deptCodes]
+      );
+      if (tRes.rows[0]?.target_value != null)
+        perfTarget = parseFloat(tRes.rows[0].target_value);
+    } catch(e) {}
+  }           
 } // end tech_hours
 } catch(e) { actual = null; }
       }
