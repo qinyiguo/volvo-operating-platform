@@ -622,9 +622,10 @@ router.get('/bonus/progress', async (req, res) => {
                     });
                   });
 
+                  // dts 需要在外層定義，供後續 keyword fallback 使用
+                  const dts = deptTypes.length ? deptTypes : Object.keys(DEPT_PATTERNS);
                   let rosterNames = [];
                   if (rp) {
-                    const dts = deptTypes.length ? deptTypes : Object.keys(DEPT_PATTERNS);
                     for (const dt of dts) {
                       const pats = (DEPT_PATTERNS[dt] || []).map(p => `%${p}%`);
                       if (!pats.length) continue;
@@ -657,8 +658,20 @@ router.get('/bonus/progress', async (req, res) => {
                       }
                       brActual += h;
                     }
-                    // ★ 姓名比對失敗（例如美容部用彙總名稱「美容技師-A」入庫）
-                    // 若 branch 查詢有資料但比對結果為 0，直接加總整個 branch 的工時
+                    // ★ Fallback 1：姓名比對失敗，用部門關鍵字比對 actRes 原始名稱
+                    // 適用於 tech_performance 用彙總名稱（如「美容技師-A」）儲存工時的情況
+                    if (brActual === 0 && actRes.rows.length > 0) {
+                      const deptKeywords = dts.flatMap(dt => DEPT_PATTERNS[dt] || []);
+                      if (deptKeywords.length) {
+                        actRes.rows.forEach(r => {
+                          const name = (r.tech_name_clean || '').trim();
+                          if (deptKeywords.some(kw => name.includes(kw))) {
+                            brActual += parseFloat(r.actual_hours || 0);
+                          }
+                        });
+                      }
+                    }
+                    // ★ Fallback 2：keyword 也找不到，且 branch 查詢有資料，加總整個 branch
                     if (brActual === 0 && usedBranchFilter && actRes.rows.length > 0) {
                       brActual = actRes.rows.reduce((s, r) => s + parseFloat(r.actual_hours || 0), 0);
                     }
