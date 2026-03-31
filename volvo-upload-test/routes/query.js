@@ -184,4 +184,36 @@ router.get('/periods', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── 美容工時代碼 ──
+router.get('/beauty-op-hours', async (req, res) => {
+  try {
+    const r = await pool.query(`SELECT op_code, description, standard_hours FROM beauty_op_hours ORDER BY op_code`);
+    res.json(r.rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.put('/beauty-op-hours/:op_code', async (req, res) => {
+  const op_code = req.params.op_code.trim();
+  const { description, standard_hours } = req.body;
+  if (!op_code) return res.status(400).json({ error: 'op_code 為必填' });
+  const hours = parseFloat(standard_hours);
+  if (isNaN(hours) || hours < 0) return res.status(400).json({ error: 'standard_hours 必須為正數' });
+  try {
+    await pool.query(
+      `INSERT INTO beauty_op_hours (op_code, description, standard_hours, updated_at)
+       VALUES ($1,$2,$3,NOW())
+       ON CONFLICT (op_code) DO UPDATE SET description=$2, standard_hours=$3, updated_at=NOW()`,
+      [op_code, description || '', hours]
+    );
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/beauty-op-hours/:op_code', async (req, res) => {
+  try {
+    await pool.query(`DELETE FROM beauty_op_hours WHERE op_code=$1`, [req.params.op_code]);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;
