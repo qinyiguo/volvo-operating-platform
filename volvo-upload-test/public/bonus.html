@@ -1435,7 +1435,7 @@ async function renderProgressContent() {
         for (var ii=0;ii<data.results.length;ii++) {
           var item=data.results[ii], m=item.metric, actual=item.actual, autoPT=item.perfTarget;
           var tiers=(m.bonus_rule||{}).tiers||[], roles=(m.bonus_rule||{}).roles||[];
-var useAuto=(m.metric_source==='revenue'||m.metric_source==='performance'||m.metric_source==='tech_hours')&&autoPT!==null;
+var useAuto=(m.metric_source==='revenue'||m.metric_source==='performance'||m.metric_source==='tech_hours'||m.metric_source==='manual')&&autoPT!==null;
           var autoRate=useAuto&&autoPT>0&&actual!==null?actual/autoPT*100:null;
           metaById[m.id]={metric:m,actual:actual,autoPT:autoPT,useAuto:useAuto,autoRate:autoRate,tiers:(m.bonus_rule||{}).tiers||[],roles:(m.bonus_rule||{}).roles||[],promoRules:(m.bonus_rule||{}).promo_rules||[]};
           for (var ti=0;ti<item.targets.length;ti++) {
@@ -1668,8 +1668,7 @@ memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonu
                 +'<span style="font-size:10px;color:#60a5fa;font-weight:700">'+meta7.metric.metric_name+'</span>'
                 +(meta7.autoRate!==null?'<span style="font-size:10px;color:'+rc7+';font-weight:700">'+meta7.autoRate.toFixed(0)+'%</span>':'')
                 +'<button onclick="event.stopPropagation();openMetricModal('+mId7+')" title="編輯指標" style="background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.25);padding:1px 5px;border-radius:3px;font-size:10px;cursor:pointer">✏️</button>'
-              +(meta7.metric.metric_source==='tech_hours'?'<button onclick="event.stopPropagation();openActualOverrideModal('+mId7+',\''+meta7.metric.metric_name.replace(/\'/g,"\\\'")+'\',\''+(_actualPeriod||'')+'\')" title="手動填入實績" style="background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3);padding:1px 5px;border-radius:3px;font-size:10px;cursor:pointer">📝</button>':'')
-                +'<button onclick="event.stopPropagation();deleteMetric('+mId7+',\''+safeN7+'\')" title="刪除指標" style="background:rgba(239,68,68,.15);color:#ef4444;border:none;padding:1px 5px;border-radius:3px;font-size:10px;cursor:pointer">🗑</button>'
++(meta7.metric.metric_source==='tech_hours'||meta7.metric.metric_source==='manual'?'<button onclick="event.stopPropagation();openActualOverrideModal('+mId7+',\''+meta7.metric.metric_name.replace(/\'/g,"\\\'")+'\',\''+(_actualPeriod||'')+'\','+(meta7.metric.metric_source==='manual'?'true':'false')+')" title="手動填入目標/實績" style="background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3);padding:1px 5px;border-radius:3px;font-size:10px;cursor:pointer">📝</button>':'')                +'<button onclick="event.stopPropagation();deleteMetric('+mId7+',\''+safeN7+'\')" title="刪除指標" style="background:rgba(239,68,68,.15);color:#ef4444;border:none;padding:1px 5px;border-radius:3px;font-size:10px;cursor:pointer">🗑</button>'
               +'</span>';
             }).join('')
           +'</div>'
@@ -1711,8 +1710,9 @@ memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonu
           var tp4=isTeamDept?teamPoolMap[mId4]:null;
           html+='<th style="'+thBase+'min-width:110px;text-align:center;background:#0c1524;border-bottom:1px solid #1e2d40">'
             +'<div style="font-size:11px;font-weight:800;color:#e2e8f0;margin-bottom:2px">'+(isTeamDept?'👥 ':'')+meta4.metric.metric_name+'</div>'
-            +(meta4.useAuto&&meta4.autoRate!==null?'<div style="font-size:10px;color:#64748b;margin-bottom:2px"><span>'+fv4(meta4.actual)+'</span> <span style="color:'+rc4+';font-weight:700">'+meta4.autoRate.toFixed(1)+'%</span></div>':'')
-            +(tp4?'<div style="font-size:10px;color:#f59e0b;font-weight:800;margin-bottom:2px">池 '+tp4.pool.toLocaleString()+' 元</div>':'')
+            +(meta4.useAuto&&meta4.autoPT!==null?'<div style="font-size:10px;color:#64748b;margin-bottom:2px">📐 目標 <strong style="color:#94a3b8">'+(meta4.metric.metric_source==='tech_hours'?Math.round(meta4.autoPT)+' 小時':fv4(meta4.autoPT))+'</strong></div>':'')
++(meta4.useAuto&&meta4.autoRate!==null?'<div style="font-size:10px;color:#64748b;margin-bottom:2px">⚡ '+(meta4.metric.metric_source==='tech_hours'?(meta4.actual!==null?Math.round(meta4.actual)+' 小時':'—'):fv4(meta4.actual))+' <span style="color:'+rc4+';font-weight:700">'+meta4.autoRate.toFixed(1)+'%</span></div>':(meta4.useAuto?'<div style="font-size:9px;color:#f59e0b;margin-bottom:2px">📝 待填入實績</div>':''))
++(tp4?'<div style="font-size:10px;color:#f59e0b;font-weight:800;margin-bottom:2px">池 '+tp4.pool.toLocaleString()+' 元</div>':'')
             +'<button onclick="event.stopPropagation();openMetricModal('+mId4+')" style="background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.25);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">✏️ 編輯指標</button>'
           +'</th>';
         }
@@ -2364,26 +2364,48 @@ async function _saveMR(el) {
   } catch(e) { console.warn('主管考核儲存失敗', e); }
 }
   // ── 手動實績覆蓋 Modal ──
-async function openActualOverrideModal(metricId, metricName, period) {
+async function openActualOverrideModal(metricId, metricName, period, isManual) {
   const branch = document.getElementById('selFactory').value;
   const existing = await fetch(`/api/bonus/actual-override?metric_id=${metricId}&period=${period}&branch=${encodeURIComponent(branch)}`).then(r=>r.json()).catch(()=>null);
   const curVal  = existing?.actual_value != null ? existing.actual_value : '';
   const curNote = existing?.note || '';
+
+  // 若是 manual 指標，額外查部門目標
+  let curTarget = '';
+  if (isManual) {
+    try {
+      const m = _metrics.find(function(x){ return x.id === metricId; });
+      const deptCodes = (m && m.target_dept_codes) || [];
+      if (deptCodes.length) {
+        const ts = await fetch('/api/bonus/targets?metric_id='+metricId).then(r=>r.json()).catch(()=>[]);
+        const deptT = ts.find(function(t){ return deptCodes.includes(t.dept_code); });
+        if (deptT && deptT.target_value != null) curTarget = deptT.target_value;
+      }
+    } catch(e) {}
+  }
+
+  const targetRow = isManual ? `
+    <div style="font-size:11px;color:#64748b;margin-bottom:4px">當月目標值</div>
+    <input type="number" id="aoTargetInput" value="${curTarget}" min="0" step="0.1" placeholder="例：500（手動設定目標）"
+      style="width:100%;background:#0f172a;border:1px solid #3b82f6;color:#3b82f6;padding:8px 12px;border-radius:6px;font-size:14px;font-weight:800;outline:none;margin-bottom:10px">
+  ` : '';
+
   const html = `<div id="aoModalBg" onclick="if(event.target===this)this.remove()"
     style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center">
-    <div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:24px;min-width:360px;max-width:90vw">
-      <div style="font-size:15px;font-weight:800;color:#f59e0b;margin-bottom:4px">📝 手動填入實績</div>
+    <div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:24px;min-width:380px;max-width:90vw">
+      <div style="font-size:15px;font-weight:800;color:#f59e0b;margin-bottom:4px">📝 ${isManual?'手動目標 / 實績':'手動填入實績'}</div>
       <div style="font-size:12px;color:#64748b;margin-bottom:16px">${metricName}｜${period.slice(0,4)}年${parseInt(period.slice(4))}月${branch?' ｜ '+branch:' ｜ 全廠'}</div>
-      <div style="font-size:11px;color:#64748b;margin-bottom:4px">實績數值（留空 = 使用 DMS 自動計算）</div>
-      <input type="number" id="aoValInput" value="${curVal}" min="0" step="0.1" placeholder="例：320（小時）"
+      ${targetRow}
+      <div style="font-size:11px;color:#64748b;margin-bottom:4px">當月實績值（留空 = ${isManual?'不顯示達成率':'使用 DMS 自動計算'}）</div>
+      <input type="number" id="aoValInput" value="${curVal}" min="0" step="0.1" placeholder="${isManual?'例：480（實際完成量）':'例：320（小時）'}"
         style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#f59e0b;padding:8px 12px;border-radius:6px;font-size:14px;font-weight:800;outline:none;margin-bottom:10px">
       <div style="font-size:11px;color:#64748b;margin-bottom:4px">備註</div>
       <input type="text" id="aoNoteInput" value="${curNote}" placeholder="（選填）"
         style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#94a3b8;padding:7px 12px;border-radius:6px;font-size:13px;outline:none;margin-bottom:14px">
       <div style="display:flex;gap:8px;justify-content:flex-end">
-        ${curVal!==''?`<button onclick="clearActualOverride(${metricId},'${period}','${branch}')" style="padding:6px 12px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:6px;font-size:12px;cursor:pointer">🗑 清除手動值</button>`:''}
+        ${curVal!==''?`<button onclick="clearActualOverride(${metricId},'${period}','${branch}')" style="padding:6px 12px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:6px;font-size:12px;cursor:pointer">🗑 清除</button>`:''}
         <button onclick="document.getElementById('aoModalBg').remove()" style="padding:6px 14px;border-radius:6px;border:1px solid #475569;background:transparent;color:#94a3b8;font-size:12px;cursor:pointer">取消</button>
-        <button onclick="saveActualOverride(${metricId},'${period}','${branch}')" style="padding:6px 16px;border-radius:6px;border:none;background:#f59e0b;color:#fff;font-size:12px;font-weight:700;cursor:pointer">💾 儲存</button>
+        <button onclick="saveActualOverride(${metricId},'${period}','${branch}',${!!isManual})" style="padding:6px 16px;border-radius:6px;border:none;background:#f59e0b;color:#fff;font-size:12px;font-weight:700;cursor:pointer">💾 儲存</button>
       </div>
       <div id="aoMsg" style="font-size:12px;min-height:16px;margin-top:8px"></div>
     </div>
@@ -2391,10 +2413,27 @@ async function openActualOverrideModal(metricId, metricName, period) {
   const existing2 = document.getElementById('aoModalBg'); if (existing2) existing2.remove();
   document.body.insertAdjacentHTML('beforeend', html);
 }
-async function saveActualOverride(metricId, period, branch) {
+async function saveActualOverride(metricId, period, branch, isManual) {
   const val  = document.getElementById('aoValInput')?.value.trim();
   const note = document.getElementById('aoNoteInput')?.value.trim() || '';
   const msgEl = document.getElementById('aoMsg');
+  // 若是 manual 指標，同步儲存部門目標
+  if (isManual) {
+    const tgtVal = document.getElementById('aoTargetInput')?.value.trim();
+    if (tgtVal !== '' && tgtVal != null) {
+      const m = _metrics.find(function(x){ return x.id === metricId; });
+      const deptCodes = (m && m.target_dept_codes) || [];
+      if (deptCodes.length) {
+        const entries = deptCodes.map(function(dc){
+          return { metric_id: metricId, dept_code: dc, period: period, target_value: parseFloat(tgtVal) };
+        });
+        await fetch('/api/bonus/targets/batch', {
+          method: 'PUT', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ entries })
+        });
+      }
+    }
+  }
   try {
     const r = await fetch('/api/bonus/actual-override', {
       method: 'PUT', headers: {'Content-Type':'application/json'},
