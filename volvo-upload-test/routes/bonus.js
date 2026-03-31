@@ -740,13 +740,21 @@ router.get('/bonus/progress', async (req, res) => {
 
       // ── manual（★ 獨立在最外層，不被 !== 'manual' 擋住）──
       } else if (m.metric_source === 'manual') {
-        // 讀取手動實績
+        // 讀取手動實績：先用 effectiveBranch，若找不到再 fallback 全廠（branch=''）
         try {
-          const overR = await pool.query(
+          let overR = await pool.query(
             `SELECT actual_value FROM bonus_actual_overrides
              WHERE metric_id=$1 AND period=$2 AND COALESCE(branch,'')=$3 LIMIT 1`,
             [m.id, actualPeriod, effectiveBranch || '']
           );
+          // ★ fallback：若 effectiveBranch 有值但找不到資料，再試全廠（branch=''）
+          if (!overR.rows.length && effectiveBranch) {
+            overR = await pool.query(
+              `SELECT actual_value FROM bonus_actual_overrides
+               WHERE metric_id=$1 AND period=$2 AND COALESCE(branch,'')='' LIMIT 1`,
+              [m.id, actualPeriod]
+            );
+          }
           if (overR.rows.length && overR.rows[0].actual_value != null)
             actual = parseFloat(overR.rows[0].actual_value);
         } catch(e) {}
