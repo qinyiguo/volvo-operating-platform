@@ -1530,6 +1530,38 @@ function calcPromoBonus(unused1, unused2, branch, personName, jobTitle) {
 
     var sortedFc=Object.keys(byFactory).sort(function(a,b){return (FC_ORDER.indexOf(a)<0?99:FC_ORDER.indexOf(a))-(FC_ORDER.indexOf(b)<0?99:FC_ORDER.indexOf(b));});
     if (!sortedFc.length){ el.innerHTML='<div class="empty">此廠別無人員資料</div>'; return; }
+    // ── 預載所有部門的分配權重（伺服器 → 快取，支援跨裝置）──
+    await Promise.all(sortedFc.map(async function(f) {
+      var dkeys = Object.keys(byFactory[f] || {});
+      await Promise.all(dkeys.map(async function(dk) {
+        var cacheKey = f + '-' + dk;
+        if (_weightsCache[cacheKey] && Object.keys(_weightsCache[cacheKey]).length) return;
+        try {
+          var r = await fetch(
+            '/api/bonus/dept-weights?branch=' + encodeURIComponent(f) +
+            '&dept_code=' + encodeURIComponent(dk)
+          ).then(function(res){ return res.json(); });
+          if (r && Object.keys(r).length) {
+            _weightsCache[cacheKey] = r;
+          } else {
+            // Fallback：從 localStorage 讀取並順便遷移到伺服器
+            try {
+              var lv = localStorage.getItem('bonus-weights-'+f+'-'+dk);
+              if (lv) {
+                var parsed = JSON.parse(lv);
+                _weightsCache[cacheKey] = parsed;
+                // 自動遷移
+                await fetch('/api/bonus/dept-weights', {
+                  method: 'PUT',
+                  headers: {'Content-Type': 'application/json'},
+                  body: JSON.stringify({ branch: f, dept_code: dk, weights: parsed })
+                });
+              }
+            } catch(e2) {}
+          }
+        } catch(e) {}
+      }));
+    }));
 
     // ★ 偵測哪些 dept_code 跨廠衝突（同代碼出現在 2+ 個廠，如零件部 05700）
     var conflictedDeptCodes={};
@@ -2022,8 +2054,8 @@ async function deletePromoCfg(id, name) {
 }
 
 // ── 團體/個人模式 helpers ──
-// 新的（貼上）
 var _teamModeCache = {};
+var _weightsCache = {};  // 跨裝置權重快取（由伺服器載入）
 
 function _ppGetTeamMode(fc, dkey) {
   var cacheKey = fc + '-' + dkey;
@@ -2059,14 +2091,27 @@ async function _toggleTeamMode(fc, dkey, current) {
 
 // ── 團體制權重 helpers ──
 function _ppGetWeights(fc, dkey) {
+  // 優先使用伺服器快取（跨裝置），fallback 到 localStorage
+  var cached = _weightsCache[fc + '-' + dkey];
+  if (cached && Object.keys(cached).length) return cached;
   try {
     var v = localStorage.getItem('bonus-weights-'+fc+'-'+dkey);
-    if (v) return JSON.parse(v); // { emp_id: weight, ... }
+    if (v) return JSON.parse(v);
   } catch(e) {}
   return {};
 }
-function _ppSetWeights(fc, dkey, obj) {
+async function _ppSetWeights(fc, dkey, obj) {
+  _weightsCache[fc + '-' + dkey] = obj;
+  // localStorage 備份（離線）
   try { localStorage.setItem('bonus-weights-'+fc+'-'+dkey, JSON.stringify(obj)); } catch(e) {}
+  // 儲存到伺服器（跨裝置同步）
+  try {
+    await fetch('/api/bonus/dept-weights', {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ branch: fc, dept_code: dkey, weights: obj })
+    });
+  } catch(e) { console.warn('[weights] 儲存失敗', e); }
 }
 function _openWeightModal(fc, dkey, membersJSON) {
   var members = JSON.parse(decodeURIComponent(membersJSON));
@@ -2109,26 +2154,26 @@ function _openWeightModal(fc, dkey, membersJSON) {
   if (existing) existing.remove();
   document.body.insertAdjacentHTML('beforeend', html);
 }
-function _saveWeightModal(fc, dkey) {
+async function _saveWeightModal(fc, dkey) {
   var inputs = document.querySelectorAll('#weightModalBg input[data-empid]');
   var obj = {};
   inputs.forEach(function(inp){
     var val = parseFloat(inp.value);
     obj[inp.getAttribute('data-empid')] = isNaN(val)||val<0 ? 0 : val;
   });
-  _ppSetWeights(fc, dkey, obj);
+  await _ppSetWeights(fc, dkey, obj);
   document.getElementById('weightModalBg').remove();
   var inner = document.getElementById('progressInner');
   if (inner) { inner.innerHTML = '<div class="loading"><span class="spinner"></span>重新計算中</div>'; renderProgressContent(); }
 }
-  function _saveWeightModal(fc, dkey) {
+async function _saveWeightModal(fc, dkey) {
   var inputs = document.querySelectorAll('#weightModalBg input[data-empid]');
   var obj = {};
   inputs.forEach(function(inp){
     var val = parseFloat(inp.value);
     obj[inp.getAttribute('data-empid')] = isNaN(val)||val<0 ? 0 : val;
   });
-  _ppSetWeights(fc, dkey, obj);
+  await _ppSetWeights(fc, dkey, obj);
   document.getElementById('weightModalBg').remove();
   var inner = document.getElementById('progressInner');
   if (inner) { inner.innerHTML = '<div class="loading"><span class="spinner"></span>重新計算中</div>'; renderProgressContent(); }
