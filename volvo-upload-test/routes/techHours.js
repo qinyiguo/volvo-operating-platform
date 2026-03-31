@@ -63,11 +63,6 @@ const BEAUTY_FACTORY = '聯合';
 const AMAB_FACTORY   = '鈑烤';
 const AMAB_NAMES     = ['AMAB', 'AMAE', 'AMAP'];
 
-// ────────────────────────────────────────────
-// buildOriginalExpr   = wage / hourlyRate  (折扣後直接換算，未還原)
-// buildRestoreExpr    = (wage/discount) / hourlyRate  (還原折扣後的真實工時)
-// buildRestoreWageExpr = 只還原折扣，不除以時薪（讓 JS 端按科別各自除）
-// ────────────────────────────────────────────
 function buildOriginalExpr(hourlyRate) {
   return `ROUND((wage / ${hourlyRate})::numeric, 4)`;
 }
@@ -86,7 +81,6 @@ function buildRestoreExpr(hourlyRate) {
   `;
 }
 
-// 只還原折扣 → 回傳還原後的工資（不除時薪），讓 JS 依科別各自換算工時
 function buildRestoreWageExpr() {
   return `
     ROUND((
@@ -124,7 +118,6 @@ async function getConfig() {
     if (r.rows.length && r.rows[0].value) {
       const saved = JSON.parse(r.rows[0].value);
       const merged = { ...DEFAULT_CONFIG, ...saved };
-      // 升級舊設定：補充 hourly_rates
       if (!merged.hourly_rates) {
         const fallback = parseFloat(merged.hourly_rate) || 2150;
         merged.hourly_rates = {
@@ -145,7 +138,6 @@ function splitTechName(rawName) {
   return rawName.split(/[-\/、,，\s]+/).map(s => s.trim()).filter(Boolean);
 }
 
-// buildActualMap 現在儲存還原折扣後的工資（非工時），讓 findActualHours 按科別時薪換算
 function buildActualMap(rows) {
   const map = {};
   rows.forEach(r => {
@@ -164,7 +156,6 @@ function buildActualMap(rows) {
   return map;
 }
 
-// hourlyRate 為科別對應的時薪，將工資換算為工時
 function findActualHours(empName, actualMap, matchedSet) {
   if (!empName) return 0;
   const name = empName.trim();
@@ -203,40 +194,52 @@ router.get('/stats/tech-hours', async (req, res) => {
       ? [branch]
       : ALL_FACTORIES;
 
+    // ── 取得員工工作天數（全域，供所有廠別使用）──
+    let globalEmpWorkingDays = null;
+    try {
+      const empWdRes = await pool.query(
+        `SELECT work_dates FROM working_days_config WHERE branch='EMPLOYEE' AND period=$1`,
+        [period]
+      );
+      if (empWdRes.rows[0]?.work_dates?.length) {
+        globalEmpWorkingDays = empWdRes.rows[0].work_dates.length;
+      }
+    } catch(e) {}
+
     // ── 美容 DMS 工時（不限 branch）──
     const beautyRate    = parseFloat(hourlyRates.beauty || hourlyRate);
-const beautyDmsRes  = await pool.query(
-  `SELECT tech_name_clean,
-          SUM(standard_hours) AS actual_hours
-   FROM tech_performance
-   WHERE period=$1 AND tech_name_clean ~ '美容'
-   GROUP BY tech_name_clean`,
-  [period]
-);
-const beautyDmsMap = {};
-beautyDmsRes.rows.forEach(r => {
-  beautyDmsMap[r.tech_name_clean] = Math.round(parseFloat(r.actual_hours || 0) * 10) / 10;
-});
+    const beautyDmsRes  = await pool.query(
+      `SELECT tech_name_clean,
+              SUM(standard_hours) AS actual_hours
+       FROM tech_performance
+       WHERE period=$1 AND tech_name_clean ~ '美容'
+       GROUP BY tech_name_clean`,
+      [period]
+    );
+    const beautyDmsMap = {};
+    beautyDmsRes.rows.forEach(r => {
+      beautyDmsMap[r.tech_name_clean] = Math.round(parseFloat(r.actual_hours || 0) * 10) / 10;
+    });
 
     // ── AMAB/AMAE/AMAP DMS 工時（不限 branch）──
     const bodyworkRate  = parseFloat(hourlyRates.bodywork || hourlyRate);
-const amabDmsRes    = await pool.query(
-  `SELECT tech_name_clean,
-          SUM(standard_hours) AS actual_hours
-   FROM tech_performance
-   WHERE period=$1 AND tech_name_clean = ANY($2)
-   GROUP BY tech_name_clean`,
-  [period, AMAB_NAMES]
-);
-const amabDmsMap = {};
-amabDmsRes.rows.forEach(r => {
-  amabDmsMap[r.tech_name_clean] = Math.round(parseFloat(r.actual_hours || 0) * 10) / 10;
-});
+    const amabDmsRes    = await pool.query(
+      `SELECT tech_name_clean,
+              SUM(standard_hours) AS actual_hours
+       FROM tech_performance
+       WHERE period=$1 AND tech_name_clean = ANY($2)
+       GROUP BY tech_name_clean`,
+      [period, AMAB_NAMES]
+    );
+    const amabDmsMap = {};
+    amabDmsRes.rows.forEach(r => {
+      amabDmsMap[r.tech_name_clean] = Math.round(parseFloat(r.actual_hours || 0) * 10) / 10;
+    });
 
     const result = {};
 
     for (const br of BRANCHES) {
-      // 1. 工作天數
+      // 1. 服務廠工作天數（供進度顯示用）
       let workingDays = 0;
       const wdRes = await pool.query(
         `SELECT work_dates FROM working_days_config WHERE branch=$1 AND period=$2`,
@@ -270,6 +273,10 @@ amabDmsRes.rows.forEach(r => {
           workingDays = parseInt(r3.rows[0]?.cnt || 0);
         }
       }
+
+      // ── 員工工作天數（用於目標計算，優先級高於服務廠工作天數）──
+      // 若已設定全域員工工作天數則使用，否則 fallback 至服務廠工作天數
+      const empWorkingDays = globalEmpWorkingDays !== null ? globalEmpWorkingDays : workingDays;
 
       // 2. 名冊查詢
       const periodStart = `${period.slice(0,4)}-${period.slice(4,6)}-01`;
@@ -311,7 +318,7 @@ amabDmsRes.rows.forEach(r => {
         deptTypeMap[dt].push(r);
       });
 
-      // 4. 實際工時（工資反推，折扣還原 → 儲存還原後工資，JS 端按科別時薪換算）
+      // 4. 實際工時
       let actualRes;
       if (STD_BRANCHES.has(br)) {
         actualRes = await pool.query(
@@ -336,7 +343,11 @@ SUM(standard_hours) AS actual_hours
       const matchedSet = new Set();
 
       // 5. 組合名冊技師
-      const branchResult = { working_days: workingDays, dept_types: {} };
+      const branchResult = {
+        working_days:     workingDays,
+        emp_working_days: empWorkingDays,  // 新增：員工工作天數
+        dept_types: {},
+      };
 
       for (const [deptType, techs] of Object.entries(deptTypeMap)) {
         const typeRates      = rates[deptType] || {};
@@ -348,7 +359,8 @@ SUM(standard_hours) AS actual_hours
             const rate          = typeRates[t.job_title] !== undefined ? typeRates[t.job_title] : (typeRates.default ?? 1.0);
             const isResigned    = t.status === '離職';
             const effectiveRate = (isResigned && !resignedCountTarget) ? 0 : rate;
-            const targetHours   = Math.round(workingDays * 8 * effectiveRate * 10) / 10;
+            // ★ 目標工時改用員工工作天數計算
+            const targetHours   = Math.round(empWorkingDays * 8 * effectiveRate * 10) / 10;
             const actualHours = findActualHours(t.emp_name, actualMap, matchedSet);
             const achieveRate   = targetHours > 0 ? Math.round(actualHours / targetHours * 1000) / 10 : null;
             return {
@@ -430,6 +442,8 @@ SUM(standard_hours) AS actual_hours
       resigned_count_target: resignedCountTarget,
       hourly_rate:           hourlyRate,
       hourly_rates:          hourlyRates,
+      // 回傳員工工作天數供前端顯示
+      emp_working_days:      globalEmpWorkingDays,
     });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
@@ -446,7 +460,6 @@ router.get('/stats/tech-hours-raw', async (req, res) => {
     const config         = await getConfig();
     const hourlyRate     = parseFloat(config.hourly_rate) || 2150;
     const hourlyRates    = config.hourly_rates || { engine: hourlyRate, bodywork: 1450, paint: 1450, beauty: hourlyRate };
-    // 依科別選取對應時薪
     const deptRate       = dept_type && hourlyRates[dept_type]
       ? parseFloat(hourlyRates[dept_type])
 : hourlyRate;
@@ -496,7 +509,7 @@ router.get('/stats/tech-hours-raw', async (req, res) => {
         });
       }
 
-rawRes = await pool.query(
+      rawRes = await pool.query(
         `SELECT
            dispatch_date,
            work_order,
@@ -517,7 +530,7 @@ rawRes = await pool.query(
 
     const rows    = rawRes.rows;
     const sumOrig = rows.reduce((s, r) => s + parseFloat(r.original_hours || 0), 0);
-    const sumRest = sumOrig;   // 直接用 standard_hours，無折扣差異
+    const sumRest = sumOrig;
     const sumWage = rows.reduce((s, r) => s + parseFloat(r.wage            || 0), 0);
 
     res.json({
