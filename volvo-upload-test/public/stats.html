@@ -560,7 +560,11 @@
       </div>
       <button onclick="openTechHoursConfig()"
         style="flex-shrink:0;background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.4);padding:9px 16px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap">
-        &#x2699;&#xFE0F; 產能利用率設定
+&#x2699;&#xFE0F; 產能利用率設定
+      </button>
+      <button onclick="openTechGroupConfig()"
+        style="flex-shrink:0;background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.4);padding:9px 16px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap">
+        &#x1F465; 組別設定
       </button>
     </div>
     <div id="techHoursKPI" class="kpi-grid"></div>
@@ -2567,7 +2571,19 @@ async function loadTechHours(period,branch){
     const {branches:branchData,rosterPeriod,hourly_rate:HOURLY=2150,hourly_rates:HOURLY_RATES={engine:2150,bodywork:1450,paint:1450,beauty:2150}}=data;
     const branchColors={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
     const DEPT_COLORS={engine:'#8b5cf6',bodywork:'#f97316',paint:'#06b6d4',beauty:'#ec4899'};
-    const brKeys=Object.keys(branchData).filter(br=>!branch||br===branch);
+const brKeys=Object.keys(branchData).filter(br=>!branch||br===branch);
+
+    _techHoursCache = data;
+    brKeys.forEach(br_ov=>{
+      const ex_ov=_techGetExcludes(period,br_ov);
+      Object.values((branchData[br_ov]||{}).dept_types||{}).forEach(dv_ov=>{
+        dv_ov.techs.forEach(t_ov=>{
+          if(ex_ov[t_ov.emp_name]){t_ov.target_excluded=true;t_ov.target_hours=0;t_ov.achieve_rate=null;}
+        });
+      });
+    });
+
+    // KPI
 
     // KPI
     let grandActH=0,grandTgtH=0;
@@ -2650,31 +2666,76 @@ async function loadTechHours(period,branch){
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr>
+<thead><tr>
                 <th>姓名</th><th>職務</th><th>狀態</th>
+                <th style="text-align:center;white-space:nowrap;font-size:11px">不計目標</th>
                 <th class="num">利用率</th><th class="num">目標工時</th>
                 <th class="num">實際工時</th><th class="num">達成率</th>
               </tr></thead>
               <tbody>`;
+  const _grpBrGroups=_techGetGroups(br);
+        const _grpMap_dk={};const _grpUng=[];
         dv.techs.forEach(t=>{
+          const g=_grpBrGroups[t.emp_name]||'';
+          if(g){if(!_grpMap_dk[g])_grpMap_dk[g]=[];_grpMap_dk[g].push(t);}
+          else{_grpUng.push(t);}
+        });
+        const _GRP_COLS=['#3b82f6','#10b981','#f59e0b','#8b5cf6','#f97316','#06b6d4','#ec4899','#ef4444'];
+        let _grpCI=0;const _grpColMap={};
+
+        const _renderTechRow=(t)=>{
           const isResigned=t.status==='離職';
           const tAch=t.achieve_rate;
           const tAchCol=tAch===null?'#475569':tAch>=100?'#10b981':tAch>=80?'#f59e0b':'#ef4444';
           const tBarW=t.target_hours>0?Math.min(100,t.actual_hours/t.target_hours*100):0;
           const safeEmpName=t.emp_name.replace(/'/g,"\\'");
-          html+=`<tr style="${isResigned?'opacity:.65':''} ${t.is_dms_only?'background:rgba(100,116,139,.04)':''}">
+          const isExcluded=t.target_excluded;
+          return `<tr style="${isResigned?'opacity:.65':''} ${t.is_dms_only?'background:rgba(100,116,139,.04)':''}">
             <td style="font-weight:600;cursor:pointer;color:#93c5fd" onclick="openTechHoursDetail('${safeEmpName}','${br}','${dk}')" title="點擊查看折扣明細">${t.emp_name} <span style="font-size:10px;opacity:.6">🔍</span></td>
             <td style="font-size:12px;color:#94a3b8">${t.job_title||'—'}</td>
             <td><span style="font-size:10px;padding:1px 6px;border-radius:6px;background:${t.status==='在職'?'rgba(16,185,129,.15)':t.status==='留職停薪'?'rgba(245,158,11,.15)':'rgba(239,68,68,.15)'};color:${t.status==='在職'?'#10b981':t.status==='留職停薪'?'#f59e0b':'#ef4444'}">${t.status}</span></td>
-            <td class="num" style="color:#64748b">${t.target_excluded?'—':(t.utilization*100).toFixed(0)+'%'}</td>
-            <td class="num">${t.target_excluded?'<span style="color:#475569">不計目標</span>':t.target_hours+'H'}</td>
+            <td style="text-align:center;padding:6px 8px">
+              <button onclick="_techToggleExclude('${period}','${br}','${safeEmpName}')"
+                title="${isExcluded?'恢復計入目標':'設為不計目標（實績照計）'}"
+                style="padding:3px 9px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;border:1.5px solid ${isExcluded?'#ef4444':'#2d3f56'};background:${isExcluded?'rgba(239,68,68,.15)':'transparent'};color:${isExcluded?'#ef4444':'#475569'}">
+                ${isExcluded?'❌ 不計':'✅ 計入'}
+              </button>
+            </td>
+            <td class="num" style="color:#64748b">${isExcluded?'—':(t.utilization*100).toFixed(0)+'%'}</td>
+            <td class="num">${isExcluded?'<span style="color:#ef4444;font-size:11px;font-weight:700">不計</span>':t.target_hours+'H'}</td>
             <td class="num" style="color:#8b5cf6;font-weight:700">${t.actual_hours}H</td>
             <td class="num">
               ${tAch===null?'<span style="color:#475569">—</span>':`<span style="color:${tAchCol};font-weight:800">${tAch}%</span>`}
-              ${!t.target_excluded&&t.target_hours>0?`<div class="bar-wrap" style="margin-top:3px"><div class="bar-bg" style="height:3px"><div class="bar-fill" style="width:${tBarW.toFixed(0)}%;height:3px;background:${tAchCol}"></div></div></div>`:''}
+              ${!isExcluded&&t.target_hours>0?`<div class="bar-wrap" style="margin-top:3px"><div class="bar-bg" style="height:3px"><div class="bar-fill" style="width:${tBarW.toFixed(0)}%;height:3px;background:${tAchCol}"></div></div></div>`:''}
             </td>
           </tr>`;
+        };
+        const _renderGrpSubtotal=(gName,gTechs,gCol)=>{
+          const gAct=Math.round(gTechs.reduce((s,t)=>s+(t.actual_hours||0),0)*10)/10;
+          const gTgt=Math.round(gTechs.reduce((s,t)=>s+(t.target_hours||0),0)*10)/10;
+          const gAch=gTgt>0?Math.round(gAct/gTgt*1000)/10:null;
+          const gAchCol=gAch===null?'#475569':gAch>=100?'#10b981':gAch>=80?'#f59e0b':'#ef4444';
+          return `<tr style="background:${gCol}18;border-top:2px solid ${gCol}55">
+            <td colspan="4" style="padding:7px 12px;font-size:12px;font-weight:800;color:${gCol}">📊 ${gName} 小計（${gTechs.length} 人）</td>
+            <td class="num" style="color:#94a3b8;font-weight:700">${gTgt}H</td>
+            <td class="num" style="color:#8b5cf6;font-weight:800">${gAct}H</td>
+            <td class="num">
+              ${gAch===null?'<span style="color:#475569">—</span>':`<span style="color:${gAchCol};font-weight:800">${gAch}%</span>`}
+              ${gTgt>0?`<div class="bar-wrap" style="margin-top:3px"><div class="bar-bg" style="height:3px"><div class="bar-fill" style="width:${Math.min(100,gAct/gTgt*100).toFixed(0)}%;height:3px;background:${gAchCol}"></div></div></div>`:''}
+            </td>
+          </tr>`;
+        };
+        Object.entries(_grpMap_dk).forEach(([gName,gTechs])=>{
+          if(!_grpColMap[gName]){_grpColMap[gName]=_GRP_COLS[_grpCI%_GRP_COLS.length];_grpCI++;}
+          const gCol=_grpColMap[gName];
+          html+=`<tr style="background:${gCol}10"><td colspan="8" style="padding:5px 12px;border-top:2px solid ${gCol}44;border-bottom:1px solid ${gCol}22"><span style="font-size:12px;font-weight:800;color:${gCol}">👥 ${gName}</span><span style="font-size:11px;color:#64748b;margin-left:8px">${gTechs.length} 人</span></td></tr>`;
+          gTechs.forEach(t=>{html+=_renderTechRow(t);});
+          html+=_renderGrpSubtotal(gName,gTechs,gCol);
         });
+        if(_grpUng.length>0&&Object.keys(_grpMap_dk).length>0){
+          html+=`<tr style="background:rgba(100,116,139,.06)"><td colspan="8" style="padding:5px 12px;border-top:1px solid #2d3f56"><span style="font-size:11px;font-weight:700;color:#64748b">📋 未分組（${_grpUng.length} 人）</span></td></tr>`;
+        }
+        _grpUng.forEach(t=>{html+=_renderTechRow(t);});
         html+=`</tbody></table></div></div>`;
       });
       html+=`</div>`;
@@ -4348,6 +4409,130 @@ document.addEventListener('DOMContentLoaded',async()=>{
     </div>
   </div>
 </div>
+
+   <!-- ══ 技師組別設定 Modal ══ -->
+<div id="techGroupConfigModal"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:600;
+         align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto"
+  onclick="if(event.target===this)closeTechGroupConfig()">
+  <div style="background:#1a2740;border:1px solid #2d4060;border-radius:14px;
+              width:100%;max-width:740px;box-shadow:0 24px 64px rgba(0,0,0,.85);margin:auto">
+    <div style="display:flex;align-items:center;gap:10px;padding:16px 20px 14px;
+                border-bottom:1px solid #2d3f56;flex-shrink:0;flex-wrap:wrap">
+      <div style="font-size:15px;font-weight:800;color:#fff;flex:1">&#x1F465; 技師組別設定</div>
+      <div style="font-size:11px;color:#64748b;min-width:0;flex:2">輸入組別名稱（如：A組、B組），同組技師的目標與達成率會自動合計</div>
+      <button onclick="saveTechGroupConfig()"
+        style="padding:7px 16px;background:#3b82f6;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">
+        &#x1F4BE; 儲存組別
+      </button>
+      <button onclick="closeTechGroupConfig()"
+        style="width:30px;height:30px;border-radius:8px;border:1px solid #2d3f56;background:#0f172a;color:#64748b;font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center">&times;</button>
+    </div>
+    <div style="padding:18px 20px;overflow-y:auto;max-height:calc(100vh - 130px)">
+      <div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#94a3b8;line-height:1.8;margin-bottom:16px">
+        &#x1F4A1; 設定儲存在瀏覽器本地（localStorage）。同組技師以<strong style="color:#e2e8f0">彩色分群</strong>顯示，底部自動計算<strong style="color:#e2e8f0">組別目標／實際／達成率</strong>。<br>
+        &#x26A0;&#xFE0F; <strong style="color:#e2e8f0">不計目標</strong>請直接在工時表每一列的按鈕切換，按月份分開儲存。
+      </div>
+      <div id="techGroupConfigBody"><div style="color:#64748b;font-size:13px">載入中...</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let _techHoursCache = null;
+
+function _techGetAllGroups(){try{return JSON.parse(localStorage.getItem('techGroupsV2')||'{}');}catch(e){return {};}}
+function _techGetGroups(branch){return _techGetAllGroups()[branch]||{};}
+function _techSaveGroups(branch,groups){try{const a=_techGetAllGroups();a[branch]=groups;localStorage.setItem('techGroupsV2',JSON.stringify(a));}catch(e){}}
+function _techGetExcludes(period,branch){try{const a=JSON.parse(localStorage.getItem('techExcludeV2')||'{}');return(a[period]||{})[branch]||{};}catch(e){return {};}}
+function _techSaveExclude(period,branch,empName,excluded){
+  try{
+    const a=JSON.parse(localStorage.getItem('techExcludeV2')||'{}');
+    if(!a[period])a[period]={};if(!a[period][branch])a[period][branch]={};
+    if(excluded){a[period][branch][empName]=true;}
+    else{delete a[period][branch][empName];if(!Object.keys(a[period][branch]).length)delete a[period][branch];if(!Object.keys(a[period]).length)delete a[period];}
+    localStorage.setItem('techExcludeV2',JSON.stringify(a));
+  }catch(e){}
+}
+function _techToggleExclude(period,branch,empName){
+  const ex=_techGetExcludes(period,branch);
+  _techSaveExclude(period,branch,empName,!ex[empName]);
+  loadTechHours(period,document.getElementById('selBranch').value);
+}
+function openTechGroupConfig(){
+  if(!_techHoursCache){alert('請先載入技師工時資料');return;}
+  document.getElementById('techGroupConfigModal').style.display='flex';
+  document.body.style.overflow='hidden';
+  renderTechGroupConfigModal();
+}
+function closeTechGroupConfig(){
+  document.getElementById('techGroupConfigModal').style.display='none';
+  document.body.style.overflow='';
+}
+function _tgEscId(s){return String(s).replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g,'_');}
+function renderTechGroupConfigModal(){
+  const data=_techHoursCache;if(!data)return;
+  const branch=document.getElementById('selBranch').value;
+  const BC={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
+  const DC={engine:'#8b5cf6',bodywork:'#f97316',paint:'#06b6d4',beauty:'#ec4899'};
+  const brKeys=Object.keys(data.branches||{}).filter(br=>!branch||br===branch);
+  let html='';
+  brKeys.forEach(br=>{
+    const bd=data.branches[br];if(!bd)return;
+    const col=BC[br]||'#94a3b8';
+    const groups=_techGetGroups(br);
+    const groupNames=[...new Set(Object.values(groups))].filter(Boolean).sort();
+    html+=`<div style="margin-bottom:24px"><div style="font-size:14px;font-weight:800;color:${col};margin-bottom:12px;padding-bottom:8px;border-bottom:1.5px solid ${col}44">${br}</div>`;
+    Object.entries(bd.dept_types||{}).forEach(([dk,dv])=>{
+      if(!dv.techs.length)return;
+      const dCol=DC[dk]||'#94a3b8';
+      html+=`<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:${dCol};margin-bottom:8px;padding:3px 10px;background:${dCol}15;border-radius:5px;display:inline-block">${dv.label}</div><div style="display:flex;flex-direction:column;gap:5px">`;
+      dv.techs.forEach(t=>{
+        const curGroup=groups[t.emp_name]||'';
+        const ex=_techGetExcludes(getPeriod(),br);
+        const isExcl=!!ex[t.emp_name];
+        const sCol=t.status==='在職'?'#10b981':t.status==='留職停薪'?'#f59e0b':'#ef4444';
+        html+=`<div style="display:flex;align-items:center;gap:8px;background:#0f172a;border:1px solid ${isExcl?'rgba(239,68,68,.4)':'#2d3f56'};border-radius:8px;padding:8px 12px">
+          <span style="font-weight:700;color:${isExcl?'#ef4444':'#e2e8f0'};min-width:72px">${t.emp_name}</span>
+          <span style="font-size:11px;color:#64748b;min-width:58px">${t.job_title||'—'}</span>
+          <span style="font-size:10px;padding:1px 7px;border-radius:4px;background:${sCol}22;color:${sCol}">${t.status}</span>
+          ${isExcl?`<span style="font-size:10px;background:rgba(239,68,68,.15);color:#ef4444;padding:2px 8px;border-radius:5px;font-weight:700;white-space:nowrap">❌ 不計目標中</span>`:''}
+          <input type="text" list="tgList-${br}-${dk}" id="tgInput-${br}-${_tgEscId(t.emp_name)}" value="${curGroup}" placeholder="組別名稱（留空=不分組）"
+            style="flex:1;background:#1e293b;border:1px solid #2d3f56;color:#e2e8f0;padding:6px 10px;border-radius:6px;font-size:12px;outline:none"
+            onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#2d3f56'">
+          <datalist id="tgList-${br}-${dk}">${groupNames.map(g=>`<option value="${g}">`).join('')}</datalist>
+        </div>`;
+      });
+      html+=`</div></div>`;
+    });
+    html+=`</div>`;
+  });
+  document.getElementById('techGroupConfigBody').innerHTML=html||'<div style="color:#64748b">無技師資料，請先查詢工時</div>';
+}
+function saveTechGroupConfig(){
+  const data=_techHoursCache;if(!data)return;
+  const branch=document.getElementById('selBranch').value;
+  const brKeys=Object.keys(data.branches||{}).filter(br=>!branch||br===branch);
+  brKeys.forEach(br=>{
+    const bd=data.branches[br];if(!bd)return;
+    const groups=_techGetGroups(br);
+    Object.values(bd.dept_types||{}).forEach(dv=>{
+      dv.techs.forEach(t=>{
+        const el=document.getElementById(`tgInput-${br}-${_tgEscId(t.emp_name)}`);
+        if(!el)return;
+        const val=el.value.trim();
+        if(val){groups[t.emp_name]=val;}else{delete groups[t.emp_name];}
+      });
+    });
+    _techSaveGroups(br,groups);
+  });
+  closeTechGroupConfig();
+  const p=getPeriod();if(p)loadTechHours(p,document.getElementById('selBranch').value);
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){const m=document.getElementById('techGroupConfigModal');if(m&&m.style.display!=='none')closeTechGroupConfig();}
+});
+</script>
    
 </body>
 </html>
