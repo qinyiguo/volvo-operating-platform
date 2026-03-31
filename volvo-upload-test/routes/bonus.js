@@ -582,7 +582,9 @@ router.get('/bonus/progress', async (req, res) => {
                 for (const brr of BRS) {
                   const pSt = `${actualPeriod.slice(0,4)}-${actualPeriod.slice(4,6)}-01`;
 
-                  const actRes = await pool.query(
+                  // 先用 branch 篩選；若查無資料（聯合/鈑烤可能以不同branch名入庫），
+                  // fallback 查全期間，靠後續名冊比對過濾
+                  let actRes = await pool.query(
                     `SELECT tp.tech_name_clean,
                        SUM(COALESCE(boh.standard_hours, tp.standard_hours)) AS actual_hours
                      FROM tech_performance tp
@@ -591,6 +593,17 @@ router.get('/bonus/progress', async (req, res) => {
                      GROUP BY tp.tech_name_clean`,
                     [actualPeriod, brr]
                   );
+                  if (!actRes.rows.length) {
+                    actRes = await pool.query(
+                      `SELECT tp.tech_name_clean,
+                         SUM(COALESCE(boh.standard_hours, tp.standard_hours)) AS actual_hours
+                       FROM tech_performance tp
+                       LEFT JOIN beauty_op_hours boh ON TRIM(boh.op_code) = TRIM(tp.work_code)
+                       WHERE tp.period=$1
+                       GROUP BY tp.tech_name_clean`,
+                      [actualPeriod]
+                    );
+                  }
 
                   const actMap = {};
                   actRes.rows.forEach(r => {
