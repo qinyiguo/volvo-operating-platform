@@ -582,8 +582,9 @@ router.get('/bonus/progress', async (req, res) => {
                 for (const brr of BRS) {
                   const pSt = `${actualPeriod.slice(0,4)}-${actualPeriod.slice(4,6)}-01`;
 
-                  // 先用 branch 篩選；若查無資料（聯合/鈑烤可能以不同branch名入庫），
-                  // fallback 查全期間，靠後續名冊比對過濾
+                  // 先用 branch 篩選；記錄是否用了 branch 限制（影響 fallback 邏輯）
+                  // 若查無資料（聯合/鈑烤可能以不同branch名入庫），fallback 查全期間
+                  let usedBranchFilter = true;
                   let actRes = await pool.query(
                     `SELECT tp.tech_name_clean,
                        SUM(COALESCE(boh.standard_hours, tp.standard_hours)) AS actual_hours
@@ -594,6 +595,7 @@ router.get('/bonus/progress', async (req, res) => {
                     [actualPeriod, brr]
                   );
                   if (!actRes.rows.length) {
+                    usedBranchFilter = false;
                     actRes = await pool.query(
                       `SELECT tp.tech_name_clean,
                          SUM(COALESCE(boh.standard_hours, tp.standard_hours)) AS actual_hours
@@ -655,8 +657,16 @@ router.get('/bonus/progress', async (req, res) => {
                       }
                       brActual += h;
                     }
+                    // ★ 姓名比對失敗（例如美容部用彙總名稱「美容技師-A」入庫）
+                    // 若 branch 查詢有資料但比對結果為 0，直接加總整個 branch 的工時
+                    if (brActual === 0 && usedBranchFilter && actRes.rows.length > 0) {
+                      brActual = actRes.rows.reduce((s, r) => s + parseFloat(r.actual_hours || 0), 0);
+                    }
                   } else {
-                    brActual = actRes.rows.reduce((s, r) => s + parseFloat(r.actual_hours || 0), 0);
+                    // 無名冊資料：用 branch 查詢總和（若有）
+                    if (usedBranchFilter) {
+                      brActual = actRes.rows.reduce((s, r) => s + parseFloat(r.actual_hours || 0), 0);
+                    }
                   }
                   sumActual += Math.round(brActual * 10) / 10;
 
