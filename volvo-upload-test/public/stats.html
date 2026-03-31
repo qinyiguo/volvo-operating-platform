@@ -3036,8 +3036,40 @@ async function loadTechTurnover(period, branch) {
     html += `</div>`;  // end KPI grid
 
     // ── 引電每日台數圖表 ──
+    const _trAvgBtns = BRANCHES.map(br=>{
+      const col=branchColors[br]||'#94a3b8', avg=bd[br]?.daily_avg||0;
+      return `<button id="trAvgToggle-${br}" onclick="_toggleTrAvg('${br}')"
+        style="padding:4px 11px;border:1.5px solid ${col};border-radius:6px;
+               background:transparent;color:${col};font-size:11px;font-weight:600;cursor:pointer;transition:all .15s">
+        📈 ${br} 均線
+      </button>`;
+    }).join('');
+    const _trAvgCards = BRANCHES.map(br=>{
+      const b=bd[br]||{}, col=branchColors[br]||'#94a3b8';
+      const avg=b.daily_avg||0, total=b.total_visits||0, wd=b.working_days||0;
+      const trR=b.turnover_rate, trC=trR===null?'#475569':trR>=4?'#10b981':trR>=3?'#f59e0b':'#ef4444';
+      return `<div style="flex:1;min-width:0;background:#0f172a;border:1.5px solid ${col}55;border-radius:10px;padding:12px 14px;text-align:center">
+        <div style="font-size:11px;font-weight:800;color:${col};margin-bottom:8px">${br} 引電</div>
+        <div style="font-size:30px;font-weight:900;color:${col};line-height:1">${avg}</div>
+        <div style="font-size:10px;color:#64748b;margin-top:4px">台 / 天</div>
+        <div style="border-top:1px solid ${col}33;margin-top:8px;padding-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px">
+          <div><div style="font-size:10px;color:#64748b">月台次</div><div style="font-size:14px;font-weight:800;color:#e2e8f0">${total}</div></div>
+          <div><div style="font-size:10px;color:#64748b">周轉率</div><div style="font-size:14px;font-weight:800;color:${trC}">${trR!==null?trR:'—'}</div></div>
+        </div>
+      </div>`;
+    }).join('');
     html += `<div class="card">
       <div class="card-title">📅 每日引電台數 <span class="card-title-note">排除 PDI、鈑噴、事故保險</span></div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">${_trAvgCards}</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+        <span style="font-size:11px;color:#64748b;font-weight:700">顯示日均線：</span>
+        ${_trAvgBtns}
+        <button id="trTotalToggle" onclick="_toggleTrTotal()"
+          style="padding:4px 11px;border:1.5px solid #f97316;border-radius:6px;
+                 background:transparent;color:#f97316;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s">
+          📊 合計線
+        </button>
+      </div>
       <div id="turnoverDailyChart" style="overflow-x:auto;margin-bottom:16px"></div>`;
 
     // 引電每日明細表
@@ -3127,6 +3159,9 @@ async function loadTechTurnover(period, branch) {
     el.innerHTML = html;
 
     // ── 繪製圖表 ──
+    _trChartCache = { BRANCHES, bd, sortedDates, branchColors };
+    _trShowAvg    = Object.fromEntries(BRANCHES.map(b=>[b,false]));
+    _trShowTotal  = false;
     _renderTurnoverChart(BRANCHES, bd, sortedDates, branchColors);
     if (bw && bw.daily && bw.daily.length) {
       const bwDates = [...new Set(bw.daily.map(d => String(d.work_date).slice(0,10)))].sort();
@@ -3138,95 +3173,180 @@ async function loadTechTurnover(period, branch) {
   }
 }
 
- function _renderTurnoverChart(BRANCHES, bd, sortedDates, branchColors) {
+// ── 周轉率圖表全域狀態 ──
+var _trChartCache = null;
+var _trShowAvg    = {};
+var _trShowTotal  = false;
+
+function _toggleTrAvg(br) {
+  if (!_trChartCache) return;
+  _trShowAvg[br] = !_trShowAvg[br];
+  const col = _trChartCache.branchColors[br] || '#94a3b8';
+  const btn = document.getElementById('trAvgToggle-' + br);
+  if (btn) {
+    btn.style.background   = _trShowAvg[br] ? col + '28' : 'transparent';
+    btn.style.borderWidth  = _trShowAvg[br] ? '2px' : '1.5px';
+    btn.style.fontWeight   = _trShowAvg[br] ? '800' : '600';
+  }
+  const { BRANCHES, bd, sortedDates, branchColors } = _trChartCache;
+  _renderTurnoverChart(BRANCHES, bd, sortedDates, branchColors);
+}
+
+function _toggleTrTotal() {
+  if (!_trChartCache) return;
+  _trShowTotal = !_trShowTotal;
+  const btn = document.getElementById('trTotalToggle');
+  if (btn) {
+    btn.style.background  = _trShowTotal ? 'rgba(249,115,22,.2)' : 'transparent';
+    btn.style.borderWidth = _trShowTotal ? '2px' : '1.5px';
+    btn.style.fontWeight  = _trShowTotal ? '800' : '600';
+  }
+  const { BRANCHES, bd, sortedDates, branchColors } = _trChartCache;
+  _renderTurnoverChart(BRANCHES, bd, sortedDates, branchColors);
+}
+
+function _renderTurnoverChart(BRANCHES, bd, sortedDates, branchColors) {
   var wrap = document.getElementById('turnoverDailyChart');
   if (!wrap || !sortedDates.length) return;
   var isLight = document.body.classList.contains('light-theme');
   var DOW_CN  = ['日','一','二','三','四','五','六'];
-  var isMob   = window.innerWidth <= 768;
-  var chartH  = isMob ? 160 : 240;
-  var topPad  = 20, xLH = 36, leftP = 50, rightP = 24;
-  var gap     = 6;
-  var brCount = BRANCHES.length;
+  var showAvg   = _trShowAvg   || {};
+  var showTotal = _trShowTotal || false;
 
-  // 建立 dayMap
+  // Build dayMap
   var dayMap = {};
   BRANCHES.forEach(function(br) {
-    (bd[br] && bd[br].daily || []).forEach(function(d) {
+    (bd[br]&&bd[br].daily||[]).forEach(function(d) {
       var dt = String(d.work_date).slice(0,10);
       if (!dayMap[dt]) dayMap[dt] = {};
-      dayMap[dt][br] = parseInt(d.vehicle_count || 0);
+      dayMap[dt][br] = parseInt(d.vehicle_count||0);
     });
   });
 
+  // Max value
   var maxVal = 0;
-  sortedDates.forEach(function(d) {
-    BRANCHES.forEach(function(br) { var v = (dayMap[d] && dayMap[d][br]) || 0; if (v > maxVal) maxVal = v; });
+  sortedDates.forEach(function(date) {
+    BRANCHES.forEach(function(br){ var v=(dayMap[date]&&dayMap[date][br])||0; if(v>maxVal)maxVal=v; });
+    if (showTotal) {
+      var tot = BRANCHES.reduce(function(s,br){return s+((dayMap[date]&&dayMap[date][br])||0);},0);
+      if (tot > maxVal) maxVal = tot;
+    }
   });
   if (!maxVal) maxVal = 1;
 
-  var availW  = Math.min((wrap.clientWidth || 700) - leftP - rightP, 900);
-  var groupW  = Math.max(20, Math.floor(availW / Math.max(sortedDates.length, 1)));
-  var barW    = Math.max(6, Math.min(32, Math.floor((groupW - gap) / Math.max(brCount, 1))));
-  var actualGW= brCount * barW + gap;
-  var svgW    = Math.max(wrap.clientWidth || 700, leftP + sortedDates.length * actualGW + rightP);
-  var svgH    = topPad + chartH + xLH;
-  var yScale  = function(v) { return maxVal > 0 ? topPad + chartH * (1 - v / maxVal) : topPad + chartH; };
-  var axCol   = isLight ? '#94a3b8' : '#475569';
-  var gridCol = isLight ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,0.05)';
-  var lblCol  = isLight ? '#475569' : '#94a3b8';
+  var isMob   = window.innerWidth <= 768;
+  var chartH  = isMob ? 180 : 260;
+  var topPad  = 28;
+  var xLH     = 38;
+  var leftP   = 52;
+  var rightP  = 28;
+  var brCount = BRANCHES.length;
+  var gap     = 5;
 
-  var svg = '<svg width="' + svgW + '" height="' + svgH + '" xmlns="http://www.w3.org/2000/svg" style="display:block">';
+  var availW  = Math.min((wrap.clientWidth||800)-leftP-rightP, 1200);
+  var groupW  = Math.max(brCount*9+gap, Math.floor(availW/Math.max(sortedDates.length,1)));
+  var barW    = Math.max(7, Math.min(30, Math.floor((groupW-gap)/Math.max(brCount,1))));
+  var actGW   = brCount*barW+gap;
+  var svgW    = Math.max(wrap.clientWidth||800, leftP+sortedDates.length*actGW+rightP);
+  var svgH    = topPad+chartH+xLH;
+  var yScale  = function(v){ return topPad+chartH*(1-v/maxVal); };
+  var axCol   = isLight?'#94a3b8':'#475569';
+  var gridCol = isLight?'rgba(0,0,0,0.07)':'rgba(255,255,255,0.05)';
+  var lblCol  = isLight?'#475569':'#94a3b8';
 
-  for (var ti = 0; ti <= 4; ti++) {
-    var ytv = Math.round(maxVal * ti / 4), yy = yScale(ytv);
-    svg += '<line x1="' + leftP + '" y1="' + yy + '" x2="' + (svgW - rightP) + '" y2="' + yy + '" stroke="' + (ti === 0 ? axCol : gridCol) + '" stroke-width="' + (ti === 0 ? 1.5 : 0.5) + '"/>';
-    svg += '<text x="' + (leftP - 6) + '" y="' + (yy + 4) + '" text-anchor="end" font-size="10" fill="' + axCol + '">' + ytv + '</text>';
+  var svg = '<svg width="'+svgW+'" height="'+svgH+'" xmlns="http://www.w3.org/2000/svg" style="display:block">';
+
+  // Y grid
+  for (var ti=0;ti<=5;ti++) {
+    var ytv=Math.round(maxVal*ti/5), yy=yScale(ytv);
+    svg+='<line x1="'+leftP+'" y1="'+yy+'" x2="'+(svgW-rightP)+'" y2="'+yy+'" stroke="'+(ti===0?axCol:gridCol)+'" stroke-width="'+(ti===0?1.5:0.5)+'"/>';
+    svg+='<text x="'+(leftP-6)+'" y="'+(yy+4)+'" text-anchor="end" font-size="10" fill="'+axCol+'">'+ytv+'</text>';
   }
 
+  // Bars + total dots
   var cx = leftP;
+  var totalPts = [];
   sortedDates.forEach(function(date) {
-    var dow    = new Date(date + 'T00:00:00').getDay();
+    var dow    = new Date(date+'T00:00:00').getDay();
     var dayNum = parseInt(date.slice(8));
-    var midX   = cx + brCount * barW / 2;
-    if (dow === 0 || dow === 6) svg += '<rect x="' + cx + '" y="' + topPad + '" width="' + (brCount * barW) + '" height="' + chartH + '" fill="' + (isLight ? 'rgba(0,0,0,0.025)' : 'rgba(255,255,255,0.025)') + '"/>';
+    var midX   = cx + brCount*barW/2;
+    if (dow===0||dow===6) svg+='<rect x="'+cx+'" y="'+topPad+'" width="'+(brCount*barW)+'" height="'+chartH+'" fill="'+(isLight?'rgba(0,0,0,0.025)':'rgba(255,255,255,0.025)')+'" />';
 
-    BRANCHES.forEach(function(br, bi) {
-      var cnt = (dayMap[date] && dayMap[date][br]) || 0;
-      var col = branchColors[br] || '#94a3b8';
-      var bx  = cx + bi * barW;
-      if (cnt > 0) {
-        var barH = Math.max(3, chartH * cnt / maxVal);
-        var by   = topPad + chartH - barH;
-        var gid  = 'tg_' + bi + '_' + date.replace(/-/g,'');
-        svg += '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="' + col + '" stop-opacity="1"/><stop offset="100%" stop-color="' + col + '" stop-opacity="0.6"/></linearGradient></defs>';
-        svg += '<rect x="' + bx + '" y="' + by + '" width="' + Math.max(1, barW - 1) + '" height="' + barH + '" fill="url(#' + gid + ')" rx="2"/>';
-        if (barH > 18) {
-          svg += '<text x="' + (bx + barW / 2) + '" y="' + (by + 13) + '" text-anchor="middle" font-size="10" font-weight="700" fill="rgba(255,255,255,0.9)">' + cnt + '</text>';
-        } else {
-          svg += '<text x="' + (bx + barW / 2) + '" y="' + Math.max(topPad + 12, by - 3) + '" text-anchor="middle" font-size="10" font-weight="700" fill="' + col + '">' + cnt + '</text>';
-        }
+    var dayTotal = 0;
+    BRANCHES.forEach(function(br,bi) {
+      var cnt = (dayMap[date]&&dayMap[date][br])||0;
+      dayTotal += cnt;
+      if (!cnt) return;
+      var col  = branchColors[br]||'#94a3b8';
+      var bx   = cx+bi*barW;
+      var barH = Math.max(4, chartH*cnt/maxVal);
+      var by   = topPad+chartH-barH;
+      var gid  = 'tg'+bi+'_'+date.replace(/-/g,'');
+      svg+='<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1">'
+          +'<stop offset="0%" stop-color="'+col+'" stop-opacity="1"/>'
+          +'<stop offset="100%" stop-color="'+col+'" stop-opacity="0.55"/>'
+          +'</linearGradient></defs>';
+      svg+='<rect x="'+bx+'" y="'+by+'" width="'+Math.max(1,barW-1)+'" height="'+barH+'" fill="url(#'+gid+')" rx="2"/>';
+      if (barH>20) {
+        svg+='<text x="'+(bx+barW/2)+'" y="'+(by+13)+'" text-anchor="middle" font-size="9" font-weight="700" fill="rgba(255,255,255,0.9)">'+cnt+'</text>';
+      } else if (barW>=10) {
+        svg+='<text x="'+(bx+barW/2)+'" y="'+Math.max(topPad+11,by-3)+'" text-anchor="middle" font-size="9" font-weight="700" fill="'+col+'">'+cnt+'</text>';
       }
     });
 
-    var dowC = dow === 0 ? '#ef4444' : dow === 6 ? '#60a5fa' : lblCol;
-    svg += '<text x="' + midX + '" y="' + (topPad + chartH + 14) + '" text-anchor="middle" font-size="10" font-weight="' + (dow === 0 || dow === 6 ? 700 : 400) + '" fill="' + dowC + '">' + dayNum + '</text>';
-    svg += '<text x="' + midX + '" y="' + (topPad + chartH + 26) + '" text-anchor="middle" font-size="9" fill="' + dowC + '">' + DOW_CN[dow] + '</text>';
-    cx += actualGW;
+    // Total connecting line point
+    if (showTotal && dayTotal>0) totalPts.push({x:midX, y:yScale(dayTotal), v:dayTotal});
+
+    // X labels
+    var dowC = dow===0?'#ef4444':dow===6?(isLight?'#2563eb':'#60a5fa'):lblCol;
+    var fw   = (dow===0||dow===6)?'700':'400';
+    svg+='<text x="'+midX+'" y="'+(topPad+chartH+15)+'" text-anchor="middle" font-size="10" font-weight="'+fw+'" fill="'+dowC+'">'+dayNum+'</text>';
+    svg+='<text x="'+midX+'" y="'+(topPad+chartH+27)+'" text-anchor="middle" font-size="9" fill="'+dowC+'">'+DOW_CN[dow]+'</text>';
+    cx += actGW;
   });
 
-  // 圖例
-  BRANCHES.forEach(function(br, bi) {
-    var col = branchColors[br] || '#94a3b8';
-    var lx  = leftP + bi * 60;
-    svg += '<rect x="' + lx + '" y="' + (svgH - 10) + '" width="10" height="9" fill="' + col + '" rx="2"/>';
-    svg += '<text x="' + (lx + 14) + '" y="' + (svgH - 2) + '" font-size="10" font-weight="700" fill="' + col + '">' + br + '</text>';
+  // Total line
+  if (showTotal && totalPts.length>1) {
+    var pts = totalPts.map(function(p){return p.x+','+p.y;}).join(' ');
+    svg+='<polyline points="'+pts+'" fill="none" stroke="#f97316" stroke-width="2" stroke-dasharray="5,3" opacity="0.8"/>';
+    totalPts.forEach(function(p){
+      svg+='<circle cx="'+p.x+'" cy="'+p.y+'" r="3.5" fill="#f97316" opacity="0.85"/>';
+      svg+='<text x="'+p.x+'" y="'+Math.max(topPad+11,p.y-6)+'" text-anchor="middle" font-size="10" font-weight="800" fill="#f97316">'+p.v+'</text>';
+    });
+  }
+
+  // Avg lines per branch
+  BRANCHES.forEach(function(br) {
+    if (!showAvg[br]) return;
+    var col = branchColors[br]||'#94a3b8';
+    var avg = bd[br]?parseFloat(bd[br].daily_avg||0):0;
+    if (!avg) return;
+    var y = yScale(avg);
+    svg+='<line x1="'+leftP+'" y1="'+(y+1)+'" x2="'+(svgW-rightP)+'" y2="'+(y+1)+'" stroke="rgba(0,0,0,0.15)" stroke-width="2" stroke-dasharray="6,3"/>';
+    svg+='<line x1="'+leftP+'" y1="'+y+'" x2="'+(svgW-rightP)+'" y2="'+y+'" stroke="'+col+'" stroke-width="2.5" stroke-dasharray="6,3" opacity="0.95"/>';
+    var labelTxt = br+' 均'+avg+'台';
+    var lw = labelTxt.length*6.8+10;
+    svg+='<rect x="'+(leftP+8)+'" y="'+(y-14)+'" width="'+lw+'" height="17" fill="'+(isLight?'rgba(241,245,249,.92)':'rgba(15,23,42,.9)')+'" rx="4"/>';
+    svg+='<text x="'+(leftP+13)+'" y="'+(y-2)+'" font-size="10" font-weight="800" fill="'+col+'">'+labelTxt+'</text>';
   });
 
-  svg += '</svg>';
+  // Legend
+  var lx = leftP;
+  BRANCHES.forEach(function(br) {
+    var col=branchColors[br]||'#94a3b8';
+    svg+='<rect x="'+lx+'" y="'+(svgH-12)+'" width="10" height="9" fill="'+col+'" rx="2"/>';
+    svg+='<text x="'+(lx+14)+'" y="'+(svgH-3)+'" font-size="10" font-weight="700" fill="'+col+'">'+br+'</text>';
+    lx+=56;
+  });
+  if (showTotal) {
+    svg+='<line x1="'+lx+'" y1="'+(svgH-7)+'" x2="'+(lx+14)+'" y2="'+(svgH-7)+'" stroke="#f97316" stroke-width="2" stroke-dasharray="4,2"/>';
+    svg+='<text x="'+(lx+18)+'" y="'+(svgH-3)+'" font-size="10" font-weight="700" fill="#f97316">合計</text>';
+  }
+
+  svg+='</svg>';
   wrap.innerHTML = svg;
 }
-
+ 
 // ── 鈑烤每日台數柱狀圖（集團合計，橘色）──
 function _renderBwChart(daily, dateList) {
   const wrap = document.getElementById('turnoverBwChart');
