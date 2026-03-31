@@ -2761,7 +2761,7 @@ function closeTechHoursDetail() {
         <th style="${thN}">折扣</th>
         <th style="${thN}">工資(元)</th>
         <th style="${thN}">折扣後工時</th>
-        <th style="${thN}">回推工時</th>
+        <th style="${thN}">${deptType==='beauty'?'校正工時':'回推工時'}</th>
         <th style="${thS}">狀態</th>
       </tr></thead><tbody>`;
 
@@ -2781,7 +2781,17 @@ function closeTechHoursDetail() {
         <td style="padding:6px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;color:${discounted?'#f59e0b':'#475569'};font-weight:${discounted?700:400}">${discDisplay}</td>
         <td style="padding:6px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;font-variant-numeric:tabular-nums">${Math.round(r.wage).toLocaleString()}</td>
         <td style="padding:6px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;color:#8b5cf6">${origH}</td>
-        <td style="padding:6px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;color:${discounted?'#10b981':'#64748b'};font-weight:${discounted?700:400}">${restH}${discounted&&parseFloat(diff)>0?` <span style="font-size:10px;color:#10b981">(+${diff})</span>`:''}</td>
+<td style="padding:6px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;color:${
+          deptType==='beauty'
+            ? (r.beauty_corrected_hours!=null?'#ec4899':'#475569')
+            : (discounted?'#10b981':'#64748b')
+        };font-weight:${(discounted||r.beauty_corrected_hours!=null)?700:400}">
+          ${deptType==='beauty'
+            ? (r.beauty_corrected_hours!=null
+                ? parseFloat(r.beauty_corrected_hours).toFixed(2)+' <span style="font-size:10px;color:#ec4899">✦校正</span>'
+                : restH+' <span style="font-size:10px;color:#475569">（未設定代碼）</span>')
+            : restH+(discounted&&parseFloat(diff)>0?` <span style="font-size:10px;color:#10b981">(+${diff})</span>`:'')}
+        </td>
         <td style="padding:6px 10px;border-bottom:1px solid rgba(45,63,86,.3)">${discounted?'<span style="background:rgba(245,158,11,.15);color:#f59e0b;padding:1px 6px;border-radius:4px;font-size:10px">有折扣</span>':'<span style="color:#475569;font-size:11px">—</span>'}</td>
       </tr>`;
     });
