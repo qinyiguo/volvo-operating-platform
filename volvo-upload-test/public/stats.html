@@ -790,6 +790,7 @@
 const TR_DEPT_COLORS = { engine:'#8b5cf6', bodywork:'#f97316', paint:'#06b6d4', beauty:'#ec4899' };
 const TR_JOB_ORDER = ['領班','副領班','L4技師','L3技師','L2技師','L1技師','L0技師','實習生','default'];
 let _trConfig     = null;
+let _trWorkDays   = 26;
 let _trCurrentTab = 'engine';
 
 async function openTechHoursConfig() {
@@ -887,7 +888,7 @@ function renderTrTable(dept) {
       <th style="text-align:left;padding:8px 12px;background:#090f1a;color:#64748b;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;white-space:nowrap">職務</th>
       <th style="padding:8px 12px;background:#090f1a;color:${col};font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;min-width:240px">產能利用率</th>
       <th style="text-align:right;padding:8px 12px;background:#090f1a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;white-space:nowrap">日工時</th>
-      <th style="text-align:right;padding:8px 12px;background:#090f1a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;white-space:nowrap">月目標(26天)</th>
+<th style="text-align:right;padding:8px 12px;background:#090f1a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;white-space:nowrap">月目標(${_trWorkDays}天)</th>
       <th style="padding:8px 12px;background:#090f1a;border-bottom:1px solid #2d3f56;width:46px"></th>
     </tr></thead><tbody>`;
 
@@ -895,7 +896,7 @@ function renderTrTable(dept) {
     const curVal    = rates[key] !== undefined ? rates[key] : 0.8;
     const pct       = Math.round(curVal * 100);
     const dailyH    = (8 * curVal).toFixed(1);
-    const monthH    = Math.round(26 * 8 * curVal * 10) / 10;
+    const monthH    = Math.round(_trWorkDays * 8 * curVal * 10) / 10;
     const isDefault = key === 'default';
     const valCol    = curVal === 0 ? '#475569' : curVal >= 1.5 ? '#f97316' : curVal >= 1.0 ? '#f59e0b' : '#10b981';
     const rowBg     = isDefault ? 'background:rgba(100,116,139,.05)' : '';
@@ -2568,7 +2569,8 @@ async function loadTechHours(period,branch){
     const data=await fetch(`/api/stats/tech-hours?${params}`).then(r=>r.json());
     if(data.error)throw new Error(data.error);
 
-    const {branches:branchData,rosterPeriod,hourly_rate:HOURLY=2150,hourly_rates:HOURLY_RATES={engine:2150,bodywork:1450,paint:1450,beauty:2150}}=data;
+const {branches:branchData,rosterPeriod,hourly_rate:HOURLY=2150,hourly_rates:HOURLY_RATES={engine:2150,bodywork:1450,paint:1450,beauty:2150},emp_working_days}=data;
+    if(emp_working_days!=null) _trWorkDays=emp_working_days;
     const branchColors={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
     const DEPT_COLORS={engine:'#8b5cf6',bodywork:'#f97316',paint:'#06b6d4',beauty:'#ec4899'};
 const brKeys=Object.keys(branchData).filter(br=>!branch||br===branch);
