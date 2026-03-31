@@ -1274,7 +1274,7 @@ async function loadWdCalendar() {
       document.getElementById('btnWdDelete').style.display = data.updated_at ? '' : 'none';
     } catch(e) { wdWorkDates = new Set(); }
     document.getElementById('wdMonthTitle').textContent = `${year}年${month+1}月 ─ 👷 員工工作天（三站共用）`;
-    document.getElementById('wdCalendarWrap').style.display='';renderWdCalendar(year,month);}  /* end service branch */ }
+    document.getElementById('wdCalendarWrap').style.display='';renderWdCalendar(year,month);} 
     return;
   }
 
