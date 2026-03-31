@@ -562,9 +562,9 @@ router.get('/bonus/progress', async (req, res) => {
             const fld = m.stat_field==='amount'?'SUM(wage)':m.stat_field==='hours'?'SUM(standard_hours)':'COUNT(DISTINCT work_order)';
             actual = parseFloat((await pool.query(`SELECT COALESCE(${fld},0) AS v FROM tech_performance WHERE ${conds.join(' AND ')}`, p)).rows[0]?.v || 0);
 } else if (m.metric_source === 'tech_hours') {
-  // 使用手動覆蓋值或留 null（由前端 openActualOverrideModal 填入）
   actual = null;
-  // 嘗試抓手動覆蓋
+  
+  // 1. 先抓手動覆蓋（優先）
   try {
     const overR = await pool.query(
       `SELECT actual_value FROM bonus_actual_overrides
@@ -574,44 +574,51 @@ router.get('/bonus/progress', async (req, res) => {
     if (overR.rows.length && overR.rows[0].actual_value != null)
       actual = parseFloat(overR.rows[0].actual_value);
   } catch(e) {}
-  // 計算工時目標（roster × 利用率 × 工作天）
-  try {
-    const cfgR = await pool.query(`SELECT value FROM app_settings WHERE key='tech_capacity_config'`);
-    const tCfg = cfgR.rows[0]?.value ? JSON.parse(cfgR.rows[0].value) : {};
-    const utilR = tCfg.utilization_rates || {};
-    const resignOk = tCfg.resigned_count_target === true;
-    const DEPT_PATTERNS = { engine:['引擎'], bodywork:['鈑金'], paint:['烤漆','噴漆'], beauty:['美容'] };
-    const rpR = await pool.query(`SELECT DISTINCT period FROM staff_roster ORDER BY period DESC LIMIT 1`);
-    const rp  = rpR.rows[0]?.period;
-    const pSt = `${actualPeriod.slice(0,4)}-${actualPeriod.slice(4,6)}-01`;
-    const BRS = effectiveBranch ? [effectiveBranch] : ['AMA','AMC','AMD'];
-    let tgtTotal = 0;
-    for (const brr of BRS) {
-      const wdR = await pool.query(`SELECT work_dates FROM working_days_config WHERE branch=$1 AND period=$2`, [brr, actualPeriod]);
-      let wd = wdR.rows[0]?.work_dates?.length || 0;
-      if (!wd) {
-        const r2 = await pool.query(`SELECT COUNT(DISTINCT open_time::date) AS cnt FROM business_query WHERE period=$1 AND branch=$2 AND open_time IS NOT NULL`, [actualPeriod, brr]);
-        wd = parseInt(r2.rows[0]?.cnt || 0);
-      }
-      if (!wd || !rp) continue;
-      const deptTypes = filters.filter(f=>f.type==='dept_type').map(f=>f.value);
-      for (const dt of (deptTypes.length ? deptTypes : Object.keys(DEPT_PATTERNS))) {
-        const pats = (DEPT_PATTERNS[dt]||[]).map(p=>`%${p}%`);
-        if (!pats.length) continue;
-        const tR = await pool.query(
-          `SELECT job_title, status FROM staff_roster WHERE period=$1 AND factory=$2 AND (${pats.map((_,i)=>`dept_name ILIKE $${i+3}`).join(' OR ')}) AND COALESCE(job_category,'') NOT ILIKE '%計時%' AND (status!='離職' OR (resign_date IS NOT NULL AND resign_date >= $${pats.length+3}::date))`,
-          [rp, brr, ...pats, pSt]
-        );
-        for (const t2 of tR.rows) {
-          const tRates = utilR[dt] || {};
-          let u = tRates[t2.job_title] !== undefined ? tRates[t2.job_title] : (tRates.default ?? 0.8);
-          if (t2.status === '離職' && !resignOk) u = 0;
-          tgtTotal += wd * 8 * u;
+
+  // 2. ★ 沒有手動覆蓋 → 自動從 tech_performance 抓
+  if (actual === null) {
+    try {
+      const deptTypes = filters.filter(f => f.type === 'dept_type').map(f => f.value);
+      const DEPT_PATTERNS = {
+        engine:   ['引擎'],
+        bodywork: ['鈑金'],
+        paint:    ['烤漆', '噴漆'],
+        beauty:   ['美容']
+      };
+      const BRS = effectiveBranch ? [effectiveBranch] : ['AMA','AMC','AMD'];
+      let actualTotal = 0;
+
+      for (const brr of BRS) {
+        const conds = [`period=$1`, `branch=$2`];
+        const p = [actualPeriod, brr];
+        let idx = 3;
+
+        // 若有科別篩選，加入 dept_name 條件
+        if (deptTypes.length) {
+          const allPats = [];
+          for (const dt of deptTypes) {
+            for (const pat of (DEPT_PATTERNS[dt] || [])) {
+              allPats.push(`tech_name_clean IN (
+                SELECT emp_name FROM staff_roster
+                WHERE period=(SELECT MAX(period) FROM staff_roster)
+                  AND dept_name ILIKE $${idx++}
+              )`);
+              p.push(`%${pat}%`);
+            }
+          }
+          if (allPats.length) conds.push(`(${allPats.join(' OR ')})`);
         }
+
+        const r = await pool.query(
+          `SELECT COALESCE(SUM(standard_hours), 0) AS v
+           FROM tech_performance WHERE ${conds.join(' AND ')}`, p
+        );
+        actualTotal += parseFloat(r.rows[0]?.v || 0);
       }
-    }
-    if (tgtTotal > 0) perfTarget = Math.round(tgtTotal * 10) / 10;
-  } catch(e) { console.warn('[tech_hours target]', e.message); }
+
+      if (actualTotal > 0) actual = Math.round(actualTotal * 10) / 10;
+    } catch(e) { console.warn('[tech_hours actual]', e.message); }
+  }
 
  // ★ NEW: manual 部門指標 — 從 bonus_actual_overrides 拿實績，從 bonus_targets 拿部門目標
 } else if (m.metric_source === 'manual' && m.scope_type === 'dept') {
