@@ -490,6 +490,7 @@ router.get('/bonus/progress', async (req, res) => {
         ? factory
         : inferBranchFromDeptCodes(deptCodes));
 
+      // ── revenue ──
       if (m.metric_source === 'revenue') {
         const revBranchF = filters.find(f=>f.type==='branch')?.value || null;
         const revType    = filters.find(f=>f.type==='revenue_type')?.value || 'paid';
@@ -499,6 +500,7 @@ router.get('/bonus/progress', async (req, res) => {
           perfTarget = await getRevenueTarget(period, useBranch, revType);
         } catch(e) { actual = null; }
 
+      // ── performance ──
       } else if (m.metric_source === 'performance') {
         const perfMetricId = filters.find(f => f.type === 'perf_metric_id')?.value;
         if (perfMetricId) {
@@ -523,7 +525,153 @@ router.get('/bonus/progress', async (req, res) => {
           } catch(e) { actual = null; }
         }
 
-      } else if (m.metric_source !== 'manual') {
+      // ── tech_hours ──
+      } else if (m.metric_source === 'tech_hours') {
+        actual = null;
+        perfTarget = null;
+
+        try {
+          const overR = await pool.query(
+            `SELECT actual_value FROM bonus_actual_overrides
+             WHERE metric_id=$1 AND period=$2 AND COALESCE(branch,'')=$3 LIMIT 1`,
+            [m.id, actualPeriod, effectiveBranch || '']
+          );
+          if (overR.rows.length && overR.rows[0].actual_value != null)
+            actual = parseFloat(overR.rows[0].actual_value);
+        } catch(e) {}
+
+        if (actual === null) {
+          try {
+            const DEPT_PATTERNS = { engine:['引擎'], bodywork:['鈑金'], paint:['烤漆','噴漆'], beauty:['美容'] };
+            const deptTypes = filters.filter(f => f.type === 'dept_type').map(f => f.value);
+            const rpR = await pool.query(`SELECT DISTINCT period FROM staff_roster ORDER BY period DESC LIMIT 1`);
+            const rp  = rpR.rows[0]?.period;
+            const BRS = effectiveBranch ? [effectiveBranch] : ['AMA','AMC','AMD'];
+            let sumActual = 0, sumTarget = 0;
+
+            for (const brr of BRS) {
+              const pSt = `${actualPeriod.slice(0,4)}-${actualPeriod.slice(4,6)}-01`;
+
+              const actRes = await pool.query(
+                `SELECT tp.tech_name_clean,
+                   SUM(COALESCE(boh.standard_hours, tp.standard_hours)) AS actual_hours
+                 FROM tech_performance tp
+                 LEFT JOIN beauty_op_hours boh ON TRIM(boh.op_code) = TRIM(tp.work_code)
+                 WHERE tp.period=$1 AND tp.branch=$2
+                 GROUP BY tp.tech_name_clean`,
+                [actualPeriod, brr]
+              );
+
+              const actMap = {};
+              actRes.rows.forEach(r => {
+                const name  = (r.tech_name_clean || '').trim();
+                const hours = parseFloat(r.actual_hours || 0);
+                if (!name) return;
+                if (actMap[name] === undefined) actMap[name] = 0;
+                actMap[name] += hours;
+                name.split(/[-\/、,，\s]+/).map(s => s.trim()).filter(Boolean).forEach(seg => {
+                  if (seg !== name) {
+                    if (actMap[seg] === undefined) actMap[seg] = 0;
+                    actMap[seg] += hours;
+                  }
+                });
+              });
+
+              let rosterNames = [];
+              if (rp) {
+                const dts = deptTypes.length ? deptTypes : Object.keys(DEPT_PATTERNS);
+                for (const dt of dts) {
+                  const pats = (DEPT_PATTERNS[dt] || []).map(p => `%${p}%`);
+                  if (!pats.length) continue;
+                  const nR = await pool.query(
+                    `SELECT emp_name FROM staff_roster
+                     WHERE period=$1 AND factory=$2
+                       AND (${pats.map((_, i) => `dept_name ILIKE $${i + 3}`).join(' OR ')})
+                       AND COALESCE(job_category,'') NOT ILIKE '%計時%'
+                       AND (status != '離職' OR (resign_date IS NOT NULL AND resign_date >= $${pats.length + 3}::date))`,
+                    [rp, brr, ...pats, pSt]
+                  );
+                  rosterNames.push(...nR.rows.map(r => r.emp_name));
+                }
+              }
+
+              let brActual = 0;
+              if (rosterNames.length) {
+                const matched = new Set();
+                for (const empName of rosterNames) {
+                  const name = empName.trim();
+                  let h = 0;
+                  if (actMap[name] !== undefined) {
+                    h = actMap[name]; matched.add(name);
+                  } else {
+                    for (const [k, v] of Object.entries(actMap)) {
+                      if (!matched.has(k) && (k.includes(name) || (name.length >= 2 && name.includes(k)))) {
+                        h = v; matched.add(k); break;
+                      }
+                    }
+                  }
+                  brActual += h;
+                }
+              } else {
+                brActual = actRes.rows.reduce((s, r) => s + parseFloat(r.actual_hours || 0), 0);
+              }
+              sumActual += Math.round(brActual * 10) / 10;
+
+              if (rp) {
+                const cfgR = await pool.query(`SELECT value FROM app_settings WHERE key='tech_capacity_config'`);
+                const tCfg = cfgR.rows[0]?.value ? JSON.parse(cfgR.rows[0].value) : {};
+                const utilR = tCfg.utilization_rates || {};
+                const resignOk = tCfg.resigned_count_target === true;
+
+                let wd = 0;
+                const empWdR = await pool.query(
+                  `SELECT work_dates FROM working_days_config WHERE branch='EMPLOYEE' AND period=$1`,
+                  [actualPeriod]
+                );
+                if (empWdR.rows[0]?.work_dates?.length) {
+                  wd = empWdR.rows[0].work_dates.length;
+                }
+                if (!wd) {
+                  const wdR = await pool.query(
+                    `SELECT work_dates FROM working_days_config WHERE branch=$1 AND period=$2`,
+                    [brr, actualPeriod]
+                  );
+                  wd = wdR.rows[0]?.work_dates?.length || 0;
+                }
+                if (!wd) {
+                  const r2 = await pool.query(
+                    `SELECT COUNT(DISTINCT open_time::date) AS cnt FROM business_query WHERE period=$1 AND branch=$2 AND open_time IS NOT NULL`,
+                    [actualPeriod, brr]
+                  );
+                  wd = parseInt(r2.rows[0]?.cnt || 0);
+                }
+                if (!wd) wd = 26;
+
+                const dts = deptTypes.length ? deptTypes : Object.keys(DEPT_PATTERNS);
+                for (const dt of dts) {
+                  const pats = (DEPT_PATTERNS[dt]||[]).map(p => `%${p}%`);
+                  if (!pats.length) continue;
+                  const tR = await pool.query(
+                    `SELECT job_title, status FROM staff_roster WHERE period=$1 AND factory=$2 AND (${pats.map((_,i)=>`dept_name ILIKE $${i+3}`).join(' OR ')}) AND COALESCE(job_category,'') NOT ILIKE '%計時%' AND (status!='離職' OR (resign_date IS NOT NULL AND resign_date >= $${pats.length+3}::date))`,
+                    [rp, brr, ...pats, pSt]
+                  );
+                  const typeRates = utilR[dt] || {};
+                  for (const t2 of tR.rows) {
+                    let u = typeRates[t2.job_title] !== undefined ? typeRates[t2.job_title] : (typeRates.default ?? 0.8);
+                    if (t2.status === '離職' && !resignOk) u = 0;
+                    sumTarget += wd * 8 * u;
+                  }
+                }
+              }
+            }
+
+            if (sumActual > 0) actual = Math.round(sumActual * 10) / 10;
+            if (sumTarget > 0) perfTarget = Math.round(sumTarget * 10) / 10;
+          } catch(e) { console.warn('[tech_hours]', e.message); }
+        }
+
+      // ── repair_income / tech_wage / parts_sales ──
+      } else if (m.metric_source === 'repair_income' || m.metric_source === 'tech_wage' || m.metric_source === 'parts_sales') {
         const branchF = effectiveBranch;
         try {
           if (m.metric_source === 'repair_income') {
@@ -543,206 +691,46 @@ router.get('/bonus/progress', async (req, res) => {
             }
             const fld = m.stat_field==='amount'?'SUM(wage)':m.stat_field==='hours'?'SUM(standard_hours)':'COUNT(DISTINCT work_order)';
             actual = parseFloat((await pool.query(`SELECT COALESCE(${fld},0) AS v FROM tech_performance WHERE ${conds.join(' AND ')}`, p)).rows[0]?.v || 0);
-
-          } else if (m.metric_source === 'tech_hours') {
-            actual = null;
-            perfTarget = null;
-
-            // 1. 先抓手動覆蓋（優先）
-            try {
-              const overR = await pool.query(
-                `SELECT actual_value FROM bonus_actual_overrides
-                 WHERE metric_id=$1 AND period=$2 AND COALESCE(branch,'')=$3 LIMIT 1`,
-                [m.id, actualPeriod, effectiveBranch || '']
-              );
-              if (overR.rows.length && overR.rows[0].actual_value != null)
-                actual = parseFloat(overR.rows[0].actual_value);
-            } catch(e) {}
-
-            // 2. 沒有手動覆蓋 → 與 stats.html 完全一致的抓取邏輯
-            if (actual === null) {
-              try {
-                const DEPT_PATTERNS = { engine:['引擎'], bodywork:['鈑金'], paint:['烤漆','噴漆'], beauty:['美容'] };
-                const deptTypes = filters.filter(f => f.type === 'dept_type').map(f => f.value);
-                const rpR = await pool.query(`SELECT DISTINCT period FROM staff_roster ORDER BY period DESC LIMIT 1`);
-                const rp  = rpR.rows[0]?.period;
-                const BRS = effectiveBranch ? [effectiveBranch] : ['AMA','AMC','AMD'];
-                let sumActual = 0, sumTarget = 0;
-
-                for (const brr of BRS) {
-                  // pSt 定義在最前面，實績與目標計算均使用
-                  const pSt = `${actualPeriod.slice(0,4)}-${actualPeriod.slice(4,6)}-01`;
-
-                  // ── 實績：與 techHours.js 完全相同的查詢（含 beauty_op_hours JOIN）──
-                  const actRes = await pool.query(
-                    `SELECT tp.tech_name_clean,
-                       SUM(COALESCE(boh.standard_hours, tp.standard_hours)) AS actual_hours
-                     FROM tech_performance tp
-                     LEFT JOIN beauty_op_hours boh ON TRIM(boh.op_code) = TRIM(tp.work_code)
-                     WHERE tp.period=$1 AND tp.branch=$2
-                     GROUP BY tp.tech_name_clean`,
-                    [actualPeriod, brr]
-                  );
-
-                  // ── 建立模糊比對 map（同 techHours.js buildActualMap）──
-                  const actMap = {};
-                  actRes.rows.forEach(r => {
-                    const name  = (r.tech_name_clean || '').trim();
-                    const hours = parseFloat(r.actual_hours || 0);
-                    if (!name) return;
-                    if (actMap[name] === undefined) actMap[name] = 0;
-                    actMap[name] += hours;
-                    // 依分隔符拆分（處理「姓名-代碼」格式）
-                    name.split(/[-\/、,，\s]+/).map(s => s.trim()).filter(Boolean).forEach(seg => {
-                      if (seg !== name) {
-                        if (actMap[seg] === undefined) actMap[seg] = 0;
-                        actMap[seg] += hours;
-                      }
-                    });
-                  });
-
-                  // ── 從名冊取出對應科別技師名單 ──
-                  let rosterNames = [];
-                  if (rp) {
-                    const dts = deptTypes.length ? deptTypes : Object.keys(DEPT_PATTERNS);
-                    for (const dt of dts) {
-                      const pats = (DEPT_PATTERNS[dt] || []).map(p => `%${p}%`);
-                      if (!pats.length) continue;
-                      const nR = await pool.query(
-                        `SELECT emp_name FROM staff_roster
-                         WHERE period=$1 AND factory=$2
-                           AND (${pats.map((_, i) => `dept_name ILIKE $${i + 3}`).join(' OR ')})
-                           AND COALESCE(job_category,'') NOT ILIKE '%計時%'
-                           AND (status != '離職' OR (resign_date IS NOT NULL AND resign_date >= $${pats.length + 3}::date))`,
-                        [rp, brr, ...pats, pSt]
-                      );
-                      rosterNames.push(...nR.rows.map(r => r.emp_name));
-                    }
-                  }
-
-                  // ── 模糊比對加總（同 techHours.js findActualHours 邏輯）──
-                  let brActual = 0;
-                  if (rosterNames.length) {
-                    const matched = new Set();
-                    for (const empName of rosterNames) {
-                      const name = empName.trim();
-                      let h = 0;
-                      if (actMap[name] !== undefined) {
-                        h = actMap[name]; matched.add(name);
-                      } else {
-                        for (const [k, v] of Object.entries(actMap)) {
-                          if (!matched.has(k) && (k.includes(name) || (name.length >= 2 && name.includes(k)))) {
-                            h = v; matched.add(k); break;
-                          }
-                        }
-                      }
-                      brActual += h;
-                    }
-                  } else {
-                    // 若無名冊（無法過濾科別），加總整廠所有技師工時
-                    brActual = actRes.rows.reduce((s, r) => s + parseFloat(r.actual_hours || 0), 0);
-                  }
-                  sumActual += Math.round(brActual * 10) / 10;
-
-                  // ── 目標計算 ──
-                  if (rp) {
-                    const cfgR = await pool.query(`SELECT value FROM app_settings WHERE key='tech_capacity_config'`);
-                    const tCfg = cfgR.rows[0]?.value ? JSON.parse(cfgR.rows[0].value) : {};
-                    const utilR = tCfg.utilization_rates || {};
-                    const resignOk = tCfg.resigned_count_target === true;
-                    // pSt 已在 for 迴圈頂部定義，此處直接使用
-
-                    // ★ 修正：優先使用員工工作天數（與 stats.html techHours.js 完全一致）
-                    let wd = 0;
-
-                    // 優先級 1：working_days_config WHERE branch='EMPLOYEE'
-                    const empWdR = await pool.query(
-                      `SELECT work_dates FROM working_days_config WHERE branch='EMPLOYEE' AND period=$1`,
-                      [actualPeriod]
-                    );
-                    if (empWdR.rows[0]?.work_dates?.length) {
-                      wd = empWdR.rows[0].work_dates.length;
-                    }
-
-                    // 優先級 2：服務廠工作天數設定
-                    if (!wd) {
-                      const wdR = await pool.query(
-                        `SELECT work_dates FROM working_days_config WHERE branch=$1 AND period=$2`,
-                        [brr, actualPeriod]
-                      );
-                      wd = wdR.rows[0]?.work_dates?.length || 0;
-                    }
-
-                    // 優先級 3：從 business_query 自動偵測
-                    if (!wd) {
-                      const r2 = await pool.query(
-                        `SELECT COUNT(DISTINCT open_time::date) AS cnt FROM business_query WHERE period=$1 AND branch=$2 AND open_time IS NOT NULL`,
-                        [actualPeriod, brr]
-                      );
-                      wd = parseInt(r2.rows[0]?.cnt || 0);
-                    }
-
-                    if (!wd) wd = 26; // 兜底
-
-                    const dts = deptTypes.length ? deptTypes : Object.keys(DEPT_PATTERNS);
-                    for (const dt of dts) {
-                      const pats = (DEPT_PATTERNS[dt]||[]).map(p => `%${p}%`);
-                      if (!pats.length) continue;
-                      const tR = await pool.query(
-                        `SELECT job_title, status FROM staff_roster WHERE period=$1 AND factory=$2 AND (${pats.map((_,i)=>`dept_name ILIKE $${i+3}`).join(' OR ')}) AND COALESCE(job_category,'') NOT ILIKE '%計時%' AND (status!='離職' OR (resign_date IS NOT NULL AND resign_date >= $${pats.length+3}::date))`,
-                        [rp, brr, ...pats, pSt]
-                      );
-                      const typeRates = utilR[dt] || {};
-                      for (const t2 of tR.rows) {
-                        let u = typeRates[t2.job_title] !== undefined ? typeRates[t2.job_title] : (typeRates.default ?? 0.8);
-                        if (t2.status === '離職' && !resignOk) u = 0;
-                        sumTarget += wd * 8 * u;
-                      }
-                    }
-                  }
-                }
-
-                if (sumActual > 0) actual = Math.round(sumActual * 10) / 10;
-                if (sumTarget > 0) perfTarget = Math.round(sumTarget * 10) / 10;
-} catch(e) { console.warn('[tech_hours]', e.message); }
-            }
-
           }
         } catch(e) { actual = null; }
       }
 
+      // ══ manual：完全獨立，不受上方任何 if/else 影響 ══
       if (m.metric_source === 'manual') {
-            try {
-              const overR = await pool.query(
-                `SELECT actual_value FROM bonus_actual_overrides
-                 WHERE metric_id=$1 AND period=$2 AND COALESCE(branch,'')=$3 LIMIT 1`,
-                [m.id, actualPeriod, effectiveBranch || '']
-              );
-              if (overR.rows.length && overR.rows[0].actual_value != null)
-                actual = parseFloat(overR.rows[0].actual_value);
-            } catch(e) {}
-            try {
-              if (deptCodes.length) {
-                const tRes = await pool.query(
-                  `SELECT target_value FROM bonus_targets
-                   WHERE metric_id=$1 AND dept_code=ANY($2) AND target_value IS NOT NULL
-                   ORDER BY updated_at DESC LIMIT 1`,
-                  [m.id, deptCodes]
-                );
-                if (tRes.rows[0]?.target_value != null)
-                  perfTarget = parseFloat(tRes.rows[0].target_value);
-              }
-              if (perfTarget === null) {
-                const tRes2 = await pool.query(
-                  `SELECT target_value FROM bonus_targets
-                   WHERE metric_id=$1 AND dept_code IS NULL AND target_value IS NOT NULL
-                   ORDER BY updated_at DESC LIMIT 1`,
-                  [m.id]
-                );
-                if (tRes2.rows[0]?.target_value != null)
-                  perfTarget = parseFloat(tRes2.rows[0].target_value);
-              }
-} catch(e) {}
+        try {
+          const overR = await pool.query(
+            `SELECT actual_value FROM bonus_actual_overrides
+             WHERE metric_id=$1 AND period=$2 AND COALESCE(branch,'')=$3 LIMIT 1`,
+            [m.id, actualPeriod, effectiveBranch || '']
+          );
+          if (overR.rows.length && overR.rows[0].actual_value != null)
+            actual = parseFloat(overR.rows[0].actual_value);
+        } catch(e) {}
+
+        try {
+          // 先找有部門代碼的目標
+          if (deptCodes.length) {
+            const tRes = await pool.query(
+              `SELECT target_value FROM bonus_targets
+               WHERE metric_id=$1 AND dept_code=ANY($2) AND target_value IS NOT NULL
+               ORDER BY updated_at DESC LIMIT 1`,
+              [m.id, deptCodes]
+            );
+            if (tRes.rows[0]?.target_value != null)
+              perfTarget = parseFloat(tRes.rows[0].target_value);
+          }
+          // fallback：找 dept_code IS NULL（全廠目標）
+          if (perfTarget === null) {
+            const tRes2 = await pool.query(
+              `SELECT target_value FROM bonus_targets
+               WHERE metric_id=$1 AND dept_code IS NULL AND target_value IS NOT NULL
+               ORDER BY updated_at DESC LIMIT 1`,
+              [m.id]
+            );
+            if (tRes2.rows[0]?.target_value != null)
+              perfTarget = parseFloat(tRes2.rows[0].target_value);
+          }
+        } catch(e) {}
       }
 
       const myTargets = targets.filter(t => t.metric_id === m.id);
