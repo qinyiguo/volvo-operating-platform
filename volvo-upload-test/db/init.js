@@ -386,6 +386,14 @@ await client.query(`
       ON bonus_actual_overrides (metric_id, period, COALESCE(branch,''))
     `);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS beauty_op_hours (
+        op_code        VARCHAR(20) PRIMARY KEY,
+        description    VARCHAR(200) DEFAULT '',
+        standard_hours NUMERIC(8,2) NOT NULL DEFAULT 0,
+        updated_at     TIMESTAMPTZ DEFAULT NOW()
+      )`);
+
     console.log('[initDB] ✅ 所有表格建立完成');
   } catch (err) {
     console.error('[initDB] ❌ 失敗:', err.message);
