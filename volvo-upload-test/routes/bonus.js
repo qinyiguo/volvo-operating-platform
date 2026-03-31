@@ -704,10 +704,14 @@ router.get('/bonus/progress', async (req, res) => {
 
                 if (sumActual > 0) actual = Math.round(sumActual * 10) / 10;
                 if (sumTarget > 0) perfTarget = Math.round(sumTarget * 10) / 10;
-              } catch(e) { console.warn('[tech_hours]', e.message); }
+} catch(e) { console.warn('[tech_hours]', e.message); }
             }
 
-} else if (m.metric_source === 'manual') {
+          }
+        } catch(e) { actual = null; }
+      }
+
+      if (m.metric_source === 'manual') {
             try {
               const overR = await pool.query(
                 `SELECT actual_value FROM bonus_actual_overrides
@@ -738,9 +742,7 @@ router.get('/bonus/progress', async (req, res) => {
                 if (tRes2.rows[0]?.target_value != null)
                   perfTarget = parseFloat(tRes2.rows[0].target_value);
               }
-            } catch(e) {}
-          }
-        } catch(e) { actual = null; }
+} catch(e) {}
       }
 
       const myTargets = targets.filter(t => t.metric_id === m.id);
