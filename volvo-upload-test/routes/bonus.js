@@ -707,7 +707,7 @@ router.get('/bonus/progress', async (req, res) => {
               } catch(e) { console.warn('[tech_hours]', e.message); }
             }
 
-          } else if (m.metric_source === 'manual' && m.scope_type === 'dept') {
+} else if (m.metric_source === 'manual') {
             try {
               const overR = await pool.query(
                 `SELECT actual_value FROM bonus_actual_overrides
@@ -717,8 +717,8 @@ router.get('/bonus/progress', async (req, res) => {
               if (overR.rows.length && overR.rows[0].actual_value != null)
                 actual = parseFloat(overR.rows[0].actual_value);
             } catch(e) {}
-            if (deptCodes.length) {
-              try {
+            try {
+              if (deptCodes.length) {
                 const tRes = await pool.query(
                   `SELECT target_value FROM bonus_targets
                    WHERE metric_id=$1 AND dept_code=ANY($2) AND target_value IS NOT NULL
@@ -727,8 +727,18 @@ router.get('/bonus/progress', async (req, res) => {
                 );
                 if (tRes.rows[0]?.target_value != null)
                   perfTarget = parseFloat(tRes.rows[0].target_value);
-              } catch(e) {}
-            }
+              }
+              if (perfTarget === null) {
+                const tRes2 = await pool.query(
+                  `SELECT target_value FROM bonus_targets
+                   WHERE metric_id=$1 AND dept_code IS NULL AND target_value IS NOT NULL
+                   ORDER BY updated_at DESC LIMIT 1`,
+                  [m.id]
+                );
+                if (tRes2.rows[0]?.target_value != null)
+                  perfTarget = parseFloat(tRes2.rows[0].target_value);
+              }
+            } catch(e) {}
           }
         } catch(e) { actual = null; }
       }
