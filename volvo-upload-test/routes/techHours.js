@@ -475,13 +475,14 @@ router.get('/stats/tech-hours-raw', async (req, res) => {
     return res.status(400).json({ error: 'period / emp_name 為必填' });
   }
   try {
-    const config         = await getConfig();
-    const hourlyRate     = parseFloat(config.hourly_rate) || 2150;
-    const hourlyRates    = config.hourly_rates || { engine: hourlyRate, bodywork: 1450, paint: 1450, beauty: hourlyRate };
-    const deptRate       = dept_type && hourlyRates[dept_type]
+    const config      = await getConfig();
+    const hourlyRate  = parseFloat(config.hourly_rate) || 2150;
+    const hourlyRates = config.hourly_rates || { engine: hourlyRate, bodywork: 1450, paint: 1450, beauty: hourlyRate };
+    const deptRate    = dept_type && hourlyRates[dept_type]
       ? parseFloat(hourlyRates[dept_type])
-: hourlyRate;
-// ── 模糊比對：找出 tech_performance 裡所有符合 emp_name 的名稱變體 ──
+      : hourlyRate;
+
+    // ── 模糊比對：找出 tech_performance 裡所有符合 emp_name 的名稱變體 ──
     const allNamesRes = await pool.query(
       `SELECT DISTINCT tech_name_clean FROM tech_performance WHERE period=$1`,
       [period]
@@ -497,7 +498,7 @@ router.get('/stats/tech-hours-raw', async (req, res) => {
           || (emp_name.length >= 2 && segs.some(s => s.includes(emp_name) || emp_name.includes(s)));
       });
 
-    // 若 tech_performance 完全找不到，嘗試從 business_query.repair_tech 找名稱對應
+    // 若還是找不到，嘗試從 business_query.repair_tech 找名稱對應
     if (!matchedNames.length) {
       const bqRes = await pool.query(
         `SELECT DISTINCT repair_tech FROM business_query
@@ -506,13 +507,8 @@ router.get('/stats/tech-hours-raw', async (req, res) => {
         [period, emp_name, `%${emp_name}%`]
       );
       const bqNames = bqRes.rows.map(r => r.repair_tech).filter(Boolean);
-      // 用找到的 repair_tech 名稱再去比對 tech_performance
       if (bqNames.length) {
-        const allNamesRes2 = await pool.query(
-          `SELECT DISTINCT tech_name_clean FROM tech_performance WHERE period=$1`,
-          [period]
-        );
-        matchedNames = allNamesRes2.rows
+        matchedNames = allNamesRes.rows
           .map(r => r.tech_name_clean)
           .filter(n => {
             if (!n) return false;
@@ -535,8 +531,7 @@ router.get('/stats/tech-hours-raw', async (req, res) => {
       });
     }
 
-    let rawRes;
-    rawRes = await pool.query(
+    const rawRes = await pool.query(
       `SELECT
          tp.dispatch_date,
          tp.work_order,
@@ -556,56 +551,9 @@ router.get('/stats/tech-hours-raw', async (req, res) => {
        ORDER BY tp.branch, tp.dispatch_date, tp.work_order`,
       [period, matchedNames]
     );
-    } else {
-      if (!branch) return res.status(400).json({ error: 'branch 為必填' });
-
-      const allRes = await pool.query(
-        `SELECT DISTINCT tech_name_clean FROM tech_performance WHERE period=$1`,
-        [period]
-      );
-      matchedNames = allRes.rows
-        .map(r => r.tech_name_clean)
-        .filter(n => {
-          if (!n) return false;
-          const segs = n.split(/[-\/、,，\s]+/).map(s => s.trim()).filter(Boolean);
-          return n.includes(emp_name) || segs.some(s => s === emp_name || emp_name.includes(s));
-        });
-
-      if (!matchedNames.length) {
-        return res.json({
-          emp_name,
-          matched_names:  [],
-          rows:           [],
-          summary:        null,
-          hourly_rate:    deptRate,
-          dept_type:      dept_type || null,
-        });
-      }
-
-rawRes = await pool.query(
-        `SELECT
-           tp.dispatch_date,
-           tp.work_order,
-           tp.work_code,
-           tp.task_content,
-           tp.account_type,
-           tp.discount,
-           tp.wage,
-           tp.standard_hours              AS original_hours,
-           tp.standard_hours              AS restored_hours,
-           boh.standard_hours             AS beauty_corrected_hours,
-           boh.description                AS beauty_op_desc,
-           (${WAS_DISCOUNTED_EXPR})       AS was_discounted
-         FROM tech_performance tp
-         LEFT JOIN beauty_op_hours boh ON TRIM(boh.op_code) = TRIM(tp.work_code)
-         WHERE tp.period=$1 AND tp.tech_name_clean=$2
-         ORDER BY tp.branch, tp.dispatch_date, tp.work_order`,
-        [period, emp_name]
-      );
-    }
 
     const rows    = rawRes.rows;
-const isBeauty = dept_type === 'beauty';
+    const isBeauty = dept_type === 'beauty';
     const sumOrig = rows.reduce((s, r) => s + parseFloat(r.original_hours || 0), 0);
     const sumRest = isBeauty
       ? rows.reduce((s, r) => s + parseFloat(r.beauty_corrected_hours ?? r.original_hours ?? 0), 0)
