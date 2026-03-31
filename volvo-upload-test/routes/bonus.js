@@ -569,179 +569,40 @@ router.get('/bonus/progress', async (req, res) => {
                 actual = parseFloat(overR.rows[0].actual_value);
             } catch(e) {}
 
-            // 2. 沒有手動覆蓋 → DMS 自動計算
+            // 2. 直接呼叫 /api/stats/tech-hours（與 stats.html 完全相同的來源，不重複計算）
             if (actual === null) {
               try {
-                const DEPT_PATTERNS = { engine:['引擎'], bodywork:['鈑金'], paint:['烤漆','噴漆'], beauty:['美容'] };
                 const deptTypes = filters.filter(f => f.type === 'dept_type').map(f => f.value);
-                const rpR = await pool.query(`SELECT DISTINCT period FROM staff_roster ORDER BY period DESC LIMIT 1`);
-                const rp  = rpR.rows[0]?.period;
-                const BRS = effectiveBranch ? [effectiveBranch] : ['AMA','AMC','AMD','聯合','鈑烤'];
-                let sumActual = 0, sumTarget = 0;
+                const port      = process.env.PORT || 3001;
+                const brParam   = effectiveBranch ? `&branch=${encodeURIComponent(effectiveBranch)}` : '';
+                const url       = `http://localhost:${port}/api/stats/tech-hours?period=${actualPeriod}${brParam}`;
 
-                for (const brr of BRS) {
-                  const pSt = `${actualPeriod.slice(0,4)}-${actualPeriod.slice(4,6)}-01`;
+                const thData = await fetch(url).then(r => r.json()).catch(() => null);
 
-                  // 先用 branch 篩選；記錄是否用了 branch 限制（影響 fallback 邏輯）
-                  // 若查無資料（聯合/鈑烤可能以不同branch名入庫），fallback 查全期間
-                  let usedBranchFilter = true;
-                  let actRes = await pool.query(
-                    `SELECT tp.tech_name_clean,
-                       SUM(COALESCE(boh.standard_hours, tp.standard_hours)) AS actual_hours
-                     FROM tech_performance tp
-                     LEFT JOIN beauty_op_hours boh ON TRIM(boh.op_code) = TRIM(tp.work_code)
-                     WHERE tp.period=$1 AND tp.branch=$2
-                     GROUP BY tp.tech_name_clean`,
-                    [actualPeriod, brr]
-                  );
-                  if (!actRes.rows.length) {
-                    usedBranchFilter = false;
-                    actRes = await pool.query(
-                      `SELECT tp.tech_name_clean,
-                         SUM(COALESCE(boh.standard_hours, tp.standard_hours)) AS actual_hours
-                       FROM tech_performance tp
-                       LEFT JOIN beauty_op_hours boh ON TRIM(boh.op_code) = TRIM(tp.work_code)
-                       WHERE tp.period=$1
-                       GROUP BY tp.tech_name_clean`,
-                      [actualPeriod]
-                    );
-                  }
+                if (thData && !thData.error) {
+                  let sumActual = 0, sumTarget = 0;
 
-                  const actMap = {};
-                  actRes.rows.forEach(r => {
-                    const name  = (r.tech_name_clean || '').trim();
-                    const hours = parseFloat(r.actual_hours || 0);
-                    if (!name) return;
-                    if (actMap[name] === undefined) actMap[name] = 0;
-                    actMap[name] += hours;
-                    name.split(/[-\/、,，\s]+/).map(s => s.trim()).filter(Boolean).forEach(seg => {
-                      if (seg !== name) {
-                        if (actMap[seg] === undefined) actMap[seg] = 0;
-                        actMap[seg] += hours;
-                      }
-                    });
-                  });
+                  for (const [brKey, brData] of Object.entries(thData.branches || {})) {
+                    // 若有廠別限制，只取對應廠別
+                    if (effectiveBranch && brKey !== effectiveBranch) continue;
 
-                  // dts 需要在外層定義，供後續 keyword fallback 使用
-                  const dts = deptTypes.length ? deptTypes : Object.keys(DEPT_PATTERNS);
-                  let rosterNames = [];
-                  if (rp) {
-                    for (const dt of dts) {
-                      const pats = (DEPT_PATTERNS[dt] || []).map(p => `%${p}%`);
-                      if (!pats.length) continue;
-                      const nR = await pool.query(
-                        `SELECT emp_name FROM staff_roster
-                         WHERE period=$1 AND factory=$2
-                           AND (${pats.map((_, i) => `dept_name ILIKE $${i + 3}`).join(' OR ')})
-                           AND COALESCE(job_category,'') NOT ILIKE '%計時%'
-                           AND (status != '離職' OR (resign_date IS NOT NULL AND resign_date >= $${pats.length + 3}::date))`,
-                        [rp, brr, ...pats, pSt]
-                      );
-                      rosterNames.push(...nR.rows.map(r => r.emp_name));
-                    }
-                  }
+                    const deptTypesData = brData.dept_types || {};
+                    // 若指標有設定 dept_type filter（如 engine），只取該科；否則取全部科別
+                    const dtsToUse = deptTypes.length ? deptTypes : Object.keys(deptTypesData);
 
-                  let brActual = 0;
-                  if (rosterNames.length) {
-                    const matched = new Set();
-                    for (const empName of rosterNames) {
-                      const name = empName.trim();
-                      let h = 0;
-                      if (actMap[name] !== undefined) {
-                        h = actMap[name]; matched.add(name);
-                      } else {
-                        for (const [k, v] of Object.entries(actMap)) {
-                          if (!matched.has(k) && (k.includes(name) || (name.length >= 2 && name.includes(k)))) {
-                            h = v; matched.add(k); break;
-                          }
-                        }
-                      }
-                      brActual += h;
-                    }
-                    // ★ Fallback 1：姓名比對失敗，用部門關鍵字比對 actRes 原始名稱
-                    // 適用於 tech_performance 用彙總名稱（如「美容技師-A」）儲存工時的情況
-                    if (brActual === 0 && actRes.rows.length > 0) {
-                      const deptKeywords = dts.flatMap(dt => DEPT_PATTERNS[dt] || []);
-                      if (deptKeywords.length) {
-                        actRes.rows.forEach(r => {
-                          const name = (r.tech_name_clean || '').trim();
-                          if (deptKeywords.some(kw => name.includes(kw))) {
-                            brActual += parseFloat(r.actual_hours || 0);
-                          }
-                        });
-                      }
-                    }
-                    // ★ Fallback 2：keyword 也找不到，且 branch 查詢有資料，加總整個 branch
-                    if (brActual === 0 && usedBranchFilter && actRes.rows.length > 0) {
-                      brActual = actRes.rows.reduce((s, r) => s + parseFloat(r.actual_hours || 0), 0);
-                    }
-                  } else {
-                    // 無名冊資料：用 branch 查詢總和（若有）
-                    if (usedBranchFilter) {
-                      brActual = actRes.rows.reduce((s, r) => s + parseFloat(r.actual_hours || 0), 0);
-                    }
-                  }
-                  sumActual += Math.round(brActual * 10) / 10;
-
-                  if (rp) {
-                    const cfgR = await pool.query(`SELECT value FROM app_settings WHERE key='tech_capacity_config'`);
-                    const tCfg = cfgR.rows[0]?.value ? JSON.parse(cfgR.rows[0].value) : {};
-                    const utilR = tCfg.utilization_rates || {};
-                    const resignOk = tCfg.resigned_count_target === true;
-                    let wd = 0;
-
-                    // ★ 技師工時目標用「員工工作天數」，與 stats.html 邏輯相同
-                    // 不使用服務廠工作天數（如 AMA 26天）——否則目標會偏高
-                    // 優先級 1：branch='EMPLOYEE' 期間精確設定
-                    const empWdR = await pool.query(
-                      `SELECT work_dates FROM working_days_config WHERE branch='EMPLOYEE' AND period=$1`,
-                      [actualPeriod]
-                    );
-                    if (empWdR.rows[0]?.work_dates?.length) {
-                      wd = empWdR.rows[0].work_dates.length;
-                    }
-                    // 優先級 2：最新的 EMPLOYEE 設定（若本月未設定）
-                    if (!wd) {
-                      const empWdLatest = await pool.query(
-                        `SELECT work_dates FROM working_days_config WHERE branch='EMPLOYEE'
-                         ORDER BY updated_at DESC LIMIT 1`
-                      );
-                      if (empWdLatest.rows[0]?.work_dates?.length) {
-                        wd = empWdLatest.rows[0].work_dates.length;
-                      }
-                    }
-                    // 優先級 3：business_query 自動偵測（不使用服務廠 working_days_config）
-                    if (!wd) {
-                      const r2 = await pool.query(
-                        `SELECT COUNT(DISTINCT open_time::date) AS cnt FROM business_query WHERE period=$1 AND branch=$2 AND open_time IS NOT NULL`,
-                        [actualPeriod, brr]
-                      );
-                      wd = parseInt(r2.rows[0]?.cnt || 0);
-                    }
-                    // 最終 fallback：22天（員工工作天，非服務廠26天）
-                    if (!wd) wd = 22;
-
-                    const dts = deptTypes.length ? deptTypes : Object.keys(DEPT_PATTERNS);
-                    for (const dt of dts) {
-                      const pats = (DEPT_PATTERNS[dt]||[]).map(p => `%${p}%`);
-                      if (!pats.length) continue;
-                      const tR = await pool.query(
-                        `SELECT job_title, status FROM staff_roster WHERE period=$1 AND factory=$2 AND (${pats.map((_,i)=>`dept_name ILIKE $${i+3}`).join(' OR ')}) AND COALESCE(job_category,'') NOT ILIKE '%計時%' AND (status!='離職' OR (resign_date IS NOT NULL AND resign_date >= $${pats.length+3}::date))`,
-                        [rp, brr, ...pats, pSt]
-                      );
-                      const typeRates = utilR[dt] || {};
-                      for (const t2 of tR.rows) {
-                        // ★ 找不到職稱設定時用 0（與 stats.html 行為一致），不用 0.8 fallback
-                        let u = typeRates[t2.job_title] !== undefined ? typeRates[t2.job_title] : (typeRates['default'] !== undefined ? typeRates['default'] : 0);
-                        if (t2.status === '離職' && !resignOk) u = 0;
-                        sumTarget += wd * 8 * u;
+                    for (const dt of dtsToUse) {
+                      const deptData = deptTypesData[dt];
+                      if (!deptData) continue;
+                      for (const tech of deptData.techs || []) {
+                        sumActual += parseFloat(tech.actual_hours || 0);
+                        sumTarget += parseFloat(tech.target_hours || 0); // 已考慮利用率、員工工作天、不計目標
                       }
                     }
                   }
+
+                  if (sumActual > 0) actual    = Math.round(sumActual * 10) / 10;
+                  if (sumTarget > 0) perfTarget = Math.round(sumTarget * 10) / 10;
                 }
-
-                if (sumActual > 0) actual = Math.round(sumActual * 10) / 10;
-                if (sumTarget > 0) perfTarget = Math.round(sumTarget * 10) / 10;
               } catch(e) { console.warn('[tech_hours]', e.message); }
             }
           }
