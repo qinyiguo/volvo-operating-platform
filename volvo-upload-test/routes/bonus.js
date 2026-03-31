@@ -559,7 +559,7 @@ router.get('/bonus/progress', async (req, res) => {
                 actual = parseFloat(overR.rows[0].actual_value);
             } catch(e) {}
 
-            // 2. 沒有手動覆蓋 → 直接查 tech_performance
+            // 2. 沒有手動覆蓋 → 與 stats.html 完全一致的抓取邏輯
             if (actual === null) {
               try {
                 const DEPT_PATTERNS = { engine:['引擎'], bodywork:['鈑金'], paint:['烤漆','噴漆'], beauty:['美容'] };
@@ -570,21 +570,79 @@ router.get('/bonus/progress', async (req, res) => {
                 let sumActual = 0, sumTarget = 0;
 
                 for (const brr of BRS) {
-                  // ── 實績：加總 tech_performance.standard_hours ──
-                  const conds = [`period=$1`, `branch=$2`]; const p = [actualPeriod, brr]; let idx = 3;
-                  if (deptTypes.length && rp) {
-                    const subQ = deptTypes.flatMap(dt =>
-                      (DEPT_PATTERNS[dt]||[]).map(pat => {
-                        p.push(`%${pat}%`);
-                        return `tech_name_clean IN (SELECT emp_name FROM staff_roster WHERE period='${rp}' AND dept_name ILIKE $${idx++})`;
-                      })
-                    ).join(' OR ');
-                    if (subQ) conds.push(`(${subQ})`);
-                  }
-                  const actR = await pool.query(
-                    `SELECT COALESCE(SUM(standard_hours),0) AS v FROM tech_performance WHERE ${conds.join(' AND ')}`, p
+                  // pSt 定義在最前面，實績與目標計算均使用
+                  const pSt = `${actualPeriod.slice(0,4)}-${actualPeriod.slice(4,6)}-01`;
+
+                  // ── 實績：與 techHours.js 完全相同的查詢（含 beauty_op_hours JOIN）──
+                  const actRes = await pool.query(
+                    `SELECT tp.tech_name_clean,
+                       SUM(COALESCE(boh.standard_hours, tp.standard_hours)) AS actual_hours
+                     FROM tech_performance tp
+                     LEFT JOIN beauty_op_hours boh ON TRIM(boh.op_code) = TRIM(tp.work_code)
+                     WHERE tp.period=$1 AND tp.branch=$2
+                     GROUP BY tp.tech_name_clean`,
+                    [actualPeriod, brr]
                   );
-                  sumActual += parseFloat(actR.rows[0]?.v || 0);
+
+                  // ── 建立模糊比對 map（同 techHours.js buildActualMap）──
+                  const actMap = {};
+                  actRes.rows.forEach(r => {
+                    const name  = (r.tech_name_clean || '').trim();
+                    const hours = parseFloat(r.actual_hours || 0);
+                    if (!name) return;
+                    if (actMap[name] === undefined) actMap[name] = 0;
+                    actMap[name] += hours;
+                    // 依分隔符拆分（處理「姓名-代碼」格式）
+                    name.split(/[-\/、,，\s]+/).map(s => s.trim()).filter(Boolean).forEach(seg => {
+                      if (seg !== name) {
+                        if (actMap[seg] === undefined) actMap[seg] = 0;
+                        actMap[seg] += hours;
+                      }
+                    });
+                  });
+
+                  // ── 從名冊取出對應科別技師名單 ──
+                  let rosterNames = [];
+                  if (rp) {
+                    const dts = deptTypes.length ? deptTypes : Object.keys(DEPT_PATTERNS);
+                    for (const dt of dts) {
+                      const pats = (DEPT_PATTERNS[dt] || []).map(p => `%${p}%`);
+                      if (!pats.length) continue;
+                      const nR = await pool.query(
+                        `SELECT emp_name FROM staff_roster
+                         WHERE period=$1 AND factory=$2
+                           AND (${pats.map((_, i) => `dept_name ILIKE $${i + 3}`).join(' OR ')})
+                           AND COALESCE(job_category,'') NOT ILIKE '%計時%'
+                           AND (status != '離職' OR (resign_date IS NOT NULL AND resign_date >= $${pats.length + 3}::date))`,
+                        [rp, brr, ...pats, pSt]
+                      );
+                      rosterNames.push(...nR.rows.map(r => r.emp_name));
+                    }
+                  }
+
+                  // ── 模糊比對加總（同 techHours.js findActualHours 邏輯）──
+                  let brActual = 0;
+                  if (rosterNames.length) {
+                    const matched = new Set();
+                    for (const empName of rosterNames) {
+                      const name = empName.trim();
+                      let h = 0;
+                      if (actMap[name] !== undefined) {
+                        h = actMap[name]; matched.add(name);
+                      } else {
+                        for (const [k, v] of Object.entries(actMap)) {
+                          if (!matched.has(k) && (k.includes(name) || (name.length >= 2 && name.includes(k)))) {
+                            h = v; matched.add(k); break;
+                          }
+                        }
+                      }
+                      brActual += h;
+                    }
+                  } else {
+                    // 若無名冊（無法過濾科別），加總整廠所有技師工時
+                    brActual = actRes.rows.reduce((s, r) => s + parseFloat(r.actual_hours || 0), 0);
+                  }
+                  sumActual += Math.round(brActual * 10) / 10;
 
                   // ── 目標計算 ──
                   if (rp) {
@@ -592,7 +650,7 @@ router.get('/bonus/progress', async (req, res) => {
                     const tCfg = cfgR.rows[0]?.value ? JSON.parse(cfgR.rows[0].value) : {};
                     const utilR = tCfg.utilization_rates || {};
                     const resignOk = tCfg.resigned_count_target === true;
-                    const pSt = `${actualPeriod.slice(0,4)}-${actualPeriod.slice(4,6)}-01`;
+                    // pSt 已在 for 迴圈頂部定義，此處直接使用
 
                     // ★ 修正：優先使用員工工作天數（與 stats.html techHours.js 完全一致）
                     let wd = 0;
