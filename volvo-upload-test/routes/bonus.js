@@ -690,6 +690,9 @@ router.get('/bonus/progress', async (req, res) => {
                     const resignOk = tCfg.resigned_count_target === true;
                     let wd = 0;
 
+                    // ★ 技師工時目標用「員工工作天數」，與 stats.html 邏輯相同
+                    // 不使用服務廠工作天數（如 AMA 26天）——否則目標會偏高
+                    // 優先級 1：branch='EMPLOYEE' 期間精確設定
                     const empWdR = await pool.query(
                       `SELECT work_dates FROM working_days_config WHERE branch='EMPLOYEE' AND period=$1`,
                       [actualPeriod]
@@ -697,13 +700,17 @@ router.get('/bonus/progress', async (req, res) => {
                     if (empWdR.rows[0]?.work_dates?.length) {
                       wd = empWdR.rows[0].work_dates.length;
                     }
+                    // 優先級 2：最新的 EMPLOYEE 設定（若本月未設定）
                     if (!wd) {
-                      const wdR = await pool.query(
-                        `SELECT work_dates FROM working_days_config WHERE branch=$1 AND period=$2`,
-                        [brr, actualPeriod]
+                      const empWdLatest = await pool.query(
+                        `SELECT work_dates FROM working_days_config WHERE branch='EMPLOYEE'
+                         ORDER BY updated_at DESC LIMIT 1`
                       );
-                      wd = wdR.rows[0]?.work_dates?.length || 0;
+                      if (empWdLatest.rows[0]?.work_dates?.length) {
+                        wd = empWdLatest.rows[0].work_dates.length;
+                      }
                     }
+                    // 優先級 3：business_query 自動偵測（不使用服務廠 working_days_config）
                     if (!wd) {
                       const r2 = await pool.query(
                         `SELECT COUNT(DISTINCT open_time::date) AS cnt FROM business_query WHERE period=$1 AND branch=$2 AND open_time IS NOT NULL`,
@@ -711,7 +718,8 @@ router.get('/bonus/progress', async (req, res) => {
                       );
                       wd = parseInt(r2.rows[0]?.cnt || 0);
                     }
-                    if (!wd) wd = 26;
+                    // 最終 fallback：22天（員工工作天，非服務廠26天）
+                    if (!wd) wd = 22;
 
                     const dts = deptTypes.length ? deptTypes : Object.keys(DEPT_PATTERNS);
                     for (const dt of dts) {
