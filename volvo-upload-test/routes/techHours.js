@@ -208,12 +208,13 @@ router.get('/stats/tech-hours', async (req, res) => {
 
     // ── 美容 DMS 工時（不限 branch）──
     const beautyRate    = parseFloat(hourlyRates.beauty || hourlyRate);
-    const beautyDmsRes  = await pool.query(
-      `SELECT tech_name_clean,
-              SUM(standard_hours) AS actual_hours
-       FROM tech_performance
-       WHERE period=$1 AND tech_name_clean ~ '美容'
-       GROUP BY tech_name_clean`,
+const beautyDmsRes  = await pool.query(
+      `SELECT tp.tech_name_clean,
+              SUM(COALESCE(boh.standard_hours, tp.standard_hours)) AS actual_hours
+       FROM tech_performance tp
+       LEFT JOIN beauty_op_hours boh ON TRIM(boh.op_code) = TRIM(tp.work_code)
+       WHERE tp.period=$1 AND tp.tech_name_clean ~ '美容'
+       GROUP BY tp.tech_name_clean`,
       [period]
     );
     const beautyDmsMap = {};
@@ -321,21 +322,23 @@ router.get('/stats/tech-hours', async (req, res) => {
       // 4. 實際工時
       let actualRes;
       if (STD_BRANCHES.has(br)) {
-        actualRes = await pool.query(
-          `SELECT tech_name_clean,
-SUM(standard_hours) AS actual_hours
-           FROM tech_performance
-           WHERE period=$1 AND branch=$2
-           GROUP BY tech_name_clean`,
+actualRes = await pool.query(
+          `SELECT tp.tech_name_clean,
+              SUM(COALESCE(boh.standard_hours, tp.standard_hours)) AS actual_hours
+           FROM tech_performance tp
+           LEFT JOIN beauty_op_hours boh ON TRIM(boh.op_code) = TRIM(tp.work_code)
+           WHERE tp.period=$1 AND tp.branch=$2
+           GROUP BY tp.tech_name_clean`,
           [period, br]
         );
       } else {
-        actualRes = await pool.query(
-          `SELECT tech_name_clean,
-SUM(standard_hours) AS actual_hours
-           FROM tech_performance
-           WHERE period=$1
-           GROUP BY tech_name_clean`,
+actualRes = await pool.query(
+          `SELECT tp.tech_name_clean,
+              SUM(COALESCE(boh.standard_hours, tp.standard_hours)) AS actual_hours
+           FROM tech_performance tp
+           LEFT JOIN beauty_op_hours boh ON TRIM(boh.op_code) = TRIM(tp.work_code)
+           WHERE tp.period=$1
+           GROUP BY tp.tech_name_clean`,
           [period]
         );
       }
