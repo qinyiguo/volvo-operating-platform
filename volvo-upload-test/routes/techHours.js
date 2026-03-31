@@ -469,21 +469,24 @@ router.get('/stats/tech-hours-raw', async (req, res) => {
     let matchedNames = [emp_name];
     let rawRes;
     if (!branch) {
-      rawRes = await pool.query(
+rawRes = await pool.query(
         `SELECT
-           dispatch_date,
-           work_order,
-           work_code,
-           task_content,
-           account_type,
-           discount,
-           wage,
-           standard_hours        AS original_hours,
-           standard_hours        AS restored_hours,
-           (${WAS_DISCOUNTED_EXPR}) AS was_discounted
-         FROM tech_performance
-         WHERE period=$1 AND tech_name_clean=$2
-         ORDER BY branch, dispatch_date, work_order`,
+           tp.dispatch_date,
+           tp.work_order,
+           tp.work_code,
+           tp.task_content,
+           tp.account_type,
+           tp.discount,
+           tp.wage,
+           tp.standard_hours              AS original_hours,
+           tp.standard_hours              AS restored_hours,
+           boh.standard_hours             AS beauty_corrected_hours,
+           boh.description                AS beauty_op_desc,
+           (${WAS_DISCOUNTED_EXPR})       AS was_discounted
+         FROM tech_performance tp
+         LEFT JOIN beauty_op_hours boh ON TRIM(boh.op_code) = TRIM(tp.work_code)
+         WHERE tp.period=$1 AND tp.tech_name_clean=$2
+         ORDER BY tp.branch, tp.dispatch_date, tp.work_order`,
         [period, emp_name]
       );
     } else {
@@ -512,29 +515,35 @@ router.get('/stats/tech-hours-raw', async (req, res) => {
         });
       }
 
-      rawRes = await pool.query(
+rawRes = await pool.query(
         `SELECT
-           dispatch_date,
-           work_order,
-           work_code,
-           task_content,
-           account_type,
-           discount,
-           wage,
-           standard_hours        AS original_hours,
-           standard_hours        AS restored_hours,
-           (${WAS_DISCOUNTED_EXPR}) AS was_discounted
-         FROM tech_performance
-         WHERE period=$1 AND tech_name_clean=$2
-         ORDER BY branch, dispatch_date, work_order`,
+           tp.dispatch_date,
+           tp.work_order,
+           tp.work_code,
+           tp.task_content,
+           tp.account_type,
+           tp.discount,
+           tp.wage,
+           tp.standard_hours              AS original_hours,
+           tp.standard_hours              AS restored_hours,
+           boh.standard_hours             AS beauty_corrected_hours,
+           boh.description                AS beauty_op_desc,
+           (${WAS_DISCOUNTED_EXPR})       AS was_discounted
+         FROM tech_performance tp
+         LEFT JOIN beauty_op_hours boh ON TRIM(boh.op_code) = TRIM(tp.work_code)
+         WHERE tp.period=$1 AND tp.tech_name_clean=$2
+         ORDER BY tp.branch, tp.dispatch_date, tp.work_order`,
         [period, emp_name]
       );
     }
 
     const rows    = rawRes.rows;
+const isBeauty = dept_type === 'beauty';
     const sumOrig = rows.reduce((s, r) => s + parseFloat(r.original_hours || 0), 0);
-    const sumRest = sumOrig;
-    const sumWage = rows.reduce((s, r) => s + parseFloat(r.wage            || 0), 0);
+    const sumRest = isBeauty
+      ? rows.reduce((s, r) => s + parseFloat(r.beauty_corrected_hours ?? r.original_hours ?? 0), 0)
+      : sumOrig;
+    const sumWage = rows.reduce((s, r) => s + parseFloat(r.wage || 0), 0);
 
     res.json({
       emp_name,
