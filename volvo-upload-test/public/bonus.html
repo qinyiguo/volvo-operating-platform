@@ -2468,15 +2468,13 @@ async function saveActualOverride(metricId, period, branch, isManual) {
     if (tgtVal !== '' && tgtVal != null) {
       const m = _metrics.find(function(x){ return x.id === metricId; });
       const deptCodes = (m && m.target_dept_codes) || [];
-      if (deptCodes.length) {
-        const entries = deptCodes.map(function(dc){
-          return { metric_id: metricId, dept_code: dc, period: period, target_value: parseFloat(tgtVal) };
-        });
-        await fetch('/api/bonus/targets/batch', {
-          method: 'PUT', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ entries })
-        });
-      }
+const tEntries = deptCodes.length
+        ? deptCodes.map(function(dc){ return { metric_id: metricId, dept_code: dc, period: period, target_value: parseFloat(tgtVal) }; })
+        : [{ metric_id: metricId, dept_code: null, period: period, target_value: parseFloat(tgtVal) }];
+      await fetch('/api/bonus/targets/batch', {
+        method: 'PUT', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ entries: tEntries })
+      });
     }
   }
   try {
