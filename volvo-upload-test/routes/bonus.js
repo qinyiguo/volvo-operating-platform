@@ -723,7 +723,7 @@ router.get('/bonus/progress', async (req, res) => {
                       );
                       const typeRates = utilR[dt] || {};
                       for (const t2 of tR.rows) {
-                        let u = typeRates[t2.job_title] !== undefined ? typeRates[t2.job_title] : (typeRates.default ?? 0.8);
+                        let u = typeRates[t2.job_title] !== undefined ? typeRates[t2.job_title] : (typeRates['default'] !== undefined ? typeRates['default'] : 0);
                         if (t2.status === '離職' && !resignOk) u = 0;
                         sumTarget += wd * 8 * u;
                       }
