@@ -209,17 +209,32 @@ router.get('/stats/tech-hours', async (req, res) => {
     // ── 美容 DMS 工時（不限 branch）──
     const beautyRate    = parseFloat(hourlyRates.beauty || hourlyRate);
 const beautyDmsRes  = await pool.query(
-      `SELECT tp.tech_name_clean,
-              SUM(COALESCE(boh.standard_hours, tp.standard_hours)) AS actual_hours
+      `SELECT
+         CASE
+           WHEN tp.tech_name_clean ~* '美容技師.*[-,]A' OR tp.tech_name_clean = '美容技師-A' THEN '美容技師-A'
+           WHEN tp.tech_name_clean ~* '美容技師.*[-,]C' OR tp.tech_name_clean = '美容技師-C' THEN '美容技師-C'
+           WHEN tp.tech_name_clean ~* '美容技師.*[-,]D' OR tp.tech_name_clean = '美容技師-D' THEN '美容技師-D'
+           ELSE NULL
+         END AS station_name,
+         SUM(COALESCE(boh.standard_hours, tp.standard_hours)) AS actual_hours
        FROM tech_performance tp
        LEFT JOIN beauty_op_hours boh ON TRIM(boh.op_code) = TRIM(tp.work_code)
        WHERE tp.period=$1 AND tp.tech_name_clean ~ '美容'
-       GROUP BY tp.tech_name_clean`,
+       GROUP BY station_name
+       HAVING
+         CASE
+           WHEN tp.tech_name_clean ~* '美容技師.*[-,]A' OR tp.tech_name_clean = '美容技師-A' THEN '美容技師-A'
+           WHEN tp.tech_name_clean ~* '美容技師.*[-,]C' OR tp.tech_name_clean = '美容技師-C' THEN '美容技師-C'
+           WHEN tp.tech_name_clean ~* '美容技師.*[-,]D' OR tp.tech_name_clean = '美容技師-D' THEN '美容技師-D'
+           ELSE NULL
+         END IS NOT NULL`,
       [period]
     );
     const beautyDmsMap = {};
     beautyDmsRes.rows.forEach(r => {
-      beautyDmsMap[r.tech_name_clean] = Math.round(parseFloat(r.actual_hours || 0) * 10) / 10;
+      if (r.station_name) {
+        beautyDmsMap[r.station_name] = Math.round(parseFloat(r.actual_hours || 0) * 10) / 10;
+      }
     });
 
     // ── AMAB/AMAE/AMAP DMS 工時（不限 branch）──
