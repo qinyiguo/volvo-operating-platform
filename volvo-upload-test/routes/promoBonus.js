@@ -131,7 +131,7 @@ router.get('/promo-bonus/results', async (req, res) => {
                FROM tech_performance WHERE ${conds.join(' AND ')} GROUP BY tech_name_clean`, p);
             for (const row of r.rows) {
               const units = Math.floor(parseFloat(row.actual||0) / perQty);
-              if (units > 0) personResults[row.person_name] = units * bonusUnit;
+              if (units > 0) personResults[row.person_name] = Math.round(units * bonusUnit);
             }
           } else {
             // parts_sales based
@@ -147,7 +147,7 @@ router.get('/promo-bonus/results', async (req, res) => {
                FROM parts_sales WHERE ${conds.join(' AND ')} GROUP BY sales_person`, p);
             for (const row of r.rows) {
               const units = Math.floor(parseFloat(row.actual||0) / perQty);
-              if (units > 0) personResults[row.person_name] = units * bonusUnit;
+              if (units > 0) personResults[row.person_name] = Math.round(units * bonusUnit);
             }
           }
 
@@ -182,7 +182,7 @@ router.get('/promo-bonus/results', async (req, res) => {
 
           for (const row of r.rows) {
             const sales = parseFloat(row.total_sales || 0);
-            if (sales > 0) personResults[row.person_name] = sales * bonusPct / 100;
+            if (sales > 0) personResults[row.person_name] = Math.round(sales * bonusPct / 100);
           }
         }
 
