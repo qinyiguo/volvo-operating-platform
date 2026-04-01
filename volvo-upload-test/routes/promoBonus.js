@@ -20,15 +20,15 @@ router.get('/promo-bonus/configs', async (req, res) => {
 router.post('/promo-bonus/configs', async (req, res) => {
   const { rule_name, rule_type, sa_config_id, per_qty, bonus_per_unit,
           part_catalog_types, paycode_types, discount_min, discount_max,
-          bonus_pct, role_amounts, target_factories, active, sort_order } = req.body;
+          bonus_pct, role_amounts, target_factories, active, sort_order, person_type } = req.body;
   if (!rule_name) return res.status(400).json({ error: '名稱為必填' });
   try {
     const r = await pool.query(`
       INSERT INTO promo_bonus_configs
         (rule_name, rule_type, sa_config_id, per_qty, bonus_per_unit,
          part_catalog_types, paycode_types, discount_min, discount_max,
-         bonus_pct, role_amounts, target_factories, active, sort_order)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *
+         bonus_pct, role_amounts, target_factories, active, sort_order, person_type)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *
     `, [rule_name.trim(), rule_type||'sa_qty', sa_config_id||null,
         per_qty||1, bonus_per_unit||0,
         JSON.stringify(part_catalog_types||[]), JSON.stringify(paycode_types||[]),
@@ -43,7 +43,7 @@ router.post('/promo-bonus/configs', async (req, res) => {
 router.put('/promo-bonus/configs/:id', async (req, res) => {
   const { rule_name, rule_type, sa_config_id, per_qty, bonus_per_unit,
           part_catalog_types, paycode_types, discount_min, discount_max,
-          bonus_pct, role_amounts, target_factories, active, sort_order } = req.body;
+          bonus_pct, role_amounts, target_factories, active, sort_order, person_type } = req.body;
   if (!rule_name) return res.status(400).json({ error: '名稱為必填' });
   try {
     const r = await pool.query(`
@@ -51,16 +51,15 @@ router.put('/promo-bonus/configs/:id', async (req, res) => {
         rule_name=$1, rule_type=$2, sa_config_id=$3, per_qty=$4, bonus_per_unit=$5,
         part_catalog_types=$6, paycode_types=$7, discount_min=$8, discount_max=$9,
         bonus_pct=$10, role_amounts=$11, target_factories=$12, active=$13, sort_order=$14,
-        updated_at=NOW()
-      WHERE id=$15 RETURNING *
+        person_type=$15, updated_at=NOW()
+      WHERE id=$16 RETURNING *
     `, [rule_name.trim(), rule_type||'sa_qty', sa_config_id||null,
         per_qty||1, bonus_per_unit||0,
         JSON.stringify(part_catalog_types||[]), JSON.stringify(paycode_types||[]),
         discount_min!=null?parseFloat(discount_min):null,
         discount_max!=null?parseFloat(discount_max):null,
         bonus_pct||0, JSON.stringify(role_amounts||{}),
-        JSON.stringify(target_factories||[]), active!==false, sort_order||0,
-        req.params.id]);
+        JSON.stringify(target_factories||[]), active!==false, sort_order||0, person_type||'sales_person', req.params.id]);
     if (!r.rows.length) return res.status(404).json({ error: '找不到設定' });
     res.json(r.rows[0]);
   } catch(err) { res.status(500).json({ error: err.message }); }
@@ -145,6 +144,7 @@ router.get('/promo-bonus/results', async (req, res) => {
             if (funcCodes.length) { conds.push(`function_code=ANY($${idx++})`); p.push(funcCodes); }
             if (partNums.length)  { conds.push(`part_number=ANY($${idx++})`);   p.push(partNums); }
             if (partTypes.length) { conds.push(`part_type=ANY($${idx++})`);     p.push(partTypes); }
+            
             const personCol = cfg.person_type === 'tech' ? 'pickup_person' : 'sales_person';
             const expr = statMethod==='quantity'?'SUM(sale_qty)':statMethod==='count'?'COUNT(*)':'SUM(sale_price_untaxed)';
             const r = await pool.query(
@@ -202,11 +202,14 @@ router.get('/promo-bonus/results', async (req, res) => {
   const bonusPct   = parseFloat(cfg.bonus_pct || 0);
   const personCol  = cfg.person_type === 'tech' ? 'pickup_person' : 'sales_person';
 
+  const payCodes2 = cfg.paycode_types || [];     
   const conds = ['period=$1','branch=$2']; const p = [period, br]; let idx = 3;
   if (catCodes.length)  { conds.push(`category_code=ANY($${idx++})`); p.push(catCodes); }
   if (funcCodes.length) { conds.push(`function_code=ANY($${idx++})`); p.push(funcCodes); }
   if (partNums.length)  { conds.push(`part_number=ANY($${idx++})`);   p.push(partNums); }
   if (partTypes.length) { conds.push(`part_type=ANY($${idx++})`);     p.push(partTypes); }
+  if (payCodes2.length) { conds.push(`part_type=ANY($${idx++})`); p.push(payCodes2); }
+
 
   const r = await pool.query(
     `SELECT COALESCE(NULLIF(${personCol},''),'（未知）') AS person_name,
