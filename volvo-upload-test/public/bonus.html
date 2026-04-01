@@ -438,6 +438,10 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
               <div style="font-size:11px;color:#64748b">留空=不限</div>
             </div>
             <div class="form-group">
+            <label>帳類篩選（留空=全部）</label>
+            <div id="pmSaPctPaycodes" style="display:flex;flex-wrap:wrap;gap:3px;background:#0f172a;border:1px solid #2d3f56;border-radius:7px;padding:8px 10px;min-height:40px"></div>
+          </div>
+            <div class="form-group">
               <label>獎金比例（%）</label>
               <input type="number" id="pmBonusPct" class="form-input" placeholder="例：5" min="0" max="100" step="0.1">
               <div style="font-size:11px;color:#64748b">銷售金額 × %</div>
@@ -2003,6 +2007,13 @@ async function openPromoModal(id) {
   if (saPctPT) saPctPT.value = cfg.person_type || 'sales_person';
   var saPctB = document.getElementById('pmSaPctBonus');
   if (saPctB) saPctB.value = cfg.bonus_pct || 0;
+  var selSaPctPay = cfg.paycode_types || [];
+  var saPctPayEl = document.getElementById('pmSaPctPaycodes');
+  if (saPctPayEl) saPctPayEl.innerHTML = ALL_PAYCODES.map(function(t){
+    var on = selSaPctPay.includes(t);
+    return '<label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;padding:5px 12px;border-radius:6px;margin:2px;border:1.5px solid '+(on?'#f97316':'#2d3f56')+';background:'+(on?'rgba(249,115,22,.15)':'transparent')+';font-size:12px;font-weight:700;color:'+(on?'#f97316':'#64748b')+'" onclick="toggleChipLabel(this,\'#f97316\')">'
+      + '<input type="checkbox" value="'+t+'" '+(on?'checked':'')+' style="display:none">'+t+'</label>';
+  }).join('');
   // Catalog type checkboxes
   var selCatTypes = cfg.part_catalog_types || [];
   document.getElementById('pmCatalogTypes').innerHTML = CATALOG_TYPES.map(function(t){
@@ -2065,6 +2076,7 @@ async function savePromoCfg() {
   payload.sa_config_id = parseInt(saId);
   payload.bonus_pct    = parseFloat(document.getElementById('pmSaPctBonus').value) || 0;
   payload.person_type  = document.getElementById('pmSaPctPersonType').value;
+  payload.paycode_types = [...document.querySelectorAll('#pmSaPctPaycodes input:checked')].map(function(cb){ return cb.value; });
   } else {
     var catTypes = [...document.querySelectorAll('#pmCatalogTypes input:checked')].map(function(cb){ return cb.value; });
     if (!catTypes.length) { alert('請選擇品項類型（精品/配件）'); return; }
