@@ -2563,7 +2563,8 @@ function exportWipModalCSV(){
 async function loadTechHours(period,branch){
   const kpiEl=document.getElementById('techHoursKPI'),contentEl=document.getElementById('techHoursContent');
   kpiEl.innerHTML='';contentEl.innerHTML='<div class="loading"><span class="spinner"></span>載入中</div>';
-  if(!period){contentEl.innerHTML='<div class="empty">請選擇期間</div>';return;}
+  if (!Object.keys(_techGroupsCache).length) { await _techLoadAllGroups(); }
+ if(!period){contentEl.innerHTML='<div class="empty">請選擇期間</div>';return;}
   try{
     const params=new URLSearchParams();params.set('period',period);if(branch)params.set('branch',branch);
     const data=await fetch(`/api/stats/tech-hours?${params}`).then(r=>r.json());
@@ -4563,9 +4564,28 @@ document.addEventListener('DOMContentLoaded',async()=>{
 <script>
 let _techHoursCache = null;
 
-function _techGetAllGroups(){try{return JSON.parse(localStorage.getItem('techGroupsV2')||'{}');}catch(e){return {};}}
-function _techGetGroups(branch){return _techGetAllGroups()[branch]||{};}
-function _techSaveGroups(branch,groups){try{const a=_techGetAllGroups();a[branch]=groups;localStorage.setItem('techGroupsV2',JSON.stringify(a));}catch(e){}}
+let _techGroupsCache = {};
+
+async function _techLoadAllGroups() {
+  try {
+    const data = await fetch('/api/tech-group-config-v2').then(r => r.json());
+    _techGroupsCache = data || {};
+  } catch(e) { console.warn('[techGroups] load failed', e); }
+}
+
+function _techGetAllGroups() { return _techGroupsCache; }
+function _techGetGroups(branch) { return _techGroupsCache[branch] || {}; }
+
+async function _techSaveGroups(branch, groups) {
+  _techGroupsCache[branch] = groups;
+  try {
+    await fetch('/api/tech-group-config-v2', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ branch, groups }),
+    });
+  } catch(e) { console.warn('[techGroups] save failed', e); }
+}
 function _techGetExcludes(period,branch){try{const a=JSON.parse(localStorage.getItem('techExcludeV2')||'{}');return(a[period]||{})[branch]||{};}catch(e){return {};}}
 function _techSaveExclude(period,branch,empName,excluded){
   try{
@@ -4631,12 +4651,12 @@ function renderTechGroupConfigModal(){
   });
   document.getElementById('techGroupConfigBody').innerHTML=html||'<div style="color:#64748b">無技師資料，請先查詢工時</div>';
 }
-function saveTechGroupConfig(){
+async function saveTechGroupConfig(){
   const data=_techHoursCache;if(!data)return;
   const branch=document.getElementById('selBranch').value;
   const brKeys=Object.keys(data.branches||{}).filter(br=>!branch||br===branch);
-  brKeys.forEach(br=>{
-    const bd=data.branches[br];if(!bd)return;
+  for (const br of brKeys) {
+    const bd=data.branches[br];if(!bd)continue;
     const groups=_techGetGroups(br);
     Object.values(bd.dept_types||{}).forEach(dv=>{
       dv.techs.forEach(t=>{
@@ -4646,8 +4666,8 @@ function saveTechGroupConfig(){
         if(val){groups[t.emp_name]=val;}else{delete groups[t.emp_name];}
       });
     });
-    _techSaveGroups(br,groups);
-  });
+    await _techSaveGroups(br,groups);
+  }
   closeTechGroupConfig();
   const p=getPeriod();if(p)loadTechHours(p,document.getElementById('selBranch').value);
 }
