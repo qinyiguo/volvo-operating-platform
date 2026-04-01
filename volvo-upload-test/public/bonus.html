@@ -1816,9 +1816,22 @@ html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);tex
           var mrNote = (_managerReviewMap[p4.emp_id]&&_managerReviewMap[p4.emp_id].note)||'';
           var safeEmpId = p4.emp_id.replace(/'/g,"\\'");
           // 促銷獎金（前）
-          html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;background:rgba(16,185,129,.03);font-weight:900;">'
-            +(mRow.promoBonus>0?'<span style="color:#10b981;font-size:14px">'+mRow.promoBonus.toLocaleString()+'<span style="font-size:9px;margin-left:1px">元</span></span>':'<span style="color:#2d4060">—</span>')
-          +'</td>';
+var promoDetailData = encodeURIComponent(JSON.stringify(
+  Object.keys((_promoApiResults&&_promoApiResults.resultsByConfig)||{}).map(function(cid){
+    var cfg2 = ((_promoApiResults.resultsByConfig[cid]||{}).config)||{};
+    var brMap = ((_promoApiResults.resultsByConfig[cid]||{}).byBranch||{})[fc]||{};
+    var amt = brMap[person3.emp_name];
+    if (amt === undefined) {
+      for (var k in brMap) {
+        if (k.length>=2&&(k.indexOf(person3.emp_name)>=0||person3.emp_name.indexOf(k)>=0)){amt=brMap[k];break;}
+      }
+    }
+    return { name: cfg2.rule_name||'（未知）', amount: parseFloat(amt||0) };
+  }).filter(function(x){return x.amount>0;})
+));
+html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;background:rgba(16,185,129,.03);font-weight:900;">'
+  +(mRow.promoBonus>0?'<span onclick="_openPromoDetail(\''+p4.emp_name.replace(/'/g,"\\'")+'\',\''+promoDetailData+'\')" style="color:#10b981;font-size:14px;cursor:pointer;text-decoration:underline dotted">'+mRow.promoBonus.toLocaleString()+'<span style="font-size:9px;margin-left:1px">元</span></span>':'<span style="color:#2d4060">—</span>')
++'</td>';
           
           // 主管考核（純顯示）
           html+='<td style="padding:6px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:center;background:rgba(167,139,250,.03);min-width:100px" data-mrcell="'+safeEmpId+'">';
@@ -2625,6 +2638,33 @@ async function clearActualOverride(metricId, period, branch) {
   document.getElementById('aoModalBg')?.remove();
   const inner = document.getElementById('progressInner');
   if (inner) { inner.innerHTML = '<div class="loading"><span class="spinner"></span>重新計算中</div>'; renderProgressContent(); }
+}
+
+  function _openPromoDetail(empName, dataJSON) {
+  var items = JSON.parse(decodeURIComponent(dataJSON));
+  var rows = items.map(function(item){
+    return '<tr><td style="padding:8px 12px;color:#e2e8f0;font-size:13px">'+item.name+'</td>'
+      +'<td style="padding:8px 12px;text-align:right;color:#10b981;font-size:13px;font-weight:700">'+item.amount.toLocaleString()+' 元</td></tr>';
+  }).join('');
+  var total = items.reduce(function(s,x){return s+x.amount;},0);
+  var html = '<div id="promoDetailBg" onclick="if(event.target===this)this.remove()"'
+    +' style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center">'
+    +'<div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:24px;min-width:360px;max-width:90vw">'
+    +'<div style="font-size:15px;font-weight:800;color:#10b981;margin-bottom:4px">🎁 促銷獎金明細</div>'
+    +'<div style="font-size:12px;color:#64748b;margin-bottom:16px">'+empName+'</div>'
+    +'<table style="width:100%;border-collapse:collapse">'
+    +'<thead><tr><th style="text-align:left;padding:6px 12px;font-size:11px;color:#64748b;border-bottom:1px solid #2d3f56">規則名稱</th>'
+    +'<th style="text-align:right;padding:6px 12px;font-size:11px;color:#64748b;border-bottom:1px solid #2d3f56">獎金</th></tr></thead>'
+    +'<tbody>'+rows+'</tbody>'
+    +'<tfoot><tr style="background:rgba(16,185,129,.08)">'
+    +'<td style="padding:8px 12px;font-weight:700;color:#10b981">合計</td>'
+    +'<td style="padding:8px 12px;text-align:right;font-weight:900;color:#10b981;font-size:15px">'+total.toLocaleString()+' 元</td>'
+    +'</tr></tfoot></table>'
+    +'<div style="display:flex;justify-content:flex-end;margin-top:16px">'
+    +'<button onclick="document.getElementById(\'promoDetailBg\').remove()" style="padding:6px 18px;border-radius:6px;border:1px solid #475569;background:transparent;color:#94a3b8;font-size:12px;cursor:pointer">關閉</button>'
+    +'</div></div></div>';
+  var ex = document.getElementById('promoDetailBg'); if(ex) ex.remove();
+  document.body.insertAdjacentHTML('beforeend', html);
 }
 
 </script>
