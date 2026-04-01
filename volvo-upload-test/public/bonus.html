@@ -712,7 +712,7 @@ function renderRosterTree(rows) {
         const eName=e.emp_name.replace(/'/g,"\\'"), eFact=(e.factory||'').replace(/'/g,"\\'");
         const _dA=e.dept_name?"'"+e.dept_name.replace(/'/g,"\\'")+"'":"''";
         html+='<tr class="'+rc+'"><td style="font-family:monospace;font-size:11px;color:#94a3b8">'+e.emp_id+'</td><td style="font-weight:700">'+e.emp_name+'</td><td style="font-size:12px;color:#94a3b8">'+(e.job_title||'—')+'</td><td>'+(STATUS_BADGE[e.status]||e.status)+'</td><td style="font-size:12px;color:#64748b">'+(e.mgr1||'—')+'</td><td style="font-size:11px">'+(e.hire_date?.slice(0,10)||'—')+'</td><td style="font-size:11px;color:'+(e.resign_date?'#ef4444':'#475569')+'">'+(e.resign_date?.slice(0,10)||'—')+'</td>';
-        html+='<td><button class="btn btn-secondary btn-sm" onclick="openEmpEditModal(\''+_period+'\',\''+e.emp_id+'\',\''+eFact+'\',\''+eName+'\','+_dA+')">✏️</button></td></tr>';
+        html+='<td><button class="btn btn-secondary btn-sm" onclick="openEmpEditModal(\''+_rosterLoadedPeriod+'\',\''+e.emp_id+'\',\''+eFact+'\',\''+eName+'\','+_dA+')">✏️</button></td></tr>';
       });
       html+='</tbody></table></div></div>';
     });
