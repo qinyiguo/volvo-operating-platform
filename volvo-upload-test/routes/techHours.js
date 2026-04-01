@@ -812,4 +812,37 @@ router.put('/tech-bay-config', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── 組別設定（存資料庫，跨電腦同步）──
+router.get('/tech-group-config-v2', async (req, res) => {
+  const { branch } = req.query;
+  try {
+    if (branch) {
+      const key = `tech_groups_${branch}`;
+      const r = await pool.query(`SELECT value FROM app_settings WHERE key=$1`, [key]);
+      res.json(r.rows[0] ? JSON.parse(r.rows[0].value) : {});
+    } else {
+      const r = await pool.query(`SELECT key, value FROM app_settings WHERE key LIKE 'tech_groups_%'`);
+      const all = {};
+      r.rows.forEach(row => {
+        const br = row.key.replace('tech_groups_', '');
+        try { all[br] = JSON.parse(row.value); } catch(e) {}
+      });
+      res.json(all);
+    }
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.put('/tech-group-config-v2', async (req, res) => {
+  const { branch, groups } = req.body;
+  if (!branch) return res.status(400).json({ error: 'branch 為必填' });
+  const key = `tech_groups_${branch}`;
+  try {
+    await pool.query(`
+      INSERT INTO app_settings (key, value) VALUES ($1, $2)
+      ON CONFLICT (key) DO UPDATE SET value = $2
+    `, [key, JSON.stringify(groups || {})]);
+    res.json({ ok: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;
