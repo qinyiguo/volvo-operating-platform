@@ -228,6 +228,7 @@ router.get('/promo-bonus/results', async (req, res) => {
               const sales = parseFloat(row.actual || 0);
               if (sales > 0) personResults[row.person_name] = Math.round(sales * bonusPct / 100);
             }
+            }
           } else {
             // parts_sales based
             const conds = ['period=$1','branch=$2']; const p = [period, br]; let idx = 3;
