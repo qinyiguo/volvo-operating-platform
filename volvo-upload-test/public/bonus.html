@@ -1702,7 +1702,8 @@ memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonu
                 +'<span style="font-size:10px;color:#60a5fa;font-weight:700">'+meta7.metric.metric_name+'</span>'
                 +(meta7.autoRate!==null?'<span style="font-size:10px;color:'+rc7+';font-weight:700">'+meta7.autoRate.toFixed(0)+'%</span>':'')
                 +'<button onclick="event.stopPropagation();openMetricModal('+mId7+')" title="編輯指標" style="background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.25);padding:1px 5px;border-radius:3px;font-size:10px;cursor:pointer">✏️</button>'
-+(meta7.metric.metric_source==='tech_hours'||meta7.metric.metric_source==='manual'?'<button onclick="event.stopPropagation();openActualOverrideModal('+mId7+',\''+meta7.metric.metric_name.replace(/\'/g,"\\\'")+'\',\''+(_actualPeriod||'')+'\','+(meta7.metric.metric_source==='manual'?'true':'false')+')" title="手動填入目標/實績" style="background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3);padding:1px 5px;border-radius:3px;font-size:10px;cursor:pointer">📝</button>':'')                +'<button onclick="event.stopPropagation();deleteMetric('+mId7+',\''+safeN7+'\')" title="刪除指標" style="background:rgba(239,68,68,.15);color:#ef4444;border:none;padding:1px 5px;border-radius:3px;font-size:10px;cursor:pointer">🗑</button>'
+                +'<button onclick="event.stopPropagation();openActualOverrideModal('+mId7+',\''+meta7.metric.metric_name.replace(/\'/g,"\\\'")+'\',\''+(_actualPeriod||'')+'\','+(meta7.metric.metric_source==='manual'?'true':'false')+',\''+meta7.metric.metric_source+'\')" title="手動填入目標/實績" style="background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3);padding:1px 5px;border-radius:3px;font-size:10px;cursor:pointer">📝</button>'              
+                +'<button onclick="event.stopPropagation();deleteMetric('+mId7+',\''+safeN7+'\')" title="刪除指標" style="background:rgba(239,68,68,.15);color:#ef4444;border:none;padding:1px 5px;border-radius:3px;font-size:10px;cursor:pointer">🗑</button>'
               +'</span>';
             }).join('')
           +'</div>'
@@ -2411,7 +2412,8 @@ async function _saveMR(el) {
   } catch(e) { console.warn('主管考核儲存失敗', e); }
 }
   // ── 手動實績覆蓋 Modal ──
-async function openActualOverrideModal(metricId, metricName, period, isManual) {
+async function openActualOverrideModal(metricId, metricName, period, isManual, metricSource) {
+  metricSource = metricSource || 'manual';
   const branch = document.getElementById('selFactory').value;
   const existing = await fetch(`/api/bonus/actual-override?metric_id=${metricId}&period=${period}&branch=${encodeURIComponent(branch)}`).then(r=>r.json()).catch(()=>null);
   const curVal  = existing?.actual_value != null ? existing.actual_value : '';
@@ -2432,6 +2434,23 @@ async function openActualOverrideModal(metricId, metricName, period, isManual) {
   }
 
   const targetRow = isManual ? `
+  const m = _metrics.find(function(x){ return x.id === metricId; });
+const curStatField = (m && m.stat_field) || 'amount';
+const defaultUnit  = (metricSource === 'tech_hours') ? 'raw' : (curStatField === 'amount' ? 'k' : 'raw');
+const unitRow = `
+  <div style="margin-bottom:10px;padding:8px 12px;background:#0f172a;border-radius:6px;border:1px solid #2d3f56">
+    <div style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:6px">輸入單位（儲存後生效）</div>
+    <div style="display:flex;gap:16px">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:#94a3b8">
+        <input type="radio" name="aoUnit" value="raw" ${defaultUnit==='raw'?'checked':''} style="accent-color:#f59e0b">
+        原始數字（小時 / 件 / 分）
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:#94a3b8">
+        <input type="radio" name="aoUnit" value="k" ${defaultUnit==='k'?'checked':''} style="accent-color:#f59e0b">
+        K（× 1,000，金額類）
+      </label>
+    </div>
+  </div>`;
     <div style="font-size:11px;color:#64748b;margin-bottom:4px">當月目標值</div>
     <input type="number" id="aoTargetInput" value="${curTarget}" min="0" step="0.1" placeholder="例：500（手動設定目標）"
       style="width:100%;background:#0f172a;border:1px solid #3b82f6;color:#3b82f6;padding:8px 12px;border-radius:6px;font-size:14px;font-weight:800;outline:none;margin-bottom:10px">
@@ -2456,7 +2475,8 @@ async function openActualOverrideModal(metricId, metricName, period, isManual) {
       <div style="font-size:11px;color:#64748b;margin-bottom:4px">當月實績值（留空 = ${isManual?'不顯示達成率':'使用 DMS 自動計算'}）</div>
       <input type="number" id="aoValInput" value="${curVal}" min="0" step="0.1" placeholder="${isManual?'例：480（實際完成量）':'例：320（小時）'}"
         style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#f59e0b;padding:8px 12px;border-radius:6px;font-size:14px;font-weight:800;outline:none;margin-bottom:10px">
-      <div style="font-size:11px;color:#64748b;margin-bottom:4px">備註</div>
+            ${unitRow}
+          <div style="font-size:11px;color:#64748b;margin-bottom:4px">備註</div>
       <input type="text" id="aoNoteInput" value="${curNote}" placeholder="（選填）"
         style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#94a3b8;padding:7px 12px;border-radius:6px;font-size:13px;outline:none;margin-bottom:14px">
       <div style="display:flex;gap:8px;justify-content:flex-end">
@@ -2471,8 +2491,26 @@ async function openActualOverrideModal(metricId, metricName, period, isManual) {
   document.body.insertAdjacentHTML('beforeend', html);
 }
 async function saveActualOverride(metricId, period, branch, isManual) {
-  const val  = document.getElementById('aoValInput')?.value.trim();
-  const note = document.getElementById('aoNoteInput')?.value.trim() || '';
+  const val     = document.getElementById('aoValInput')?.value.trim();
+  const note    = document.getElementById('aoNoteInput')?.value.trim() || '';
+  const unit    = document.querySelector('input[name="aoUnit"]:checked')?.value || 'raw';
+  const rawVal  = val === '' ? null : parseFloat(val);
+  const finalVal = (rawVal !== null && unit === 'k') ? rawVal * 1000 : rawVal;
+  // 將 unit 選擇同步存入 bonus_metrics.stat_field（寫 DB，跨裝置同步）
+  const m = _metrics.find(function(x){ return x.id === metricId; });
+  if (m) {
+    const newStatField = (unit === 'k') ? 'amount' : 'count';
+    if (m.stat_field !== newStatField) {
+      try {
+        await fetch('/api/bonus/metrics/' + metricId, {
+          method: 'PUT',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(Object.assign({}, m, { stat_field: newStatField }))
+        });
+        m.stat_field = newStatField;
+      } catch(e) {}
+    }
+  }
   const msgEl = document.getElementById('aoMsg');
   // 若是 manual 指標，同步儲存部門目標
   if (isManual) {
@@ -2492,7 +2530,8 @@ const tEntries = deptCodes.length
   try {
     const r = await fetch('/api/bonus/actual-override', {
       method: 'PUT', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ metric_id:metricId, period, branch, actual_value: val===''?null:parseFloat(val), note })
+      body: JSON.stringify({ metric_id:metricId, period, branch, actual_value: finalVal, note })
+
     }).then(r=>r.json());
     if (r.error) throw new Error(r.error);
     // 若是 manual 指標，同步更新顯示格式
