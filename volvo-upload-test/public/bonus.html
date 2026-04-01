@@ -1745,9 +1745,11 @@ memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonu
           var tp4=isTeamDept?teamPoolMap[mId4]:null;
           html+='<th style="'+thBase+'min-width:110px;text-align:center;background:#0c1524;border-bottom:1px solid #1e2d40">'
             +'<div style="font-size:11px;font-weight:800;color:#e2e8f0;margin-bottom:2px">'+(isTeamDept?'👥 ':'')+meta4.metric.metric_name+'</div>'
-            +(meta4.useAuto&&meta4.autoPT!==null?'<div style="font-size:10px;color:#64748b;margin-bottom:2px">📐 目標 <strong style="color:#94a3b8">'+(meta4.metric.metric_source==='tech_hours'?Math.round(meta4.autoPT)+' 小時':fv4(meta4.autoPT))+'</strong></div>':'')
-+(meta4.useAuto&&meta4.autoRate!==null?'<div style="font-size:10px;color:#64748b;margin-bottom:2px">⚡ '+(meta4.metric.metric_source==='tech_hours'?(meta4.actual!==null?Math.round(meta4.actual)+' 小時':'—'):fv4(meta4.actual))+' <span style="color:'+rc4+';font-weight:700">'+meta4.autoRate.toFixed(1)+'%</span></div>':(meta4.useAuto?'<div style="font-size:9px;color:#f59e0b;margin-bottom:2px">📝 待填入實績</div>':''))
-+(tp4?'<div style="font-size:10px;color:#f59e0b;font-weight:800;margin-bottom:2px">池 '+tp4.pool.toLocaleString()+' 元</div>':'')
+            +(meta4.useAuto&&meta4.autoPT!==null?'<div style="font-size:10px;color:#64748b;margin-bottom:2px">📐 目標 <strong style="color:#94a3b8">'
+            +(meta4.metric.metric_source==='tech_hours'?Math.round(meta4.autoPT)+' 小時':fv4(meta4.autoPT))+'</strong></div>':'')
+            +(meta4.useAuto&&meta4.autoRate!==null?'<div style="font-size:10px;color:#64748b;margin-bottom:2px">⚡ '
+            +(meta4.metric.metric_source==='tech_hours'?(meta4.actual!==null?Math.round(meta4.actual)+' 小時':'—'):fv4(meta4.actual))+' <span style="color:'+rc4+';font-weight:700">'+meta4.autoRate.toFixed(1)+'%</span></div>':(meta4.useAuto?'<div style="font-size:9px;color:#f59e0b;margin-bottom:2px">📝 待填入實績</div>':''))
+            +(tp4?'<div style="font-size:10px;color:#f59e0b;font-weight:800;margin-bottom:2px">池 '+tp4.pool.toLocaleString()+' 元</div>':'')
             +'<button onclick="event.stopPropagation();openMetricModal('+mId4+')" style="background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.25);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">✏️ 編輯指標</button>'
           +'</th>';
         }
@@ -2434,16 +2436,16 @@ async function openActualOverrideModal(metricId, metricName, period, isManual, m
   }
 
   const targetRow = isManual ? `
-  const m = _metrics.find(function(x){ return x.id === metricId; });
+const m = _metrics.find(function(x){ return x.id === metricId; });
 const curStatField = (m && m.stat_field) || 'amount';
-const defaultUnit  = (metricSource === 'tech_hours') ? 'raw' : (curStatField === 'amount' ? 'k' : 'raw');
+const defaultUnit = (metricSource === 'tech_hours') ? 'raw' : (curStatField === 'amount' ? 'k' : 'raw');
 const unitRow = `
   <div style="margin-bottom:10px;padding:8px 12px;background:#0f172a;border-radius:6px;border:1px solid #2d3f56">
-    <div style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:6px">輸入單位（儲存後生效）</div>
+    <div style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:6px">輸入單位</div>
     <div style="display:flex;gap:16px">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:#94a3b8">
         <input type="radio" name="aoUnit" value="raw" ${defaultUnit==='raw'?'checked':''} style="accent-color:#f59e0b">
-        原始數字（小時 / 件 / 分）
+        原始數字（小時／件）
       </label>
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:#94a3b8">
         <input type="radio" name="aoUnit" value="k" ${defaultUnit==='k'?'checked':''} style="accent-color:#f59e0b">
