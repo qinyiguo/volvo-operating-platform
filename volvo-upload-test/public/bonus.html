@@ -1820,10 +1820,10 @@ var promoDetailData = encodeURIComponent(JSON.stringify(
   Object.keys((_promoApiResults&&_promoApiResults.resultsByConfig)||{}).map(function(cid){
     var cfg2 = ((_promoApiResults.resultsByConfig[cid]||{}).config)||{};
     var brMap = ((_promoApiResults.resultsByConfig[cid]||{}).byBranch||{})[fc]||{};
-    var amt = brMap[person3.emp_name];
+    var amt = brMap[p4.emp_name];        // ← person3 改成 p4
     if (amt === undefined) {
       for (var k in brMap) {
-        if (k.length>=2&&(k.indexOf(person3.emp_name)>=0||person3.emp_name.indexOf(k)>=0)){amt=brMap[k];break;}
+        if (k.length>=2&&(k.indexOf(p4.emp_name)>=0||p4.emp_name.indexOf(k)>=0)){amt=brMap[k];break;}  // ← 同樣改
       }
     }
     return { name: cfg2.rule_name||'（未知）', amount: parseFloat(amt||0) };
