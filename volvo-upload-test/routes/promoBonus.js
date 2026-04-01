@@ -114,6 +114,7 @@ router.get('/promo-bonus/results', async (req, res) => {
 
           if (workCodes.length > 0) {
             // tech_performance based
+             const payCodes2 = cfg.paycode_types || [];
             const conds = ['period=$1','branch=$2']; const p = [period, br]; let idx = 3;
             if (acTypes.length) { conds.push(`account_type=ANY($${idx++})`); p.push(acTypes); }
             const wcConds = [];
@@ -138,6 +139,7 @@ router.get('/promo-bonus/results', async (req, res) => {
             }
           } else {
             // parts_sales based
+            const payCodes2 = cfg.paycode_types || [];
             const conds = ['period=$1','branch=$2']; const p = [period, br]; let idx = 3;
             if (catCodes.length)  { conds.push(`category_code=ANY($${idx++})`); p.push(catCodes); }
             if (funcCodes.length) { conds.push(`function_code=ANY($${idx++})`); p.push(funcCodes); }
