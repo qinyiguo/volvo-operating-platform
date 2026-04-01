@@ -143,11 +143,12 @@ router.get('/promo-bonus/results', async (req, res) => {
             if (funcCodes.length) { conds.push(`function_code=ANY($${idx++})`); p.push(funcCodes); }
             if (partNums.length)  { conds.push(`part_number=ANY($${idx++})`);   p.push(partNums); }
             if (partTypes.length) { conds.push(`part_type=ANY($${idx++})`);     p.push(partTypes); }
+            const personCol = cfg.person_type === 'tech' ? 'pickup_person' : 'sales_person';
             const expr = statMethod==='quantity'?'SUM(sale_qty)':statMethod==='count'?'COUNT(*)':'SUM(sale_price_untaxed)';
             const r = await pool.query(
-              `SELECT COALESCE(NULLIF(sales_person,''),'（未知）') AS person_name,
+              `SELECT COALESCE(NULLIF(${personCol},''),'（未知）') AS person_name,
                       COALESCE(${expr},0) AS actual
-               FROM parts_sales WHERE ${conds.join(' AND ')} GROUP BY sales_person`, p);
+               FROM parts_sales WHERE ${conds.join(' AND ')} GROUP BY ${personCol}`, p);
             for (const row of r.rows) {
               const units = Math.floor(parseFloat(row.actual||0) / perQty);
               if (units > 0) personResults[row.person_name] = Math.round(units * bonusUnit);
