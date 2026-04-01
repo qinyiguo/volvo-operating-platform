@@ -380,6 +380,7 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
           <select id="pmRuleType" class="form-select" onchange="onPmRuleTypeChange()">
             <option value="sa_qty">📦 數量型（依指標銷售件數）</option>
             <option value="parts_discount">💎 折扣型（精品/配件折扣區間）</option>
+            <option value="sa_pct">💰 比例型（指標銷售總額 × %）</option>
           </select>
         </div>
       </div>
@@ -444,6 +445,28 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
           </div>
         </div>
       </div>
+      <!-- sa_pct fields -->
+<div id="pmSaPctArea" style="display:none">
+  <div class="section-label">💰 比例型設定（指標銷售總額 × %）</div>
+  <div style="background:#1e293b;border:1px solid #10b98144;border-radius:8px;padding:12px 14px;margin-bottom:12px">
+    <div class="form-group">
+      <label>連結指標銷售品項</label>
+      <select id="pmSaPctConfigId" class="form-select"><option value="">選擇...</option></select>
+    </div>
+    <div class="form-group">
+      <label>歸屬人員</label>
+      <select id="pmSaPctPersonType" class="form-select">
+        <option value="sales_person">🛒 銷售人員（SA）</option>
+        <option value="tech">🔧 施工技師</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>獎金比例（%）</label>
+      <input type="number" id="pmSaPctBonus" class="form-input" value="0" min="0" max="100" step="0.1" placeholder="例：5">
+      <div style="font-size:11px;color:#64748b;margin-top:4px">銷售總額 × %</div>
+    </div>
+  </div>
+</div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div class="form-group">
@@ -1972,6 +1995,14 @@ async function openPromoModal(id) {
   saSel.innerHTML = '<option value="">選擇指標銷售品項...</option>' + saList.map(function(s){
     return '<option value="' + s.id + '" ' + (s.id == cfg.sa_config_id ? 'selected' : '') + '>' + s.config_name + '</option>';
   }).join('');
+  var saPctSel = document.getElementById('pmSaPctConfigId');
+  if (saPctSel) saPctSel.innerHTML = '<option value="">選擇...</option>' + saList.map(function(s){
+    return '<option value="'+s.id+'" '+(s.id==cfg.sa_config_id?'selected':'')+'>'+s.config_name+'</option>';
+  }).join('');
+  var saPctPT = document.getElementById('pmSaPctPersonType');
+  if (saPctPT) saPctPT.value = cfg.person_type || 'sales_person';
+  var saPctB = document.getElementById('pmSaPctBonus');
+  if (saPctB) saPctB.value = cfg.bonus_pct || 0;
   // Catalog type checkboxes
   var selCatTypes = cfg.part_catalog_types || [];
   document.getElementById('pmCatalogTypes').innerHTML = CATALOG_TYPES.map(function(t){
@@ -2005,6 +2036,8 @@ function onPmRuleTypeChange() {
   var discArea  = document.getElementById('pmDiscArea');
   if (saArea)   saArea.style.display   = type === 'sa_qty' ? '' : 'none';
   if (discArea) discArea.style.display = type === 'parts_discount' ? '' : 'none';
+  var saPctArea = document.getElementById('pmSaPctArea');
+  if (saPctArea) saPctArea.style.display = type === 'sa_pct' ? '' : 'none';
 }
 
 async function savePromoCfg() {
@@ -2026,6 +2059,12 @@ async function savePromoCfg() {
     payload.per_qty        = parseFloat(document.getElementById('pmPerQty').value) || 1;
     payload.bonus_per_unit = parseFloat(document.getElementById('pmBonusUnit').value) || 0;
     payload.person_type = document.getElementById('pmPersonType').value;
+    } else if (ruleType === 'sa_pct') {
+  var saId = document.getElementById('pmSaPctConfigId').value;
+  if (!saId) { alert('請選擇指標銷售品項'); return; }
+  payload.sa_config_id = parseInt(saId);
+  payload.bonus_pct    = parseFloat(document.getElementById('pmSaPctBonus').value) || 0;
+  payload.person_type  = document.getElementById('pmSaPctPersonType').value;
   } else {
     var catTypes = [...document.querySelectorAll('#pmCatalogTypes input:checked')].map(function(cb){ return cb.value; });
     if (!catTypes.length) { alert('請選擇品項類型（精品/配件）'); return; }
