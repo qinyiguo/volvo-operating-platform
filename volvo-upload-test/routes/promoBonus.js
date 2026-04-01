@@ -1,6 +1,9 @@
 const router = require('express').Router();
 const pool   = require('../db/pool');
 
+// ── 自動補欄位（只跑一次）──
+pool.query(`ALTER TABLE promo_bonus_configs ADD COLUMN IF NOT EXISTS person_type VARCHAR(20) DEFAULT 'sales_person'`).catch(()=>{});
+
 // ── CRUD ──
 router.get('/promo-bonus/configs', async (req, res) => {
   try {
