@@ -1247,7 +1247,8 @@ function _renderVCTLMetricList(){
       +'<span style="font-size:10px;background:rgba(59,130,246,.15);color:#3b82f6;padding:1px 7px;border-radius:4px">'+(SL[m.source_type]||m.source_type)+'</span>'
       +'<span style="font-size:10px;background:rgba(16,185,129,.15);color:#10b981;padding:1px 7px;border-radius:4px">'+(CL[m.calc_method]||m.calc_method)+'</span>'
       +'<span style="font-size:10px;background:rgba(245,158,11,.12);color:#f59e0b;padding:1px 7px;border-radius:4px">帳類: '+acs+'</span>'
-      +((m.filters||[]).length?'<span style="font-size:10px;background:rgba(139,92,246,.12);color:#8b5cf6;padding:1px 7px;border-radius:4px">篩選: '+(m.filters||[]).length+'條</span>':'')
+      +((m.filters||[]).filter(function(f){return f.type!=='catalog_type';}).length?'<span style="font-size:10px;background:rgba(139,92,246,.12);color:#8b5cf6;padding:1px 7px;border-radius:4px">篩選: '+(m.filters||[]).filter(function(f){return f.type!=='catalog_type';}).length+'條</span>':'')
+      +((m.filters||[]).filter(function(f){return f.type==='catalog_type';}).length?'<span style="font-size:10px;background:rgba(16,185,129,.12);color:#10b981;padding:1px 7px;border-radius:4px">📦 '+(m.filters||[]).filter(function(f){return f.type==='catalog_type';}).map(function(f){return f.value;}).join('/')+'</span>':'')
       +'</div></div>'
       +'<button onclick="openVCTLModal('+m.id+')" style="flex-shrink:0;padding:4px 10px;background:#253347;color:#cbd5e1;border:1px solid #2d3f56;border-radius:5px;font-size:12px;cursor:pointer">✏️ 編輯</button>'
       +'<button onclick="deleteVCTLMetric('+m.id+',\''+m.metric_name.replace(/'/g,"\\'")+'\')" style="flex-shrink:0;padding:4px 10px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.25);border-radius:5px;font-size:12px;cursor:pointer">刪除</button>'
@@ -1308,8 +1309,10 @@ function openVCTLModal(id){
   document.getElementById('vctlMOrder').value=m?(m.sort_order||0):0;
   document.getElementById('vctlMSource').value=m?(m.source_type||'parts'):'parts';
   onVCTLSourceChange(m?(m.calc_method||'amount'):null);
-  _buildVCTLAccountChips(m?m.source_type:'parts',m?(m.account_types||[]):[]);
-  _vctlEditingFilters=m?[...(m.filters||[])]:[];
+_buildVCTLAccountChips(m?m.source_type:'parts',m?(m.account_types||[]):[]);
+  _buildVCTLCatalogChips(m?(m.filters||[]).filter(function(f){return f.type==='catalog_type';}).map(function(f){return f.value;}):[]);
+  // 編輯 filters 排除 catalog_type（catalog_type 由 chips 單獨管理）
+  _vctlEditingFilters=m?[...(m.filters||[]).filter(function(f){return f.type!=='catalog_type';})]:[];
   _renderVCTLFilterList();
   document.getElementById('vctlModal').style.display='flex';
   document.body.style.overflow='hidden';
@@ -1334,7 +1337,10 @@ function onVCTLSourceChange(restoreCalc){
   var fw=document.getElementById('vctlFTypeWrap');if(fw)fw.style.display=isWage?'none':'';
   var hint=document.getElementById('vctlFilterHint');if(hint)hint.textContent=isWage?'工資代碼（精確如 17300，或範圍如 00030-00033）':'類別碼/功能碼/零件編號 篩選條件（AND 邏輯）';
   var atl=document.getElementById('vctlATLabel');if(atl)atl.textContent=isWage?'帳類篩選（account_type，留空=全部）':'Paycode 篩選（part_type，留空=全部）';
+var ctw=document.getElementById('vctlCatalogTypeWrap');
+  if(ctw)ctw.style.display=(src==='parts')?'':'none';
   _buildVCTLAccountChips(src,[]);
+  if(src==='parts')_buildVCTLCatalogChips([]);
 }
 function _buildVCTLAccountChips(src,selectedVals){
   var el=document.getElementById('vctlAccountChips');if(!el)return;
@@ -1346,6 +1352,19 @@ function _buildVCTLAccountChips(src,selectedVals){
   }).join('');
 }
 function toggleVCTLChip(el,col){
+  var cb=el.querySelector('input');cb.checked=!cb.checked;
+  el.style.borderColor=cb.checked?col:'#2d3f56';el.style.background=cb.checked?col+'22':'transparent';el.style.color=cb.checked?col:'#64748b';
+}
+ function _buildVCTLCatalogChips(selectedVals){
+  var el=document.getElementById('vctlCatalogChips');if(!el)return;
+  var chipCol='#10b981';
+  el.innerHTML=['零件','精品','配件'].map(function(t){
+    var on=selectedVals.indexOf(t)!==-1;
+    return '<label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;padding:5px 11px;border-radius:6px;margin:2px;border:1.5px solid '+(on?chipCol:'#2d3f56')+';background:'+(on?chipCol+'22':'transparent')+';font-size:12px;font-weight:700;color:'+(on?chipCol:'#64748b')+'" onclick="toggleVCTLCatalogChip(this,\''+chipCol+'\')">'
+      +'<input type="checkbox" value="'+t+'" '+(on?'checked':'')+' style="display:none">'+t+'</label>';
+  }).join('');
+}
+function toggleVCTLCatalogChip(el,col){
   var cb=el.querySelector('input');cb.checked=!cb.checked;
   el.style.borderColor=cb.checked?col:'#2d3f56';el.style.background=cb.checked?col+'22':'transparent';el.style.color=cb.checked?col:'#64748b';
 }
@@ -1383,6 +1402,9 @@ async function saveVCTLMetric(){
   var description=document.getElementById('vctlMDesc').value.trim();
   var account_types=[...document.querySelectorAll('#vctlAccountChips input:checked')].map(function(cb){return cb.value;});
   var filters=_vctlEditingFilters.map(function(f){return{type:f.type,value:f.value};});
+ // 收集零件類別（catalog_type）chips
+  var catalogChecked=[...document.querySelectorAll('#vctlCatalogChips input:checked')].map(function(cb){return cb.value;});
+  catalogChecked.forEach(function(v){filters.push({type:'catalog_type',value:v});});
   var btn=document.getElementById('vctlBtnSave');btn.disabled=true;btn.textContent='儲存中...';
   try{
     var url=_vctlEditingId?'/api/vctl/metrics/'+_vctlEditingId:'/api/vctl/metrics';
@@ -1453,6 +1475,13 @@ document.addEventListener('keydown',function(e){
       <div style="margin-bottom:16px">
         <label id="vctlATLabel" style="display:block;font-size:12px;color:#64748b;font-weight:600;margin-bottom:7px">Paycode 篩選（part_type，留空=全部）</label>
         <div id="vctlAccountChips" style="display:flex;flex-wrap:wrap;gap:3px;background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:10px 12px;min-height:44px"></div>
+      </div>
+     <div id="vctlCatalogTypeWrap" style="margin-bottom:16px;display:none">
+        <label style="display:block;font-size:12px;color:#64748b;font-weight:600;margin-bottom:7px">
+          零件類別篩選（parts_catalog.part_type）
+          <span style="font-size:10px;color:#475569;font-weight:400;margin-left:6px">與型錄比對後依類別過濾，留空=全部</span>
+        </label>
+        <div id="vctlCatalogChips" style="display:flex;flex-wrap:wrap;gap:3px;background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:10px 12px;min-height:44px"></div>
       </div>
       <div style="margin-bottom:6px">
         <label style="display:block;font-size:12px;color:#64748b;font-weight:600;margin-bottom:3px">篩選條件</label>
