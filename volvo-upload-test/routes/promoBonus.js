@@ -35,7 +35,7 @@ router.post('/promo-bonus/configs', async (req, res) => {
         discount_min!=null?parseFloat(discount_min):null,
         discount_max!=null?parseFloat(discount_max):null,
         bonus_pct||0, JSON.stringify(role_amounts||{}),
-        JSON.stringify(target_factories||[]), active!==false, sort_order||0]);
+        JSON.stringify(target_factories||[]), active!==false, sort_order||0, person_type||'sales_person']);
     res.json(r.rows[0]);
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
@@ -59,7 +59,8 @@ router.put('/promo-bonus/configs/:id', async (req, res) => {
         discount_min!=null?parseFloat(discount_min):null,
         discount_max!=null?parseFloat(discount_max):null,
         bonus_pct||0, JSON.stringify(role_amounts||{}),
-        JSON.stringify(target_factories||[]), active!==false, sort_order||0, person_type||'sales_person', req.params.id]);
+        JSON.stringify(target_factories||[]), active!==false, sort_order||0,
+        person_type||'sales_person', req.params.id]);
     if (!r.rows.length) return res.status(404).json({ error: '找不到設定' });
     res.json(r.rows[0]);
   } catch(err) { res.status(500).json({ error: err.message }); }
