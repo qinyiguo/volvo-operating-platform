@@ -393,6 +393,13 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
             <select id="pmSaConfigId" class="form-select"><option value="">選擇...</option></select>
             <div style="font-size:11px;color:#64748b;margin-top:4px">來自「各廠明細 → 指標銷售」的設定</div>
           </div>
+          <div class="form-group">
+  <label>歸屬人員</label>
+  <select id="pmPersonType" class="form-select">
+    <option value="sales_person">🛒 銷售人員（SA）</option>
+    <option value="tech">🔧 施工技師（技師施工統計）</option>
+  </select>
+</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
             <div class="form-group">
               <label>每幾件觸發</label>
@@ -1948,6 +1955,7 @@ async function openPromoModal(id) {
   document.getElementById('pmRuleType').value = cfg.rule_type || 'sa_qty';
   document.getElementById('pmSortOrder').value = cfg.sort_order || 0;
   document.getElementById('pmActive').checked = cfg.active !== false;
+  document.getElementById('pmPersonType').value = cfg.person_type || 'sales_person';
   // SA qty fields
   document.getElementById('pmPerQty').value = cfg.per_qty || 1;
   document.getElementById('pmBonusUnit').value = cfg.bonus_per_unit || 0;
@@ -2017,6 +2025,7 @@ async function savePromoCfg() {
     payload.sa_config_id   = parseInt(saId);
     payload.per_qty        = parseFloat(document.getElementById('pmPerQty').value) || 1;
     payload.bonus_per_unit = parseFloat(document.getElementById('pmBonusUnit').value) || 0;
+    payload.person_type = document.getElementById('pmPersonType').value;
   } else {
     var catTypes = [...document.querySelectorAll('#pmCatalogTypes input:checked')].map(function(cb){ return cb.value; });
     if (!catTypes.length) { alert('請選擇品項類型（精品/配件）'); return; }
