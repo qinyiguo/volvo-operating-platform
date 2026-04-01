@@ -188,7 +188,7 @@ router.get('/promo-bonus/results', async (req, res) => {
             const sales = parseFloat(row.total_sales || 0);
             if (sales > 0) personResults[row.person_name] = Math.round(sales * bonusPct / 100);
           }
-        }
+        
 
         } else if (cfg.rule_type === 'sa_pct') {
   if (!cfg.sa_config_id) continue;
