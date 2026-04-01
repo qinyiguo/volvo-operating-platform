@@ -101,26 +101,52 @@ router.get('/stats/vctl', async (req, res) => {
             cnt    = parseInt(r.rows[0]?.cnt       || 0);
 
           } else {
-            // parts — general parts_sales
-            const conds=['period=$1','branch=$2']; const p=[period,br]; let idx=3;
-            if(acTypes.length){conds.push(`part_type=ANY($${idx++})`);p.push(acTypes);}
+            // parts — parts_sales
+            // 若有 catalog_type 篩選，需 JOIN parts_catalog 依 part_type 過濾
             const cc=filters.filter(f=>f.type==='category_code').map(f=>f.value);
             const fc=filters.filter(f=>f.type==='function_code').map(f=>f.value);
             const pn=filters.filter(f=>f.type==='part_number').map(f=>f.value);
             const pt=filters.filter(f=>f.type==='part_type').map(f=>f.value);
-            if(cc.length){conds.push(`category_code=ANY($${idx++})`);p.push(cc);}
-            if(fc.length){conds.push(`function_code=ANY($${idx++})`);p.push(fc);}
-            if(pn.length){conds.push(`part_number=ANY($${idx++})`);p.push(pn);}
-            if(pt.length){conds.push(`part_type=ANY($${idx++})`);p.push(pt);}
-            const r = await pool.query(
-              `SELECT COALESCE(SUM(sale_price_untaxed),0) AS amount,
-                      COALESCE(SUM(cost_untaxed),0) AS cost,
-                      COALESCE(SUM(sale_qty),0) AS qty, COUNT(*) AS cnt
-               FROM parts_sales WHERE ${conds.join(' AND ')}`, p);
-            amount = parseFloat(r.rows[0]?.amount || 0);
-            cost   = parseFloat(r.rows[0]?.cost   || 0);
-            qty    = parseFloat(r.rows[0]?.qty     || 0);
-            cnt    = parseInt(r.rows[0]?.cnt       || 0);
+            const ct=filters.filter(f=>f.type==='catalog_type').map(f=>f.value); // 新增：零件/精品/配件
+
+            if (ct.length) {
+              // JOIN parts_catalog，依 pc.part_type 過濾
+              const conds=['ps.period=$1','ps.branch=$2']; const p=[period,br]; let idx=3;
+              conds.push(`pc.part_type=ANY($${idx++})`); p.push(ct);
+              if(acTypes.length){conds.push(`ps.part_type=ANY($${idx++})`);p.push(acTypes);}
+              if(cc.length){conds.push(`ps.category_code=ANY($${idx++})`);p.push(cc);}
+              if(fc.length){conds.push(`ps.function_code=ANY($${idx++})`);p.push(fc);}
+              if(pn.length){conds.push(`ps.part_number=ANY($${idx++})`);p.push(pn);}
+              if(pt.length){conds.push(`ps.part_type=ANY($${idx++})`);p.push(pt);}
+              const r = await pool.query(
+                `SELECT COALESCE(SUM(ps.sale_price_untaxed),0) AS amount,
+                        COALESCE(SUM(ps.cost_untaxed),0) AS cost,
+                        COALESCE(SUM(ps.sale_qty),0) AS qty, COUNT(*) AS cnt
+                 FROM parts_sales ps
+                 JOIN parts_catalog pc ON ps.part_number=pc.part_number
+                 WHERE ${conds.join(' AND ')}`, p);
+              amount = parseFloat(r.rows[0]?.amount || 0);
+              cost   = parseFloat(r.rows[0]?.cost   || 0);
+              qty    = parseFloat(r.rows[0]?.qty     || 0);
+              cnt    = parseInt(r.rows[0]?.cnt       || 0);
+            } else {
+              // 原本邏輯：直接查 parts_sales（不限零件類別）
+              const conds=['period=$1','branch=$2']; const p=[period,br]; let idx=3;
+              if(acTypes.length){conds.push(`part_type=ANY($${idx++})`);p.push(acTypes);}
+              if(cc.length){conds.push(`category_code=ANY($${idx++})`);p.push(cc);}
+              if(fc.length){conds.push(`function_code=ANY($${idx++})`);p.push(fc);}
+              if(pn.length){conds.push(`part_number=ANY($${idx++})`);p.push(pn);}
+              if(pt.length){conds.push(`part_type=ANY($${idx++})`);p.push(pt);}
+              const r = await pool.query(
+                `SELECT COALESCE(SUM(sale_price_untaxed),0) AS amount,
+                        COALESCE(SUM(cost_untaxed),0) AS cost,
+                        COALESCE(SUM(sale_qty),0) AS qty, COUNT(*) AS cnt
+                 FROM parts_sales WHERE ${conds.join(' AND ')}`, p);
+              amount = parseFloat(r.rows[0]?.amount || 0);
+              cost   = parseFloat(r.rows[0]?.cost   || 0);
+              qty    = parseFloat(r.rows[0]?.qty     || 0);
+              cnt    = parseInt(r.rows[0]?.cnt       || 0);
+            }
           }
         } catch(e) {}
         mr.branches[br] = { amount, cost, qty, cnt };
