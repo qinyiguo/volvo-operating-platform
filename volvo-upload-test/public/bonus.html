@@ -181,10 +181,6 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
       <div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:11px 14px;font-size:12px;color:#94a3b8;line-height:1.8;margin-bottom:14px">
         上傳 DMS 匯出的「員工基本資料」Excel。系統自動排除計時人員及本月前離職人員。
       </div>
-      <div class="form-group">
-        <label>期間 <span style="color:#ef4444">*</span></label>
-        <select id="uploadPeriodSel" class="form-select"><option value="">選擇期間...</option></select>
-      </div>
       <div class="upload-zone" id="rosterUploadZone" onclick="document.getElementById('rosterFileInput').click()">
         <div style="font-size:28px;margin-bottom:8px">📊</div>
         <strong>點擊選擇或拖拉檔案</strong>
@@ -1872,8 +1868,8 @@ function handleRosterFile(file) {
 }
 async function doUploadRoster() {
   if (!_rosterFile) return;
-  var period=document.getElementById('uploadPeriodSel').value;
-  if (!period){ alert('請選擇期間'); return; }
+    const now = new Date();
+    var period = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0');
   var btn=document.getElementById('btnDoUpload'); btn.disabled=true;
   document.getElementById('uploadResult').innerHTML='<span class="spinner"></span>上傳中...';
   var formData=new FormData(); formData.append('file',_rosterFile); formData.append('period',period);
