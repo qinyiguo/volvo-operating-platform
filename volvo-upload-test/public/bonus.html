@@ -199,8 +199,10 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
     <button class="btn btn-secondary" onclick="showBodyshopUpload()" style="margin-left:auto">
       📤 上傳申請資料
     </button>
-    <button class="btn btn-secondary btn-sm" onclick="openBSSettings()" style="font-size:12px">⚙️ 設定</button>
+<button class="btn btn-secondary btn-sm" onclick="openBSSettings()" style="font-size:12px">⚙️ 設定</button>
   </div>
+  <!-- ★ 比對結果訊息列 -->
+  <div id="bodyshopMatchInfo" style="width:100%;font-size:12px;color:#94a3b8;padding:6px 2px;min-height:20px"></div>
 
   <!-- ── 子頁籤 ── -->
   <div class="tab-bar" style="margin-bottom:14px">
@@ -2888,11 +2890,14 @@ async function loadBodyshopSummary() {
     const pendingMap = data.pendingMap || {};
     const periodLabel = _bsPeriod.slice(0,4) + '年' + parseInt(_bsPeriod.slice(4)) + '月';
     if (!rows.length) {
-      el.innerHTML = `<div class="empty"><div style="font-size:28px;margin-bottom:10px">🚗</div><div style="font-size:14px;font-weight:700;color:#94a3b8;margin-bottom:6px">${periodLabel} 尚無已結清的獎金資料</div><div style="font-size:12px;color:#64748b">請先上傳申請 Excel，再按「執行比對」</div></div>`;
+     el.innerHTML = `<div class="empty"><div style="font-size:28px;margin-bottom:10px">🚗</div><div style="font-size:14px;font-weight:700;color:#94a3b8;margin-bottom:6px">${periodLabel} 尚無結清日期落在本月的獎金資料</div><div style="font-size:12px;color:#64748b">獎金依工單「結清日期」所在月份歸帳，請先上傳申請 Excel 再按「執行比對」</div></div>`;
       return;
     }
     const totalBonus = rows.reduce((s, r) => s + parseFloat(r.total_bonus || 0), 0);
-    let html = `<div class="summary-cards" style="margin-bottom:16px">
+      let html = `<div style="font-size:12px;color:#64748b;background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.15);border-radius:8px;padding:8px 14px;margin-bottom:12px">
+      📅 以下獎金為「結清日期」落在 <strong style="color:#10b981">${periodLabel}</strong> 的工單，非依申請月份統計
+    </div>
+    <div class="summary-cards" style="margin-bottom:16px">
       <div class="sc"><div class="sc-label">👥 有獎金人數</div><div class="sc-val" style="color:#f59e0b">${rows.length}</div></div>
       <div class="sc"><div class="sc-label">💰 獎金總額</div><div class="sc-val" style="color:#10b981">${Math.round(totalBonus).toLocaleString()}</div></div>
       <div class="sc"><div class="sc-label">📋 結清筆數</div><div class="sc-val">${rows.reduce((s,r)=>s+parseInt(r.work_order_count||0),0)}</div></div>
