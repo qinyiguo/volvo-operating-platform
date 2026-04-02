@@ -1455,20 +1455,29 @@ async function loadWdCalendar() {
       document.getElementById('btnWdDelete').style.display = data.updated_at ? '' : 'none';
     } catch(e) { wdWorkDates = new Set(); }
     document.getElementById('wdMonthTitle').textContent = `${year}年${month+1}月 ─ 👷 員工工作天（三站共用）`;
-    document.getElementById('wdCalendarWrap').style.display='';renderWdCalendar(year,month);} 
-    return;
+document.getElementById('wdCalendarWrap').style.display='';renderWdCalendar(year,month);
+    return;   // ← return 移入 if 區塊內
   }
 
-  // ── 服務廠模式（原有邏輯）──
+  // ── 服務廠模式 ──
   const branch = document.getElementById('wdBranch').value;
-function renderWdCalendar(year,month){const cal=document.getElementById('wdCalendar');const firstDay=new Date(year,month,1).getDay(),daysInMonth=new Date(year,month+1,0).getDate();let html='';for(let i=0;i<firstDay;i++)html+=`<div class="wd-day-cell empty"></div>`;for(let d=1;d<=daysInMonth;d++){const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`,dow=(firstDay+d-1)%7,isWork=wdWorkDates.has(dateStr),cls=['wd-day-cell',isWork?'work':'',dow===0?'sun-col':'',dow===6?'sat-col':''].filter(Boolean).join(' ');html+=`<div class="${cls}" data-date="${dateStr}" onclick="toggleWdDay('${dateStr}')">${d}</div>`;}cal.innerHTML=html;updateWdCount();}
-function toggleWdDay(dateStr){if(wdWorkDates.has(dateStr))wdWorkDates.delete(dateStr);else wdWorkDates.add(dateStr);const cell=document.querySelector(`.wd-day-cell[data-date="${dateStr}"]`);if(cell)cell.classList.toggle('work',wdWorkDates.has(dateStr));updateWdCount();}
-function updateWdCount(){document.getElementById('wdWorkCount').textContent=wdWorkDates.size;}
-function wdSelectWeekdays(){document.querySelectorAll('.wd-day-cell:not(.empty)').forEach(cell=>{const dow=new Date(cell.dataset.date).getDay();if(dow>=1&&dow<=5){wdWorkDates.add(cell.dataset.date);cell.classList.add('work');}else{wdWorkDates.delete(cell.dataset.date);cell.classList.remove('work');}});updateWdCount();}
-function wdSelectAll(){document.querySelectorAll('.wd-day-cell:not(.empty)').forEach(cell=>{wdWorkDates.add(cell.dataset.date);cell.classList.add('work');});updateWdCount();}
-function wdClearAll(){wdWorkDates.clear();document.querySelectorAll('.wd-day-cell:not(.empty)').forEach(cell=>cell.classList.remove('work'));updateWdCount();}
-async function saveWdConfig(){const period=document.getElementById('wdPeriod').value,msgEl=document.getElementById('wdMsg'),btn=document.getElementById('btnWdSave');if(!period){msgEl.textContent='請先選擇期間';msgEl.style.color='#ef4444';return;}btn.disabled=true;const work_dates=[...wdWorkDates].sort();const branch=_wdMode==='employee'?'EMPLOYEE':document.getElementById('wdBranch').value;const targets=_wdMode==='employee'?['EMPLOYEE']:branch==='ALL'?['AMA','AMC','AMD']:[branch];msgEl.textContent='儲存中...';msgEl.style.color='#64748b';try{await Promise.all(targets.map(br=>fetch('/api/working-days',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({branch:br,period,work_dates})}).then(r=>r.json()).then(d=>{if(d.error)throw new Error(`${br}: ${d.error}`);})));const label=_wdMode==='employee'?'員工工作天（三站共用）':branch==='ALL'?'AMA、AMC、AMD 三站':branch;msgEl.textContent=`✅ 已儲存 ${label} 共 ${work_dates.length} 個營業日`;msgEl.style.color='#10b981';if(branch!=='ALL'||_wdMode==='employee')document.getElementById('btnWdDelete').style.display='';loadWdList();}catch(e){msgEl.textContent='❌ '+e.message;msgEl.style.color='#ef4444';}finally{btn.disabled=false;}}
-async function deleteWdConfig(){const period=document.getElementById('wdPeriod').value;const branch=_wdMode==='employee'?'EMPLOYEE':document.getElementById('wdBranch').value;const targets=_wdMode==='employee'?['EMPLOYEE']:branch==='ALL'?['AMA','AMC','AMD']:[branch];const label=_wdMode==='employee'?'員工工作天':branch==='ALL'?'AMA、AMC、AMD 三站':branch;if(!confirm(`確定刪除 ${label} ${period.slice(0,4)}年${period.slice(4)}月 的工作天數設定？`))return;await Promise.all(targets.map(br=>fetch(`/api/working-days?branch=${br}&period=${period}`,{method:'DELETE'})));wdClearAll();loadWdList();}
+  const year = parseInt(period.slice(0,4)), month = parseInt(period.slice(4)) - 1;
+  const fetchBranch = branch === 'ALL' ? 'AMA' : branch;
+  try {
+    const data = await (await fetch(`/api/working-days?branch=${fetchBranch}&period=${period}`)).json();
+    wdWorkDates = new Set(Array.isArray(data.work_dates) ? data.work_dates : []);
+    if (!data.updated_at || !data.work_dates?.length) {
+      statusEl.textContent = branch === 'ALL' ? '⚠️ 尚未設定，請勾選後儲存（將同步三站）' : `⚠️ ${branch} 尚未設定`;
+      document.getElementById('btnWdDelete').style.display = 'none';
+    } else {
+      const label = branch === 'ALL' ? 'AMA（代表三站）' : branch;
+      statusEl.textContent = `✅ ${label} 已設定 ${wdWorkDates.size} 個營業日`;
+      document.getElementById('btnWdDelete').style.display = '';
+    }
+  } catch(e) { wdWorkDates = new Set(); statusEl.textContent = '載入失敗'; }
+  document.getElementById('wdMonthTitle').textContent = `${year}年${month+1}月 ─ ${branch === 'ALL' ? '三站同步' : branch}`;
+  document.getElementById('wdCalendarWrap').style.display = '';
+  renderWdCalendar(year, month);
 
 // ══ 工資代碼設定 ══
 const TWC_ALL_ACCOUNT=['一般','票劵','內結','保險','延保','保固','善意維修','VSA'];
