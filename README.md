@@ -60,43 +60,260 @@
 
 ```
 volvo-upload-test/
-├── index.js                  # 入口：Express 初始化 + 路由掛載
+├── index.js
+├── patch.js
 ├── Dockerfile
 ├── package.json
 │
 ├── db/
-│   ├── pool.js               # PostgreSQL 連線池
-│   └── init.js               # 啟動時自動建表（CREATE TABLE IF NOT EXISTS）
+│   ├── pool.js
+│   └── init.js
 │
 ├── lib/
-│   ├── utils.js              # 通用工具：pick / num / parseDate / detectBranch 等
-│   ├── parsers.js            # Excel 資料列解析：各報表欄位對應
-│   └── batchInsert.js        # 批次 INSERT 工具
+│   ├── utils.js
+│   ├── parsers.js
+│   └── batchInsert.js
 │
 ├── routes/
-│   ├── upload.js             # POST /api/upload（Excel 上傳）
-│   ├── saConfig.js           # /api/sa-config/*（指標銷售設定）
-│   ├── query.js              # /api/query/*、/api/counts、working-days、income-config
-│   ├── techWage.js           # /api/tech-wage-config/*、/api/stats/tech-wage-matrix
-│   ├── revenue.js            # /api/revenue-targets/*、/api/revenue-estimates/*（含週次提交）
-│   ├── performance.js        # /api/performance-metrics/*、/api/performance-targets/*
-│   ├── stats.js              # /api/stats/*（所有統計 API）
-│   ├── auth.js               # /api/auth/settings/*（密碼驗證）
-│   ├── bonus.js              # /api/bonus/*（獎金表相關）
-│   ├── techHours.js          # /api/stats/tech-hours、tech-capacity-config、tech-turnover、tech-bay-config
-│   ├── personTargets.js      # /api/person-targets/*
-│   ├── wip.js                # /api/wip/status/*（WIP 工單狀態標記）
-│   └── vctl.js               # /api/vctl/metrics/*、/api/stats/vctl（VCTL 商務政策指標）
+│   ├── upload.js
+│   ├── stats.js
+│   ├── techHours.js
+│   ├── bonus.js
+│   ├── bodyshopBonus.js
+│   ├── promoBonus.js
+│   ├── revenue.js
+│   ├── performance.js
+│   ├── personTargets.js
+│   ├── query.js
+│   ├── saConfig.js
+│   ├── techWage.js
+│   ├── auth.js
+│   ├── wip.js
+│   ├── vctl.js
+│   └── managerReview.js
 │
 └── public/
-    ├── index.html            # 重導向至 performance.html
-    ├── performance.html      # 業績指標與預估
-    ├── stats.html            # 各廠明細
-    ├── query.html            # 資料查詢
-    ├── bonus.html            # 獎金表
-    ├── settings.html         # 設定管理
-    └── theme.css             # 深色／淺色主題共用樣式
+    ├── index.html
+    ├── performance.html
+    ├── stats.html
+    ├── query.html
+    ├── bonus.html
+    ├── settings.html
+    └── theme.css
 ```
+
+---
+
+## 檔案說明
+
+### 入口與設定
+
+#### `index.js`
+應用程式主入口。初始化 Express、設定 CORS、multer 檔案上傳中介層、靜態資源服務，並將所有 `routes/` 掛載到對應路徑。服務啟動時自動呼叫 `initDatabase()` 建立資料表。
+
+#### `patch.js`
+一次性資料修補腳本（不在正常請求流程中執行）。用於修正歷史資料、補齊欄位，或處理 Excel 上傳格式異動後的資料遷移作業。
+
+#### `Dockerfile`
+Docker 映像定義。基於 `node:20-alpine`，安裝 production 依賴後啟動 `node index.js`，對外埠口為 8080，供 Zeabur 雲端自動部署使用。
+
+#### `package.json`
+定義 npm 依賴與啟動腳本。主要依賴：`express`（Web 框架）、`pg`（PostgreSQL）、`xlsx`（Excel 解析）、`multer`（檔案上傳）、`cors`、`dotenv`。
+
+---
+
+### 資料庫層 `db/`
+
+#### `db/pool.js`
+建立並匯出 PostgreSQL 連線池（`pg.Pool`），從環境變數 `POSTGRES_CONNECTION_STRING` 讀取連線字串。所有 routes 皆透過此 pool 執行 SQL 查詢。
+
+#### `db/init.js`
+啟動時執行的自動建表腳本（約 450 行）。以 `CREATE TABLE IF NOT EXISTS` 建立所有資料表，並以 `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` 補充新欄位，確保部署時不影響現有資料、無須手動執行 SQL。涵蓋全部約 20 張主要資料表與設定資料表。
+
+> ⚠️ `ALTER TABLE` 語句必須置於對應 `CREATE TABLE` 之後，否則全新部署時會因資料表尚不存在而啟動失敗。
+
+---
+
+### 工具函式庫 `lib/`
+
+#### `lib/utils.js`
+全域共用小工具，提供：
+- `pick(obj, keys)` — 篩選物件欄位
+- `num(val)` — 安全轉換為數字（處理 null / undefined）
+- `parseDate(val)` — 日期格式解析
+- `detectBranch(filename)` — 從檔名識別據點代碼（AMA / AMC / AMD）
+- `detectPeriod(filename)` — 從檔名擷取六位數期間（YYYYMM）
+
+#### `lib/parsers.js`
+各 Excel 報表的**中文欄位別名對應表**。將 DMS 匯出的中文欄名（如「服務顧問」、「帳類」）對應到資料庫英文欄位名（如 `service_advisor`、`account_type`）。是 `upload.js` 解析 Excel 的核心依賴。
+
+> 若 DMS 報表格式異動（欄名改變），只需更新此檔的對應設定即可，無需修改路由邏輯。
+
+#### `lib/batchInsert.js`
+提供 `batchInsert()` 函式，將解析後的大量資料列以批次 `INSERT` 方式寫入 PostgreSQL，避免逐筆 INSERT 造成的效能問題。由 `upload.js` 於 Excel 解析完成後呼叫。
+
+---
+
+### 路由層 `routes/`
+
+#### `routes/upload.js`
+處理 `POST /api/upload`。接收 multer 上傳的 Excel 檔（最多 8 個、50 MB 限制），依檔名自動識別報表類型與據點期間，刪除同據點同期間的舊資料後，呼叫 `parsers` + `batchInsert` 重新寫入。支援六種報表：
+
+| 報表 | 目標資料表 |
+|------|-----------|
+| 維修收入分類明細 | `repair_income` |
+| 技師績效報表 | `tech_performance` |
+| 零件銷售明細 | `parts_sales` |
+| 業務查詢 | `business_query` |
+| 零配件比對 | `parts_catalog` |
+| 員工基本資料（獎金表頁面） | `staff_roster` |
+
+#### `routes/stats.js`
+最大的路由檔（約 890 行）。提供 `/api/stats/*` 所有統計端點，包含：維修收入彙總、有費/無費收入分解、單車銷售額、SA 業績排名、零件銷售、精品配件矩陣、指標銷售矩陣、月份趨勢、每日進廠台數、個人業績達成率、VCTL 實績等，共 15 支以上 API。全部支援 `?period=YYYYMM&branch=AMA` 查詢參數。
+
+> 技師姓名正規化（斜線/空格/多人施工）在此檔的 `canonicalExpr` 處理。
+
+#### `routes/techHours.js`
+處理技師工時相關計算（約 850 行）：
+
+- `/api/stats/tech-hours` — 目標工時 vs 實際工時（工資金額回推，含折扣還原）
+- `/api/stats/tech-hours-raw` — 技師折扣工時明細
+- `/api/stats/tech-turnover` — 施工周轉率（引電台次 ÷ 技師人數 ÷ 工作天）
+- `/api/tech-capacity-config` — 技師工時產能設定 CRUD
+- `/api/tech-bay-config` — 各廠工位數設定 CRUD
+
+> `discount` 欄位可能為小數（0~1）或百分比（1~100），工時計算 SQL 須同時處理兩種格式。
+
+#### `routes/bonus.js`
+獎金表後端（約 756 行）。提供完整的獎金計算功能：
+
+- `/api/bonus/metrics` — 獎金指標定義 CRUD（DMS 來源、職稱分層階梯、科別篩選）
+- `/api/bonus/progress` — 依廠別目標 × 科別占比 × 個人相對權重計算應領獎金
+- `/api/bonus/roster` — 人員名冊查詢（依廠別/部門/在職狀態）
+- `/api/bonus/upload-roster` — 上傳員工基本資料 Excel
+
+#### `routes/bodyshopBonus.js`
+鈑烤廠（鈑金/烤漆技師）的**專屬獎金計算邏輯**（約 600 行）。針對施工台次、工位承接率等鈑烤特定指標計算達成率與應領獎金，與引電技師的一般獎金邏輯分開維護。
+
+#### `routes/promoBonus.js`
+促銷/專案獎金的計算邏輯（約 260 行）。處理短期激勵方案或活動期間的額外獎金，獨立於一般月績效獎金之外。
+
+#### `routes/revenue.js`
+管理四大營收目標與業績預估（約 370 行）：
+
+- `/api/revenue-targets` — 一般/鈑烤/延保/有費月目標與去年實績 CRUD
+- `/api/revenue-estimates` — 各站本月最新預估值（即時顯示）
+- `/api/revenue-estimates/weekly-submit` — 週次預估提交（每週每站一次，提交後鎖定）
+- `/api/revenue-estimates/history` — 週次提交歷史紀錄
+- `/api/revenue-estimates/week-status` — 本週各站是否已提交
+
+#### `routes/performance.js`
+管理業績指標定義與月目標（約 308 行）：
+
+- `/api/performance-metrics` — 指標定義 CRUD（對應 `performance_metrics` 資料表）
+- `/api/performance-targets` — 各指標月目標與去年實績 CRUD
+
+#### `routes/personTargets.js`
+管理 SA 個人業績目標（約 286 行）：
+
+- `/api/person-targets` — 依廠別/SA 設定個人目標權重或直接目標值，支援拖曳排序（`order` 欄位）
+
+#### `routes/query.js`
+四大資料表的全文查詢端點（約 219 行）：
+
+- `/api/query/repair_income` / `tech_performance` / `parts_sales` / `business_query` — 支援篩選、排序、關鍵字搜尋，無筆數上限（供 CSV 匯出）
+- `/api/periods` — 取得所有有效期間清單
+- `/api/counts` — 各資料表筆數統計
+- `/api/working-days` — 工作天數設定 CRUD
+
+#### `routes/saConfig.js`
+管理 SA 指標銷售矩陣的篩選條件（約 70 行）：
+
+- 同類型多值為 OR 邏輯（如：類別碼 93 OR 94）
+- 不同類型之間為 AND 邏輯（如：類別碼 93 AND 功能碼 1832）
+
+#### `routes/techWage.js`
+管理工資代碼追蹤設定（約 111 行）：
+
+- `/api/tech-wage-config` — 指定要追蹤的工資代碼 CRUD
+- `/api/stats/tech-wage-matrix` — 依工資代碼統計台數/金額/工時矩陣
+
+#### `routes/auth.js`
+settings.html 與 bonus.html 的密碼保護（約 37 行）：
+
+- `/api/auth/settings/verify` — 驗證管理員密碼
+- `/api/auth/settings/change` — 修改密碼
+
+密碼存於 `app_settings` 資料表。
+
+#### `routes/wip.js`
+WIP 未結工單管理（約 110 行）：
+
+- `/api/wip/status` — 查詢未結工單（有進廠紀錄但尚未在 `repair_income` 結算，跨月累計，排除 PV 外賣訂單）
+- `/api/wip/status/:work_order/:branch` — 行內更新工單狀態（等料 / 施工中 / 已可結帳…）
+
+#### `routes/vctl.js`
+VCTL 商務政策指標管理（約 160 行）：
+
+- `/api/vctl/metrics` — 指標定義 CRUD（來源可指定：零件 / 配件 / 精品 / 工資）
+- `/api/stats/vctl` — 計算各指標的售價、成本、毛利率實績
+
+#### `routes/managerReview.js`
+主管審核介面的後端端點（約 33 行）。供主管確認或調整獎金計算結果使用，目前為輕量路由。
+
+---
+
+### 前端頁面 `public/`
+
+#### `public/index.html`
+根路徑入口，僅做 meta refresh 重導向至 `performance.html`。
+
+#### `public/performance.html`
+**業績指標與預估頁面**。顯示工作天進度條、有費 KPI 卡片（集團合計與三廠拆分，含 YoY）、收入分解表（一般/保險/延保/票券/外賣）、各自訂業績指標達成率，以及每週一次的業績預估 Modal（週次鎖定，含歷史紀錄分頁）。底部顯示 VCTL 商務政策指標毛利率。
+
+#### `public/stats.html`
+**各廠明細頁面**（最大前端檔案，約 295 KB）。包含 11 個分頁：
+
+| 分頁 | 主要功能 |
+|------|---------|
+| 維修收入 | 有費/無費收入摘要、SA 排名、帳類分析 |
+| 單車銷售額 | 依保養/維修/自費鈑烤/延保/保險的車均金額 |
+| 個人業績 | SA 個人達成率（三科別），支援科別占比、拖曳排序、Excel 匯出 |
+| 零件銷售 | 種類彙總、Top 20 零件 |
+| 精品配件 | 精品/配件銷售矩陣（需上傳零件型錄） |
+| 指標銷售 | SA 銷售人員 / 技師施工雙視角矩陣 |
+| 月份趨勢 | 各月維修收入折線圖 |
+| 每日進廠 | 日均台數、日均線切換、天數進度 |
+| WIP 未結工單 | 依進廠月份/維修類型統計，支援 PDI 標記、行內狀態填寫 |
+| 技師工時 | 目標工時 vs 實際工時，含折扣還原 |
+| 施工周轉率 | 引電周轉率、集團鈑烤周轉率、工位承接率 |
+
+#### `public/query.html`
+**資料查詢頁面**。提供四大資料表的全文搜尋介面，支援篩選、排序、欄位切換、分頁（50/100/200/500 筆），並可匯出帶 BOM 的 CSV（相容中文 Excel）。
+
+#### `public/bonus.html`
+**獎金表頁面**（密碼保護）。顯示各廠人員名冊（在職/留職停薪/本月離職），以及依指標設定計算的個人達成率與應領獎金。支援獎金指標管理（DMS 來源、職稱分層階梯、科別篩選、計算據點覆蓋）。
+
+#### `public/settings.html`
+**系統設定頁面**（密碼保護，約 170 KB）。包含 10 個設定分頁：
+
+| 分頁 | 功能 |
+|------|------|
+| 上傳 Excel | 拖拉上傳，顯示歷史紀錄 |
+| 資料庫狀態 | 各資料表筆數統計 |
+| 指標銷售設定 | SA 銷售矩陣篩選條件 |
+| 工作天數 | 月曆點選實際營業日，三站同步 |
+| 工資代碼設定 | 追蹤特定工資代碼台數/金額/工時 |
+| 營收目標 | 四大營收月目標與去年實績，支援 Excel 批次匯入 |
+| 零配精品銷售 | 業績指標定義、目標設定、Excel 批次匯入 |
+| 個人業績目標 | 依廠別總目標設定 SA 個人權重，支援拖曳排序 |
+| 工位設定 | 各廠引擎/鈑金/烤漆工位數 |
+| 管理員密碼 | 修改登入密碼 |
+
+#### `public/theme.css`
+所有頁面共用的 CSS（約 25 KB）。定義深色/淺色雙主題（CSS 變數切換）、card 元件、sticky table headers、進度條、badge、modal 等全域樣式。
+
+> Sticky table headers 需使用 `border-collapse: separate; border-spacing: 0`（不可用 `collapse`），且 `position: sticky` 須套在 `<thead>` 而非 `<th>`。
 
 ---
 
