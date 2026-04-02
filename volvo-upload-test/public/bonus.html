@@ -2805,6 +2805,7 @@ const BS_STATUS_MAP = {
 const BRANCH_LABEL = { AMA:'AMA 內湖', AMC:'AMC 仁愛', AMD:'AMD 士林' };
 
 async function initBodyshopTab() {
+  try { _bsSettings = await fetch('/api/bodyshop-bonus/settings').then(r=>r.json()); } catch(e) {}
   await loadBodyshopPeriods();
   loadBodyshopData();
   loadBodyshopPending();
@@ -3144,7 +3145,7 @@ async function saveBSSettings() {
     _bsSettings = payload;
     document.getElementById('bsSettingsMsg').style.color = '#10b981';
     document.getElementById('bsSettingsMsg').textContent = '✅ 已儲存';
-    setTimeout(() => closeModal('bodyshopSettingsModal'), 800);
+setTimeout(() => { closeModal('bodyshopSettingsModal'); loadBodyshopList(); }, 800);
   } catch(e) {
     document.getElementById('bsSettingsMsg').style.color = '#ef4444';
     document.getElementById('bsSettingsMsg').textContent = '❌ ' + e.message;
