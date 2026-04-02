@@ -3116,6 +3116,40 @@ async function doBodyshopUpload() {
   
   const el = document.getElementById('bodyshopListContent');
 }
+  // ── 業務鈑烤設定 ──
+let _bsSettings = { lookback_days: 30, rate_a: 2, rate_b: 4 };
+
+async function openBSSettings() {
+  try { _bsSettings = await fetch('/api/bodyshop-bonus/settings').then(r => r.json()); } catch(e) {}
+  document.getElementById('bsCfgLookback').value = _bsSettings.lookback_days ?? 30;
+  document.getElementById('bsCfgRateA').value    = _bsSettings.rate_a ?? 2;
+  document.getElementById('bsCfgRateB').value    = _bsSettings.rate_b ?? 4;
+  document.getElementById('bsSettingsMsg').textContent = '';
+  openModal('bodyshopSettingsModal');
+}
+
+async function saveBSSettings() {
+  const payload = {
+    lookback_days: parseInt(document.getElementById('bsCfgLookback').value) || 30,
+    rate_a: parseFloat(document.getElementById('bsCfgRateA').value) || 2,
+    rate_b: parseFloat(document.getElementById('bsCfgRateB').value) || 4,
+  };
+  try {
+    const r = await fetch('/api/bodyshop-bonus/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(r => r.json());
+    if (r.error) throw new Error(r.error);
+    _bsSettings = payload;
+    document.getElementById('bsSettingsMsg').style.color = '#10b981';
+    document.getElementById('bsSettingsMsg').textContent = '✅ 已儲存';
+    setTimeout(() => closeModal('bodyshopSettingsModal'), 800);
+  } catch(e) {
+    document.getElementById('bsSettingsMsg').style.color = '#ef4444';
+    document.getElementById('bsSettingsMsg').textContent = '❌ ' + e.message;
+  }
+}
   
 </script>
 
