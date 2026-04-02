@@ -424,6 +424,21 @@ await client.query(`
     await client.query(`CREATE INDEX IF NOT EXISTS idx_bba_plate  ON bodyshop_bonus_applications(plate_no_norm)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_bba_status ON bodyshop_bonus_applications(status)`);
 
+    await client.query(`ALTER TABLE bodyshop_bonus_applications ADD COLUMN IF NOT EXISTS source_app_id INTEGER`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_bba_source ON bodyshop_bonus_applications(source_app_id)`);
+    try {
+      await client.query(`
+        DO $$ BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='fk_bba_source_app') THEN
+            ALTER TABLE bodyshop_bonus_applications
+              ADD CONSTRAINT fk_bba_source_app
+              FOREIGN KEY (source_app_id)
+              REFERENCES bodyshop_bonus_applications(id) ON DELETE CASCADE;
+          END IF;
+        END$$
+      `);
+    } catch(e) { console.warn('[initDB] FK source_app_id:', e.message); }
+
     console.log('[initDB] ✅ 所有表格建立完成');
   } catch (err) {
     console.error('[initDB] ❌ 失敗:', err.message);
