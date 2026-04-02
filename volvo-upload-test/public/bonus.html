@@ -173,8 +173,61 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
     </div>
     <div id="progressContent"><div class="empty">請先選擇期間後按查詢</div></div>
   </div>
-   <div id="tab-bodyshop" style="display:none">
+<div id="tab-bodyshop" style="display:none">
 
+  <!-- ── 工具列 ── -->
+  <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:12px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <span style="font-size:15px;font-weight:800;color:#f59e0b">🚗 業務鈑烤取送獎金</span>
+    <div style="display:flex;align-items:center;gap:6px">
+      <span style="font-size:12px;color:#64748b;font-weight:600">結算期間</span>
+      <select id="bodyshopPeriodSel" class="sel" onchange="loadBodyshopData()">
+        <option value="">選擇期間...</option>
+      </select>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <span style="font-size:12px;color:#64748b;font-weight:600">廠別</span>
+      <select id="bodyshopBranchSel" class="sel" onchange="loadBodyshopData()">
+        <option value="">全部</option>
+        <option value="AMA">AMA 內湖</option>
+        <option value="AMC">AMC 仁愛</option>
+        <option value="AMD">AMD 士林</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="runBodyshopMatch()" id="btnBodyshopMatch">
+      <span class="spinner" id="matchSpinner" style="display:none"></span>🔄 執行比對
+    </button>
+    <button class="btn btn-secondary" onclick="showBodyshopUpload()" style="margin-left:auto">
+      📤 上傳申請資料
+    </button>
+    <span id="bodyshopMatchInfo" style="font-size:11px;color:#64748b"></span>
+  </div>
+
+  <!-- ── 子頁籤 ── -->
+  <div class="tab-bar" style="margin-bottom:14px">
+    <button class="tab-btn active" id="bstab-btn-summary"  onclick="switchBSTab('summary')">📊 獎金彙總</button>
+    <button class="tab-btn"        id="bstab-btn-list"     onclick="switchBSTab('list')">📋 申請明細</button>
+    <button class="tab-btn"        id="bstab-btn-pending"  onclick="switchBSTab('pending')">⏳ 待結清累計</button>
+  </div>
+
+  <div id="bstab-summary">
+    <div id="bodyshopSummaryContent"><div class="empty">請選擇期間後按「執行比對」</div></div>
+  </div>
+  <div id="bstab-list" style="display:none">
+    <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap">
+      <select id="bodyshopStatusFilter" class="sel" onchange="loadBodyshopList()" style="font-size:12px">
+        <option value="">全部狀態</option>
+        <option value="settled">✅ 已結清</option>
+        <option value="matched_pending">🔶 匹配待結清</option>
+        <option value="pending">⏳ 未匹配</option>
+        <option value="not_found">❌ 查無工單</option>
+      </select>
+      <span id="bodyshopListCount" style="font-size:12px;color:#64748b"></span>
+    </div>
+    <div id="bodyshopListContent"><div class="empty">請選擇期間</div></div>
+  </div>
+  <div id="bstab-pending" style="display:none">
+    <div id="bodyshopPendingContent"><div class="empty">載入中...</div></div>
+  </div>
 </div>
 
 <!-- 上傳 Modal -->
@@ -530,6 +583,37 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
   </div>
 </div>
 
+ <!-- 業務鈑烤上傳 Modal -->
+<div class="modal-bd" id="bodyshopUploadModal">
+  <div class="modal-win" style="max-width:500px">
+    <div class="modal-head">
+      <div class="modal-title">📤 上傳 Google Form 申請資料</div>
+      <button class="modal-close" onclick="closeModal('bodyshopUploadModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:11px 14px;font-size:12px;color:#94a3b8;line-height:1.8;margin-bottom:14px">
+        📌 請上傳從 Google 表單下載的 Excel（.xlsx / .xls）<br>
+        系統會自動讀取：<strong>申請日期、姓名、員編、車牌號碼、車輛進廠廠別、申請部門</strong><br>
+        重複記錄（同車牌+同申請日期+同姓名）會自動略過
+      </div>
+      <div class="upload-zone" id="bodyshopUploadZone" onclick="document.getElementById('bodyshopFileInput').click()">
+        <div style="font-size:28px;margin-bottom:8px">🚗</div>
+        <strong>點擊選擇或拖拉 Excel 檔案</strong>
+        <p style="margin-top:4px;color:#64748b;font-size:12px">支援 .xlsx / .xls</p>
+      </div>
+      <input type="file" id="bodyshopFileInput" accept=".xlsx,.xls" style="display:none">
+      <div id="bodyshopFileInfo" style="margin-top:8px;font-size:13px;min-height:20px"></div>
+      <div id="bodyshopUploadResult" style="margin-top:10px;min-height:20px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('bodyshopUploadModal')">關閉</button>
+      <button class="btn btn-primary" id="btnBodyshopDoUpload" disabled onclick="doBodyshopUpload()">🚀 開始上傳</button>
+    </div>
+  </div>
+</div>
+
+<script> 
+  
 <script>
 // ══ Auth ══
 const BONUS_TOKEN_KEY = 'volvo_settings_token';
@@ -2672,6 +2756,329 @@ async function clearActualOverride(metricId, period, branch) {
   document.body.insertAdjacentHTML('beforeend', html);
 }
 
+// ════════════════════════════════════════════
+// 業務鈑烤取送獎金
+// ════════════════════════════════════════════
+let _bsPeriod = '', _bsBranch = '', _bsCurrentTab = 'summary';
+let _bsFile = null;
+
+const BS_STATUS_MAP = {
+  'settled':         { label:'✅ 已結清',   color:'#10b981', bg:'rgba(16,185,129,.15)' },
+  'matched_pending': { label:'🔶 待結清',   color:'#f59e0b', bg:'rgba(245,158,11,.15)' },
+  'pending':         { label:'⏳ 未比對',   color:'#64748b', bg:'rgba(100,116,139,.15)' },
+  'not_found':       { label:'❌ 查無工單', color:'#ef4444', bg:'rgba(239,68,68,.15)' },
+};
+const BRANCH_LABEL = { AMA:'AMA 內湖', AMC:'AMC 仁愛', AMD:'AMD 士林' };
+
+async function initBodyshopTab() {
+  await loadBodyshopPeriods();
+  loadBodyshopData();
+  loadBodyshopPending();
+}
+
+async function loadBodyshopPeriods() {
+  try {
+    const periods = await fetch('/api/bodyshop-bonus/periods').then(r=>r.json());
+    const now = new Date();
+    const curPeriod = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0');
+    const sel = document.getElementById('bodyshopPeriodSel');
+    const allMonths = [];
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      allMonths.push(d.getFullYear() + String(d.getMonth()+1).padStart(2,'0'));
+    }
+    const allPeriods = [...new Set([...allMonths, ...periods])].sort().reverse();
+    sel.innerHTML = '<option value="">選擇期間...</option>' + allPeriods.map(p =>
+      `<option value="${p}" ${p === curPeriod ? 'selected' : ''}>${p.slice(0,4)}年${parseInt(p.slice(4))}月</option>`
+    ).join('');
+    _bsPeriod = curPeriod;
+  } catch(e) {}
+}
+
+function loadBodyshopData() {
+  _bsPeriod = document.getElementById('bodyshopPeriodSel').value;
+  _bsBranch = document.getElementById('bodyshopBranchSel').value;
+  if (_bsCurrentTab === 'summary') loadBodyshopSummary();
+  else if (_bsCurrentTab === 'list') loadBodyshopList();
+  else if (_bsCurrentTab === 'pending') loadBodyshopPending();
+}
+
+function switchBSTab(tab) {
+  _bsCurrentTab = tab;
+  ['summary','list','pending'].forEach(t => {
+    document.getElementById('bstab-'+t).style.display = t === tab ? '' : 'none';
+    const btn = document.getElementById('bstab-btn-'+t);
+    if (btn) btn.classList.toggle('active', t === tab);
+  });
+  if (tab === 'summary') loadBodyshopSummary();
+  else if (tab === 'list') loadBodyshopList();
+  else if (tab === 'pending') loadBodyshopPending();
+}
+
+async function runBodyshopMatch() {
+  const period = document.getElementById('bodyshopPeriodSel').value;
+  if (!period) { alert('請先選擇結算期間'); return; }
+  const btn = document.getElementById('btnBodyshopMatch');
+  const spinner = document.getElementById('matchSpinner');
+  btn.disabled = true; spinner.style.display = '';
+  document.getElementById('bodyshopMatchInfo').textContent = '比對中，請稍候...';
+  try {
+    const r = await fetch('/api/bodyshop-bonus/match', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ period })
+    }).then(r => r.json());
+    if (r.error) throw new Error(r.error);
+    document.getElementById('bodyshopMatchInfo').textContent =
+      `✅ 完成：共 ${r.total} 筆，已結清 ${r.settled} 筆，待結清 ${r.matched - r.settled} 筆，查無工單 ${r.notFound} 筆`;
+    loadBodyshopData();
+    loadBodyshopPending();
+  } catch(e) {
+    document.getElementById('bodyshopMatchInfo').textContent = '❌ ' + e.message;
+  } finally {
+    btn.disabled = false; spinner.style.display = 'none';
+  }
+}
+
+async function loadBodyshopSummary() {
+  const el = document.getElementById('bodyshopSummaryContent');
+  if (!_bsPeriod) { el.innerHTML = '<div class="empty">請選擇結算期間</div>'; return; }
+  el.innerHTML = '<div class="loading"><span class="spinner"></span>計算中</div>';
+  try {
+    const params = new URLSearchParams({ settled_period: _bsPeriod });
+    if (_bsBranch) params.set('branch', _bsBranch);
+    const data = await fetch('/api/bodyshop-bonus/summary?' + params).then(r => r.json());
+    if (data.error) throw new Error(data.error);
+    const rows = data.rows || [];
+    const pendingMap = data.pendingMap || {};
+    const periodLabel = _bsPeriod.slice(0,4) + '年' + parseInt(_bsPeriod.slice(4)) + '月';
+    if (!rows.length) {
+      el.innerHTML = `<div class="empty"><div style="font-size:28px;margin-bottom:10px">🚗</div><div style="font-size:14px;font-weight:700;color:#94a3b8;margin-bottom:6px">${periodLabel} 尚無已結清的獎金資料</div><div style="font-size:12px;color:#64748b">請先上傳申請 Excel，再按「執行比對」</div></div>`;
+      return;
+    }
+    const totalBonus = rows.reduce((s, r) => s + parseFloat(r.total_bonus || 0), 0);
+    let html = `<div class="summary-cards" style="margin-bottom:16px">
+      <div class="sc"><div class="sc-label">👥 有獎金人數</div><div class="sc-val" style="color:#f59e0b">${rows.length}</div></div>
+      <div class="sc"><div class="sc-label">💰 獎金總額</div><div class="sc-val" style="color:#10b981">${Math.round(totalBonus).toLocaleString()}</div></div>
+      <div class="sc"><div class="sc-label">📋 結清筆數</div><div class="sc-val">${rows.reduce((s,r)=>s+parseInt(r.work_order_count||0),0)}</div></div>
+    </div>
+    <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr>
+        <th style="background:#0c1524;color:#475569;padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:left">員工姓名</th>
+        <th style="background:#0c1524;color:#475569;padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:left">員編</th>
+        <th style="background:#0c1524;color:#475569;padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:left">部門</th>
+        <th style="background:#0c1524;color:#475569;padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:center">廠別</th>
+        <th style="background:#0c1524;color:#475569;padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:center">結清筆數</th>
+        <th style="background:#0c1524;color:#475569;padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:right">維修總收入</th>
+        <th style="background:#0c1524;color:#10b981;padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:right">獎金總額</th>
+        <th style="background:#0c1524;color:#f59e0b;padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:center">待結清件數</th>
+        <th style="background:#0c1524;color:#475569;padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:left;min-width:200px">車牌明細</th>
+      </tr></thead><tbody>`;
+    rows.forEach(r => {
+      const pendingCnt = pendingMap[r.emp_id || r.applicant_name] || 0;
+      const plates = r.plates || [], bonuses = r.bonuses || [], incomes = r.incomes || [];
+      const rates = r.rates || [], wos = r.work_orders || [], settles = r.settle_dates || [];
+      const detailRows = plates.map((p, i) => {
+        const rate = parseFloat(rates[i] || 0.02) * 100;
+        const inc = parseFloat(incomes[i] || 0);
+        const b = parseFloat(bonuses[i] || 0);
+        const capped = inc * (rates[i] || 0.02) > 20000;
+        return `<div style="margin-bottom:4px;padding:4px 0;border-bottom:1px solid rgba(45,63,86,.3)">
+          <span style="font-weight:700;color:#e2e8f0">${p}</span>
+          <span style="color:#64748b;font-size:10px;margin-left:6px">${wos[i] || ''}</span>
+          <div style="margin-top:2px"><span style="color:#94a3b8;font-size:10px">${inc.toLocaleString()} × ${rate}% = </span>
+          <span style="color:${capped?'#f97316':'#10b981'};font-weight:700;font-size:11px">${b.toLocaleString()}元</span>
+          ${capped ? '<span style="color:#f97316;font-size:9px">(上限2萬)</span>' : ''}</div></div>`;
+      }).join('');
+      html += `<tr>
+        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);font-weight:700;color:#e2e8f0">${r.applicant_name}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);color:#94a3b8;font-size:11px;font-family:monospace">${r.emp_id || '—'}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);color:#64748b;font-size:12px">${r.dept_name || '—'}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);text-align:center"><span style="font-size:11px;padding:2px 8px;border-radius:4px;background:rgba(59,130,246,.15);color:#60a5fa">${BRANCH_LABEL[r.branch]||r.branch||'—'}</span></td>
+        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);text-align:center;font-weight:700">${r.work_order_count}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;color:#94a3b8">${Math.round(parseFloat(r.total_income||0)).toLocaleString()}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right"><span style="color:#10b981;font-weight:900;font-size:15px">${Math.round(parseFloat(r.total_bonus||0)).toLocaleString()}</span><span style="color:#64748b;font-size:10px;margin-left:2px">元</span></td>
+        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);text-align:center">${pendingCnt > 0 ? `<span style="font-size:11px;padding:2px 10px;border-radius:5px;background:rgba(245,158,11,.15);color:#f59e0b;font-weight:700">🕐 ${pendingCnt} 件</span>` : '<span style="color:#475569">—</span>'}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2)"><div style="cursor:pointer" onclick="_toggleBSDetail(this)">
+          <div style="display:flex;flex-wrap:wrap;gap:4px">${plates.slice(0,3).map(p=>`<span style="font-size:10px;background:#1e293b;border:1px solid #334155;border-radius:4px;padding:1px 6px;color:#94a3b8">${p}</span>`).join('')}${plates.length > 3 ? `<span style="font-size:10px;color:#64748b">+${plates.length-3}筆</span>` : ''}</div>
+          <div class="bs-detail-rows" style="display:none;margin-top:8px;background:#0f172a;border-radius:6px;padding:8px 10px;border:1px solid #2d3f56">${detailRows}</div>
+        </div></td></tr>`;
+    });
+    const grandTotal = rows.reduce((s,r) => s + parseFloat(r.total_bonus||0), 0);
+    html += `<tr style="background:rgba(16,185,129,.06)">
+      <td colspan="4" style="padding:10px 12px;font-weight:800;color:#10b981;font-size:13px">${periodLabel} 合計</td>
+      <td style="padding:10px 12px;text-align:center;font-weight:700">${rows.reduce((s,r)=>s+parseInt(r.work_order_count||0),0)}</td>
+      <td style="padding:10px 12px;text-align:right;color:#94a3b8;font-weight:700">${Math.round(rows.reduce((s,r)=>s+parseFloat(r.total_income||0),0)).toLocaleString()}</td>
+      <td style="padding:10px 12px;text-align:right"><span style="color:#10b981;font-weight:900;font-size:16px">${Math.round(grandTotal).toLocaleString()}</span><span style="font-size:10px;color:#64748b;margin-left:2px">元</span></td>
+      <td colspan="2"></td></tr>`;
+    html += '</tbody></table></div>';
+    el.innerHTML = html;
+  } catch(e) { el.innerHTML = `<div class="empty" style="color:#ef4444">${e.message}</div>`; }
+}
+
+function _toggleBSDetail(el) {
+  const d = el.querySelector('.bs-detail-rows');
+  if (d) d.style.display = d.style.display === 'none' ? '' : 'none';
+}
+
+async function loadBodyshopList() {
+  const el = document.getElementById('bodyshopListContent');
+  if (!_bsPeriod) { el.innerHTML = '<div class="empty">請選擇期間</div>'; return; }
+  el.innerHTML = '<div class="loading"><span class="spinner"></span>載入中</div>';
+  try {
+    const status = document.getElementById('bodyshopStatusFilter').value;
+    const params = new URLSearchParams({ period: _bsPeriod, limit: 500 });
+    if (_bsBranch) params.set('branch', _bsBranch);
+    if (status)   params.set('status', status);
+    const data = await fetch('/api/bodyshop-bonus/applications?' + params).then(r => r.json());
+    const rows = data.rows || [];
+    document.getElementById('bodyshopListCount').textContent = `共 ${data.total} 筆`;
+    if (!rows.length) { el.innerHTML = '<div class="empty">無資料</div>'; return; }
+    const th = 'background:#0c1524;color:#475569;padding:8px 10px;border-bottom:1px solid #2d3f56;font-size:11px;font-weight:700;white-space:nowrap;text-align:left';
+    let html = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr>
+        <th style="${th}">狀態</th><th style="${th}">申請日期</th><th style="${th}">申請人</th>
+        <th style="${th}">員編</th><th style="${th}">部門</th><th style="${th}">廠別</th>
+        <th style="${th}">車牌</th><th style="${th}">工單號碼</th><th style="${th}">帳類</th>
+        <th style="${th}">結清日</th><th style="${th};text-align:right">維修收入</th>
+        <th style="${th};text-align:center">獎金率</th><th style="${th};text-align:right;color:#10b981">獎金金額</th>
+        <th style="${th}">操作</th>
+      </tr></thead><tbody>`;
+    rows.forEach(r => {
+      const s = BS_STATUS_MAP[r.status] || { label: r.status, color: '#94a3b8', bg: '' };
+      const settled = r.status === 'settled';
+      const isCapped = settled && (parseFloat(r.income_total||0) * parseFloat(r.bonus_rate||0.02)) > 20000;
+      html += `<tr>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2)"><span style="font-size:11px;padding:2px 8px;border-radius:5px;background:${s.bg};color:${s.color};font-weight:700">${s.label}</span></td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:#94a3b8;font-size:11px">${(r.apply_date||'—').slice(0,10)}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);font-weight:700;color:#e2e8f0">${r.applicant_name||'—'}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:#64748b;font-size:11px;font-family:monospace">${r.emp_id||'—'}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:#64748b;font-size:11px">${r.dept_name||'—'}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2)"><span style="font-size:10px;background:rgba(59,130,246,.12);color:#60a5fa;padding:1px 6px;border-radius:4px">${BRANCH_LABEL[r.branch]||r.branch||'—'}</span></td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);font-weight:700;font-size:11px;color:#e2e8f0">${r.plate_no_raw||'—'}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:#64748b;font-size:11px;font-family:monospace">${r.work_order||'—'}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:#94a3b8;font-size:11px">${r.repair_type||'—'}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:#64748b;font-size:11px">${(r.settle_date||'—').toString().slice(0,10)}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;color:#94a3b8;font-size:11px">${settled?Math.round(parseFloat(r.income_total||0)).toLocaleString():'—'}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:center">
+          ${settled ? `<select onchange="setBSRate(${r.id},this.value)" style="background:#1e293b;border:1px solid #2d3f56;color:#e2e8f0;padding:3px 6px;border-radius:5px;font-size:11px;outline:none">
+            <option value="0.02" ${parseFloat(r.bonus_rate||0.02)===0.02?'selected':''}>2%</option>
+            <option value="0.04" ${parseFloat(r.bonus_rate||0.02)===0.04?'selected':''}>4%</option>
+          </select>` : '<span style="color:#475569">—</span>'}
+        </td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right">
+          ${settled ? `<span style="color:${isCapped?'#f97316':'#10b981'};font-weight:800">${Math.round(parseFloat(r.bonus_amount||0)).toLocaleString()} 元</span>${isCapped?'<span style="color:#f97316;font-size:9px;margin-left:2px">↑上限</span>':''}` : '<span style="color:#475569">—</span>'}
+        </td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2)">
+          <button class="btn btn-danger btn-sm" onclick="deleteBSApp(${r.id})">刪除</button>
+        </td></tr>`;
+    });
+    html += '</tbody></table></div>';
+    el.innerHTML = html;
+  } catch(e) { el.innerHTML = `<div class="empty" style="color:#ef4444">${e.message}</div>`; }
+}
+
+async function loadBodyshopPending() {
+  const el = document.getElementById('bodyshopPendingContent');
+  if (!el) return;
+  el.innerHTML = '<div class="loading"><span class="spinner"></span>載入中</div>';
+  try {
+    const params = new URLSearchParams();
+    if (_bsBranch) params.set('branch', _bsBranch);
+    const rows = await fetch('/api/bodyshop-bonus/pending?' + params).then(r => r.json());
+    if (!rows.length) { el.innerHTML = '<div class="empty">🎉 目前無待結清記錄</div>'; return; }
+    const th = 'background:#0c1524;color:#475569;padding:8px 10px;border-bottom:1px solid #2d3f56;font-size:11px;font-weight:700;white-space:nowrap;text-align:left';
+    let html = `<div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px 18px;margin-bottom:14px">
+      <span style="font-size:13px;font-weight:700;color:#f59e0b">⏳ 待結清總筆數：${rows.length} 筆</span>
+      <div style="font-size:12px;color:#64748b;margin-top:4px">以下記錄尚未結清，每月執行比對時會自動重新檢查</div>
+    </div>
+    <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr>
+        <th style="${th}">狀態</th><th style="${th}">申請人</th><th style="${th}">申請日期</th>
+        <th style="${th}">車牌</th><th style="${th}">廠別</th><th style="${th}">工單號碼</th>
+        <th style="${th}">帳類</th><th style="${th};text-align:right">待結清天數</th>
+      </tr></thead><tbody>`;
+    rows.forEach(r => {
+      const s = BS_STATUS_MAP[r.status] || { label: r.status, color: '#94a3b8', bg: '' };
+      const days = Math.round(parseFloat(r.days_pending || 0));
+      const daysColor = days > 60 ? '#ef4444' : days > 30 ? '#f59e0b' : '#64748b';
+      html += `<tr>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2)"><span style="font-size:11px;padding:2px 7px;border-radius:5px;background:${s.bg};color:${s.color};font-weight:700">${s.label}</span></td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);font-weight:700;color:#e2e8f0">${r.applicant_name}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:#94a3b8;font-size:11px">${(r.apply_date||'').toString().slice(0,10)}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);font-weight:700;font-size:11px;color:#e2e8f0">${r.plate_no_raw||'—'}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2)"><span style="font-size:10px;background:rgba(59,130,246,.12);color:#60a5fa;padding:1px 6px;border-radius:4px">${BRANCH_LABEL[r.branch]||r.branch||'—'}</span></td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:#64748b;font-size:11px;font-family:monospace">${r.work_order||'—'}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:#94a3b8;font-size:11px">${r.repair_type||'—'}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right"><span style="color:${daysColor};font-weight:700">${days}</span><span style="color:#475569;font-size:10px;margin-left:2px">天</span></td>
+      </tr>`;
+    });
+    html += '</tbody></table></div>';
+    el.innerHTML = html;
+  } catch(e) { el.innerHTML = `<div class="empty" style="color:#ef4444">${e.message}</div>`; }
+}
+
+async function setBSRate(id, rate) {
+  try {
+    const r = await fetch(`/api/bodyshop-bonus/applications/${id}/rate`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bonus_rate: parseFloat(rate) })
+    }).then(r => r.json());
+    if (r.error) throw new Error(r.error);
+    loadBodyshopSummary(); loadBodyshopList();
+  } catch(e) { alert('設定失敗：' + e.message); }
+}
+
+async function deleteBSApp(id) {
+  if (!confirm('確定刪除此筆申請記錄？')) return;
+  await fetch('/api/bodyshop-bonus/applications/' + id, { method: 'DELETE' });
+  loadBodyshopList(); loadBodyshopSummary(); loadBodyshopPending();
+}
+
+function showBodyshopUpload() {
+  document.getElementById('bodyshopFileInfo').textContent = '';
+  document.getElementById('bodyshopUploadResult').innerHTML = '';
+  document.getElementById('btnBodyshopDoUpload').disabled = true;
+  _bsFile = null;
+  openModal('bodyshopUploadModal');
+}
+
+(function() {
+  const zone = document.getElementById('bodyshopUploadZone');
+  if (!zone) return;
+  zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+  zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag'); handleBSFile(e.dataTransfer.files[0]); });
+  document.getElementById('bodyshopFileInput').addEventListener('change', e => handleBSFile(e.target.files[0]));
+})();
+
+function handleBSFile(file) {
+  if (!file) return;
+  _bsFile = file;
+  document.getElementById('bodyshopFileInfo').innerHTML =
+    `<span style="color:#10b981">✅ 已選擇：${file.name}（${(file.size/1024).toFixed(0)} KB）</span>`;
+  document.getElementById('btnBodyshopDoUpload').disabled = false;
+}
+
+async function doBodyshopUpload() {
+  if (!_bsFile) return;
+  const btn = document.getElementById('btnBodyshopDoUpload');
+  btn.disabled = true;
+  document.getElementById('bodyshopUploadResult').innerHTML = '<span class="spinner"></span>上傳解析中...';
+  const fd = new FormData(); fd.append('file', _bsFile);
+  try {
+    const r = await fetch('/api/bodyshop-bonus/upload', { method: 'POST', body: fd }).then(r => r.json());
+    if (r.error) throw new Error(r.error);
+    document.getElementById('bodyshopUploadResult').innerHTML =
+      `<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:10px 14px;font-size:13px;color:#10b981">✅ 新增 <strong>${r.inserted}</strong> 筆，略過重複 ${r.skipped} 筆（共解析 ${r.total} 筆）</div>`;
+    await loadBodyshopPeriods();
+    loadBodyshopData(); loadBodyshopPending();
+  } catch(e) {
+    document.getElementById('bodyshopUploadResult').innerHTML =
+      `<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:10px 14px;font-size:13px;color:#ef4444">❌ ${e.message}</div>`;
+  } finally { btn.disabled = false; }
+}
+  
 </script>
 
 <!-- 主管考核 Modal -->
