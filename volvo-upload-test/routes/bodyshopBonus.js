@@ -5,7 +5,7 @@ const pool   = require('../db/pool');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
-// ══ 正規化車牌（移除空白、破折號，轉大寫）══
+// ══ 正規化車牌 ══
 function normalizePlate(raw) {
   if (!raw) return '';
   return String(raw).replace(/[\s\-]/g, '').toUpperCase().trim();
@@ -20,9 +20,10 @@ function factoryToBranch(factoryStr) {
   return null;
 }
 
-// ══ 初始化 DB Table（啟動時自動建立）══
+// ══ 初始化 DB Table ══
 async function initTable() {
   try {
+    // 主表（一列 = 一筆申請表單）
     await pool.query(`
       CREATE TABLE IF NOT EXISTS bodyshop_bonus_applications (
         id               SERIAL PRIMARY KEY,
@@ -35,7 +36,7 @@ async function initTable() {
         plate_no_norm    VARCHAR(20),
         factory_raw      VARCHAR(30),
         branch           VARCHAR(10),
-        -- 匹配結果
+        -- 匹配結果（主列保留整體狀態）
         status           VARCHAR(20)  NOT NULL DEFAULT 'pending',
         work_order       VARCHAR(50),
         repair_type      VARCHAR(50),
@@ -44,19 +45,25 @@ async function initTable() {
         bonus_rate       NUMERIC(5,4) DEFAULT 0.02,
         bonus_amount     NUMERIC(12,2),
         settled_period   VARCHAR(6),
-        -- 後續追蹤
         note             TEXT DEFAULT '',
+        upload_batch     VARCHAR(50),
+        -- ★ 一對多：子列指向原始申請，NULL = 原始列
+        source_app_id    INTEGER REFERENCES bodyshop_bonus_applications(id) ON DELETE CASCADE,
         created_at       TIMESTAMPTZ DEFAULT NOW(),
         updated_at       TIMESTAMPTZ DEFAULT NOW()
       )
     `);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_bba_period    ON bodyshop_bonus_applications(app_period)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_bba_plate     ON bodyshop_bonus_applications(plate_no_norm)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_bba_status    ON bodyshop_bonus_applications(status)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_bba_settle    ON bodyshop_bonus_applications(settle_date)`);
-    await pool.query(`ALTER TABLE bodyshop_bonus_applications ADD COLUMN IF NOT EXISTS upload_batch VARCHAR(50)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_bba_period       ON bodyshop_bonus_applications(app_period)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_bba_plate        ON bodyshop_bonus_applications(plate_no_norm)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_bba_status       ON bodyshop_bonus_applications(status)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_bba_settle       ON bodyshop_bonus_applications(settle_date)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_bba_source       ON bodyshop_bonus_applications(source_app_id)`);
 
-    // ★ 確保 app_settings 表存在（含唯一索引）
+    // 補欄位（升級舊資料庫用）
+    await pool.query(`ALTER TABLE bodyshop_bonus_applications ADD COLUMN IF NOT EXISTS upload_batch   VARCHAR(50)`);
+    await pool.query(`ALTER TABLE bodyshop_bonus_applications ADD COLUMN IF NOT EXISTS source_app_id INTEGER REFERENCES bodyshop_bonus_applications(id) ON DELETE CASCADE`);
+
+    // app_settings
     await pool.query(`
       CREATE TABLE IF NOT EXISTS app_settings (
         key   VARCHAR(100) PRIMARY KEY,
@@ -81,9 +88,10 @@ router.get('/bodyshop-bonus/settings', async (req, res) => {
 router.put('/bodyshop-bonus/settings', async (req, res) => {
   const { lookback_days, rate_a, rate_b } = req.body;
   const val = JSON.stringify({
-    lookback_days: parseInt(lookback_days) >= 0 ? parseInt(lookback_days) : 30,
-    rate_a:        parseFloat(rate_a)      || 2,
-    rate_b:        parseFloat(rate_b)      || 4,
+    // ★ 0 是合法值，不能用 || 30
+    lookback_days: (lookback_days === '' || lookback_days == null) ? 30 : Math.max(0, parseInt(lookback_days) || 0),
+    rate_a:        parseFloat(rate_a)  || 2,
+    rate_b:        parseFloat(rate_b)  || 4,
   });
   try {
     await pool.query(`
@@ -108,22 +116,16 @@ function parseFormExcel(buffer) {
   }
 
   const headers = raw[headerIdx].map(c => String(c || '').trim());
-  const col = name => {
-    const idx = headers.findIndex(h => h.includes(name));
-    return idx >= 0 ? idx : -1;
-  };
+  const col = name => headers.findIndex(h => h.includes(name));
 
   const fmtDate = v => {
     if (!v) return null;
     if (v instanceof Date) {
-      const y = v.getFullYear();
-      const m = String(v.getMonth()+1).padStart(2,'0');
-      const d = String(v.getDate()).padStart(2,'0');
-      return `${y}-${m}-${d}`;
+      return `${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,'0')}-${String(v.getDate()).padStart(2,'0')}`;
     }
     const s = String(v).trim();
-    const m2 = s.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
-    return m2 ? `${m2[1]}-${m2[2].padStart(2,'0')}-${m2[3].padStart(2,'0')}` : null;
+    const m = s.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+    return m ? `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}` : null;
   };
 
   const rows = [];
@@ -139,9 +141,7 @@ function parseFormExcel(buffer) {
     const dept         = String(r[col('申請部門')] || r[col('部門')] || '').trim();
 
     let appPeriod = '';
-    if (applyDateStr) {
-      appPeriod = applyDateStr.slice(0,4) + applyDateStr.slice(5,7);
-    }
+    if (applyDateStr) appPeriod = applyDateStr.slice(0,4) + applyDateStr.slice(5,7);
 
     rows.push({
       app_period:     appPeriod,
@@ -174,9 +174,10 @@ router.post('/bodyshop-bonus/upload', upload.single('file'), async (req, res) =>
       for (const r of rows) {
         if (!r.plate_no_norm || !r.app_period) { skipped++; continue; }
 
+        // 避免重複（同車牌+申請日期+申請人），且只比對原始列（source_app_id IS NULL）
         const dup = await client.query(
           `SELECT id FROM bodyshop_bonus_applications
-           WHERE plate_no_norm=$1 AND apply_date=$2 AND applicant_name=$3`,
+           WHERE plate_no_norm=$1 AND apply_date=$2 AND applicant_name=$3 AND source_app_id IS NULL`,
           [r.plate_no_norm, r.apply_date, r.applicant_name]
         );
         if (dup.rows.length) { skipped++; continue; }
@@ -198,155 +199,214 @@ router.post('/bodyshop-bonus/upload', upload.single('file'), async (req, res) =>
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ══ 執行匹配 ══
-// ★ 優先抓「申請日期後」開立的工單；往前回溯天數依設定；結清日期月份決定獎金所屬月份
+// ══ 執行匹配（一張申請 → 多張工單，每張工單獨立一列）══
 router.post('/bodyshop-bonus/match', async (req, res) => {
   const { period } = req.body;
   if (!period) return res.status(400).json({ error: 'period 為必填' });
 
   try {
-    // 讀取設定
+    // 讀設定
     const cfgR = await pool.query(`SELECT value FROM app_settings WHERE key='bodyshop_bonus_settings'`);
     const cfg  = cfgR.rows[0] ? JSON.parse(cfgR.rows[0].value) : {};
-    const lookbackDays  = parseInt(cfg.lookback_days ?? 30);
-    const defaultRateA  = parseFloat(cfg.rate_a ?? 2) / 100;
+    const lookbackDays = (cfg.lookback_days === '' || cfg.lookback_days == null) ? 30 : Math.max(0, parseInt(cfg.lookback_days) || 0);
+    const defaultRateA = parseFloat(cfg.rate_a ?? 2) / 100;
 
+    // 只處理原始申請列（source_app_id IS NULL）
     const appRows = (await pool.query(`
       SELECT * FROM bodyshop_bonus_applications
-      WHERE status IN ('pending', 'matched_pending', 'not_found')
+      WHERE source_app_id IS NULL
+        AND status IN ('pending', 'matched_pending', 'not_found')
       ORDER BY apply_date ASC
     `)).rows;
 
-    let matched = 0, settled = 0, notFound = 0;
+    let totalApps = appRows.length;
+    let matchedApps = 0, settledWOs = 0, notFoundApps = 0, totalWOs = 0;
 
-    for (const app of appRows) {
-      const plate  = app.plate_no_norm;
-      const branch = app.branch;
-      if (!plate) continue;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
 
-      // ── Step 1: 查 business_query ──
-      // ★ 申請日期前 lookbackDays 天到現在，都納入；ORDER BY 優先申請日期後的工單
-      const bqConds  = [`UPPER(REPLACE(REPLACE(plate_no,' ',''),'-',''))=$1`];
-      const bqParams = [plate];
-      let idx = 2;
+      for (const app of appRows) {
+        const plate  = app.plate_no_norm;
+        const branch = app.branch;
+        if (!plate) continue;
 
-      if (branch) { bqConds.push(`branch=$${idx++}`); bqParams.push(branch); }
+        // ── Step 1: 查 business_query，取得所有符合的工單 ──
+        const bqConds  = [`UPPER(REPLACE(REPLACE(plate_no,' ',''),'-',''))=$1`];
+        const bqParams = [plate];
+        let idx = 2;
 
-      if (app.apply_date) {
-        // 往前回溯 lookbackDays 天（申請日期後的工單不受此限，全部納入）
-        bqConds.push(`open_time >= ($${idx++}::date - interval '${lookbackDays} days')`);
-        bqParams.push(app.apply_date);
-      }
+        if (branch) { bqConds.push(`branch=$${idx++}`); bqParams.push(branch); }
 
-      // 帳類：鈑烤相關
-      bqConds.push(`(
-        repair_type ILIKE '%鈑%' OR repair_type ILIKE '%噴%' OR
-        repair_type ILIKE '%保險%' OR repair_type ILIKE '%事故%' OR
-        repair_type ILIKE '%鈑烤%' OR repair_type ILIKE '%鈑金%'
-      )`);
+        // 時間範圍：申請日期後的工單全部納入 + 往前回溯 lookbackDays 天
+        if (app.apply_date) {
+          if (lookbackDays > 0) {
+            // 申請日期往前 lookbackDays 天 ~ 未來（無上限）
+            bqConds.push(`open_time >= ($${idx++}::date - interval '${lookbackDays} days')`);
+          } else {
+            // lookbackDays = 0：只抓申請日期當天及之後的工單
+            bqConds.push(`open_time >= $${idx++}::date`);
+          }
+          bqParams.push(app.apply_date);
+        }
 
-      // ★ 優先排序：申請日期後的工單排前面，次以 open_time DESC
-      // 申請日期後的 open_time >= apply_date → 排序值 0（先顯示）
-      const applyDateForSort = app.apply_date || new Date().toISOString().slice(0,10);
-      const orderClause = app.apply_date
-        ? `ORDER BY (open_time >= $${idx++}::date) DESC, open_time DESC LIMIT 10`
-        : `ORDER BY open_time DESC LIMIT 10`;
-      if (app.apply_date) bqParams.push(applyDateForSort);
+        // 帳類：鈑烤/事故/保險
+        bqConds.push(`(
+          repair_type ILIKE '%鈑%' OR repair_type ILIKE '%噴%' OR
+          repair_type ILIKE '%保險%' OR repair_type ILIKE '%事故%' OR
+          repair_type ILIKE '%鈑烤%' OR repair_type ILIKE '%鈑金%'
+        )`);
 
-      const bqRes = await pool.query(
-        `SELECT work_order, branch, repair_type, settle_date, open_time
-         FROM business_query WHERE ${bqConds.join(' AND ')} ${orderClause}`,
-        bqParams
-      );
+        // ★ 申請日期後的工單排前面，再依 open_time DESC；不限筆數（取全部）
+        const orderClause = app.apply_date
+          ? `ORDER BY (open_time >= $${idx++}::date) DESC, open_time DESC`
+          : `ORDER BY open_time DESC`;
+        if (app.apply_date) bqParams.push(app.apply_date);
 
-      if (!bqRes.rows.length) {
-        await pool.query(
-          `UPDATE bodyshop_bonus_applications SET status='not_found', updated_at=NOW() WHERE id=$1`,
+        const bqRes = await client.query(
+          `SELECT work_order, branch, repair_type, open_time
+           FROM business_query WHERE ${bqConds.join(' AND ')} ${orderClause}`,
+          bqParams
+        );
+
+        if (!bqRes.rows.length) {
+          // 找不到任何工單
+          await client.query(
+            `UPDATE bodyshop_bonus_applications SET status='not_found', updated_at=NOW() WHERE id=$1`,
+            [app.id]
+          );
+          notFoundApps++;
+          continue;
+        }
+
+        matchedApps++;
+
+        // ── Step 2: 對每張工單查 repair_income，各自計算獎金 ──
+        // 先刪除此申請的舊子列（重新比對）
+        await client.query(
+          `DELETE FROM bodyshop_bonus_applications WHERE source_app_id=$1`,
           [app.id]
         );
-        notFound++;
-        continue;
-      }
 
-      matched++;
-      let bestWorkOrder  = null;
-      let bestBranch     = null;
-      let bestRepairType = null;
-      let incomeTotal    = null;
-      let settleDate     = null;
-      let isSettled      = false;
+        const woResults = [];
+        for (const bq of bqRes.rows) {
+          const riRes = await client.query(`
+            SELECT work_order, branch, clear_date,
+                   COALESCE(total_taxed, total_untaxed) AS income_total
+            FROM repair_income
+            WHERE work_order=$1 AND branch=$2 AND clear_date IS NOT NULL
+            LIMIT 1
+          `, [bq.work_order, bq.branch]);
 
-      // ── Step 2: 查 repair_income 是否結清 ──
-      for (const bq of bqRes.rows) {
-        const riRes = await pool.query(`
-          SELECT work_order, branch, clear_date,
-                 COALESCE(total_taxed, total_untaxed) AS income_total
-          FROM repair_income
-          WHERE work_order=$1 AND branch=$2 AND clear_date IS NOT NULL
-          LIMIT 1
-        `, [bq.work_order, bq.branch]);
+          if (riRes.rows.length) {
+            const ri = riRes.rows[0];
+            const income = parseFloat(ri.income_total || 0);
+            const rate   = parseFloat(app.bonus_rate || defaultRateA);
+            const bonus  = Math.min(income * rate, 20000);
 
-        if (riRes.rows.length) {
-          isSettled      = true;
-          bestWorkOrder  = bq.work_order;
-          bestBranch     = bq.branch;
-          bestRepairType = bq.repair_type;
-          settleDate     = riRes.rows[0].clear_date;
-          incomeTotal    = parseFloat(riRes.rows[0].income_total || 0);
-          break;
-        } else {
-          if (!bestWorkOrder) {
-            bestWorkOrder  = bq.work_order;
-            bestBranch     = bq.branch;
-            bestRepairType = bq.repair_type;
+            // settled_period 依結清日期月份
+            const sd = ri.clear_date instanceof Date ? ri.clear_date : new Date(ri.clear_date);
+            const settledPeriod = sd.getFullYear() + String(sd.getMonth()+1).padStart(2,'0');
+
+            woResults.push({
+              status:         'settled',
+              work_order:     bq.work_order,
+              branch:         bq.branch,
+              repair_type:    bq.repair_type,
+              settle_date:    ri.clear_date,
+              income_total:   income,
+              bonus_rate:     rate,
+              bonus_amount:   bonus,
+              settled_period: settledPeriod,
+            });
+          } else {
+            // 有工單但未結清
+            woResults.push({
+              status:      'matched_pending',
+              work_order:  bq.work_order,
+              branch:      bq.branch,
+              repair_type: bq.repair_type,
+              settle_date:  null,
+              income_total: null,
+              bonus_rate:   parseFloat(app.bonus_rate || defaultRateA),
+              bonus_amount: null,
+              settled_period: null,
+            });
           }
+        }
+
+        totalWOs += woResults.length;
+
+        if (woResults.length === 0) {
+          // 不應發生，但保護性處理
+          await client.query(
+            `UPDATE bodyshop_bonus_applications SET status='not_found', updated_at=NOW() WHERE id=$1`,
+            [app.id]
+          );
+          continue;
+        }
+
+        // 原始列用第一筆工單結果更新（作為代表狀態）
+        const first = woResults[0];
+        const overallStatus = woResults.some(w => w.status === 'settled')
+          ? 'settled'
+          : woResults.some(w => w.status === 'matched_pending')
+            ? 'matched_pending'
+            : 'not_found';
+
+        await client.query(`
+          UPDATE bodyshop_bonus_applications SET
+            status=$1, work_order=$2, branch=$3, repair_type=$4,
+            settle_date=$5, income_total=$6, bonus_rate=$7, bonus_amount=$8,
+            settled_period=$9, updated_at=NOW()
+          WHERE id=$10
+        `, [first.status, first.work_order, first.branch, first.repair_type,
+            first.settle_date, first.income_total, first.bonus_rate, first.bonus_amount,
+            first.settled_period, app.id]);
+
+        if (first.status === 'settled') settledWOs++;
+
+        // 第 2 筆起：INSERT 子列
+        for (let i = 1; i < woResults.length; i++) {
+          const wo = woResults[i];
+          await client.query(`
+            INSERT INTO bodyshop_bonus_applications (
+              app_period, apply_date, applicant_name, emp_id, dept_name,
+              plate_no_raw, plate_no_norm, factory_raw, branch,
+              status, work_order, repair_type, settle_date,
+              income_total, bonus_rate, bonus_amount, settled_period,
+              source_app_id, upload_batch
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+          `, [
+            app.app_period, app.apply_date, app.applicant_name, app.emp_id, app.dept_name,
+            app.plate_no_raw, app.plate_no_norm, app.factory_raw, wo.branch,
+            wo.status, wo.work_order, wo.repair_type, wo.settle_date,
+            wo.income_total, wo.bonus_rate, wo.bonus_amount, wo.settled_period,
+            app.id, app.upload_batch,
+          ]);
+          if (wo.status === 'settled') settledWOs++;
         }
       }
 
-      if (isSettled) {
-        const rate     = parseFloat(app.bonus_rate || defaultRateA);
-        const bonusAmt = Math.min(incomeTotal * rate, 20000);
+      await client.query('COMMIT');
+    } catch(e) { await client.query('ROLLBACK'); throw e; }
+    finally { client.release(); }
 
-        // ★ settled_period 依結清日期月份決定（而非執行比對的當月）
-        const sd = settleDate instanceof Date ? settleDate : new Date(settleDate);
-        const settledPeriod = sd.getFullYear() + String(sd.getMonth()+1).padStart(2,'0');
-
-        await pool.query(`
-          UPDATE bodyshop_bonus_applications SET
-            status='settled', work_order=$1, branch=$2, repair_type=$3,
-            settle_date=$4, income_total=$5, bonus_amount=$6,
-            settled_period=$7, updated_at=NOW()
-          WHERE id=$8
-        `, [bestWorkOrder, bestBranch, bestRepairType,
-            settleDate, incomeTotal, bonusAmt,
-            settledPeriod, app.id]);
-        settled++;
-      } else if (bestWorkOrder) {
-        await pool.query(`
-          UPDATE bodyshop_bonus_applications SET
-            status='matched_pending', work_order=$1, branch=$2,
-            repair_type=$3, updated_at=NOW()
-          WHERE id=$4
-        `, [bestWorkOrder, bestBranch, bestRepairType, app.id]);
-      }
-    }
-
-    res.json({ ok: true, total: appRows.length, matched, settled, notFound, period });
+    res.json({ ok: true, total: totalApps, matched: matchedApps, settled: settledWOs, notFound: notFoundApps, work_orders: totalWOs, period });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ══ ★ 重置已結清記錄（讓舊的錯誤比對結果可重新比對）══
-// POST /bodyshop-bonus/reset-match  body: { app_period?, branch? }
-// 將指定期間/廠別的 settled/matched_pending 記錄重置為 pending
+// ══ 重置比對結果（清子列，原始列回 pending）══
 router.post('/bodyshop-bonus/reset-match', async (req, res) => {
   const { app_period, branch } = req.body;
   try {
-    const conds  = [`status IN ('settled','matched_pending','not_found')`];
+    const conds  = [`source_app_id IS NULL`];
     const params = [];
     let idx = 1;
     if (app_period) { conds.push(`app_period=$${idx++}`); params.push(app_period); }
-    if (branch)     { conds.push(`branch=$${idx++}`);     params.push(branch); }
+    if (branch)     { conds.push(`(branch=$${idx++} OR factory_raw ILIKE $${idx++})`); params.push(branch, '%'+branch+'%'); }
 
+    // 子列依 CASCADE 自動刪除，只需重置原始列
     const r = await pool.query(`
       UPDATE bodyshop_bonus_applications SET
         status='pending',
@@ -357,23 +417,37 @@ router.post('/bodyshop-bonus/reset-match', async (req, res) => {
       RETURNING id
     `, params);
 
+    // 手動清子列（若 CASCADE 未生效）
+    await pool.query(`
+      DELETE FROM bodyshop_bonus_applications
+      WHERE source_app_id IN (
+        SELECT id FROM bodyshop_bonus_applications WHERE ${conds.join(' AND ')}
+      )
+    `, params);
+
     res.json({ ok: true, reset: r.rowCount });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ══ 查詢申請清單 ══
+// ══ 查詢申請清單（含子列，每張工單一列）══
 router.get('/bodyshop-bonus/applications', async (req, res) => {
-  const { period, status, branch, page = 1, limit = 200 } = req.query;
+  const { period, status, branch, page = 1, limit = 500 } = req.query;
   try {
     const conds = []; const params = []; let idx = 1;
+
+    // period 篩選：原始列用 app_period，子列繼承原始列的 app_period
     if (period) { conds.push(`app_period=$${idx++}`); params.push(period); }
     if (status) { conds.push(`status=$${idx++}`);     params.push(status); }
     if (branch) { conds.push(`branch=$${idx++}`);     params.push(branch); }
+
     const where  = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
     const offset = (parseInt(page)-1) * parseInt(limit);
+
     const r = await pool.query(
-      `SELECT * FROM bodyshop_bonus_applications ${where}
-       ORDER BY apply_date DESC, id DESC
+      `SELECT *,
+        CASE WHEN source_app_id IS NULL THEN '原始' ELSE '追加' END AS row_type
+       FROM bodyshop_bonus_applications ${where}
+       ORDER BY applicant_name, plate_no_norm, apply_date DESC, id ASC
        LIMIT $${idx++} OFFSET $${idx}`,
       [...params, parseInt(limit), offset]
     );
@@ -384,12 +458,11 @@ router.get('/bodyshop-bonus/applications', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ══ ★ 獎金彙總：依結清日期（settle_date）月份過濾，而非 settled_period ══
+// ══ 獎金彙總：依結清日期月份（settle_date），含所有子列 ══
 router.get('/bodyshop-bonus/summary', async (req, res) => {
   const { settled_period, branch } = req.query;
   if (!settled_period) return res.status(400).json({ error: 'settled_period 為必填' });
   try {
-    // settled_period 格式 "YYYYMM" → 轉成該月份範圍
     const periodDate = `${settled_period.slice(0,4)}-${settled_period.slice(4,6)}-01`;
 
     const conds  = [
@@ -400,6 +473,7 @@ router.get('/bodyshop-bonus/summary', async (req, res) => {
     let idx = 2;
     if (branch) { conds.push(`branch=$${idx++}`); params.push(branch); }
 
+    // 主查：每人彙總，包含原始列和子列（JOIN 取申請人資訊）
     const r = await pool.query(`
       SELECT
         applicant_name, emp_id, dept_name,
@@ -407,23 +481,25 @@ router.get('/bodyshop-bonus/summary', async (req, res) => {
         COUNT(*) AS work_order_count,
         SUM(income_total) AS total_income,
         SUM(bonus_amount) AS total_bonus,
-        array_agg(plate_no_raw  ORDER BY settle_date) AS plates,
-        array_agg(work_order    ORDER BY settle_date) AS work_orders,
-        array_agg(bonus_amount  ORDER BY settle_date) AS bonuses,
-        array_agg(income_total  ORDER BY settle_date) AS incomes,
-        array_agg(bonus_rate    ORDER BY settle_date) AS rates,
-        array_agg(settle_date::text ORDER BY settle_date) AS settle_dates
+        array_agg(plate_no_raw  ORDER BY settle_date, id) AS plates,
+        array_agg(work_order    ORDER BY settle_date, id) AS work_orders,
+        array_agg(bonus_amount  ORDER BY settle_date, id) AS bonuses,
+        array_agg(income_total  ORDER BY settle_date, id) AS incomes,
+        array_agg(bonus_rate    ORDER BY settle_date, id) AS rates,
+        array_agg(settle_date::text ORDER BY settle_date, id) AS settle_dates,
+        array_agg(apply_date::text  ORDER BY settle_date, id) AS apply_dates
       FROM bodyshop_bonus_applications
       WHERE ${conds.join(' AND ')}
       GROUP BY applicant_name, emp_id, dept_name, branch
       ORDER BY total_bonus DESC
     `, params);
 
-    // 待結清件數（全部未結清，不限期間）
+    // 待結清件數
     const pendingRes = await pool.query(`
       SELECT applicant_name, emp_id, COUNT(*) AS pending_count
       FROM bodyshop_bonus_applications
       WHERE status IN ('matched_pending','pending','not_found')
+        AND source_app_id IS NULL
       GROUP BY applicant_name, emp_id
     `);
     const pendingMap = {};
@@ -435,11 +511,11 @@ router.get('/bodyshop-bonus/summary', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ══ 所有待結清清單 ══
+// ══ 待結清清單（只看原始列）══
 router.get('/bodyshop-bonus/pending', async (req, res) => {
   const { branch } = req.query;
   try {
-    const conds  = [`status IN ('matched_pending','pending','not_found')`];
+    const conds  = [`status IN ('matched_pending','pending','not_found')`, `source_app_id IS NULL`];
     const params = [];
     if (branch) { conds.push(`branch=$1`); params.push(branch); }
     const r = await pool.query(`
@@ -452,7 +528,7 @@ router.get('/bodyshop-bonus/pending', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ══ 修改獎金比率 ══
+// ══ 修改獎金比率（支援子列）══
 router.patch('/bodyshop-bonus/applications/:id/rate', async (req, res) => {
   const { bonus_rate } = req.body;
   try {
@@ -490,7 +566,7 @@ router.patch('/bodyshop-bonus/applications/:id/note', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ══ 刪除單筆記錄 ══
+// ══ 刪除記錄（若為原始列，子列 CASCADE 自動刪除）══
 router.delete('/bodyshop-bonus/applications/:id', async (req, res) => {
   try {
     await pool.query(`DELETE FROM bodyshop_bonus_applications WHERE id=$1`, [req.params.id]);
@@ -498,11 +574,12 @@ router.delete('/bodyshop-bonus/applications/:id', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ══ 取得已有資料的期間清單 ══
+// ══ 已有資料的期間清單 ══
 router.get('/bodyshop-bonus/periods', async (req, res) => {
   try {
     const r = await pool.query(`
       SELECT DISTINCT app_period FROM bodyshop_bonus_applications
+      WHERE source_app_id IS NULL
       ORDER BY app_period DESC
     `);
     res.json(r.rows.map(r => r.app_period));
