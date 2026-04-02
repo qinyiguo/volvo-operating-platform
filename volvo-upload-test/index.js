@@ -27,6 +27,7 @@ app.use('/api', require('./routes/wip'));
 app.use('/api', require('./routes/vctl'));
 app.use('/api', require('./routes/promoBonus'));
 app.use('/api/manager-review', require('./routes/managerReview'));
+app.use('/api', require('./routes/bodyshopBonus'));
 
 
 // ── 啟動 ──
