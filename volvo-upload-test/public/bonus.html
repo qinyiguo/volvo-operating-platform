@@ -200,7 +200,7 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
       📤 上傳申請資料
     </button>
 <button class="btn btn-secondary btn-sm" onclick="openBSSettings()" style="font-size:12px">⚙️ 設定</button>
-    <button class="btn btn-danger btn-sm" onclick="runBodyshopReset()" title="重置比對結果，重新用新設定匹配" style="font-size:12px">🔄 重置重比</button>
+    <button class="btn btn-danger btn-sm" onclick="runBodyshopReset()" style="font-size:12px">🔄 重置重比</button>
   </div>
   <div id="bodyshopMatchInfo" style="width:100%;font-size:12px;color:#94a3b8;padding:4px 2px;min-height:18px"></div>
 
@@ -2866,8 +2866,9 @@ async function runBodyshopMatch() {
       body: JSON.stringify({ period })
     }).then(r => r.json());
     if (r.error) throw new Error(r.error);
-    document.getElementById('bodyshopMatchInfo').textContent =
-      `✅ 完成：共 ${r.total} 筆，已結清 ${r.settled} 筆，待結清 ${r.matched - r.settled} 筆，查無工單 ${r.notFound} 筆`;
+const infoEl2 = document.getElementById('bodyshopMatchInfo');
+    if (infoEl2) infoEl2.textContent =
+      `✅ 完成：${r.total} 筆申請，找到 ${r.work_orders || 0} 張工單，已結清 ${r.settled} 張，查無工單 ${r.notFound} 筆`;
     loadBodyshopData();
     loadBodyshopPending();
   } catch(e) {
@@ -2877,7 +2878,7 @@ async function runBodyshopMatch() {
   }
 }
 
-  async function runBodyshopReset() {
+async function runBodyshopReset() {
   const period = document.getElementById('bodyshopPeriodSel').value;
   const branch = document.getElementById('bodyshopBranchSel').value;
   const label  = period ? period.slice(0,4)+'年'+parseInt(period.slice(4))+'月' : '全部';
@@ -2889,8 +2890,7 @@ async function runBodyshopMatch() {
     if (period) body.app_period = period;
     if (branch) body.branch     = branch;
     const r = await fetch('/api/bodyshop-bonus/reset-match', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     }).then(r => r.json());
     if (r.error) throw new Error(r.error);
@@ -3159,7 +3159,7 @@ async function openBSSettings() {
 }
 
 async function saveBSSettings() {
-const lbRaw = document.getElementById('bsCfgLookback').value;
+  const lbRaw = document.getElementById('bsCfgLookback').value;
   const payload = {
     lookback_days: lbRaw === '' ? 30 : Math.max(0, parseInt(lbRaw) || 0),
     rate_a: parseFloat(document.getElementById('bsCfgRateA').value) || 2,
