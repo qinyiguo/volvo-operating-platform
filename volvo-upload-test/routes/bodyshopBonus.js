@@ -81,7 +81,7 @@ router.get('/bodyshop-bonus/settings', async (req, res) => {
 router.put('/bodyshop-bonus/settings', async (req, res) => {
   const { lookback_days, rate_a, rate_b } = req.body;
   const val = JSON.stringify({
-    lookback_days: parseInt(lookback_days) || 30,
+    lookback_days: parseInt(lookback_days) >= 0 ? parseInt(lookback_days) : 30,
     rate_a:        parseFloat(rate_a)      || 2,
     rate_b:        parseFloat(rate_b)      || 4,
   });
@@ -332,6 +332,32 @@ router.post('/bodyshop-bonus/match', async (req, res) => {
     }
 
     res.json({ ok: true, total: appRows.length, matched, settled, notFound, period });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ══ ★ 重置已結清記錄（讓舊的錯誤比對結果可重新比對）══
+// POST /bodyshop-bonus/reset-match  body: { app_period?, branch? }
+// 將指定期間/廠別的 settled/matched_pending 記錄重置為 pending
+router.post('/bodyshop-bonus/reset-match', async (req, res) => {
+  const { app_period, branch } = req.body;
+  try {
+    const conds  = [`status IN ('settled','matched_pending','not_found')`];
+    const params = [];
+    let idx = 1;
+    if (app_period) { conds.push(`app_period=$${idx++}`); params.push(app_period); }
+    if (branch)     { conds.push(`branch=$${idx++}`);     params.push(branch); }
+
+    const r = await pool.query(`
+      UPDATE bodyshop_bonus_applications SET
+        status='pending',
+        work_order=NULL, repair_type=NULL, settle_date=NULL,
+        income_total=NULL, bonus_amount=NULL, settled_period=NULL,
+        updated_at=NOW()
+      WHERE ${conds.join(' AND ')}
+      RETURNING id
+    `, params);
+
+    res.json({ ok: true, reset: r.rowCount });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
