@@ -60,6 +60,26 @@ async function initTable() {
 }
 initTable();
 
+// ══ 讀取/儲存設定 ══
+router.get('/bodyshop-bonus/settings', async (req, res) => {
+  try {
+    const r = await pool.query(`SELECT value FROM app_settings WHERE key='bodyshop_bonus_settings'`);
+    const defaults = { lookback_days: 30, rate_a: 2, rate_b: 4 };
+    res.json(r.rows[0] ? { ...defaults, ...JSON.parse(r.rows[0].value) } : defaults);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.put('/bodyshop-bonus/settings', async (req, res) => {
+  const { lookback_days, rate_a, rate_b } = req.body;
+  try {
+    await pool.query(`
+      INSERT INTO app_settings (key, value) VALUES ('bodyshop_bonus_settings', $1)
+      ON CONFLICT (key) DO UPDATE SET value=$1
+    `, [JSON.stringify({ lookback_days, rate_a, rate_b })]);
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ══ 解析 Google Form Excel ══
 function parseFormExcel(buffer) {
   const wb  = XLSX.read(buffer, { type: 'buffer', cellDates: true, raw: false });
@@ -197,7 +217,18 @@ router.post('/bodyshop-bonus/match', async (req, res) => {
       const bqParams = [plate];
       let idx = 2;
 
-      if (branch) { bqConds.push(`branch=$${idx++}`); bqParams.push(branch); }
+if (branch) { bqConds.push(`branch=$${idx++}`); bqParams.push(branch); }
+
+// 讀取設定
+const cfgR = await pool.query(`SELECT value FROM app_settings WHERE key='bodyshop_bonus_settings'`);
+const cfg = cfgR.rows[0] ? JSON.parse(cfgR.rows[0].value) : {};
+const lookbackDays = parseInt(cfg.lookback_days ?? 30);
+
+// ★ 申請日期之後的工單優先，往前最多 lookback_days 天
+if (app.apply_date) {
+  bqConds.push(`open_time >= ($${idx++}::date - interval '${lookbackDays} days')`);
+  bqParams.push(app.apply_date);
+}
 
       // 帳類包含鈑噴、事故、保險
       bqConds.push(`(
@@ -262,9 +293,12 @@ router.post('/bodyshop-bonus/match', async (req, res) => {
 
       if (isSettled) {
         // 計算獎金
-        const rate = parseFloat(app.bonus_rate || 0.02);
-        const raw  = incomeTotal * rate;
-        const bonusAmt = Math.min(raw, 20000);
+const cfgR2 = await pool.query(`SELECT value FROM app_settings WHERE key='bodyshop_bonus_settings'`);
+const cfg2 = cfgR2.rows[0] ? JSON.parse(cfgR2.rows[0].value) : {};
+const defaultRate = parseFloat(cfg2.rate_a ?? 2) / 100;
+const rate = parseFloat(app.bonus_rate || defaultRate);
+const raw  = incomeTotal * rate;
+const bonusAmt = Math.min(raw, 20000);
 
         await pool.query(`
           UPDATE bodyshop_bonus_applications SET
