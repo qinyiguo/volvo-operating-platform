@@ -199,7 +199,7 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
     <button class="btn btn-secondary" onclick="showBodyshopUpload()" style="margin-left:auto">
       📤 上傳申請資料
     </button>
-    <span id="bodyshopMatchInfo" style="font-size:11px;color:#64748b"></span>
+    <button class="btn btn-secondary btn-sm" onclick="openBSSettings()" style="font-size:12px">⚙️ 設定</button>
   </div>
 
   <!-- ── 子頁籤 ── -->
@@ -608,6 +608,42 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('bodyshopUploadModal')">關閉</button>
       <button class="btn btn-primary" id="btnBodyshopDoUpload" disabled onclick="doBodyshopUpload()">🚀 開始上傳</button>
+    </div>
+  </div>
+</div>
+
+  <!-- 業務鈑烤設定 Modal -->
+<div class="modal-bd" id="bodyshopSettingsModal">
+  <div class="modal-win" style="max-width:400px">
+    <div class="modal-head">
+      <div class="modal-title">⚙️ 業務鈑烤獎金設定</div>
+      <button class="modal-close" onclick="closeModal('bodyshopSettingsModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>工單回溯天數（申請日期往前幾天內的工單才列入比對）</label>
+        <input type="number" id="bsCfgLookback" class="form-input" value="30" min="0" max="365" placeholder="30">
+        <div style="font-size:11px;color:#64748b;margin-top:4px">申請日期當天及之後的工單一定納入，此設定控制往前追溯範圍</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group">
+          <label>獎金率 A（%）</label>
+          <input type="number" id="bsCfgRateA" class="form-input" value="2" min="0" max="100" step="0.1" placeholder="2">
+        </div>
+        <div class="form-group">
+          <label>獎金率 B（%）</label>
+          <input type="number" id="bsCfgRateB" class="form-input" value="4" min="0" max="100" step="0.1" placeholder="4">
+        </div>
+      </div>
+      <div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#94a3b8;line-height:1.8">
+        💡 每筆工單上限 <strong style="color:#e2e8f0">20,000 元</strong><br>
+        獎金 = MIN( 維修收入 × 獎金率, 20,000 )
+      </div>
+      <div id="bsSettingsMsg" style="font-size:12px;min-height:16px;margin-top:8px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('bodyshopSettingsModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveBSSettings()">💾 儲存設定</button>
     </div>
   </div>
 </div>
@@ -2920,6 +2956,7 @@ function _toggleBSDetail(el) {
 }
 
 async function loadBodyshopList() {
+  try { _bsSettings = await fetch('/api/bodyshop-bonus/settings').then(r=>r.json()); } catch(e) {}
   const el = document.getElementById('bodyshopListContent');
   if (!_bsPeriod) { el.innerHTML = '<div class="empty">請選擇期間</div>'; return; }
   el.innerHTML = '<div class="loading"><span class="spinner"></span>載入中</div>';
@@ -2959,9 +2996,9 @@ async function loadBodyshopList() {
         <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:#64748b;font-size:11px">${(r.settle_date||'—').toString().slice(0,10)}</td>
         <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;color:#94a3b8;font-size:11px">${settled?Math.round(parseFloat(r.income_total||0)).toLocaleString():'—'}</td>
         <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:center">
-          ${settled ? `<select onchange="setBSRate(${r.id},this.value)" style="background:#1e293b;border:1px solid #2d3f56;color:#e2e8f0;padding:3px 6px;border-radius:5px;font-size:11px;outline:none">
-            <option value="0.02" ${parseFloat(r.bonus_rate||0.02)===0.02?'selected':''}>2%</option>
-            <option value="0.04" ${parseFloat(r.bonus_rate||0.02)===0.04?'selected':''}>4%</option>
+${settled ? `<select onchange="setBSRate(${r.id},this.value)" style="background:#1e293b;border:1px solid #2d3f56;color:#e2e8f0;padding:3px 6px;border-radius:5px;font-size:11px;outline:none">
+            <option value="${(_bsSettings.rate_a||2)/100}" ${Math.abs(parseFloat(r.bonus_rate||0.02)-(_bsSettings.rate_a||2)/100)<0.001?'selected':''}>${_bsSettings.rate_a||2}%</option>
+            <option value="${(_bsSettings.rate_b||4)/100}" ${Math.abs(parseFloat(r.bonus_rate||0.02)-(_bsSettings.rate_b||4)/100)<0.001?'selected':''}>${_bsSettings.rate_b||4}%</option>
           </select>` : '<span style="color:#475569">—</span>'}
         </td>
         <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right">
@@ -3075,6 +3112,9 @@ async function doBodyshopUpload() {
     document.getElementById('bodyshopUploadResult').innerHTML =
       `<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:10px 14px;font-size:13px;color:#ef4444">❌ ${e.message}</div>`;
   } finally { btn.disabled = false; }
+    try { _bsSettings = await fetch('/api/bodyshop-bonus/settings').then(r=>r.json()); } catch(e) {}
+  
+  const el = document.getElementById('bodyshopListContent');
 }
   
 </script>
