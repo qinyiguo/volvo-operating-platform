@@ -143,6 +143,8 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
     <div class="tab-bar">
       <button class="tab-btn active" id="tab-btn-roster"   onclick="switchTab('roster')">👥 人員名單</button>
       <button class="tab-btn"        id="tab-btn-progress" onclick="switchTab('progress')">💰 獎金名單</button>
+      <button class="tab-btn"        id="tab-btn-bodyshop"  onclick="switchTab('bodyshop')">🚗 業務鈑烤</button>
+
     </div>
   </div>
 </div>
@@ -171,6 +173,8 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
     </div>
     <div id="progressContent"><div class="empty">請先選擇期間後按查詢</div></div>
   </div>
+   <div id="tab-bodyshop" style="display:none">
+
 </div>
 
 <!-- 上傳 Modal -->
@@ -589,13 +593,14 @@ document.addEventListener('keydown', e => {
 });
 
 function switchTab(tab) {
-  ['roster','progress'].forEach(t=>{
+  ['roster','progress','bodyshop'].forEach(t=>{    // ← 加 'bodyshop'
     const el=document.getElementById('tab-'+t);
     if(el) el.style.display=t===tab?'':'none';
     const btn=document.getElementById('tab-btn-'+t);
     if(btn) btn.classList.toggle('active',t===tab);
   });
   if (tab==='progress') loadProgress();
+  if (tab==='bodyshop') initBodyshopTab();    // ← 加這行
 }
 
 // ══ 期間 ══
