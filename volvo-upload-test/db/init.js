@@ -394,6 +394,36 @@ await client.query(`
         updated_at     TIMESTAMPTZ DEFAULT NOW()
       )`);
 
+    // ── 業務鈑烤取送獎金申請 ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS bodyshop_bonus_applications (
+        id               SERIAL PRIMARY KEY,
+        app_period       VARCHAR(6)   NOT NULL,
+        apply_date       DATE,
+        applicant_name   VARCHAR(50),
+        emp_id           VARCHAR(30),
+        dept_name        VARCHAR(100),
+        plate_no_raw     VARCHAR(30),
+        plate_no_norm    VARCHAR(20),
+        factory_raw      VARCHAR(30),
+        branch           VARCHAR(10),
+        status           VARCHAR(20)  NOT NULL DEFAULT 'pending',
+        work_order       VARCHAR(50),
+        repair_type      VARCHAR(50),
+        settle_date      DATE,
+        income_total     NUMERIC(12,2),
+        bonus_rate       NUMERIC(5,4) DEFAULT 0.02,
+        bonus_amount     NUMERIC(12,2),
+        settled_period   VARCHAR(6),
+        note             TEXT DEFAULT '',
+        upload_batch     VARCHAR(50),
+        created_at       TIMESTAMPTZ DEFAULT NOW(),
+        updated_at       TIMESTAMPTZ DEFAULT NOW()
+      )`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_bba_period ON bodyshop_bonus_applications(app_period)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_bba_plate  ON bodyshop_bonus_applications(plate_no_norm)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_bba_status ON bodyshop_bonus_applications(status)`);
+
     console.log('[initDB] ✅ 所有表格建立完成');
   } catch (err) {
     console.error('[initDB] ❌ 失敗:', err.message);
