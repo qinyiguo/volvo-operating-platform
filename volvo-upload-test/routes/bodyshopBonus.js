@@ -225,11 +225,10 @@ router.post('/bodyshop-bonus/match', async (req, res) => {
     const lookbackDays = (cfg.lookback_days === '' || cfg.lookback_days == null) ? 30 : Math.max(0, parseInt(cfg.lookback_days) || 0);
     const defaultRateA = parseFloat(cfg.rate_a ?? 2) / 100;
 
-    // 只處理原始申請列（source_app_id IS NULL）
+    // 每次比對都重新處理所有原始申請列（含已結清），確保多張工單都能被抓到
     const appRows = (await pool.query(`
       SELECT * FROM bodyshop_bonus_applications
       WHERE source_app_id IS NULL
-        AND status IN ('pending', 'matched_pending', 'not_found')
       ORDER BY apply_date ASC
     `)).rows;
 
