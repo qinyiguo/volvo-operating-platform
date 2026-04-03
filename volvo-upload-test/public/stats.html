@@ -4103,6 +4103,11 @@ if (showCarCount || showRevenue) {
           style="background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3);
                  padding:5px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">💾 儲存全科</button>
         <div id="ppdeptmsg-${dKey}" style="font-size:12px;min-height:18px"></div>
+        <button onclick="_ppCopyLastMonth('${esc(dKey)}')"
+          style="background:rgba(245,158,11,.12);color:#f59e0b;border:1px solid rgba(245,158,11,.3);
+                 padding:5px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">
+          📋 帶入上月權重
+        </button>
         <div style="margin-left:auto;display:flex;align-items:center;gap:5px">
           <span style="font-size:11px;color:#64748b">科別占比</span>
           <input type="number" min="1" max="100" step="1" id="ppAlloc-${dKey}"
@@ -4320,6 +4325,83 @@ async function _ppSaveDept(dKey){
   }catch(e){if(msgEl){msgEl.textContent='❌ '+e.message;msgEl.style.color='#ef4444';}console.error('_ppSaveDept',e);}
 }
 
+// ── 複製上月權重到當月 ──
+async function _ppCopyLastMonth(dKey) {
+  const d = _ppDeptData[dKey];
+  if (!d) return;
+  const { branch, deptKey, metricIds, roster } = d;
+  const period = getPeriod();
+  if (!period) { alert('請先選擇期間'); return; }
+
+  // 計算上月 period
+  const y = parseInt(period.slice(0, 4));
+  const m = parseInt(period.slice(4));
+  const lastPeriod = m === 1 ? `${y-1}12` : `${y}${String(m-1).padStart(2,'0')}`;
+
+  const msgEl = document.getElementById(`ppdeptmsg-${dKey}`);
+  if (msgEl) { msgEl.textContent = '查詢上月資料...'; msgEl.style.color = '#64748b'; }
+
+  try {
+    // 取上月個人目標設定（任一指標即可，只取 weight）
+    const firstMetricId = metricIds[0];
+    if (!firstMetricId) throw new Error('無指標');
+
+    const lastRows = await fetch(
+      `/api/person-targets?metric_id=${firstMetricId}&period=${lastPeriod}&branch=${branch}`
+    ).then(r => r.json());
+
+    if (!lastRows.length) {
+      if (msgEl) { msgEl.textContent = `⚠️ ${lastPeriod} 無設定資料`; msgEl.style.color = '#f59e0b'; }
+      return;
+    }
+
+    // 檢查當月是否已有資料
+    const curRows = await fetch(
+      `/api/person-targets?metric_id=${firstMetricId}&period=${period}&branch=${branch}`
+    ).then(r => r.json());
+
+    if (curRows.some(r => r.weight != null)) {
+      if (!confirm(`當月已有 ${curRows.filter(r=>r.weight!=null).length} 人有權重設定，確定要覆蓋？`)) {
+        if (msgEl) { msgEl.textContent = '已取消'; msgEl.style.color = '#64748b'; }
+        return;
+      }
+    }
+
+    // 套用上月權重到畫面（不直接存 DB，讓使用者確認後按儲存全科）
+    const lastWeightMap = {};
+    lastRows.forEach(r => {
+      if (r.weight != null) lastWeightMap[r.person_name] = parseFloat(r.weight);
+    });
+
+    let applied = 0;
+    roster.forEach((p, ni) => {
+      const w = lastWeightMap[p.emp_name];
+      if (w == null) return;
+      const wInput = document.getElementById(`ppW-${branch}-${deptKey}-${ni}`);
+      if (wInput) { wInput.value = w; applied++; }
+      // 同步更新記憶體
+      if (!d.ptMap[p.emp_name]) d.ptMap[p.emp_name] = {};
+      d.metrics.forEach(m => {
+        if (!d.ptMap[p.emp_name][m.id]) d.ptMap[p.emp_name][m.id] = {};
+        d.ptMap[p.emp_name][m.id].weight = w;
+      });
+    });
+
+    // 重新渲染表格以更新達成率計算
+    const viewEl = document.getElementById(`ppview-${branch}-${deptKey}`);
+    if (viewEl) viewEl.innerHTML = _ppBuildTable(dKey);
+
+    if (msgEl) {
+      msgEl.textContent = `✅ 已從 ${lastPeriod} 帶入 ${applied} 人權重，請確認後按「儲存全科」`;
+      msgEl.style.color = '#10b981';
+      setTimeout(() => { if (msgEl) msgEl.textContent = ''; }, 5000);
+    }
+  } catch(e) {
+    if (msgEl) { msgEl.textContent = '❌ ' + e.message; msgEl.style.color = '#ef4444'; }
+    console.error('_ppCopyLastMonth', e);
+  }
+}
+ 
  // ══ 個人業績 Excel 匯出 ══
 async function exportPersonPerfExcel(targetBranch) {
   if (!Object.keys(_ppDeptData).length) {
