@@ -37,16 +37,31 @@ router.get('/person-targets/persons', async (req, res) => {
 
 // ── 取得已設定的個人目標 ──
 router.get('/person-targets', async (req, res) => {
-  const { metric_id, period, branch } = req.query;
+  const { metric_id, period, branch, fallback_last_month } = req.query;
   try {
     const conds = []; const params = []; let idx = 1;
     if (metric_id) { conds.push(`metric_id=$${idx++}`); params.push(metric_id); }
     if (period)    { conds.push(`period=$${idx++}`);    params.push(period); }
     if (branch)    { conds.push(`branch=$${idx++}`);    params.push(branch); }
     const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
-    res.json((await pool.query(
+    let rows = (await pool.query(
       `SELECT * FROM person_metric_targets ${where} ORDER BY person_name`, params
-    )).rows);
+    )).rows;
+
+    // ★ 若當月無資料且有 fallback 參數，自動帶入上月權重（target_value 清空）
+    if (!rows.length && fallback_last_month === '1' && metric_id && period && branch) {
+      const y = parseInt(period.slice(0, 4));
+      const m = parseInt(period.slice(4));
+      const lastPeriod = m === 1 ? `${y - 1}12` : `${y}${String(m - 1).padStart(2, '0')}`;
+      const lastRows = (await pool.query(
+        `SELECT * FROM person_metric_targets WHERE metric_id=$1 AND period=$2 AND branch=$3 ORDER BY person_name`,
+        [metric_id, lastPeriod, branch]
+      )).rows;
+      // 標記為 fallback，target_value 清空
+      rows = lastRows.map(r => ({ ...r, period, target_value: null, _from_last_month: true }));
+    }
+
+    res.json(rows);
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -281,6 +296,64 @@ router.get('/stats/person-performance-all', async (req, res) => {
     ));
     res.json(results);
   } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── 複製上月權重設定到當月 ──
+router.post('/person-targets/copy-from-last-month', async (req, res) => {
+  const { metric_id, period, branch } = req.body;
+  if (!metric_id || !period || !branch)
+    return res.status(400).json({ error: '參數不完整' });
+
+  // 計算上月 period
+  const y = parseInt(period.slice(0, 4));
+  const m = parseInt(period.slice(4));
+  const lastPeriod = m === 1
+    ? `${y - 1}12`
+    : `${y}${String(m - 1).padStart(2, '0')}`;
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // 確認當月是否已有資料
+    const existing = await client.query(
+      'SELECT COUNT(*) AS cnt FROM person_metric_targets WHERE metric_id=$1 AND period=$2 AND branch=$3',
+      [metric_id, period, branch]
+    );
+    if (parseInt(existing.rows[0].cnt) > 0) {
+      await client.query('ROLLBACK');
+      return res.json({ ok: false, message: '當月已有設定，未覆蓋', skipped: true });
+    }
+
+    // 複製上月資料（只複製 weight，不複製 target_value，因為每月目標金額不同）
+    const lastMonthRows = await client.query(
+      'SELECT * FROM person_metric_targets WHERE metric_id=$1 AND period=$2 AND branch=$3',
+      [metric_id, lastPeriod, branch]
+    );
+    if (!lastMonthRows.rows.length) {
+      await client.query('ROLLBACK');
+      return res.json({ ok: false, message: `${lastPeriod} 無資料可複製`, count: 0 });
+    }
+
+    for (const r of lastMonthRows.rows) {
+      await client.query(
+        `INSERT INTO person_metric_targets
+           (metric_id, period, branch, person_name, weight, target_value, note)
+         VALUES ($1,$2,$3,$4,$5,$6,$7)
+         ON CONFLICT (metric_id, period, branch, person_name) DO NOTHING`,
+        [metric_id, period, branch, r.person_name,
+         r.weight, null /* target_value 不複製 */, r.note || '']
+      );
+    }
+
+    await client.query('COMMIT');
+    res.json({ ok: true, count: lastMonthRows.rows.length, from: lastPeriod, to: period });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
 });
 
 module.exports = router;
