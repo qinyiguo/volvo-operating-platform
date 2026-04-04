@@ -237,8 +237,12 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
   <div class="modal-win" style="max-width:480px">
     <div class="modal-head"><div class="modal-title">📤 上傳人員資料</div><button class="modal-close" onclick="closeModal('uploadModal')">×</button></div>
     <div class="modal-body">
-      <div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:11px 14px;font-size:12px;color:#94a3b8;line-height:1.8;margin-bottom:14px">
-        上傳 DMS 匯出的「員工基本資料」Excel。系統自動排除計時人員及本月前離職人員。
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <span style="font-size:12px;color:#64748b;font-weight:600;white-space:nowrap">上傳期間</span>
+        <select id="uploadPeriodSel" class="sel" style="flex:1">
+          <option value="">選擇期間...</option>
+        </select>
+        <span style="font-size:11px;color:#475569">（名冊會分月份保存）</span>
       </div>
       <div class="upload-zone" id="rosterUploadZone" onclick="document.getElementById('rosterFileInput').click()">
         <div style="font-size:28px;margin-bottom:8px">📊</div>
@@ -2040,8 +2044,8 @@ function handleRosterFile(file) {
 }
 async function doUploadRoster() {
   if (!_rosterFile) return;
-    const now = new Date();
-    var period = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0');
+const period = document.getElementById('uploadPeriodSel').value;
+    if (!period) { alert('請選擇上傳期間'); return; }
   var btn=document.getElementById('btnDoUpload'); btn.disabled=true;
   document.getElementById('uploadResult').innerHTML='<span class="spinner"></span>上傳中...';
   var formData=new FormData(); formData.append('file',_rosterFile); formData.append('period',period);
