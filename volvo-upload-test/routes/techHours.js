@@ -184,10 +184,15 @@ router.get('/stats/tech-hours', async (req, res) => {
     const hourlyRates         = config.hourly_rates || { engine: hourlyRate, bodywork: 1450, paint: 1450, beauty: hourlyRate };
     const RESTORE_WAGE_EXPR   = buildRestoreWageExpr();
 
-    const rosterPeriodRes = await pool.query(
-      `SELECT DISTINCT period FROM staff_roster ORDER BY period DESC LIMIT 1`
-    );
-    const rosterPeriod = rosterPeriodRes.rows[0]?.period;
+// 優先用「同月或最近的上個月」名冊
+const rosterPeriodRes = await pool.query(`
+  SELECT period FROM staff_roster
+  WHERE period <= $1
+  ORDER BY period DESC LIMIT 1
+`, [period]);
+// fallback：若查詢月份早於所有名冊，就用最舊的
+const rosterPeriod = rosterPeriodRes.rows[0]?.period
+  || (await pool.query(`SELECT period FROM staff_roster ORDER BY period ASC LIMIT 1`)).rows[0]?.period;
     if (!rosterPeriod) return res.json({ branches: {}, rosterPeriod: null });
 
     const BRANCHES = branch && ALL_FACTORIES.includes(branch)
