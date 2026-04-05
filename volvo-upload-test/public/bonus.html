@@ -2613,11 +2613,11 @@ async function _saveMR(el) {
   } catch(e) { console.warn('主管考核儲存失敗', e); }
 }
   // ── 手動實績覆蓋 Modal ──
-async function openActualOverrideModal(metricId, metricName, period, isManual, metricSource, overrideBranch) {
+async function openActualOverrideModal(metricId, metricName, period, isManual, metricSource, overrideBranch, dmsActual) {
   metricSource = metricSource || 'manual';
   const branch = overrideBranch || document.getElementById('selFactory').value;
   const existing = await fetch(`/api/bonus/actual-override?metric_id=${metricId}&period=${period}&branch=${encodeURIComponent(branch)}`).then(r=>r.json()).catch(()=>null);
-  const curVal  = existing?.actual_value != null ? existing.actual_value : '';
+  const curVal = existing?.actual_value != null ? existing.actual_value : (dmsActual != null ? dmsActual : '');
   const curNote = existing?.note || '';
 
   // 若是 manual 指標，額外查部門目標
