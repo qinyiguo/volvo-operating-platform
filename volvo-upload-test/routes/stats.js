@@ -212,6 +212,7 @@ router.get('/stats/sa-sales-matrix', async (req, res) => {
   const { period, branch, view } = req.query;
   const viewParam = view === 'pickup_person' ? 'pickup_person' : 'sales_person';
   try {
+    await pool.query(`SET LOCAL statement_timeout = '25000'`);
     const allConfigs = (await pool.query(
       `SELECT id,config_name,filters,stat_method,person_type FROM sa_sales_config ORDER BY id`
     )).rows;
