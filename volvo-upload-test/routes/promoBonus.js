@@ -244,7 +244,7 @@ router.get('/promo-bonus/results', async (req, res) => {
               if (sales > 0) personResults[row.person_name] = Math.round(sales * bonusPct / 100);
             }
           }
-        
+         }
         resultsByConfig[cfg.id].byBranch[br] = personResults;
       }
     }
