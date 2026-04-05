@@ -207,7 +207,6 @@ router.get('/promo-bonus/results', async (req, res) => {
           const personCol  = cfg.person_type === 'tech' ? 'pickup_person' : 'sales_person';
 
           if (workCodes.length > 0) {
-            // tech_performance based（美容等用工資代碼的指標）
             const conds = ['period=$1','branch=$2']; const p = [period, br]; let idx = 3;
             if (acTypes.length) { conds.push(`account_type=ANY($${idx++})`); p.push(acTypes); }
             const wcConds = [];
@@ -227,10 +226,9 @@ router.get('/promo-bonus/results', async (req, res) => {
                FROM tech_performance WHERE ${conds.join(' AND ')} GROUP BY tech_name_clean`, p);
             for (const row of r.rows) {
               const sales = parseFloat(row.actual || 0);
-            }            
-            }            
+              if (sales > 0) personResults[row.person_name] = Math.round(sales * bonusPct / 100);
+            }
           } else {
-            // parts_sales based
             const conds = ['period=$1','branch=$2']; const p = [period, br]; let idx = 3;
             if (catCodes.length)  { conds.push(`category_code=ANY($${idx++})`); p.push(catCodes); }
             if (funcCodes.length) { conds.push(`function_code=ANY($${idx++})`); p.push(funcCodes); }
