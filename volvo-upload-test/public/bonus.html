@@ -2701,7 +2701,7 @@ async function saveActualOverride(metricId, period, branch, isManual) {
   const finalVal = (rawVal !== null && unit === 'k') ? rawVal * 1000 : rawVal;
   // 將 unit 選擇同步存入 bonus_metrics.stat_field（寫 DB，跨裝置同步）
   const m = _metrics.find(function(x){ return x.id === metricId; });
-  if (m) {
+ if (m && isManual) {
     const newStatField = (unit === 'k') ? 'amount' : 'count';
     if (m.stat_field !== newStatField) {
       try {
