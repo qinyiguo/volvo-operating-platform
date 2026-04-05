@@ -381,13 +381,14 @@ await client.query(`
         updated_at   TIMESTAMPTZ DEFAULT NOW()
       )`);
 
+await client.query(`DROP INDEX IF EXISTS bonus_actual_overrides_unique_idx`);
+await client.query(`UPDATE bonus_actual_overrides SET branch='' WHERE branch IS NULL`);
 await client.query(`ALTER TABLE bonus_actual_overrides ALTER COLUMN branch SET NOT NULL`);
 await client.query(`ALTER TABLE bonus_actual_overrides ALTER COLUMN branch SET DEFAULT ''`);
 await client.query(`
   CREATE UNIQUE INDEX IF NOT EXISTS bonus_actual_overrides_unique_idx
   ON bonus_actual_overrides (metric_id, period, branch)
 `);
-
     await client.query(`
       CREATE TABLE IF NOT EXISTS beauty_op_hours (
         op_code        VARCHAR(20) PRIMARY KEY,
