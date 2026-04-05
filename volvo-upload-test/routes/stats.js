@@ -265,31 +265,23 @@ router.get('/stats/sa-sales-matrix', async (req, res) => {
           };
         }
       } else {
-        if (viewParam === 'pickup_person') {
-          const tConds=[]; const params=[]; let idx=1;
-          if (period) { tConds.push(`tp.period=$${idx++}`); params.push(period); }
-          if (branch) { tConds.push(`tp.branch=$${idx++}`); params.push(branch); }
-          const techWhere = tConds.length ? 'WHERE '+tConds.join(' AND ') : '';
-          const psConds = [];
-          if (period) { psConds.push(`ps.period=$${idx++}`); params.push(period); }
-          if (branch) { psConds.push(`ps.branch=$${idx++}`); params.push(branch); }
-          if (catCodes.length)  { psConds.push(`ps.category_code=ANY($${idx++})`); params.push(catCodes); }
-          if (funcCodes.length) { psConds.push(`ps.function_code=ANY($${idx++})`); params.push(funcCodes); }
-          if (partNums.length)  { psConds.push(`ps.part_number=ANY($${idx++})`);   params.push(partNums); }
-          if (partTypes.length) { psConds.push(`ps.part_type=ANY($${idx++})`);     params.push(partTypes); }
-          const psWhere = psConds.length ? 'AND '+psConds.join(' AND ') : '';
+if (viewParam === 'pickup_person') {
+          const psConds=[]; const params=[]; let idx=1;
+          if (period) { psConds.push(`period=$${idx++}`); params.push(period); }
+          if (branch) { psConds.push(`branch=$${idx++}`); params.push(branch); }
+          if (catCodes.length)  { psConds.push(`category_code=ANY($${idx++})`); params.push(catCodes); }
+          if (funcCodes.length) { psConds.push(`function_code=ANY($${idx++})`); params.push(funcCodes); }
+          if (partNums.length)  { psConds.push(`part_number=ANY($${idx++})`);   params.push(partNums); }
+          if (partTypes.length) { psConds.push(`part_type=ANY($${idx++})`);     params.push(partTypes); }
+          const psWhere = psConds.length ? 'WHERE ' + psConds.join(' AND ') : '';
           const r = await pool.query(`
-            WITH tech_names AS (
-              SELECT DISTINCT tp.branch, COALESCE(NULLIF(${canonicalExpr},''),'（未知）') AS canonical_name
-              FROM tech_performance tp ${techWhere}
-            )
-            SELECT tn.branch, tn.canonical_name AS sa_name,
-              COALESCE(SUM(ps.sale_qty),0) AS qty,
-              COALESCE(SUM(ps.sale_price_untaxed),0) AS sales,
-              COALESCE(COUNT(ps.id),0) AS cnt
-            FROM tech_names tn
-            LEFT JOIN parts_sales ps ON ps.pickup_person=tn.canonical_name AND ps.branch=tn.branch ${psWhere}
-            GROUP BY tn.branch, tn.canonical_name
+            SELECT branch,
+              COALESCE(NULLIF(pickup_person,''),'（未知）') AS sa_name,
+              COALESCE(SUM(sale_qty),0) AS qty,
+              COALESCE(SUM(sale_price_untaxed),0) AS sales,
+              COALESCE(COUNT(*),0) AS cnt
+            FROM parts_sales ${psWhere}
+            GROUP BY branch, pickup_person
           `, params);
           for (const row of r.rows) {
             const key = `${row.branch}|||${row.sa_name}`;
