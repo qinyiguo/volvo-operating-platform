@@ -227,7 +227,7 @@ router.get('/promo-bonus/results', async (req, res) => {
                FROM tech_performance WHERE ${conds.join(' AND ')} GROUP BY tech_name_clean`, p);
             for (const row of r.rows) {
               const sales = parseFloat(row.actual || 0);
-
+            }            
             }            
           } else {
             // parts_sales based
