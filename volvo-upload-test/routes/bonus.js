@@ -753,4 +753,26 @@ router.put('/bonus/dept-mode', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+router.get('/bonus/dept-weights', async (req, res) => {
+  const { branch, dept_code } = req.query;
+  const key = `dept_weights_${branch}_${dept_code}`;
+  try {
+    const r = await pool.query(`SELECT value FROM app_settings WHERE key=$1`, [key]);
+    res.json(r.rows[0] ? JSON.parse(r.rows[0].value) : {});
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.put('/bonus/dept-weights', async (req, res) => {
+  const { branch, dept_code, weights } = req.body;
+  if (!branch || !dept_code) return res.status(400).json({ error: '參數不完整' });
+  const key = `dept_weights_${branch}_${dept_code}`;
+  try {
+    await pool.query(`
+      INSERT INTO app_settings (key, value) VALUES ($1, $2)
+      ON CONFLICT (key) DO UPDATE SET value=$2
+    `, [key, JSON.stringify(weights || {})]);
+    res.json({ ok: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;
