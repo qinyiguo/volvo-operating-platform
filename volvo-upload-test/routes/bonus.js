@@ -713,7 +713,7 @@ router.put('/bonus/actual-override', async (req, res) => {
     await pool.query(`
       INSERT INTO bonus_actual_overrides (metric_id, period, branch, actual_value, note, updated_at)
       VALUES ($1,$2,$3,$4,$5,NOW())
-      ON CONFLICT (metric_id, period, COALESCE(branch,''))
+      ON CONFLICT (metric_id, period, branch)
       DO UPDATE SET actual_value=$4, note=$5, updated_at=NOW()
     `, [metric_id, period, branch||'', actual_value!=null?parseFloat(actual_value):null, note||'']);
     res.json({ ok: true });
