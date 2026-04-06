@@ -98,65 +98,33 @@ router.get('/promo-bonus/results', async (req, res) => {
       for (const br of BRANCHES) {
         const personResults = {};
 
-        if (cfg.rule_type === 'sa_qty') {
-          // ── SA config 數量型 ──
-          if (!cfg.sa_config_id) continue;
-          const saFilters  = cfg.sa_filters || [];
-          const catCodes   = saFilters.filter(f=>f.type==='category_code').map(f=>f.value);
-          const funcCodes  = saFilters.filter(f=>f.type==='function_code').map(f=>f.value);
-          const partNums   = saFilters.filter(f=>f.type==='part_number').map(f=>f.value);
-          const partTypes  = saFilters.filter(f=>f.type==='part_type').map(f=>f.value);
-          const workCodes  = saFilters.filter(f=>f.type==='work_code').map(f=>f.value);
-          const acTypes    = saFilters.filter(f=>f.type==='account_type').map(f=>f.value);
-          const statMethod = cfg.sa_stat_method || 'amount';
-          const perQty     = parseFloat(cfg.per_qty || 1);
-          const bonusUnit  = parseFloat(cfg.bonus_per_unit || 0);
-
-          if (workCodes.length > 0) {
-            // tech_performance based
-             const payCodes2 = cfg.paycode_types || [];
-            const conds = ['period=$1','branch=$2']; const p = [period, br]; let idx = 3;
-            if (acTypes.length) { conds.push(`account_type=ANY($${idx++})`); p.push(acTypes); }
-            const wcConds = [];
-            for (const wc of workCodes) {
-              if (wc.includes('-')) {
-                const [fr,to] = wc.split('-').map(s=>s.trim());
-                wcConds.push(`(work_code BETWEEN $${idx++} AND $${idx++})`);
-                p.push(fr, to);
-              } else {
-                wcConds.push(`work_code=$${idx++}`);
-                p.push(wc);
-              }
-            }
-            if (wcConds.length) conds.push(`(${wcConds.join(' OR ')})`);
-            const expr = statMethod==='count'?'COUNT(DISTINCT work_order)':statMethod==='quantity'?'SUM(standard_hours)':'SUM(wage)';
-            const r = await pool.query(
-              `SELECT tech_name_clean AS person_name, COALESCE(${expr},0) AS actual
-               FROM tech_performance WHERE ${conds.join(' AND ')} GROUP BY tech_name_clean`, p);
-            for (const row of r.rows) {
-              const units = Math.floor(parseFloat(row.actual||0) / perQty);
-              if (units > 0) personResults[row.person_name] = Math.round(units * bonusUnit);
-            }
-          } else {
-            // parts_sales based
-            const payCodes2 = cfg.paycode_types || [];
-            const conds = ['period=$1','branch=$2']; const p = [period, br]; let idx = 3;
-            if (catCodes.length)  { conds.push(`category_code=ANY($${idx++})`); p.push(catCodes); }
-            if (funcCodes.length) { conds.push(`function_code=ANY($${idx++})`); p.push(funcCodes); }
-            if (partNums.length)  { conds.push(`part_number=ANY($${idx++})`);   p.push(partNums); }
-            if (partTypes.length) { conds.push(`part_type=ANY($${idx++})`);     p.push(partTypes); }
-            
-            const personCol = cfg.person_type === 'tech' ? 'pickup_person' : 'sales_person';
-            const expr = statMethod==='quantity'?'SUM(sale_qty)':statMethod==='count'?'COUNT(*)':'SUM(sale_price_untaxed)';
-            const r = await pool.query(
-              `SELECT COALESCE(NULLIF(${personCol},''),'（未知）') AS person_name,
-                      COALESCE(${expr},0) AS actual
-               FROM parts_sales WHERE ${conds.join(' AND ')} GROUP BY ${personCol}`, p);
-            for (const row of r.rows) {
-              const units = Math.floor(parseFloat(row.actual||0) / perQty);
-              if (units > 0) personResults[row.person_name] = Math.round(units * bonusUnit);
-            }
-          }
+if (cfg.rule_type === 'sa_qty') {
+  if (!cfg.sa_config_id) continue;
+  const perQty    = parseFloat(cfg.per_qty || 1);
+  const bonusUnit = parseFloat(cfg.bonus_per_unit || 0);
+  const personType = cfg.person_type || 'sales_person';
+  const port = process.env.PORT || 3001;
+  const view = personType === 'tech' ? 'pickup_person' : 'sales_person';
+  try {
+    const matrixData = await fetch(
+      `http://localhost:${port}/api/stats/sa-sales-matrix?period=${period}&branch=${br}&view=${view}`
+    ).then(r => r.json()).catch(() => null);
+    if (matrixData) {
+      const cfg2 = matrixData.configs.find(c => c.id == cfg.sa_config_id);
+      if (cfg2) {
+        const statMethod = cfg2.stat_method || 'amount';
+        for (const row of matrixData.rows) {
+          const colData = row.configs[cfg.sa_config_id];
+          if (!colData) continue;
+          const val = statMethod === 'quantity' ? colData.qty
+                    : statMethod === 'count'    ? colData.cnt
+                    : colData.sales;
+          const units = Math.floor(parseFloat(val || 0) / perQty);
+          if (units > 0) personResults[row.sa_name] = Math.round(units * bonusUnit);
+        }
+      }
+    }
+  } catch(e) { console.warn('[promo sa_qty]', e.message); }
 
         } else if (cfg.rule_type === 'parts_discount') {
           // ── 零件折扣型 ──
@@ -194,57 +162,24 @@ router.get('/promo-bonus/results', async (req, res) => {
         
 
 } else if (cfg.rule_type === 'sa_pct') {
-          if (!cfg.sa_config_id) continue;
-          const saFilters  = cfg.sa_filters || [];
-          const catCodes   = saFilters.filter(f=>f.type==='category_code').map(f=>f.value);
-          const funcCodes  = saFilters.filter(f=>f.type==='function_code').map(f=>f.value);
-          const partNums   = saFilters.filter(f=>f.type==='part_number').map(f=>f.value);
-          const partTypes  = saFilters.filter(f=>f.type==='part_type').map(f=>f.value);
-          const workCodes  = saFilters.filter(f=>f.type==='work_code').map(f=>f.value);
-          const acTypes    = saFilters.filter(f=>f.type==='account_type').map(f=>f.value);
-          const payCodes2  = cfg.paycode_types || [];
-          const bonusPct   = parseFloat(cfg.bonus_pct || 0);
-          const personCol  = cfg.person_type === 'tech' ? 'pickup_person' : 'sales_person';
-
-          if (workCodes.length > 0) {
-            const conds = ['period=$1','branch=$2']; const p = [period, br]; let idx = 3;
-            if (acTypes.length) { conds.push(`account_type=ANY($${idx++})`); p.push(acTypes); }
-            const wcConds = [];
-            for (const wc of workCodes) {
-              if (wc.includes('-')) {
-                const [fr,to] = wc.split('-').map(s=>s.trim());
-                wcConds.push(`(work_code BETWEEN $${idx++} AND $${idx++})`);
-                p.push(fr, to);
-              } else {
-                wcConds.push(`work_code=$${idx++}`);
-                p.push(wc);
-              }
-            }
-            if (wcConds.length) conds.push(`(${wcConds.join(' OR ')})`);
-            const r = await pool.query(
-              `SELECT tech_name_clean AS person_name, COALESCE(SUM(wage),0) AS actual
-               FROM tech_performance WHERE ${conds.join(' AND ')} GROUP BY tech_name_clean`, p);
-            for (const row of r.rows) {
-              const sales = parseFloat(row.actual || 0);
-              if (sales > 0) personResults[row.person_name] = Math.round(sales * bonusPct / 100);
-            }
-          } else {
-            const conds = ['period=$1','branch=$2']; const p = [period, br]; let idx = 3;
-            if (catCodes.length)  { conds.push(`category_code=ANY($${idx++})`); p.push(catCodes); }
-            if (funcCodes.length) { conds.push(`function_code=ANY($${idx++})`); p.push(funcCodes); }
-            if (partNums.length)  { conds.push(`part_number=ANY($${idx++})`);   p.push(partNums); }
-            if (partTypes.length) { conds.push(`part_type=ANY($${idx++})`);     p.push(partTypes); }
-            if (payCodes2.length) { conds.push(`part_type=ANY($${idx++})`);     p.push(payCodes2); }
-            const r = await pool.query(
-              `SELECT COALESCE(NULLIF(${personCol},''),'（未知）') AS person_name,
-                      COALESCE(SUM(sale_price_untaxed),0) AS actual
-               FROM parts_sales WHERE ${conds.join(' AND ')} GROUP BY ${personCol}`, p);
-            for (const row of r.rows) {
-              const sales = parseFloat(row.actual || 0);
-              if (sales > 0) personResults[row.person_name] = Math.round(sales * bonusPct / 100);
-            }
-          }
-         }
+  if (!cfg.sa_config_id) continue;
+  const bonusPct   = parseFloat(cfg.bonus_pct || 0);
+  const personType = cfg.person_type || 'sales_person';
+  const port = process.env.PORT || 3001;
+  const view = personType === 'tech' ? 'pickup_person' : 'sales_person';
+  try {
+    const matrixData = await fetch(
+      `http://localhost:${port}/api/stats/sa-sales-matrix?period=${period}&branch=${br}&view=${view}`
+    ).then(r => r.json()).catch(() => null);
+    if (matrixData) {
+      for (const row of matrixData.rows) {
+        const colData = row.configs[cfg.sa_config_id];
+        if (!colData) continue;
+        const sales = parseFloat(colData.sales || 0);
+        if (sales > 0) personResults[row.sa_name] = Math.round(sales * bonusPct / 100);
+      }
+    }
+  } catch(e) { console.warn('[promo sa_pct]', e.message); }
         resultsByConfig[cfg.id].byBranch[br] = personResults;
       }
     }
