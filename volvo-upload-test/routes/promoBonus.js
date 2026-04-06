@@ -99,7 +99,7 @@ const resultsByConfig = {};
 
         // ── sa_qty ──
         if (cfg.rule_type === 'sa_qty') {
-          if (!cfg.sa_config_id) continue;
+          if (!cfg.sa_config_id) return;
           const saFilters  = cfg.sa_filters || [];
           const catCodes   = saFilters.filter(f=>f.type==='category_code').map(f=>f.value);
           const funcCodes  = saFilters.filter(f=>f.type==='function_code').map(f=>f.value);
@@ -200,7 +200,7 @@ const resultsByConfig = {};
 
         // ── sa_pct ──
         } else if (cfg.rule_type === 'sa_pct') {
-          if (!cfg.sa_config_id) continue;
+          if (!cfg.sa_config_id) return;
           const saFilters  = cfg.sa_filters || [];
           const catCodes   = saFilters.filter(f=>f.type==='category_code').map(f=>f.value);
           const funcCodes  = saFilters.filter(f=>f.type==='function_code').map(f=>f.value);
