@@ -883,7 +883,6 @@ router.get('/stats/wip/last-month-comparison', async (req, res) => {
 
 async function computeSaMatrix(period, branch, view) {
   const viewParam = view === 'pickup_person' ? 'pickup_person' : 'sales_person';
-  await pool.query(`SET LOCAL statement_timeout = '25000'`);
   const allConfigs = (await pool.query(
     `SELECT id,config_name,filters,stat_method,person_type FROM sa_sales_config ORDER BY id`
   )).rows;
