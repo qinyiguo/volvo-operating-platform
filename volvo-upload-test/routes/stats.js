@@ -265,14 +265,16 @@ router.get('/stats/sa-sales-matrix', async (req, res) => {
         }
       } else {
 if (viewParam === 'pickup_person') {
-          const psConds=[]; const params=[]; let idx=1;
-          if (period) { psConds.push(`period=$${idx++}`); params.push(period); }
-          if (branch) { psConds.push(`branch=$${idx++}`); params.push(branch); }
-          if (catCodes.length)  { psConds.push(`category_code=ANY($${idx++})`); params.push(catCodes); }
-          if (funcCodes.length) { psConds.push(`function_code=ANY($${idx++})`); params.push(funcCodes); }
-          if (partNums.length)  { psConds.push(`part_number=ANY($${idx++})`);   params.push(partNums); }
-          if (partTypes.length) { psConds.push(`part_type=ANY($${idx++})`);     params.push(partTypes); }
-          const psWhere = psConds.length ? 'WHERE ' + psConds.join(' AND ') : '';
+  const acTypes = filters.filter(f=>f.type==='account_type').map(f=>f.value); // ← 新增
+  const psConds=[]; const params=[]; let idx=1;
+  if (period) { psConds.push(`period=$${idx++}`); params.push(period); }
+  if (branch) { psConds.push(`branch=$${idx++}`); params.push(branch); }
+  if (catCodes.length)  { psConds.push(`category_code=ANY($${idx++})`); params.push(catCodes); }
+  if (funcCodes.length) { psConds.push(`function_code=ANY($${idx++})`); params.push(funcCodes); }
+  if (partNums.length)  { psConds.push(`part_number=ANY($${idx++})`);   params.push(partNums); }
+  if (partTypes.length) { psConds.push(`part_type=ANY($${idx++})`);     params.push(partTypes); }
+  if (acTypes.length)   { psConds.push(`part_type=ANY($${idx++})`);     params.push(acTypes); } // ← 新增
+  const psWhere = psConds.length ? 'WHERE ' + psConds.join(' AND ') : '';
           const r = await pool.query(`
             SELECT branch,
               COALESCE(NULLIF(pickup_person,''),'（未知）') AS sa_name,
@@ -287,15 +289,17 @@ if (viewParam === 'pickup_person') {
             if (!saMap[key]) saMap[key] = { branch:row.branch, sa_name:row.sa_name, configs:{} };
             saMap[key].configs[cfg.id] = { qty:parseFloat(row.qty||0), sales:parseFloat(row.sales||0), cnt:parseInt(row.cnt||0) };
           }
-        } else {
-          const conds=[]; const params=[]; let idx=1;
-          if (period) { conds.push(`period=$${idx++}`); params.push(period); }
-          if (branch) { conds.push(`branch=$${idx++}`); params.push(branch); }
-          if (catCodes.length)  { conds.push(`category_code=ANY($${idx++})`); params.push(catCodes); }
-          if (funcCodes.length) { conds.push(`function_code=ANY($${idx++})`); params.push(funcCodes); }
-          if (partNums.length)  { conds.push(`part_number=ANY($${idx++})`);   params.push(partNums); }
-          if (partTypes.length) { conds.push(`part_type=ANY($${idx++})`);     params.push(partTypes); }
-          const where = conds.length ? 'WHERE '+conds.join(' AND ') : '';
+} else {
+  const acTypes = filters.filter(f=>f.type==='account_type').map(f=>f.value); // ← 新增
+  const conds=[]; const params=[]; let idx=1;
+  if (period) { conds.push(`period=$${idx++}`); params.push(period); }
+  if (branch) { conds.push(`branch=$${idx++}`); params.push(branch); }
+  if (catCodes.length)  { conds.push(`category_code=ANY($${idx++})`); params.push(catCodes); }
+  if (funcCodes.length) { conds.push(`function_code=ANY($${idx++})`); params.push(funcCodes); }
+  if (partNums.length)  { conds.push(`part_number=ANY($${idx++})`);   params.push(partNums); }
+  if (partTypes.length) { conds.push(`part_type=ANY($${idx++})`);     params.push(partTypes); }
+  if (acTypes.length)   { conds.push(`part_type=ANY($${idx++})`);     params.push(acTypes); } // ← 新增
+  const where = conds.length ? 'WHERE '+conds.join(' AND ') : '';
           const r = await pool.query(`
             SELECT branch, COALESCE(NULLIF(sales_person,''),'（未知）') AS sa_name,
               SUM(sale_qty) AS qty, SUM(sale_price_untaxed) AS sales, COUNT(*) AS cnt
@@ -934,16 +938,17 @@ async function computeSaMatrix(period, branch, view) {
           cnt:   cfg.stat_method==='count'    ? parseInt(v) : 0,
         };
       }
-    } else {
-      if (viewParam === 'pickup_person') {
-        const psConds=[]; const params=[]; let idx=1;
-        if (period) { psConds.push(`period=$${idx++}`); params.push(period); }
-        if (branch) { psConds.push(`branch=$${idx++}`); params.push(branch); }
-        if (catCodes.length)  { psConds.push(`category_code=ANY($${idx++})`); params.push(catCodes); }
-        if (funcCodes.length) { psConds.push(`function_code=ANY($${idx++})`); params.push(funcCodes); }
-        if (partNums.length)  { psConds.push(`part_number=ANY($${idx++})`);   params.push(partNums); }
-        if (partTypes.length) { psConds.push(`part_type=ANY($${idx++})`);     params.push(partTypes); }
-        const psWhere = psConds.length ? 'WHERE ' + psConds.join(' AND ') : '';
+} else {
+  const acTypes = filters.filter(f=>f.type==='account_type').map(f=>f.value); // ← 新增
+  const conds=[]; const params=[]; let idx=1;
+  if (period) { conds.push(`period=$${idx++}`); params.push(period); }
+  if (branch) { conds.push(`branch=$${idx++}`); params.push(branch); }
+  if (catCodes.length)  { conds.push(`category_code=ANY($${idx++})`); params.push(catCodes); }
+  if (funcCodes.length) { conds.push(`function_code=ANY($${idx++})`); params.push(funcCodes); }
+  if (partNums.length)  { conds.push(`part_number=ANY($${idx++})`);   params.push(partNums); }
+  if (partTypes.length) { conds.push(`part_type=ANY($${idx++})`);     params.push(partTypes); }
+  if (acTypes.length)   { conds.push(`part_type=ANY($${idx++})`);     params.push(acTypes); } // ← 新增
+  const where = conds.length ? 'WHERE '+conds.join(' AND ') : '';
         const r = await pool.query(`
           SELECT branch, COALESCE(NULLIF(pickup_person,''),'（未知）') AS sa_name,
             COALESCE(SUM(sale_qty),0) AS qty, COALESCE(SUM(sale_price_untaxed),0) AS sales, COALESCE(COUNT(*),0) AS cnt
