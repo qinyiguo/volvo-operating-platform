@@ -1088,7 +1088,7 @@ function switchTab(tab){
    }); 
  const period = getPeriod();
 const branch = document.getElementById('selBranch').value;
-loadTabData(tab, period, branch);
+if (period) loadTabData(tab, period, branch);
   tabs.forEach(t=>{document.getElementById(`tab-${t}`).style.display=t===tab?'':'none';});
   if (tab === 'daily' && window._dailyState) {
     setTimeout(function(){ window._renderDailyChart(); }, 30);
