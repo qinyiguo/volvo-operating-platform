@@ -180,6 +180,7 @@ if (cfg.rule_type === 'sa_qty') {
       }
     }
   } catch(e) { console.warn('[promo sa_pct]', e.message); }
+        }  // ← 加這行，關閉 else if (sa_pct)
         resultsByConfig[cfg.id].byBranch[br] = personResults;
       }
     }
