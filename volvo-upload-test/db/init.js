@@ -455,6 +455,12 @@ await client.query(`
     created_at TIMESTAMPTZ DEFAULT NOW()
   )
 `);
+
+    // ── 查詢效能索引 ──
+await client.query(`CREATE INDEX IF NOT EXISTS idx_repair_income_period_branch ON repair_income(period, branch)`);
+await client.query(`CREATE INDEX IF NOT EXISTS idx_tech_performance_period_branch ON tech_performance(period, branch)`);
+await client.query(`CREATE INDEX IF NOT EXISTS idx_parts_sales_period_branch ON parts_sales(period, branch)`);
+await client.query(`CREATE INDEX IF NOT EXISTS idx_business_query_period_branch ON business_query(period, branch)`);
     
     console.log('[initDB] ✅ 所有表格建立完成');
   } catch (err) {
