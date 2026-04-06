@@ -29,6 +29,8 @@ app.use('/api', require('./routes/promoBonus'));
 app.use('/api/manager-review', require('./routes/managerReview'));
 app.use('/api', require('./routes/bodyshopBonus'));
 
+// ── Health check（防 Zeabur 冷啟動）──
+app.get('/health', (req, res) => res.json({ ok: true }));
 
 // ── 啟動 ──
 initDatabase()
