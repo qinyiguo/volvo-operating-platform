@@ -2,6 +2,7 @@
 <html lang="zh-TW">
 <head>
 <link rel="stylesheet" href="/theme.css">
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Volvo 獎金表</title>
@@ -94,6 +95,22 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
 .role-tag { display:inline-flex; align-items:center; gap:4px; background:rgba(59,130,246,.15); border:1px solid rgba(59,130,246,.3); border-radius:6px; padding:3px 8px; font-size:12px; font-weight:600; color:#60a5fa; margin:2px; }
 .role-tag button { background:none; border:none; color:#475569; cursor:pointer; font-size:14px; line-height:1; padding:0 2px; }
 .role-tag button:hover { color:#ef4444; }
+
+  @media print {
+  .sticky-header, nav, .tab-bar, .btn, button,
+  #extraBonusModal, #mrModal, #promoModal, #metricModal,
+  #uploadModal, #empEditModal, #bodyshopUploadModal, #bodyshopSettingsModal,
+  #lockScreen, .no-print { display: none !important; }
+  body { background: white !important; color: black !important; font-size: 11px; }
+  .container { padding: 4px !important; }
+  table { border-collapse: collapse !important; width: 100% !important; page-break-inside: auto; }
+  tr { page-break-inside: avoid; }
+  th, td { border: 1px solid #aaa !important; padding: 3px 6px !important;
+           color: black !important; background: white !important; }
+  th { background: #ddd !important; font-weight: bold !important; }
+  [style*="display:none"] { display: none !important; }
+  @page { size: A4 landscape; margin: 8mm; }
+}
   
 </style>
 </head>
@@ -138,6 +155,8 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
       </select>
       <button class="btn btn-primary" onclick="doLoad()">查詢</button>
       <button class="btn btn-secondary btn-sm" onclick="showUploadModal()" style="margin-left:auto">📤 上傳人員資料</button>
+      <button class="btn btn-secondary btn-sm no-print" onclick="exportBonusExcel()" style="background:#1a4a2e;color:#4ade80;border-color:#166534">📊 匯出 Excel</button>
+      <button class="btn btn-secondary btn-sm no-print" onclick="window.print()" style="background:#2a1a1a;color:#f87171;border-color:#7f1d1d">🖨️ 列印 PDF</button>
       <span id="lastUpdate" style="font-size:11px;color:#64748b;white-space:nowrap"></span>
     </div>
     <div class="tab-bar">
@@ -3292,6 +3311,113 @@ function renderEbList() {
       +'<button class="btn btn-danger btn-sm" onclick="deleteExtraBonus('+r.id+')">刪除</button>'
     +'</div>';
   }).join('');
+}
+
+  // ══ 匯出 Excel ══
+function exportBonusExcel() {
+  var period = document.getElementById('selPeriod')?.value || '';
+  var branch = document.getElementById('selFactory')?.value || '全部';
+  var wb = XLSX.utils.book_new();
+  var sheetCount = 0;
+
+  // 找所有廠別 section
+  var fcSections = document.querySelectorAll('#progressInner > div[style*="border"]');
+  
+  if (!fcSections.length) {
+    // fallback：直接抓所有 table
+    var tables = document.querySelectorAll('#progressInner table');
+    if (!tables.length) { alert('請先查詢獎金表再匯出'); return; }
+    var allRows = [];
+    tables.forEach(function(tbl) {
+      tbl.querySelectorAll('tr').forEach(function(tr) {
+        var cells = [];
+        tr.querySelectorAll('th,td').forEach(function(td) {
+          cells.push(td.innerText.trim().replace(/\n/g,' ').replace(/\s+/g,' '));
+        });
+        if (cells.some(function(c){return c;})) allRows.push(cells);
+      });
+      allRows.push([]);
+    });
+    var ws = XLSX.utils.aoa_to_sheet(allRows);
+    _xlsxAutoWidth(ws, allRows);
+    XLSX.utils.book_append_sheet(wb, ws, '獎金總表');
+  } else {
+    // 每個廠別各一個 sheet
+    fcSections.forEach(function(sec) {
+      var fcLabel = (sec.querySelector('span[style*="font-weight:900"]')?.innerText || ('廠別'+(++sheetCount))).replace(/[\\/*[\]?:]/g,'').slice(0,25);
+      var allRows = [];
+
+      // header row：廠別名稱
+      allRows.push([fcLabel, '', '期間：'+period]);
+      allRows.push([]);
+
+      var tables = sec.querySelectorAll('table');
+      tables.forEach(function(tbl) {
+        // 找部門名稱（table 前面的 div 裡）
+        var deptEl = tbl.closest('div[style*="border-top"]');
+        var deptName = '';
+        if (deptEl) {
+          var deptSpan = deptEl.querySelector('span[style*="font-weight:800"]');
+          if (deptSpan) deptName = deptSpan.innerText.trim();
+        }
+        if (deptName) allRows.push(['【'+deptName+'】']);
+
+        tbl.querySelectorAll('tr').forEach(function(tr) {
+          var cells = [];
+          tr.querySelectorAll('th,td').forEach(function(td) {
+            // 清除 button 文字，只留數字/文字
+            var clone = td.cloneNode(true);
+            clone.querySelectorAll('button').forEach(function(b){b.remove();});
+            var txt = clone.innerText.trim().replace(/\n/g,' ').replace(/\s+/g,' ');
+            // 數字清理
+            var numMatch = txt.match(/^([\d,]+)\s*元$/);
+            if (numMatch) cells.push(parseInt(numMatch[1].replace(/,/g,'')));
+            else cells.push(txt);
+          });
+          if (cells.some(function(c){return c!==''&&c!==0;})) allRows.push(cells);
+        });
+        allRows.push([]);
+      });
+
+      if (allRows.length > 2) {
+        var ws = XLSX.utils.aoa_to_sheet(allRows);
+        _xlsxAutoWidth(ws, allRows);
+        // 讓數字欄右對齊
+        var range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+        for (var R = range.s.r; R <= range.e.r; R++) {
+          for (var C = range.s.c; C <= range.e.c; C++) {
+            var addr = XLSX.utils.encode_cell({r:R,c:C});
+            if (ws[addr] && typeof ws[addr].v === 'number') {
+              ws[addr].z = '#,##0';
+            }
+          }
+        }
+        var sheetName = fcLabel.slice(0, 28);
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      }
+    });
+  }
+
+  if (!wb.SheetNames.length) { alert('找不到表格資料，請先查詢獎金名單'); return; }
+  var fname = '獎金表_' + period + '_' + branch + '.xlsx';
+  XLSX.writeFile(wb, fname);
+}
+
+function _xlsxAutoWidth(ws, rows) {
+  if (!rows || !rows.length) return;
+  var maxCols = rows.reduce(function(m,r){return Math.max(m,r.length);}, 0);
+  var widths = [];
+  for (var c = 0; c < maxCols; c++) {
+    var max = 8;
+    rows.forEach(function(r) {
+      var v = r[c];
+      if (v == null) return;
+      var len = typeof v === 'number' ? v.toString().length + 2 : v.toString().length;
+      if (len > max) max = len;
+    });
+    widths.push({ wch: Math.min(max * 1.4, 35) });
+  }
+  ws['!cols'] = widths;
 }
   
 </script>
