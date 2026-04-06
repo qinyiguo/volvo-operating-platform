@@ -237,7 +237,7 @@ router.get('/stats/sa-sales-matrix', async (req, res) => {
         const conds=[]; const params=[]; let idx=1;
         if (period) { conds.push(`tp.period=$${idx++}`); params.push(period); }
         if (branch) { conds.push(`tp.branch=$${idx++}`); params.push(branch); }
-        const acTypes = filters.filter(f=>f.type==='account_type').map(f=>f.value);
+        const acTypes = filters.filter(f=>f.type==='account_type'||f.type==='part_type').map(f=>f.value);
         if (acTypes.length) { conds.push(`tp.account_type=ANY($${idx++})`); params.push(acTypes); }
         const wcConds = [];
         for (const wc of workCodes) {
@@ -265,7 +265,7 @@ router.get('/stats/sa-sales-matrix', async (req, res) => {
         }
       } else {
 if (viewParam === 'pickup_person') {
-  const acTypes = filters.filter(f=>f.type==='account_type').map(f=>f.value); // ← 新增
+  const acTypes = filters.filter(f=>f.type==='account_type'||f.type==='part_type').map(f=>f.value); // ← 新增
   const psConds=[]; const params=[]; let idx=1;
   if (period) { psConds.push(`period=$${idx++}`); params.push(period); }
   if (branch) { psConds.push(`branch=$${idx++}`); params.push(branch); }
@@ -290,7 +290,7 @@ if (viewParam === 'pickup_person') {
             saMap[key].configs[cfg.id] = { qty:parseFloat(row.qty||0), sales:parseFloat(row.sales||0), cnt:parseInt(row.cnt||0) };
           }
 } else {
-  const acTypes = filters.filter(f=>f.type==='account_type').map(f=>f.value); // ← 新增
+  const acTypes = filters.filter(f=>f.type==='account_type'||f.type==='part_type').map(f=>f.value); // ← 新增
   const conds=[]; const params=[]; let idx=1;
   if (period) { conds.push(`period=$${idx++}`); params.push(period); }
   if (branch) { conds.push(`branch=$${idx++}`); params.push(branch); }
@@ -461,7 +461,7 @@ router.get('/stats/performance', async (req, res) => {
         let actual = 0;
         try {
           if (metric.metric_type === 'repair_income') {
-            const acTypes = filters.filter(f=>f.type==='account_type').map(f=>f.value);
+            const acTypes = filters.filter(f=>f.type==='account_type'||f.type==='part_type').map(f=>f.value);
             const q = acTypes.length
               ? `SELECT COALESCE(SUM(total_untaxed),0) as v FROM repair_income WHERE period=$1 AND branch=$2 AND account_type=ANY($3)`
               : `SELECT COALESCE(SUM(total_untaxed),0) as v FROM repair_income WHERE period=$1 AND branch=$2`;
@@ -912,7 +912,7 @@ async function computeSaMatrix(period, branch, view) {
       const conds=[]; const params=[]; let idx=1;
       if (period) { conds.push(`tp.period=$${idx++}`); params.push(period); }
       if (branch) { conds.push(`tp.branch=$${idx++}`); params.push(branch); }
-      const acTypes = filters.filter(f=>f.type==='account_type').map(f=>f.value);
+      const acTypes = filters.filter(f=>f.type==='account_type'||f.type==='part_type').map(f=>f.value);
       if (acTypes.length) { conds.push(`tp.account_type=ANY($${idx++})`); params.push(acTypes); }
       const wcConds = [];
       for (const wc of workCodes) {
@@ -940,7 +940,7 @@ async function computeSaMatrix(period, branch, view) {
       }
 } else {
       if (viewParam === 'pickup_person') {
-        const acTypes = filters.filter(f=>f.type==='account_type').map(f=>f.value);
+        const acTypes = filters.filter(f=>f.type==='account_type'||f.type==='part_type').map(f=>f.value);
         const psConds=[]; const params=[]; let idx=1;
         if (period) { psConds.push(`period=$${idx++}`); params.push(period); }
         if (branch) { psConds.push(`branch=$${idx++}`); params.push(branch); }
@@ -961,7 +961,7 @@ async function computeSaMatrix(period, branch, view) {
           saMap[key].configs[cfg.id] = { qty:parseFloat(row.qty||0), sales:parseFloat(row.sales||0), cnt:parseInt(row.cnt||0) };
         }
       } else {
-        const acTypes = filters.filter(f=>f.type==='account_type').map(f=>f.value);
+        const acTypes = filters.filter(f=>f.type==='account_type'||f.type==='part_type').map(f=>f.value);
         const conds=[]; const params=[]; let idx=1;
         if (period) { conds.push(`period=$${idx++}`); params.push(period); }
         if (branch) { conds.push(`branch=$${idx++}`); params.push(branch); }
