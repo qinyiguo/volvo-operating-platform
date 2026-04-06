@@ -3319,150 +3319,155 @@ function exportBonusExcel() {
   var period = document.getElementById('selPeriod')?.value || '';
   var branch = document.getElementById('selFactory')?.value || '全部';
   var wb = XLSX.utils.book_new();
-  var sheetCount = 0;
 
-  // 找所有廠別 section
-  var fcSections = document.querySelectorAll('#progressInner > div[style*="border"]');
-  
-  if (!fcSections.length) {
-    // fallback：直接抓所有 table
-    var tables = document.querySelectorAll('#progressInner table');
-    if (!tables.length) { alert('請先查詢獎金表再匯出'); return; }
-    var allRows = [];
-    tables.forEach(function(tbl) {
-      tbl.querySelectorAll('tr').forEach(function(tr) {
-        var cells = [];
-        tr.querySelectorAll('th,td').forEach(function(td) {
-          cells.push(td.innerText.trim().replace(/\n/g,' ').replace(/\s+/g,' '));
-        });
-        if (cells.some(function(c){return c;})) allRows.push(cells);
-      });
-      allRows.push([]);
-    });
-    var ws = XLSX.utils.aoa_to_sheet(allRows);
-    _xlsxAutoWidth(ws, allRows);
-    XLSX.utils.book_append_sheet(wb, ws, '獎金總表');
-  } else {
-    // 每個廠別各一個 sheet
-    fcSections.forEach(function(sec) {
-      var fcLabel = (sec.querySelector('span[style*="font-weight:900"]')?.innerText || ('廠別'+(++sheetCount))).replace(/[\\/*[\]?:]/g,'').slice(0,25);
-      var allRows = [];
-
-      // header row：廠別名稱
-      allRows.push([fcLabel, '', '期間：'+period]);
-      allRows.push([]);
-
-      var tables = sec.querySelectorAll('table');
-      tables.forEach(function(tbl) {
-        // 找部門名稱（table 前面的 div 裡）
-        var deptEl = tbl.closest('div[style*="border-top"]');
-        var deptName = '';
-        if (deptEl) {
-          var deptSpan = deptEl.querySelector('span[style*="font-weight:800"]');
-          if (deptSpan) deptName = deptSpan.innerText.trim();
-        }
-        if (deptName) allRows.push(['【'+deptName+'】']);
-
-        tbl.querySelectorAll('tr').forEach(function(tr) {
-          var cells = [];
-          tr.querySelectorAll('th,td').forEach(function(td) {
-            // 清除 button 文字，只留數字/文字
-            var clone = td.cloneNode(true);
-            clone.querySelectorAll('button').forEach(function(b){b.remove();});
-            var txt = clone.innerText.trim().replace(/\n/g,' ').replace(/\s+/g,' ');
-            // 數字清理
-            var numMatch = txt.match(/^([\d,]+)\s*元$/);
-            if (numMatch) cells.push(parseInt(numMatch[1].replace(/,/g,'')));
-            else cells.push(txt);
-          });
-          if (cells.some(function(c){return c!==''&&c!==0;})) allRows.push(cells);
-        });
-        allRows.push([]);
-      });
-
-      if (allRows.length > 2) {
-        var ws = XLSX.utils.aoa_to_sheet(allRows);
-        _xlsxAutoWidth(ws, allRows);
-        // 讓數字欄右對齊
-        var range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-        for (var R = range.s.r; R <= range.e.r; R++) {
-          for (var C = range.s.c; C <= range.e.c; C++) {
-            var addr = XLSX.utils.encode_cell({r:R,c:C});
-            if (ws[addr] && typeof ws[addr].v === 'number') {
-              ws[addr].z = '#,##0';
-            }
-          }
-        }
-        var sheetName = fcLabel.slice(0, 28);
-        XLSX.utils.book_append_sheet(wb, ws, sheetName);
-      }
-    });
+  function clean(txt) {
+    return (txt || '')
+      .replace(/[\u{1F300}-\u{1FFFF}]/gu, '')
+      .replace(/[▶►▸⚡📐💵🎁🎯💰📊🏆👥📂✏️📝🗑🏭🏢📦]/g, '')
+      .replace(/\s+/g, ' ').trim();
+  }
+  function toNum(txt) {
+    var s = (txt||'').replace(/,/g,'').replace(/元/,'').trim();
+    var m = s.match(/^-?\d+(\.\d+)?$/);
+    return m ? parseFloat(s) : null;
   }
 
-if (!wb.SheetNames.length) { alert('找不到表格資料，請先查詢獎金名單'); return; }
+  document.querySelectorAll('#progressInner > div').forEach(function(sec) {
+    // 廠別名稱
+    var fcSpan = sec.querySelector('span[style*="font-size:16px"][style*="font-weight:900"]');
+    if (!fcSpan) return;
+    var fcLabel = clean(fcSpan.innerText);
+    if (!fcLabel) return;
 
-  // ── 每個 sheet 加簽核欄 ──
-  wb.SheetNames.forEach(function(name) {
-    var ws = wb.Sheets[name];
-    var range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-    var lastRow = range.e.r + 1;
-    var totalCols = range.e.c + 1;
+    var rows = [];
+    rows.push([fcLabel, '', '', '期間：' + period.slice(0,4) + '年' + parseInt(period.slice(4)) + '月']);
+    rows.push([]);
 
-    // 空白行
-    lastRow += 2;
+    sec.querySelectorAll('div[style*="border-top"]').forEach(function(deptDiv) {
+      var tbl = deptDiv.querySelector('table');
+      if (!tbl) return;
 
-    // 簽核標題
-    var sigLabels = ['承辦人', '單位主管', '最高主管', '總經理室', '董事長室'];
-    var colSpan = Math.max(1, Math.floor(totalCols / sigLabels.length));
+      // 部門名稱
+      var deptSpan = deptDiv.querySelector('span[style*="font-weight:800"][style*="color:#cbd5e1"]');
+      var deptName = deptSpan ? clean(deptSpan.innerText) : '';
+      if (deptName) rows.push(['【' + deptName + '】']);
 
-    // 標題列
-    sigLabels.forEach(function(label, i) {
-      var col = i * colSpan;
-      var addr = XLSX.utils.encode_cell({ r: lastRow, c: col });
-      ws[addr] = { v: label, t: 's', s: {
-        font: { bold: true },
-        alignment: { horizontal: 'center' },
-        border: { bottom: { style: 'thin' } }
-      }};
-      // 合併 colSpan 格
-      if (!ws['!merges']) ws['!merges'] = [];
-      if (colSpan > 1) {
-        ws['!merges'].push({
-          s: { r: lastRow, c: col },
-          e: { r: lastRow, c: col + colSpan - 1 }
+      // 解析 thead：分離指標資訊 vs 欄位名稱
+      var ths = Array.from(tbl.querySelectorAll('thead th'));
+      var metricInfos = []; // { name, target, actual, rate }
+      var colHeaders = [];
+
+      ths.forEach(function(th, idx) {
+        var clone = th.cloneNode(true);
+        clone.querySelectorAll('button').forEach(function(b){ b.remove(); });
+        var divs = Array.from(clone.querySelectorAll('div'));
+
+        if (idx < 3) {
+          // 姓名、職務、狀態：直接取文字
+          colHeaders.push(clean(clone.innerText));
+          return;
+        }
+
+        // 最後三欄（額外獎金、促銷獎金、主管考核、總獎金）沒有 div 結構
+        if (!divs.length) {
+          colHeaders.push(clean(clone.innerText));
+          return;
+        }
+
+        var mName   = clean(divs[0]?.innerText || '');
+        var mTarget = '', mActual = '', mRate = '';
+
+        divs.forEach(function(d) {
+          var t = clean(d.innerText);
+          if (t.includes('目標')) {
+            mTarget = t.replace(/目標/,'').trim();
+          } else {
+            var rm = t.match(/(\d+\.?\d*)\s*%/);
+            if (rm) {
+              mRate   = rm[0];
+              mActual = t.replace(rm[0],'').trim();
+            }
+          }
+        });
+
+        if (mName && !mName.includes('尚無') && !mName.includes('待填')) {
+          metricInfos.push({ name: mName, target: mTarget, actual: mActual, rate: mRate });
+        }
+        colHeaders.push(mName || clean(clone.innerText));
+      });
+
+      // ── 指標目標/實績放在表格上方 ──
+      if (metricInfos.length) {
+        rows.push(['指標名稱', '目標', '實績', '達成率']);
+        metricInfos.forEach(function(mi) {
+          var tgt = toNum(mi.target);
+          var act = toNum(mi.actual);
+          rows.push([
+            mi.name,
+            tgt !== null ? tgt : mi.target,
+            act !== null ? act : mi.actual,
+            mi.rate
+          ]);
+        });
+        rows.push([]);
+      }
+
+      // ── 欄位標題列 ──
+      rows.push(colHeaders);
+
+      // ── 資料列 ──
+      var tbody = tbl.querySelector('tbody');
+      if (tbody) {
+        Array.from(tbody.querySelectorAll('tr')).forEach(function(tr) {
+          var cells = [];
+          tr.querySelectorAll('td').forEach(function(td) {
+            var cl = td.cloneNode(true);
+            cl.querySelectorAll('button,select,.spinner').forEach(function(e){ e.remove(); });
+            var txt = clean(cl.innerText).replace(/\s+/g,' ').trim();
+            if (txt === '—' || txt === '') { cells.push(''); return; }
+            var n = toNum(txt);
+            cells.push(n !== null ? n : txt);
+          });
+          if (cells.some(function(c){ return c !== '' && c !== 0; })) rows.push(cells);
         });
       }
+      rows.push([]);
     });
 
-    // 簽名空白列（留 3 行高）
-    for (var blankR = 1; blankR <= 3; blankR++) {
-      sigLabels.forEach(function(label, i) {
-        var col = i * colSpan;
-        // 畫底線（最後一空白行）
-        if (blankR === 3) {
-          for (var c2 = col; c2 < col + colSpan && c2 < totalCols; c2++) {
-            var a2 = XLSX.utils.encode_cell({ r: lastRow + blankR, c: c2 });
-            ws[a2] = { v: '', t: 's', s: {
-              border: { bottom: { style: 'medium' } }
-            }};
-          }
-        }
-      });
+    if (rows.length <= 3) return;
+
+    // ── 簽核欄 ──
+    rows.push([]);
+    rows.push(['承辦人', '', '', '單位主管', '', '', '最高主管', '', '', '總經理室', '', '', '董事長室']);
+    rows.push(Array(13).fill(''));
+    rows.push(Array(13).fill(''));
+    rows.push(Array(13).fill(''));
+
+    var ws = XLSX.utils.aoa_to_sheet(rows);
+    _xlsxAutoWidth(ws, rows);
+
+    // 數字千分位格式
+    var ref = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+    for (var R = ref.s.r; R <= ref.e.r; R++) {
+      for (var C = ref.s.c; C <= ref.e.c; C++) {
+        var a = XLSX.utils.encode_cell({r:R,c:C});
+        if (ws[a] && typeof ws[a].v === 'number') ws[a].z = '#,##0';
+      }
     }
 
-    // 更新 ref 範圍
-    range.e.r = lastRow + 3;
-    ws['!ref'] = XLSX.utils.encode_range(range);
-
-    // 列高設定（簽核區）
+    // 列高：簽核區
     if (!ws['!rows']) ws['!rows'] = [];
-    ws['!rows'][lastRow + 1] = { hpt: 40 };
-    ws['!rows'][lastRow + 2] = { hpt: 40 };
-    ws['!rows'][lastRow + 3] = { hpt: 40 };
+    var signRow = rows.length - 3;
+    ws['!rows'][signRow]   = { hpt: 50 };
+    ws['!rows'][signRow+1] = { hpt: 50 };
+    ws['!rows'][signRow+2] = { hpt: 50 };
+
+    var sheetName = fcLabel.replace(/[\\/*[\]?:]/g,'').slice(0,28);
+    XLSX.utils.book_append_sheet(wb, ws, sheetName || ('Sheet'+(wb.SheetNames.length+1)));
   });
 
-  var fname = '獎金表_' + period + '_' + branch + '.xlsx';
-  XLSX.writeFile(wb, fname);
+  if (!wb.SheetNames.length) { alert('找不到資料，請先查詢獎金名單'); return; }
+  XLSX.writeFile(wb, '獎金表_' + period + '_' + branch + '.xlsx');
 }
 
 function _xlsxAutoWidth(ws, rows) {
