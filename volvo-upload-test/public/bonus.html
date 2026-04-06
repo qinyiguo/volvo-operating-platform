@@ -1609,6 +1609,7 @@ async function renderProgressContent() {
         mrRows.forEach(function(r){ _managerReviewMap[r.emp_id] = { amount: parseInt(r.amount)||0, note: r.note||'' }; });
       } catch(e) {}
     await loadExtraBonus();
+    await loadBeautyBranches();
     try {
         var params=new URLSearchParams({period:_actualPeriod,data_period:_actualPeriod});
         if (factory) params.set('factory',factory);
