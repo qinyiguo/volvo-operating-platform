@@ -1,8 +1,6 @@
-const { computeSaMatrix } = require('./stats');
 const router = require('express').Router();
 const pool   = require('../db/pool');
 
-// ── 自動補欄位（只跑一次）──
 pool.query(`ALTER TABLE promo_bonus_configs ADD COLUMN IF NOT EXISTS person_type VARCHAR(20) DEFAULT 'sales_person'`).catch(()=>{});
 
 // ── CRUD ──
@@ -99,79 +97,177 @@ router.get('/promo-bonus/results', async (req, res) => {
       for (const br of BRANCHES) {
         const personResults = {};
 
-if (cfg.rule_type === 'sa_qty') {
-  if (!cfg.sa_config_id) continue;
-  const perQty     = parseFloat(cfg.per_qty || 1);
-  const bonusUnit  = parseFloat(cfg.bonus_per_unit || 0);
-  const personType = cfg.person_type || 'sales_person';
-  const view       = personType === 'tech' ? 'pickup_person' : 'sales_person';
-  try {
-    const matrixData = await computeSaMatrix(period, br, view);
-    const cfg2 = matrixData.configs.find(c => c.id == cfg.sa_config_id);
-    if (cfg2) {
-      const statMethod = cfg2.stat_method || 'amount';
-      for (const row of matrixData.rows) {
-        const colData = row.configs[cfg.sa_config_id];
-        if (!colData) continue;
-        const val = statMethod === 'quantity' ? colData.qty
-                  : statMethod === 'count'    ? colData.cnt
-                  : colData.sales;
-        const units = Math.floor(parseFloat(val || 0) / perQty);
-        if (units > 0) personResults[row.sa_name] = Math.round(units * bonusUnit);
-      }
-    }
-  } catch(e) { console.warn('[promo sa_qty]', e.message); }
+        // ── sa_qty ──
+        if (cfg.rule_type === 'sa_qty') {
+          if (!cfg.sa_config_id) continue;
+          const saFilters  = cfg.sa_filters || [];
+          const catCodes   = saFilters.filter(f=>f.type==='category_code').map(f=>f.value);
+          const funcCodes  = saFilters.filter(f=>f.type==='function_code').map(f=>f.value);
+          const partNums   = saFilters.filter(f=>f.type==='part_number').map(f=>f.value);
+          const partTypes  = saFilters.filter(f=>f.type==='part_type').map(f=>f.value);
+          const workCodes  = saFilters.filter(f=>f.type==='work_code').map(f=>f.value);
+          const acTypes    = saFilters.filter(f=>f.type==='account_type').map(f=>f.value);
+          const statMethod = cfg.sa_stat_method || 'amount';
+          const perQty     = parseFloat(cfg.per_qty || 1);
+          const bonusUnit  = parseFloat(cfg.bonus_per_unit || 0);
+          const personType = cfg.person_type || 'sales_person';
 
-} else if (cfg.rule_type === 'parts_discount') {
-          // ── 零件折扣型 ──
+          if (workCodes.length > 0) {
+            const conds = ['tp.period=$1','tp.branch=$2'];
+            const p = [period, br]; let idx = 3;
+            if (acTypes.length) { conds.push(`tp.account_type=ANY($${idx++})`); p.push(acTypes); }
+            const wcConds = [];
+            for (const wc of workCodes) {
+              if (wc.includes('-')) {
+                const [fr,to] = wc.split('-').map(s=>s.trim());
+                wcConds.push(`(tp.work_code BETWEEN $${idx} AND $${idx+1})`); idx+=2;
+                p.push(fr, to);
+              } else {
+                wcConds.push(`tp.work_code=$${idx++}`);
+                p.push(wc);
+              }
+            }
+            if (wcConds.length) conds.push(`(${wcConds.join(' OR ')})`);
+            const expr = statMethod==='count'  ? 'COUNT(DISTINCT tp.work_order)'
+                       : statMethod==='quantity'? 'SUM(tp.standard_hours)'
+                       : 'SUM(tp.wage)';
+            let r;
+            if (personType === 'sales_person') {
+              r = await pool.query(`
+                SELECT COALESCE(NULLIF(ps_uniq.person_name,''),'（未知）') AS person_name,
+                       COALESCE(${expr},0) AS actual
+                FROM tech_performance tp
+                LEFT JOIN (
+                  SELECT DISTINCT ON (branch, work_order) branch, work_order, sales_person AS person_name
+                  FROM parts_sales ORDER BY branch, work_order, id
+                ) ps_uniq ON ps_uniq.work_order=tp.work_order AND ps_uniq.branch=tp.branch
+                WHERE ${conds.join(' AND ')} GROUP BY ps_uniq.person_name`, p);
+            } else {
+              r = await pool.query(`
+                SELECT COALESCE(NULLIF(tp.tech_name_clean,''),'（未知）') AS person_name,
+                       COALESCE(${expr},0) AS actual
+                FROM tech_performance tp
+                WHERE ${conds.join(' AND ')} GROUP BY tp.tech_name_clean`, p);
+            }
+            for (const row of r.rows) {
+              const units = Math.floor(parseFloat(row.actual||0) / perQty);
+              if (units > 0) personResults[row.person_name] = Math.round(units * bonusUnit);
+            }
+          } else {
+            const conds = ['period=$1','branch=$2'];
+            const p = [period, br]; let idx = 3;
+            if (catCodes.length)  { conds.push(`category_code=ANY($${idx++})`); p.push(catCodes); }
+            if (funcCodes.length) { conds.push(`function_code=ANY($${idx++})`); p.push(funcCodes); }
+            if (partNums.length)  { conds.push(`part_number=ANY($${idx++})`);   p.push(partNums); }
+            if (partTypes.length) { conds.push(`part_type=ANY($${idx++})`);     p.push(partTypes); }
+            const personCol = personType === 'tech' ? 'pickup_person' : 'sales_person';
+            const expr = statMethod==='quantity'?'SUM(sale_qty)':statMethod==='count'?'COUNT(*)':'SUM(sale_price_untaxed)';
+            const r = await pool.query(`
+              SELECT COALESCE(NULLIF(${personCol},''),'（未知）') AS person_name,
+                     COALESCE(${expr},0) AS actual
+              FROM parts_sales WHERE ${conds.join(' AND ')} GROUP BY ${personCol}`, p);
+            for (const row of r.rows) {
+              const units = Math.floor(parseFloat(row.actual||0) / perQty);
+              if (units > 0) personResults[row.person_name] = Math.round(units * bonusUnit);
+            }
+          }
+
+        // ── parts_discount ──
+        } else if (cfg.rule_type === 'parts_discount') {
           const catTypes  = cfg.part_catalog_types || [];
           const payCodes  = cfg.paycode_types || [];
           const discMin   = cfg.discount_min;
           const discMax   = cfg.discount_max;
           const bonusPct  = parseFloat(cfg.bonus_pct || 0);
-
           const conds = ['ps.period=$1','ps.branch=$2'];
           const p = [period, br]; let idx = 3;
-
-          if (catTypes.length) {
-            conds.push(`pc.part_type=ANY($${idx++})`); p.push(catTypes);
-          } else {
-            conds.push(`pc.part_type IN ('精品','配件')`);
-          }
+          if (catTypes.length) { conds.push(`pc.part_type=ANY($${idx++})`); p.push(catTypes); }
+          else                 { conds.push(`pc.part_type IN ('精品','配件')`); }
           if (payCodes.length) { conds.push(`ps.part_type=ANY($${idx++})`); p.push(payCodes); }
           if (discMin != null) { conds.push(`ps.discount_rate >= $${idx++}`); p.push(parseFloat(discMin)); }
           if (discMax != null) { conds.push(`ps.discount_rate <= $${idx++}`); p.push(parseFloat(discMax)); }
-
           const r = await pool.query(`
             SELECT COALESCE(NULLIF(ps.sales_person,''),'（未知）') AS person_name,
                    COALESCE(SUM(ps.sale_price_untaxed),0) AS total_sales
             FROM parts_sales ps
             JOIN parts_catalog pc ON ps.part_number = pc.part_number
             WHERE ${conds.join(' AND ')}
-            GROUP BY ps.sales_person
-          `, p);
-
+            GROUP BY ps.sales_person`, p);
           for (const row of r.rows) {
             const sales = parseFloat(row.total_sales || 0);
             if (sales > 0) personResults[row.person_name] = Math.round(sales * bonusPct / 100);
           }
-        
 
-} else if (cfg.rule_type === 'sa_pct') {
-  if (!cfg.sa_config_id) continue;
-  const bonusPct   = parseFloat(cfg.bonus_pct || 0);
-  const personType = cfg.person_type || 'sales_person';
-  const view       = personType === 'tech' ? 'pickup_person' : 'sales_person';
-  try {
-    const matrixData = await computeSaMatrix(period, br, view);
-    for (const row of matrixData.rows) {
-      const colData = row.configs[cfg.sa_config_id];
-      if (!colData) continue;
-      const sales = parseFloat(colData.sales || 0);
-      if (sales > 0) personResults[row.sa_name] = Math.round(sales * bonusPct / 100);
-    }
-  } catch(e) { console.warn('[promo sa_pct]', e.message); }
-}  // ← 加這行，關閉 else if (sa_pct)
+        // ── sa_pct ──
+        } else if (cfg.rule_type === 'sa_pct') {
+          if (!cfg.sa_config_id) continue;
+          const saFilters  = cfg.sa_filters || [];
+          const catCodes   = saFilters.filter(f=>f.type==='category_code').map(f=>f.value);
+          const funcCodes  = saFilters.filter(f=>f.type==='function_code').map(f=>f.value);
+          const partNums   = saFilters.filter(f=>f.type==='part_number').map(f=>f.value);
+          const partTypes  = saFilters.filter(f=>f.type==='part_type').map(f=>f.value);
+          const workCodes  = saFilters.filter(f=>f.type==='work_code').map(f=>f.value);
+          const acTypes    = saFilters.filter(f=>f.type==='account_type').map(f=>f.value);
+          const bonusPct   = parseFloat(cfg.bonus_pct || 0);
+          const personType = cfg.person_type || 'sales_person';
+
+          if (workCodes.length > 0) {
+            const conds = ['tp.period=$1','tp.branch=$2'];
+            const p = [period, br]; let idx = 3;
+            if (acTypes.length) { conds.push(`tp.account_type=ANY($${idx++})`); p.push(acTypes); }
+            const wcConds = [];
+            for (const wc of workCodes) {
+              if (wc.includes('-')) {
+                const [fr,to] = wc.split('-').map(s=>s.trim());
+                wcConds.push(`(tp.work_code BETWEEN $${idx} AND $${idx+1})`); idx+=2;
+                p.push(fr, to);
+              } else {
+                wcConds.push(`tp.work_code=$${idx++}`);
+                p.push(wc);
+              }
+            }
+            if (wcConds.length) conds.push(`(${wcConds.join(' OR ')})`);
+            let r;
+            if (personType === 'sales_person') {
+              r = await pool.query(`
+                SELECT COALESCE(NULLIF(ps_uniq.person_name,''),'（未知）') AS person_name,
+                       COALESCE(SUM(tp.wage),0) AS actual
+                FROM tech_performance tp
+                LEFT JOIN (
+                  SELECT DISTINCT ON (branch, work_order) branch, work_order, sales_person AS person_name
+                  FROM parts_sales ORDER BY branch, work_order, id
+                ) ps_uniq ON ps_uniq.work_order=tp.work_order AND ps_uniq.branch=tp.branch
+                WHERE ${conds.join(' AND ')} GROUP BY ps_uniq.person_name`, p);
+            } else {
+              r = await pool.query(`
+                SELECT COALESCE(NULLIF(tp.tech_name_clean,''),'（未知）') AS person_name,
+                       COALESCE(SUM(tp.wage),0) AS actual
+                FROM tech_performance tp
+                WHERE ${conds.join(' AND ')} GROUP BY tp.tech_name_clean`, p);
+            }
+            for (const row of r.rows) {
+              const sales = parseFloat(row.actual || 0);
+              if (sales > 0) personResults[row.person_name] = Math.round(sales * bonusPct / 100);
+            }
+          } else {
+            const conds = ['period=$1','branch=$2'];
+            const p = [period, br]; let idx = 3;
+            if (catCodes.length)  { conds.push(`category_code=ANY($${idx++})`); p.push(catCodes); }
+            if (funcCodes.length) { conds.push(`function_code=ANY($${idx++})`); p.push(funcCodes); }
+            if (partNums.length)  { conds.push(`part_number=ANY($${idx++})`);   p.push(partNums); }
+            if (partTypes.length) { conds.push(`part_type=ANY($${idx++})`);     p.push(partTypes); }
+            const personCol = personType === 'tech' ? 'pickup_person' : 'sales_person';
+            const r = await pool.query(`
+              SELECT COALESCE(NULLIF(${personCol},''),'（未知）') AS person_name,
+                     COALESCE(SUM(sale_price_untaxed),0) AS actual
+              FROM parts_sales WHERE ${conds.join(' AND ')} GROUP BY ${personCol}`, p);
+            for (const row of r.rows) {
+              const sales = parseFloat(row.actual || 0);
+              if (sales > 0) personResults[row.person_name] = Math.round(sales * bonusPct / 100);
+            }
+          }
+        }
+
         resultsByConfig[cfg.id].byBranch[br] = personResults;
       }
     }
