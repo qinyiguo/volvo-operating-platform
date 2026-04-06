@@ -89,12 +89,12 @@ router.get('/promo-bonus/results', async (req, res) => {
     const BRANCHES = branch && ['AMA','AMC','AMD'].includes(branch)
       ? [branch] : ['AMA','AMC','AMD'];
 
-    const resultsByConfig = {};
+const resultsByConfig = {};
 
-    for (const cfg of configs) {
+    await Promise.all(configs.map(async (cfg) => {
       resultsByConfig[cfg.id] = { config: cfg, byBranch: {} };
 
-      for (const br of BRANCHES) {
+      await Promise.all(BRANCHES.map(async (br) => {
         const personResults = {};
 
         // ── sa_qty ──
@@ -269,8 +269,8 @@ router.get('/promo-bonus/results', async (req, res) => {
         }
 
         resultsByConfig[cfg.id].byBranch[br] = personResults;
-      }
-    }
+      }));
+    }));
 
     res.json({ configs, resultsByConfig, period });
   } catch(err) { res.status(500).json({ error: err.message }); }
