@@ -882,4 +882,118 @@ router.get('/stats/wip/last-month-comparison', async (req, res) => {
   }
 });
 
+async function computeSaMatrix(period, branch, view) {
+  const viewParam = view === 'pickup_person' ? 'pickup_person' : 'sales_person';
+  await pool.query(`SET LOCAL statement_timeout = '25000'`);
+  const allConfigs = (await pool.query(
+    `SELECT id,config_name,filters,stat_method,person_type FROM sa_sales_config ORDER BY id`
+  )).rows;
+  const configs = allConfigs.filter(cfg => {
+    const pt = cfg.person_type || 'sales_person';
+    return pt === viewParam || pt === 'both';
+  });
+  if (!configs.length) return { configs: [], rows: [], colTotals: {} };
+
+  const saMap = {};
+  for (const cfg of configs) {
+    const filters   = cfg.filters || [];
+    const catCodes  = filters.filter(f=>f.type==='category_code').map(f=>f.value);
+    const funcCodes = filters.filter(f=>f.type==='function_code').map(f=>f.value);
+    const partNums  = filters.filter(f=>f.type==='part_number').map(f=>f.value);
+    const partTypes = filters.filter(f=>f.type==='part_type').map(f=>f.value);
+    const workCodes = filters.filter(f=>f.type==='work_code').map(f=>f.value);
+    const hasPartsConds = catCodes.length||funcCodes.length||partNums.length||partTypes.length;
+    const hasWageConds  = workCodes.length;
+    if (!hasPartsConds && !hasWageConds) continue;
+
+    if (hasWageConds) {
+      const conds=[]; const params=[]; let idx=1;
+      if (period) { conds.push(`tp.period=$${idx++}`); params.push(period); }
+      if (branch) { conds.push(`tp.branch=$${idx++}`); params.push(branch); }
+      const acTypes = filters.filter(f=>f.type==='account_type').map(f=>f.value);
+      if (acTypes.length) { conds.push(`tp.account_type=ANY($${idx++})`); params.push(acTypes); }
+      const wcConds = [];
+      for (const wc of workCodes) {
+        if (wc.includes('-')) { const [from,to]=wc.split('-').map(s=>s.trim()); wcConds.push(`tp.work_code BETWEEN $${idx++} AND $${idx++}`); params.push(from,to); }
+        else { wcConds.push(`tp.work_code=$${idx++}`); params.push(wc); }
+      }
+      if (wcConds.length) conds.push(`(${wcConds.join(' OR ')})`);
+      const where    = conds.length ? 'WHERE '+conds.join(' AND ') : '';
+      const statExpr = cfg.stat_method==='amount' ? 'SUM(tp.wage)' : cfg.stat_method==='quantity' ? 'SUM(tp.standard_hours)' : 'COUNT(DISTINCT tp.work_order)';
+      let r;
+      if (viewParam === 'pickup_person') {
+        r = await pool.query(`SELECT tp.branch, COALESCE(NULLIF(${canonicalExpr},''),'（未知）') AS sa_name, ${statExpr} AS val FROM tech_performance tp ${where} GROUP BY tp.branch, sa_name`, params);
+      } else {
+        r = await pool.query(`SELECT tp.branch, COALESCE(NULLIF(ps_uniq.person_name,''),'（未知）') AS sa_name, ${statExpr} AS val FROM tech_performance tp LEFT JOIN (SELECT DISTINCT ON (branch, work_order) branch, work_order, sales_person AS person_name FROM parts_sales ORDER BY branch, work_order, id) ps_uniq ON ps_uniq.work_order=tp.work_order AND ps_uniq.branch=tp.branch ${where} GROUP BY tp.branch, sa_name`, params);
+      }
+      for (const row of r.rows) {
+        const key = `${row.branch}|||${row.sa_name}`;
+        if (!saMap[key]) saMap[key] = { branch:row.branch, sa_name:row.sa_name, configs:{} };
+        const v = parseFloat(row.val||0);
+        saMap[key].configs[cfg.id] = {
+          qty:   cfg.stat_method==='quantity' ? v : 0,
+          sales: cfg.stat_method==='amount'   ? v : 0,
+          cnt:   cfg.stat_method==='count'    ? parseInt(v) : 0,
+        };
+      }
+    } else {
+      if (viewParam === 'pickup_person') {
+        const psConds=[]; const params=[]; let idx=1;
+        if (period) { psConds.push(`period=$${idx++}`); params.push(period); }
+        if (branch) { psConds.push(`branch=$${idx++}`); params.push(branch); }
+        if (catCodes.length)  { psConds.push(`category_code=ANY($${idx++})`); params.push(catCodes); }
+        if (funcCodes.length) { psConds.push(`function_code=ANY($${idx++})`); params.push(funcCodes); }
+        if (partNums.length)  { psConds.push(`part_number=ANY($${idx++})`);   params.push(partNums); }
+        if (partTypes.length) { psConds.push(`part_type=ANY($${idx++})`);     params.push(partTypes); }
+        const psWhere = psConds.length ? 'WHERE ' + psConds.join(' AND ') : '';
+        const r = await pool.query(`
+          SELECT branch, COALESCE(NULLIF(pickup_person,''),'（未知）') AS sa_name,
+            COALESCE(SUM(sale_qty),0) AS qty, COALESCE(SUM(sale_price_untaxed),0) AS sales, COALESCE(COUNT(*),0) AS cnt
+          FROM parts_sales ${psWhere} GROUP BY branch, pickup_person
+        `, params);
+        for (const row of r.rows) {
+          const key = `${row.branch}|||${row.sa_name}`;
+          if (!saMap[key]) saMap[key] = { branch:row.branch, sa_name:row.sa_name, configs:{} };
+          saMap[key].configs[cfg.id] = { qty:parseFloat(row.qty||0), sales:parseFloat(row.sales||0), cnt:parseInt(row.cnt||0) };
+        }
+      } else {
+        const conds=[]; const params=[]; let idx=1;
+        if (period) { conds.push(`period=$${idx++}`); params.push(period); }
+        if (branch) { conds.push(`branch=$${idx++}`); params.push(branch); }
+        if (catCodes.length)  { conds.push(`category_code=ANY($${idx++})`); params.push(catCodes); }
+        if (funcCodes.length) { conds.push(`function_code=ANY($${idx++})`); params.push(funcCodes); }
+        if (partNums.length)  { conds.push(`part_number=ANY($${idx++})`);   params.push(partNums); }
+        if (partTypes.length) { conds.push(`part_type=ANY($${idx++})`);     params.push(partTypes); }
+        const where = conds.length ? 'WHERE '+conds.join(' AND ') : '';
+        const r = await pool.query(`
+          SELECT branch, COALESCE(NULLIF(sales_person,''),'（未知）') AS sa_name,
+            SUM(sale_qty) AS qty, SUM(sale_price_untaxed) AS sales, COUNT(*) AS cnt
+          FROM parts_sales ${where} GROUP BY branch, sa_name
+        `, params);
+        for (const row of r.rows) {
+          const key = `${row.branch}|||${row.sa_name}`;
+          if (!saMap[key]) saMap[key] = { branch:row.branch, sa_name:row.sa_name, configs:{} };
+          saMap[key].configs[cfg.id] = { qty:parseFloat(row.qty||0), sales:parseFloat(row.sales||0), cnt:parseInt(row.cnt||0) };
+        }
+      }
+    }
+  }
+
+  const rows = Object.values(saMap).sort((a,b) => {
+    if (a.branch!==b.branch) return a.branch<b.branch?-1:1;
+    const bSum=Object.values(b.configs).reduce((s,c)=>s+c.sales+c.cnt,0);
+    const aSum=Object.values(a.configs).reduce((s,c)=>s+c.sales+c.cnt,0);
+    return bSum-aSum;
+  });
+  const colTotals = {};
+  for (const cfg of configs) {
+    colTotals[cfg.id] = rows.reduce((s,row) => {
+      const c=row.configs[cfg.id]||{qty:0,sales:0,cnt:0};
+      return { qty:s.qty+c.qty, sales:s.sales+c.sales, cnt:s.cnt+c.cnt };
+    }, {qty:0,sales:0,cnt:0});
+  }
+  return { configs, rows, colTotals };
+}
+
 module.exports = router;
+module.exports.computeSaMatrix = computeSaMatrix;
