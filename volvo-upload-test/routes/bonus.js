@@ -775,4 +775,37 @@ router.put('/bonus/dept-weights', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// GET 額外獎金
+router.get('/extra-bonuses', async (req, res) => {
+  const { period } = req.query;
+  try {
+    const { rows } = await pool.query(
+      'SELECT * FROM bonus_extra WHERE period=$1 ORDER BY created_at DESC',
+      [period]
+    );
+    res.json(rows);
+  } catch(e) { res.status(500).json({error: e.message}); }
+});
+
+// POST 新增額外獎金
+router.post('/extra-bonuses', async (req, res) => {
+  const { period, emp_id, emp_name, branch, dept_code, amount, reason } = req.body;
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO bonus_extra (period,emp_id,emp_name,branch,dept_code,amount,reason)
+       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+      [period, emp_id, emp_name, branch||'', dept_code||'', parseInt(amount)||0, reason||'']
+    );
+    res.json(rows[0]);
+  } catch(e) { res.status(500).json({error: e.message}); }
+});
+
+// DELETE 刪除額外獎金
+router.delete('/extra-bonuses/:id', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM bonus_extra WHERE id=$1', [req.params.id]);
+    res.json({ok: true});
+  } catch(e) { res.status(500).json({error: e.message}); }
+});
+
 module.exports = router;
