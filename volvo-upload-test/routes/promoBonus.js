@@ -1,3 +1,4 @@
+const { computeSaMatrix } = require('./stats');
 const router = require('express').Router();
 const pool   = require('../db/pool');
 
@@ -100,33 +101,28 @@ router.get('/promo-bonus/results', async (req, res) => {
 
 if (cfg.rule_type === 'sa_qty') {
   if (!cfg.sa_config_id) continue;
-  const perQty    = parseFloat(cfg.per_qty || 1);
-  const bonusUnit = parseFloat(cfg.bonus_per_unit || 0);
+  const perQty     = parseFloat(cfg.per_qty || 1);
+  const bonusUnit  = parseFloat(cfg.bonus_per_unit || 0);
   const personType = cfg.person_type || 'sales_person';
-  const port = process.env.PORT || 3001;
-  const view = personType === 'tech' ? 'pickup_person' : 'sales_person';
+  const view       = personType === 'tech' ? 'pickup_person' : 'sales_person';
   try {
-    const matrixData = await fetch(
-      `http://localhost:${port}/api/stats/sa-sales-matrix?period=${period}&branch=${br}&view=${view}`
-    ).then(r => r.json()).catch(() => null);
-    if (matrixData) {
-      const cfg2 = matrixData.configs.find(c => c.id == cfg.sa_config_id);
-      if (cfg2) {
-        const statMethod = cfg2.stat_method || 'amount';
-        for (const row of matrixData.rows) {
-          const colData = row.configs[cfg.sa_config_id];
-          if (!colData) continue;
-          const val = statMethod === 'quantity' ? colData.qty
-                    : statMethod === 'count'    ? colData.cnt
-                    : colData.sales;
-          const units = Math.floor(parseFloat(val || 0) / perQty);
-          if (units > 0) personResults[row.sa_name] = Math.round(units * bonusUnit);
-        }
+    const matrixData = await computeSaMatrix(period, br, view);
+    const cfg2 = matrixData.configs.find(c => c.id == cfg.sa_config_id);
+    if (cfg2) {
+      const statMethod = cfg2.stat_method || 'amount';
+      for (const row of matrixData.rows) {
+        const colData = row.configs[cfg.sa_config_id];
+        if (!colData) continue;
+        const val = statMethod === 'quantity' ? colData.qty
+                  : statMethod === 'count'    ? colData.cnt
+                  : colData.sales;
+        const units = Math.floor(parseFloat(val || 0) / perQty);
+        if (units > 0) personResults[row.sa_name] = Math.round(units * bonusUnit);
       }
     }
   } catch(e) { console.warn('[promo sa_qty]', e.message); }
 
-        } else if (cfg.rule_type === 'parts_discount') {
+} else if (cfg.rule_type === 'parts_discount') {
           // ── 零件折扣型 ──
           const catTypes  = cfg.part_catalog_types || [];
           const payCodes  = cfg.paycode_types || [];
@@ -165,22 +161,17 @@ if (cfg.rule_type === 'sa_qty') {
   if (!cfg.sa_config_id) continue;
   const bonusPct   = parseFloat(cfg.bonus_pct || 0);
   const personType = cfg.person_type || 'sales_person';
-  const port = process.env.PORT || 3001;
-  const view = personType === 'tech' ? 'pickup_person' : 'sales_person';
+  const view       = personType === 'tech' ? 'pickup_person' : 'sales_person';
   try {
-    const matrixData = await fetch(
-      `http://localhost:${port}/api/stats/sa-sales-matrix?period=${period}&branch=${br}&view=${view}`
-    ).then(r => r.json()).catch(() => null);
-    if (matrixData) {
-      for (const row of matrixData.rows) {
-        const colData = row.configs[cfg.sa_config_id];
-        if (!colData) continue;
-        const sales = parseFloat(colData.sales || 0);
-        if (sales > 0) personResults[row.sa_name] = Math.round(sales * bonusPct / 100);
-      }
+    const matrixData = await computeSaMatrix(period, br, view);
+    for (const row of matrixData.rows) {
+      const colData = row.configs[cfg.sa_config_id];
+      if (!colData) continue;
+      const sales = parseFloat(colData.sales || 0);
+      if (sales > 0) personResults[row.sa_name] = Math.round(sales * bonusPct / 100);
     }
   } catch(e) { console.warn('[promo sa_pct]', e.message); }
-        }  // ← 加這行，關閉 else if (sa_pct)
+}  // ← 加這行，關閉 else if (sa_pct)
         resultsByConfig[cfg.id].byBranch[br] = personResults;
       }
     }
