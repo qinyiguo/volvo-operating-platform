@@ -808,4 +808,27 @@ router.delete('/bonus/extra-bonuses/:id', async (req, res) => {
   } catch(e) { res.status(500).json({error: e.message}); }
 });
 
+// 美容技師據點分配
+router.get('/bonus/beauty-branches', async (req, res) => {
+  const { period } = req.query;
+  const key = `beauty_branch_${period}`;
+  try {
+    const r = await pool.query(`SELECT value FROM app_settings WHERE key=$1`, [key]);
+    res.json(r.rows[0] ? JSON.parse(r.rows[0].value) : {});
+  } catch(e) { res.status(500).json({error: e.message}); }
+});
+
+router.put('/bonus/beauty-branches', async (req, res) => {
+  const { period, assignments } = req.body;
+  if (!period) return res.status(400).json({error:'period為必填'});
+  const key = `beauty_branch_${period}`;
+  try {
+    await pool.query(
+      `INSERT INTO app_settings (key,value) VALUES ($1,$2) ON CONFLICT (key) DO UPDATE SET value=$2`,
+      [key, JSON.stringify(assignments||{})]
+    );
+    res.json({ok:true});
+  } catch(e) { res.status(500).json({error: e.message}); }
+});
+
 module.exports = router;
