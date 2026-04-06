@@ -1967,12 +1967,14 @@ var promoDetailData = encodeURIComponent(JSON.stringify(
   }).filter(function(x){return x.amount>0;})
 ));
 var extraAmt = mRow.extraBonus||0;
+html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;background:rgba(59,130,246,.03);font-weight:900;">'
+  +(extraAmt>0?'<span onclick="openExtraBonusModal()" style="color:#60a5fa;font-size:14px;cursor:pointer;text-decoration:underline dotted">'+extraAmt.toLocaleString()+'<span style="font-size:9px;margin-left:1px">元</span></span>':'<span style="color:#2d4060">—</span>')
++'</td>';
+
+// 促銷獎金 td 後
 html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;background:rgba(16,185,129,.03);font-weight:900;">'
   +(mRow.promoBonus>0?'<span onclick="_openPromoDetail(\''+p4.emp_name.replace(/'/g,"\\'")+'\',\''+promoDetailData+'\')" style="color:#10b981;font-size:14px;cursor:pointer;text-decoration:underline dotted">'+mRow.promoBonus.toLocaleString()+'<span style="font-size:9px;margin-left:1px">元</span></span>':'<span style="color:#2d4060">—</span>')
 +'</td>';
-          
-          // 主管考核（純顯示）
-          html+='<td style="padding:6px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:center;background:rgba(167,139,250,.03);min-width:100px" data-mrcell="'+safeEmpId+'">';
           if (mrVal) {
             var mrColor = mrVal>0?'#c4b5fd':'#f87171';
             var mrBg    = mrVal>0?'rgba(167,139,250,.18)':'rgba(239,68,68,.15)';
