@@ -3416,7 +3416,7 @@ function exportBonusExcel() {
       rows.push(colHeaders);
 
       // ── 資料列 ──
-      var tbody = tbl.querySelector('tbody');
+var tbody = tbl.querySelector('tbody');
       if (tbody) {
         Array.from(tbody.querySelectorAll('tr')).forEach(function(tr) {
           var cells = [];
@@ -3424,14 +3424,17 @@ function exportBonusExcel() {
             var cl = td.cloneNode(true);
             cl.querySelectorAll('button,select,.spinner').forEach(function(e){ e.remove(); });
             var txt = clean(cl.innerText).replace(/\s+/g,' ').trim();
-            if (txt === '—' || txt === '') { cells.push(''); return; }
-            var n = toNum(txt);
-            cells.push(n !== null ? n : txt);
+            var val;
+            if (txt === '—' || txt === '') val = '';
+            else { var n = toNum(txt); val = n !== null ? n : txt; }
+            // 處理 colspan，補空格讓欄位對齊
+            var span = parseInt(td.getAttribute('colspan') || '1');
+            cells.push(val);
+            for (var s = 1; s < span; s++) cells.push('');
           });
           if (cells.some(function(c){ return c !== '' && c !== 0; })) rows.push(cells);
         });
-      }
-      rows.push([]);
+      }([]);
     });
 
     if (rows.length <= 3) return;
