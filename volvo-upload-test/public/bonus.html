@@ -1632,19 +1632,49 @@ var useAuto=(m.metric_source==='revenue'||m.metric_source==='performance'||m.met
 
 // ── 促銷獎金計算（使用獨立設定）──
 function calcPromoBonus(unused1, unused2, branch, personName, jobTitle) {
-  var total = 0;
   var rByC = (_promoApiResults && _promoApiResults.resultsByConfig) || {};
+
+  // 美容部門（聯合）：依個人據點分配設定，從對應據點的美容技師池分配
+  if (branch === '聯合') {
+    var person = _rosterData.find(function(p){ return p.emp_name === personName; });
+    if (!person) return 0;
+    var assignedBranch = _beautyBranchMap[person.emp_id] || null;
+    if (!assignedBranch) return 0;
+
+    // 取得此據點美容技師的促銷獎金總池
+    var beautyKey = '美容技師-' + (assignedBranch==='AMA'?'A':assignedBranch==='AMC'?'C':'D');
+    var pool = 0;
+    for (var cid in rByC) {
+      var brMap = ((rByC[cid].byBranch)||{})[assignedBranch] || {};
+      pool += parseFloat(brMap[beautyKey] || 0);
+    }
+    if (!pool) return 0;
+
+    // 同據點的美容技師清單
+    var branchEmpIds = _rosterData
+      .filter(function(p){ return p.factory==='聯合' && _beautyBranchMap[p.emp_id]===assignedBranch; })
+      .map(function(p){ return p.emp_id; });
+    if (!branchEmpIds.length) return 0;
+
+    // 用同部門的 dept_code 找權重
+    var deptCode = person.dept_code || '—';
+    var weights = _ppGetWeights('聯合', deptCode);
+    var totalW = branchEmpIds.reduce(function(s,id){ return s+(weights[id]!==undefined?weights[id]:1); }, 0);
+    var myW = weights[person.emp_id]!==undefined ? weights[person.emp_id] : 1;
+    return totalW > 0 ? Math.round(pool * myW / totalW) : 0;
+  }
+
+  // 一般情況
+  var total = 0;
   for (var cid in rByC) {
-    var brMap = (rByC[cid].byBranch && rByC[cid].byBranch[branch]) || {};
+    var brMap = ((rByC[cid].byBranch)||{})[branch] || {};
     var bonus = brMap[personName];
     if (bonus === undefined) {
       for (var k in brMap) {
-        if (k.length >= 2 && (k.indexOf(personName) >= 0 || personName.indexOf(k) >= 0)) {
-          bonus = brMap[k]; break;
-        }
+        if (k.length>=2&&(k.indexOf(personName)>=0||personName.indexOf(k)>=0)){bonus=brMap[k];break;}
       }
     }
-    total += parseFloat(bonus || 0);
+    total += parseFloat(bonus||0);
   }
   return total;
 }
@@ -1910,6 +1940,9 @@ memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonu
                   +' title="設定分配權重">⚖️ 權重設定</span>';
               })()
       : '')
+         +(fc==='聯合'&&(dept.dept_name||'').includes('美容')
+  ? '<button onclick="event.stopPropagation();_openBeautyBranchModal(\''+fc+'\',\''+dkey+'\')" style="margin-left:4px;padding:2px 10px;border-radius:5px;border:1px solid #0ea5e9;background:rgba(14,165,233,.15);color:#38bdf8;font-size:11px;cursor:pointer;font-weight:700">🎨 美容據點分配</button>'
+  : '')
           +'<button onclick="event.stopPropagation();_openMRModal(\''+fc+'-'+dkey+'\')" style="margin-left:4px;padding:2px 10px;border-radius:5px;border:1px solid #4a1d96;background:rgba(139,92,246,.15);color:#a78bfa;font-size:11px;cursor:pointer;font-weight:700">💼 主管考核</button>'
           +'<span style="font-size:11px;color:#475569;background:#0f172a;padding:1px 7px;border-radius:6px">'+dept.members.length+' 人</span>'
             +deptTagsHtml
@@ -3494,6 +3527,59 @@ function _xlsxAutoWidth(ws, rows) {
     widths.push({ wch: Math.min(max * 1.4, 35) });
   }
   ws['!cols'] = widths;
+}
+
+ function _openBeautyBranchModal(fc, dkey) {
+  var members = (_mrModalDepts && _mrModalDepts[fc+'-'+dkey]) || [];
+  var rows = members.map(function(emp) {
+    var cur = _beautyBranchMap[emp.empId] || '';
+    return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(45,63,86,.3)">'
+      +'<div><div style="color:#e2e8f0;font-size:13px;font-weight:700">'+emp.name+'</div>'
+      +'<div style="color:#64748b;font-size:11px">'+emp.title+'</div></div>'
+      +'<select data-beautyempid="'+emp.empId+'" style="background:#0f172a;border:1px solid #0ea5e9;color:#38bdf8;padding:5px 8px;border-radius:6px;font-size:12px;outline:none">'
+      +'<option value="" '+(cur===''?'selected':'')+'>-- 未分配 --</option>'
+      +'<option value="AMA" '+(cur==='AMA'?'selected':'')+'>AMA 內湖</option>'
+      +'<option value="AMC" '+(cur==='AMC'?'selected':'')+'>AMC 仁愛</option>'
+      +'<option value="AMD" '+(cur==='AMD'?'selected':'')+'>AMD 士林</option>'
+      +'</select>'
+    +'</div>';
+  }).join('');
+
+  var html = '<div id="beautyBranchBg" onclick="if(event.target===this)this.remove()"'
+    +' style="position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:center;justify-content:center">'
+    +'<div style="background:#1e293b;border:1px solid #0ea5e9;border-radius:12px;padding:24px;min-width:400px;max-width:90vw;max-height:80vh;overflow-y:auto">'
+    +'<div style="font-size:15px;font-weight:800;color:#38bdf8;margin-bottom:4px">🎨 美容技師據點分配</div>'
+    +'<div style="font-size:11px;color:#64748b;margin-bottom:16px">設定每位技師服務哪個據點的美容技師-A/C/D，促銷獎金將依據點池分配</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;font-size:11px;color:#475569;font-weight:700;padding-bottom:6px;border-bottom:1px solid #2d3f56">'
+    +'<span>技師</span><span>服務據點</span></div>'
+    + rows
+    +'<div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">'
+    +'<button onclick="document.getElementById(\'beautyBranchBg\').remove()"'
+    +' style="padding:6px 16px;border-radius:6px;border:1px solid #475569;background:transparent;color:#94a3b8;font-size:12px;cursor:pointer">取消</button>'
+    +'<button onclick="_saveBeautyBranchModal()"'
+    +' style="padding:6px 16px;border-radius:6px;border:none;background:#0ea5e9;color:#fff;font-size:12px;font-weight:700;cursor:pointer">💾 儲存</button>'
+    +'</div></div></div>';
+
+  var ex = document.getElementById('beautyBranchBg'); if(ex) ex.remove();
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+async function _saveBeautyBranchModal() {
+  var sels = document.querySelectorAll('#beautyBranchBg select[data-beautyempid]');
+  sels.forEach(function(sel) {
+    var empId = sel.getAttribute('data-beautyempid');
+    if (sel.value) _beautyBranchMap[empId] = sel.value;
+    else delete _beautyBranchMap[empId];
+  });
+  try {
+    await fetch('/api/bonus/beauty-branches', {
+      method:'PUT', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({period:_actualPeriod, assignments:_beautyBranchMap})
+    });
+  } catch(e) {}
+  document.getElementById('beautyBranchBg').remove();
+  var inner = document.getElementById('progressInner');
+  if(inner){inner.innerHTML='<div class="loading"><span class="spinner"></span>重新計算中</div>';renderProgressContent();}
 }
   
 </script>
