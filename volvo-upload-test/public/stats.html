@@ -1051,6 +1051,14 @@ window._sPD=function(val){_currentPeriod=val;document.querySelectorAll('.period-
 document.addEventListener('click',()=>{document.querySelectorAll('.period-btn.open').forEach(b=>b.classList.remove('open'));document.querySelectorAll('.period-dropdown.open').forEach(d=>d.classList.remove('open'));});
 
 let currentTab='repair';
+let _loadedTabs = {};
+function _markLoaded(tab, period, branch) {
+  _loadedTabs[`${tab}__${period}__${branch}`] = true;
+}
+function _isLoaded(tab, period, branch) {
+  return !!_loadedTabs[`${tab}__${period}__${branch}`];
+}
+function _clearLoaded() { _loadedTabs = {}; }
 const n=(v)=>parseFloat(v||0), fmt=(v)=>Math.round(n(v)).toLocaleString(), fmtK=(v)=>Math.round(n(v)/1000).toLocaleString()+'K';
 const badgeType=(t)=>({零件:'badge-blue',配件:'badge-green',精品:'badge-yellow'}[t]||'badge-purple');
 const ACCOUNT_GROUP=(s)=>{if(!s)return'other';const t=s.toLowerCase();if(s.includes('一般'))return'general';if(s.includes('保險'))return'insurance';if(s.includes('延保'))return'extended';if(s.includes('票'))return'voucher';if(s.includes('內結'))return'internal';if(s.includes('保固'))return'warranty';if(t.includes('vsa'))return'vsa';if(s.includes('善意'))return'goodwill';return'other';};
@@ -1078,8 +1086,9 @@ function switchTab(tab){
     const match = onclick.match(/'([^']+)'/);
     if (match) t.classList.toggle('active', match[1] === tab);
    }); 
-   if (tab === 'person-perf') loadPersonPerfDashboard();
-  if (tab === 'tech-turnover') loadTechTurnover(getPeriod(), document.getElementById('selBranch').value);
+ const period = getPeriod();
+const branch = document.getElementById('selBranch').value;
+loadTabData(tab, period, branch);
   tabs.forEach(t=>{document.getElementById(`tab-${t}`).style.display=t===tab?'':'none';});
   if (tab === 'daily' && window._dailyState) {
     setTimeout(function(){ window._renderDailyChart(); }, 30);
@@ -1097,23 +1106,32 @@ async function loadPeriods(){
 }
 
 async function loadAll(){
-  const period=getPeriod(), branch=document.getElementById('selBranch').value;
-  document.getElementById('lastUpdate').textContent='更新中...';
-  await Promise.all([
-    loadRepair(period,branch),
-    loadIncomeSummary(period,branch),
-    loadRevenuePerVehicle(period,branch),
-    loadParts(period,branch),
-    loadBoutiqueAccessories(period,branch),
-    loadTrend(branch),
-    loadDaily(period,branch),
-    loadSASales(),
-    loadWip(period,branch),
-    loadTechHours(period,branch),
-    loadTechTurnover(period,branch),
-    loadPersonPerfDashboard(),
-  ]);
-  document.getElementById('lastUpdate').textContent=`${new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})} 更新`;
+  const period = getPeriod();
+  const branch = document.getElementById('selBranch').value;
+  _clearLoaded();
+  document.getElementById('lastUpdate').textContent = '更新中...';
+  await loadTabData(currentTab, period, branch);
+  document.getElementById('lastUpdate').textContent =
+    `${new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})} 更新`;
+}
+ async function loadTabData(tab, period, branch) {
+  if (_isLoaded(tab, period, branch)) return;
+  _markLoaded(tab, period, branch);
+  switch (tab) {
+    case 'repair':
+      await Promise.all([loadRepair(period, branch), loadIncomeSummary(period, branch)]);
+      break;
+    case 'tech':       await loadRevenuePerVehicle(period, branch); break;
+    case 'parts':      await loadParts(period, branch); break;
+    case 'boutique':   await loadBoutiqueAccessories(period, branch); break;
+    case 'sa-sales':   await loadSASales(); break;
+    case 'trend':      await loadTrend(branch); break;
+    case 'daily':      await loadDaily(period, branch); break;
+    case 'wip':        await loadWip(period, branch); break;
+    case 'tech-hours': await loadTechHours(period, branch); break;
+    case 'tech-turnover': await loadTechTurnover(period, branch); break;
+    case 'person-perf':   await loadPersonPerfDashboard(); break;
+  }
 }
 
 // ══ 維修收入 ══
