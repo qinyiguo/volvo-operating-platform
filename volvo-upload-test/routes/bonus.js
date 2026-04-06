@@ -776,7 +776,7 @@ router.put('/bonus/dept-weights', async (req, res) => {
 });
 
 // GET 額外獎金
-router.get('/extra-bonuses', async (req, res) => {
+router.get('/bonus/extra-bonuses', async (req, res) => {
   const { period } = req.query;
   try {
     const { rows } = await pool.query(
@@ -788,7 +788,7 @@ router.get('/extra-bonuses', async (req, res) => {
 });
 
 // POST 新增額外獎金
-router.post('/extra-bonuses', async (req, res) => {
+router.post('/bonus/extra-bonuses', async (req, res) => {
   const { period, emp_id, emp_name, branch, dept_code, amount, reason } = req.body;
   try {
     const { rows } = await pool.query(
@@ -801,7 +801,7 @@ router.post('/extra-bonuses', async (req, res) => {
 });
 
 // DELETE 刪除額外獎金
-router.delete('/extra-bonuses/:id', async (req, res) => {
+router.delete('/bonus/extra-bonuses/:id', async (req, res) => {
   try {
     await pool.query('DELETE FROM bonus_extra WHERE id=$1', [req.params.id]);
     res.json({ok: true});
