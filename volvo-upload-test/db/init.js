@@ -442,6 +442,20 @@ await client.query(`
       `);
     } catch(e) { console.warn('[initDB] FK source_app_id:', e.message); }
 
+await client.query(`
+  CREATE TABLE IF NOT EXISTS bonus_extra (
+    id SERIAL PRIMARY KEY,
+    period VARCHAR(6) NOT NULL,
+    emp_id VARCHAR(20),
+    emp_name VARCHAR(100),
+    branch VARCHAR(20),
+    dept_code VARCHAR(20),
+    amount INTEGER DEFAULT 0,
+    reason TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+  )
+`);
+    
     console.log('[initDB] ✅ 所有表格建立完成');
   } catch (err) {
     console.error('[initDB] ❌ 失敗:', err.message);
