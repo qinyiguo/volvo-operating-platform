@@ -171,6 +171,9 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
         <div id="promoConfigList"><div class="loading"><span class="spinner"></span>載入中</div></div>
       </div>
     </div>
+  <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+  <button class="btn btn-secondary" onclick="openExtraBonusModal()" style="font-size:13px">💵 額外獎金設定</button>
+</div>
     <div id="progressContent"><div class="empty">請先選擇期間後按查詢</div></div>
   </div>
 <div id="tab-bodyshop" style="display:none">
@@ -1586,6 +1589,7 @@ async function renderProgressContent() {
         var mrRows = await fetch('/api/manager-review?period='+_actualPeriod).then(function(r){return r.json();});
         mrRows.forEach(function(r){ _managerReviewMap[r.emp_id] = { amount: parseInt(r.amount)||0, note: r.note||'' }; });
       } catch(e) {}
+    await loadExtraBonus();
     try {
         var params=new URLSearchParams({period:_actualPeriod,data_period:_actualPeriod});
         if (factory) params.set('factory',factory);
@@ -1757,6 +1761,7 @@ var eff0=te0?te0.rate:(meta00.useAuto?meta00.autoRate:null);
             if (eff0!==null) pTotal0+=calcBonus(eff0,p0.job_title||'',meta00.tiers,meta00.roles);
           }
           pTotal0 += calcPromoBonus(null, null, fc, p0.emp_name, p0.job_title||'');
+          pTotal0 += (_extraBonusMap[p0.emp_id]||0);
           if (pTotal0>0) fcBonusPpl++;
           fcTotalBonus+=pTotal0;
         }
@@ -1834,12 +1839,14 @@ _mrModalDepts[fc+'-'+dkey] = dept.members.map(function(p){
                             personBonuses[mId3]={bonus:bonusAmt,promoBonus:0,rate:dispRate,hasTarget:dispHasTgt};
                             personTotal += bonusAmt;
                 }
-                var personMR = (_managerReviewMap[person3.emp_id]&&_managerReviewMap[person3.emp_id].amount)||0;
-                personTotal += personPromoBonus;
-                personTotal += personMR;
-                if (personTotal>0) deptBonusPpl++;
-                deptTotalBonus+=personTotal;
-memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonus,mrBonus:personMR,total:personTotal});
+var personMR = (_managerReviewMap[person3.emp_id]&&_managerReviewMap[person3.emp_id].amount)||0;
+var personExtra = _extraBonusMap[person3.emp_id]||0;
+personTotal += personPromoBonus;
+personTotal += personMR;
+personTotal += personExtra;
+if (personTotal>0) deptBonusPpl++;
+deptTotalBonus+=personTotal;
+memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonus,mrBonus:personMR,extraBonus:personExtra,total:personTotal});
         }
         memberRows.sort(function(a,b){return b.total-a.total;});
 
@@ -1958,8 +1965,9 @@ var promoDetailData = encodeURIComponent(JSON.stringify(
     return { name: cfg2.rule_name||'（未知）', amount: parseFloat(amt||0) };
   }).filter(function(x){return x.amount>0;})
 ));
-html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;background:rgba(16,185,129,.03);font-weight:900;">'
-  +(mRow.promoBonus>0?'<span onclick="_openPromoDetail(\''+p4.emp_name.replace(/'/g,"\\'")+'\',\''+promoDetailData+'\')" style="color:#10b981;font-size:14px;cursor:pointer;text-decoration:underline dotted">'+mRow.promoBonus.toLocaleString()+'<span style="font-size:9px;margin-left:1px">元</span></span>':'<span style="color:#2d4060">—</span>')
+var extraAmt = mRow.extraBonus||0;
+html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;background:rgba(59,130,246,.03);font-weight:900;">'
+  +(extraAmt>0?'<span onclick="openExtraBonusModal()" style="color:#60a5fa;font-size:14px;cursor:pointer;text-decoration:underline dotted">'+extraAmt.toLocaleString()+'<span style="font-size:9px;margin-left:1px">元</span></span>':'<span style="color:#2d4060">—</span>')
 +'</td>';
           
           // 主管考核（純顯示）
@@ -1989,6 +1997,8 @@ html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);tex
           }
         var deptPromoTotal=memberRows.reduce(function(s,r){return s+(r.promoBonus||0);},0);
         var deptMRTotal=memberRows.reduce(function(s,r){return s+(r.mrBonus||0);},0);
+          var deptExtraTotal=memberRows.reduce(function(s,r){return s+(r.extraBonus||0);},0);
+          html+='<td style="padding:7px 10px;text-align:right;font-weight:900;color:'+(deptExtraTotal>0?'#60a5fa':'#334155')+'">'+(deptExtraTotal>0?deptExtraTotal.toLocaleString()+' 元':'—')+'</td>';
           html+='<td style="padding:7px 10px;text-align:right;font-weight:900;color:'+(deptPromoTotal>0?'#10b981':'#334155')+'">'+(deptPromoTotal>0?deptPromoTotal.toLocaleString()+' 元':'—')+'</td>';
           html+='<td style="padding:7px 10px;text-align:center;font-weight:900;color:'+(deptMRTotal!==0?'#a78bfa':'#334155')+'">'+(deptMRTotal!==0?deptMRTotal.toLocaleString()+' 元':'—')+'</td>';
           html+='<td style="padding:7px 10px;text-align:right;font-weight:900;color:'+(deptTotalBonus>0?'#f59e0b':'#334155')+'">'+(deptTotalBonus>0?deptTotalBonus.toLocaleString()+' 元':'—')+'</td></tr>';
@@ -2065,7 +2075,19 @@ checkAuth();
   // ════════════════════════════════════════════
 // 促銷獎金獨立設定
 // ════════════════════════════════════════════
+var _extraBonusMap = {};
+var _extraBonusList = [];
 let _managerReviewMap = {}; // { emp_id: { amount, note } }
+  async function loadExtraBonus() {
+  try {
+    var rows = await fetch('/api/bonus/extra-bonuses?period=' + _actualPeriod).then(r=>r.json());
+    _extraBonusList = rows || [];
+    _extraBonusMap = {};
+    _extraBonusList.forEach(function(r){
+      _extraBonusMap[r.emp_id] = (_extraBonusMap[r.emp_id]||0) + parseInt(r.amount||0);
+    });
+  } catch(e) { _extraBonusMap = {}; _extraBonusList = []; }
+}
 let _promoCfgs = [];
 let _editingPromoCfgId = null;
 const ALL_PAYCODES = ['一般','票劵','內結','保險','延保','保固','善意維修','VSA'];
@@ -3185,8 +3207,141 @@ setTimeout(() => { closeModal('bodyshopSettingsModal'); loadBodyshopList(); }, 8
     document.getElementById('bsSettingsMsg').textContent = '❌ ' + e.message;
   }
 }
+
+  // ── 額外獎金 ──
+async function openExtraBonusModal() {
+  await loadExtraBonus();
+  renderEbList();
+  document.getElementById('ebBranch').value='';
+  document.getElementById('ebDept').innerHTML='<option value="">選擇部門...</option>';
+  document.getElementById('ebEmp').innerHTML='<option value="">選擇人員...</option>';
+  document.getElementById('ebAmount').value='';
+  document.getElementById('ebReason').value='';
+  openModal('extraBonusModal');
+}
+function onEbBranchChange() {
+  var branch = document.getElementById('ebBranch').value;
+  var depts = {};
+  _rosterData.forEach(function(p){
+    if ((p.factory||'售後服務處') === branch) depts[p.dept_code] = p.dept_name || p.dept_code;
+  });
+  var html = '<option value="">選擇部門...</option>';
+  Object.keys(depts).forEach(function(dk){ html += '<option value="'+dk+'">'+depts[dk]+'</option>'; });
+  document.getElementById('ebDept').innerHTML = html;
+  document.getElementById('ebEmp').innerHTML = '<option value="">選擇人員...</option>';
+}
+function onEbDeptChange() {
+  var branch = document.getElementById('ebBranch').value;
+  var dept = document.getElementById('ebDept').value;
+  var emps = _rosterData.filter(function(p){
+    return (p.factory||'售後服務處')===branch && p.dept_code===dept && p.status==='在職';
+  });
+  var html = '<option value="">選擇人員...</option>';
+  emps.forEach(function(p){ html += '<option value="'+p.emp_id+'" data-name="'+p.emp_name+'">'+p.emp_name+(p.job_title?' ('+p.job_title+')':'')+'</option>'; });
+  document.getElementById('ebEmp').innerHTML = html;
+}
+async function saveExtraBonus() {
+  var empSel = document.getElementById('ebEmp');
+  var emp_id = empSel.value;
+  var emp_name = empSel.options[empSel.selectedIndex]?.getAttribute('data-name')||'';
+  var branch = document.getElementById('ebBranch').value;
+  var dept_code = document.getElementById('ebDept').value;
+  var amount = parseInt(document.getElementById('ebAmount').value)||0;
+  var reason = document.getElementById('ebReason').value.trim();
+  if (!emp_id) { alert('請選擇人員'); return; }
+  if (!amount) { alert('請輸入金額'); return; }
+  try {
+    var r = await fetch('/api/bonus/extra-bonuses', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({period:_actualPeriod, emp_id, emp_name, branch, dept_code, amount, reason})
+    }).then(r=>r.json());
+    if (r.error) throw new Error(r.error);
+    document.getElementById('ebAmount').value='';
+    document.getElementById('ebReason').value='';
+    await loadExtraBonus();
+    renderEbList();
+    var inner=document.getElementById('progressInner');
+    if(inner){inner.innerHTML='<div class="loading"><span class="spinner"></span>重新計算中</div>';renderProgressContent();}
+  } catch(e){ alert('儲存失敗：'+e.message); }
+}
+async function deleteExtraBonus(id) {
+  if(!confirm('確定刪除？')) return;
+  await fetch('/api/bonus/extra-bonuses/'+id,{method:'DELETE'});
+  await loadExtraBonus();
+  renderEbList();
+  var inner=document.getElementById('progressInner');
+  if(inner){inner.innerHTML='<div class="loading"><span class="spinner"></span>重新計算中</div>';renderProgressContent();}
+}
+function renderEbList() {
+  var el = document.getElementById('ebList');
+  if (!el) return;
+  if (!_extraBonusList.length) { el.innerHTML='<div style="color:#475569;font-size:12px;padding:8px 0">尚無記錄</div>'; return; }
+  el.innerHTML = _extraBonusList.map(function(r){
+    return '<div style="background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:6px">'
+      +'<div style="flex:1"><div style="font-weight:700;font-size:13px;color:#e2e8f0">'+r.emp_name+'</div>'
+      +'<div style="font-size:11px;color:#64748b;margin-top:2px">'+(r.branch||'')+(r.reason?' ｜ '+r.reason:'')+'</div></div>'
+      +'<span style="font-size:15px;font-weight:900;color:#60a5fa">'+parseInt(r.amount).toLocaleString()+' 元</span>'
+      +'<button class="btn btn-danger btn-sm" onclick="deleteExtraBonus('+r.id+')">刪除</button>'
+    +'</div>';
+  }).join('');
+}
   
 </script>
+
+  <!-- 額外獎金設定 Modal -->
+<div class="modal-bd" id="extraBonusModal">
+  <div class="modal-win" style="max-width:580px">
+    <div class="modal-head">
+      <div class="modal-title">💵 額外獎金設定</div>
+      <button class="modal-close" onclick="closeModal('extraBonusModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="form-group">
+          <label>廠別</label>
+          <select id="ebBranch" class="form-select" onchange="onEbBranchChange()">
+            <option value="">選擇廠別...</option>
+            <option value="售後服務處">售後服務處</option>
+            <option value="AMA">AMA 內湖</option>
+            <option value="AMC">AMC 仁愛</option>
+            <option value="AMD">AMD 士林</option>
+            <option value="聯合">聯合服務中心</option>
+            <option value="鈑烤">鈑烤廠</option>
+            <option value="零件">零件部</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>部門</label>
+          <select id="ebDept" class="form-select" onchange="onEbDeptChange()">
+            <option value="">選擇部門...</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>人員</label>
+        <select id="ebEmp" class="form-select">
+          <option value="">選擇人員...</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group">
+          <label>金額（元）</label>
+          <input type="number" id="ebAmount" class="form-input" placeholder="例：5000" min="0" step="100">
+        </div>
+        <div class="form-group">
+          <label>理由</label>
+          <input type="text" id="ebReason" class="form-input" placeholder="例：專案獎勵">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveExtraBonus()" style="width:100%;margin-bottom:16px">＋ 新增</button>
+      <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">本月已設定清單</div>
+      <div id="ebList" style="max-height:260px;overflow-y:auto"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('extraBonusModal')">關閉</button>
+    </div>
+  </div>
+</div>
 
 <!-- 主管考核 Modal -->
 <div id="mrModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.65);align-items:center;justify-content:center">
