@@ -3398,7 +3398,68 @@ function exportBonusExcel() {
     });
   }
 
-  if (!wb.SheetNames.length) { alert('找不到表格資料，請先查詢獎金名單'); return; }
+if (!wb.SheetNames.length) { alert('找不到表格資料，請先查詢獎金名單'); return; }
+
+  // ── 每個 sheet 加簽核欄 ──
+  wb.SheetNames.forEach(function(name) {
+    var ws = wb.Sheets[name];
+    var range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+    var lastRow = range.e.r + 1;
+    var totalCols = range.e.c + 1;
+
+    // 空白行
+    lastRow += 2;
+
+    // 簽核標題
+    var sigLabels = ['承辦人', '單位主管', '最高主管', '總經理室', '董事長室'];
+    var colSpan = Math.max(1, Math.floor(totalCols / sigLabels.length));
+
+    // 標題列
+    sigLabels.forEach(function(label, i) {
+      var col = i * colSpan;
+      var addr = XLSX.utils.encode_cell({ r: lastRow, c: col });
+      ws[addr] = { v: label, t: 's', s: {
+        font: { bold: true },
+        alignment: { horizontal: 'center' },
+        border: { bottom: { style: 'thin' } }
+      }};
+      // 合併 colSpan 格
+      if (!ws['!merges']) ws['!merges'] = [];
+      if (colSpan > 1) {
+        ws['!merges'].push({
+          s: { r: lastRow, c: col },
+          e: { r: lastRow, c: col + colSpan - 1 }
+        });
+      }
+    });
+
+    // 簽名空白列（留 3 行高）
+    for (var blankR = 1; blankR <= 3; blankR++) {
+      sigLabels.forEach(function(label, i) {
+        var col = i * colSpan;
+        // 畫底線（最後一空白行）
+        if (blankR === 3) {
+          for (var c2 = col; c2 < col + colSpan && c2 < totalCols; c2++) {
+            var a2 = XLSX.utils.encode_cell({ r: lastRow + blankR, c: c2 });
+            ws[a2] = { v: '', t: 's', s: {
+              border: { bottom: { style: 'medium' } }
+            }};
+          }
+        }
+      });
+    }
+
+    // 更新 ref 範圍
+    range.e.r = lastRow + 3;
+    ws['!ref'] = XLSX.utils.encode_range(range);
+
+    // 列高設定（簽核區）
+    if (!ws['!rows']) ws['!rows'] = [];
+    ws['!rows'][lastRow + 1] = { hpt: 40 };
+    ws['!rows'][lastRow + 2] = { hpt: 40 };
+    ws['!rows'][lastRow + 3] = { hpt: 40 };
+  });
+
   var fname = '獎金表_' + period + '_' + branch + '.xlsx';
   XLSX.writeFile(wb, fname);
 }
