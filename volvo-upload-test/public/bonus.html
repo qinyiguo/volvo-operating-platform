@@ -2102,8 +2102,9 @@ checkAuth();
   // ════════════════════════════════════════════
 // 促銷獎金獨立設定
 // ════════════════════════════════════════════
-var _extraBonusMap = {};
+var _extraBonusMap = {}; 
 var _extraBonusList = [];
+var _beautyBranchMap = {}; // { emp_id: 'AMA'|'AMC'|'AMD' }
 let _managerReviewMap = {}; // { emp_id: { amount, note } }
   async function loadExtraBonus() {
   try {
@@ -2114,6 +2115,11 @@ let _managerReviewMap = {}; // { emp_id: { amount, note } }
       _extraBonusMap[r.emp_id] = (_extraBonusMap[r.emp_id]||0) + parseInt(r.amount||0);
     });
   } catch(e) { _extraBonusMap = {}; _extraBonusList = []; }
+}
+async function loadBeautyBranches() {
+  try {
+    _beautyBranchMap = await fetch('/api/bonus/beauty-branches?period=' + _actualPeriod).then(r=>r.json());
+  } catch(e) { _beautyBranchMap = {}; }
 }
 let _promoCfgs = [];
 let _editingPromoCfgId = null;
@@ -3286,6 +3292,7 @@ async function saveExtraBonus() {
     document.getElementById('ebAmount').value='';
     document.getElementById('ebReason').value='';
     await loadExtraBonus();
+    await loadBeautyBranches();
     renderEbList();
     var inner=document.getElementById('progressInner');
     if(inner){inner.innerHTML='<div class="loading"><span class="spinner"></span>重新計算中</div>';renderProgressContent();}
