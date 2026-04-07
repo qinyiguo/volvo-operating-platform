@@ -986,8 +986,11 @@ function renderAllNoteAreas(){
         <button class="nToolBtn" onclick="trigImgUpload('${id}')">📷 上傳圖片</button>
         <button class="nToolBtn" onclick="openTblModal('${id}')">📊 新增表格</button>
       </div>
-      <textarea class="noteBox" id="${id}" style="${cfg.flex?'flex:1;min-height:110px':'min-height:70px'}"
-        placeholder="${cfg.ph.replace(/\n/g,'&#10;')}…"></textarea>
+<div style="display:flex;align-items:flex-start;gap:4px">
+  <span style="cursor:grab;color:var(--txt3);font-size:16px;user-select:none;padding:2px 4px;margin-top:4px;flex-shrink:0">⠿</span>
+  <textarea class="noteBox" id="${id}" style="${cfg.flex?'flex:1;min-height:110px':'min-height:70px;flex:1'}"
+    placeholder="${cfg.ph.replace(/\n/g,'&#10;')}…"></textarea>
+</div>
       <input type="file" accept="image/*" id="imgInput-${id}" style="display:none" onchange="handleImg('${id}',this)">
       <div class="noteRich" id="rich-${id}"></div>`;
   });
