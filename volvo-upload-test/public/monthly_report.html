@@ -598,9 +598,12 @@ async function init(){
   setBr('ALL');
 }
 
-// ── Load ──
+// ── Load (帶 race-condition 防護) ──
+let _loadSeq=0; // 每次切換 branch/period 產生新序號，舊的非同步結果就丟棄
+
 async function loadAll(){
   if(!curPeriod){hideLoad();return;}
+  const seq=++_loadSeq; // 快照這次的序號
   showLoad('讀取營收趨勢…');
   const last5=prevMonths(curPeriod,12),prev=prevP(curPeriod);
   const bpQ=curBr==='ALL'?'':`&branch=${curBr}`;
@@ -612,17 +615,19 @@ async function loadAll(){
     ]);
     return{period:p,bd:exBD(bd,curBr),tgt:exTgt(tgt,curBr),cars:exCars(daily,curBr)};
   }));
+  if(seq!==_loadSeq){return;} // 已被更新的切換取代，放棄這次結果
   tData={};tR.forEach(r=>{tData[r.period]=r;});
   showLoad('讀取 WIP…');
   const[w1,w2]=await Promise.all([
     sf(`/api/stats/wip?period=${curPeriod}${bpQ}`),
     sf(`/api/stats/wip?period=${prev}${bpQ}`),
   ]);
+  if(seq!==_loadSeq){return;}
   wipRows=Array.isArray(w1?.rows)?w1.rows:[];
   wipPrev=Array.isArray(w2?.rows)?w2.rows:[];
   buildAll();
-  await loadNotes();
-  hideLoad();
+  await loadNotes(seq);
+  if(seq===_loadSeq)hideLoad();
 }
 
 // ── Per-chart period state ──
@@ -1056,8 +1061,8 @@ document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if
 
 // ── Notes DB ──
 function nKey(id){return`${MODULE}_${curBr}_${curPeriod}_${id}`;}
-async function loadNotes(){
-  // ── 先清空記憶體，避免切換 branch/period 時殘留舊資料 ──
+async function loadNotes(seq){
+  // ── 清空記憶體，避免切換 branch/period 時殘留舊資料 ──
   NOTE_IDS.forEach(id=>{
     const ta=document.getElementById(id);if(ta)ta.value='';
     richData[id]=null;
@@ -1070,6 +1075,8 @@ async function loadNotes(){
   try{
     const prefix=`${MODULE}_${curBr}_${curPeriod}_`;
     const data=await sf(`/api/notes?prefix=${encodeURIComponent(prefix)}`);
+    // 若在等待 API 回應期間使用者已切換 branch/period，放棄這次結果
+    if(seq!==undefined&&seq!==_loadSeq)return;
     if(!data)return;
     NOTE_IDS.forEach(id=>{
       const el=document.getElementById(id);if(el)el.value=data[nKey(id)]??'';
