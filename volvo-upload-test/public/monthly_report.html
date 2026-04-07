@@ -93,10 +93,8 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
 .bar-bg{background:var(--bg3);border-radius:3px;height:6px;}
 .dlBtnI{background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.25);border-radius:5px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;}
 .dlBtnI:hover{background:rgba(59,130,246,.28);}
-/* keep old dlBtn for WIP charts that don't have period bar */
 .dlBtn{position:absolute;top:8px;right:8px;background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.25);border-radius:5px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer;z-index:2;}
 .dlBtn:hover{background:rgba(59,130,246,.28);}
-/* Period selector per chart */
 .cPBar{display:flex;gap:3px;}
 .cPBtn{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;border:1px solid var(--bdr);background:transparent;color:var(--txt3);transition:all .12s;}
 .cPBtn:hover{border-color:var(--accent);color:var(--accent);}
@@ -106,27 +104,66 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
 .avgDash{width:18px;height:0;display:inline-block;border-top:2px dashed rgba(255,255,255,.35);}
 [data-theme="light"] .avgDash{border-top-color:rgba(0,0,0,.3);}
 
-/* Notes */
-.noteDot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;}
+/* ═══ Rich Editor ═══ */
 .noteLabel{font-size:12px;font-weight:700;color:var(--txt3);margin-bottom:6px;display:flex;align-items:center;gap:5px;}
-.noteBox{width:300px;min-width:150px;background:var(--bg3);border:1px solid var(--bdr);color:var(--txt);border-radius:7px;padding:9px 11px;font-size:12px;line-height:1.7;resize:both;overflow:auto;min-height:96px;outline:none;font-family:inherit;}
-.noteBox:focus{border-color:var(--accent);}
-.noteBox::placeholder{color:var(--bdr2);}
-.noteToolbar{display:flex;gap:5px;margin-bottom:6px;flex-wrap:wrap;}
-.nToolBtn{padding:3px 9px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--bdr);background:var(--bg3);color:var(--txt2);}
-.nToolBtn:hover{border-color:var(--accent);color:var(--accent);}
-.noteRich{margin-top:7px;display:flex;flex-direction:row;flex-wrap:wrap;gap:7px;align-items:flex-start;}
-.noteImgWrap{position:relative;border-radius:7px;overflow:hidden;border:1px solid var(--bdr);resize:both;min-width:120px;min-height:80px;max-width:100%;overflow:auto;}
-.noteImgWrap img{width:100%;height:100%;object-fit:contain;display:block;background:var(--bg3);}
-.noteImgDel{position:absolute;top:5px;right:5px;background:rgba(239,68,68,.85);color:#fff;border:none;border-radius:4px;padding:2px 7px;font-size:11px;cursor:pointer;font-weight:700;z-index:2;}
-.noteTbl{border-radius:7px;border:1px solid var(--bdr);resize:both;overflow:auto;display:inline-block;max-width:100%;min-width:200px;}
-.noteTbl table{width:100%;border-collapse:collapse;font-size:12px;}
-.noteTbl td,.noteTbl th{border:1px solid var(--bdr);padding:7px 10px;color:var(--txt);background:var(--bg2);}
-.noteTbl th{background:var(--bg3);font-weight:700;font-size:11px;}
-.editableCell{outline:none;}
-.editableCell:focus{background:rgba(59,130,246,.08);}
-.noteTblBar{display:flex;justify-content:flex-end;padding:5px 8px;background:var(--bg3);border-top:1px solid var(--bdr);}
-.noteTblBar button{background:rgba(239,68,68,.8);color:#fff;border:none;border-radius:4px;padding:3px 9px;font-size:11px;cursor:pointer;}
+.noteDot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;}
+
+/* Row container */
+.rrow{display:flex;align-items:stretch;margin-bottom:6px;gap:0;}
+.rrow-handle{cursor:grab;color:var(--txt3);padding:0 5px;display:flex;align-items:center;font-size:16px;flex-shrink:0;user-select:none;transition:color .12s;}
+.rrow-handle:hover{color:var(--accent);}
+.rrow-handle:active{cursor:grabbing;}
+.rrow-body{display:flex;flex:1;align-items:stretch;gap:0;border:1px solid var(--bdr);border-radius:8px;overflow:hidden;min-width:0;}
+.rrow.dragging{opacity:.4;}
+.rrow.drag-over .rrow-body{outline:2px solid var(--accent);outline-offset:-1px;}
+
+/* Item */
+.ritem{position:relative;display:flex;flex-direction:column;min-width:60px;border-right:1px solid var(--bdr);}
+.ritem:last-of-type{border-right:none;}
+.ritem-tb{display:flex;align-items:center;gap:3px;padding:3px 6px;background:var(--bg2);border-bottom:1px solid var(--bdr);flex-shrink:0;min-height:24px;}
+.ritem-content{flex:1;overflow:auto;padding:6px;position:relative;background:var(--bg3);}
+.ritem-content textarea{width:100%;height:100%;min-height:36px;background:transparent;border:none;color:var(--txt);resize:none;font-family:inherit;font-size:12px;line-height:1.7;outline:none;}
+.ritem-content img{max-width:100%;max-height:100%;object-fit:contain;display:block;cursor:pointer;}
+.ritem-vresize{height:5px;cursor:row-resize;background:var(--bdr);flex-shrink:0;transition:background .15s;}
+.ritem-vresize:hover,.ritem-vresize.active{background:var(--accent);}
+
+/* Column resizer */
+.rcol-resize{width:8px;cursor:col-resize;flex-shrink:0;background:transparent;display:flex;align-items:center;justify-content:center;}
+.rcol-resize::after{content:'';width:3px;height:20px;border-radius:2px;background:var(--bdr2);transition:background .15s;}
+.rcol-resize:hover::after,.rcol-resize.active::after{background:var(--accent);}
+
+/* Add item buttons (right of row) */
+.radd-item-btns{display:flex;flex-direction:column;justify-content:center;padding:4px 3px;gap:2px;flex-shrink:0;background:var(--bg2);border-left:1px solid var(--bdr);}
+.radd-item-btn{padding:2px 5px;font-size:11px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg3);color:var(--txt3);cursor:pointer;line-height:1.4;transition:all .12s;}
+.radd-item-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* Row delete */
+.rrow-del{padding:2px 5px;font-size:10px;border:1px solid rgba(239,68,68,.3);border-radius:4px;background:transparent;color:#ef4444;cursor:pointer;flex-shrink:0;align-self:center;margin-left:4px;transition:all .12s;white-space:nowrap;}
+.rrow-del:hover{background:rgba(239,68,68,.1);}
+
+/* Item toolbar buttons */
+.ritem-del{padding:1px 5px;font-size:10px;border:1px solid rgba(239,68,68,.3);border-radius:3px;background:transparent;color:#ef4444;cursor:pointer;margin-left:auto;transition:all .12s;}
+.ritem-del:hover{background:rgba(239,68,68,.1);}
+.ritem-act{padding:1px 5px;font-size:10px;border:1px solid var(--bdr);border-radius:3px;background:transparent;color:var(--txt3);cursor:pointer;transition:all .12s;}
+.ritem-act:hover{border-color:var(--accent);color:var(--accent);}
+
+/* Add row bar */
+.radd-row-bar{display:flex;gap:5px;padding:3px 0 2px;flex-wrap:wrap;}
+.radd-row-btn{padding:3px 10px;font-size:11px;border:1px dashed var(--bdr);border-radius:5px;background:transparent;color:var(--txt3);cursor:pointer;transition:all .12s;}
+.radd-row-btn:hover{border-color:var(--accent);color:var(--accent);border-style:solid;}
+
+/* Image placeholder */
+.rich-img-ph{display:flex;align-items:center;justify-content:center;height:100%;color:var(--txt3);font-size:12px;flex-direction:column;gap:8px;cursor:pointer;min-height:80px;}
+.rich-img-ph:hover{color:var(--accent);}
+
+/* Table inside rich item */
+.rtbl-wrap{overflow:auto;height:100%;min-height:36px;}
+.rtbl-wrap table{border-collapse:collapse;font-size:11px;min-width:100%;}
+.rtbl-wrap th,.rtbl-wrap td{border:1px solid var(--bdr);padding:3px 6px;}
+.rtbl-wrap th{background:var(--bg2);font-size:10px;}
+.rtbl-wrap td{background:var(--bg3);}
+.rtbl-wrap [contenteditable]{outline:none;display:block;min-width:28px;}
+.rtbl-wrap [contenteditable]:focus{background:rgba(59,130,246,.08);}
 
 /* Extra notes */
 .extraNote{background:var(--bg2);border:1px solid var(--bdr);border-radius:10px;padding:12px 14px;position:relative;margin-top:8px;}
@@ -430,53 +467,73 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
   </div>
 </div>
 
-<!-- Table Modal -->
-<div class="modal" id="tableModal" style="display:none">
-  <div class="modalBox">
-    <div class="modalTitle">📊 新增表格</div>
-    <div class="mRow"><div class="mLbl">標題列（逗號分隔欄位名）</div>
-      <input class="mInput" id="tblHeaders" placeholder="月份,AMA,AMC,AMD,合計"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div class="mRow"><div class="mLbl">資料列數（橫列）</div>
-        <input class="mInput" id="tblRows" type="number" value="3" min="1" max="30"></div>
-      <div class="mRow"><div class="mLbl">欄數（若不用標題列）</div>
-        <input class="mInput" id="tblCols" type="number" value="5" min="1" max="20" placeholder="若填標題列則忽略"></div>
-    </div>
-    <div class="mBtns">
-      <button class="mBtn mBtnCancel" onclick="closeModal('tableModal')">取消</button>
-      <button class="mBtn mBtnPrimary" onclick="confirmAddTable()">插入</button>
-    </div>
-  </div>
-</div>
-
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
+// ── Constants ──
 const BRCOLS={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
 const BRS_ALL=['AMA','AMC','AMD'];
 const MODULE='monthly';
 const SECS=['sec-revenue','sec-detail','sec-cars','sec-wip'];
 const NOTE_CFG={
-  n_paid:        {label:'有費說明',        ph:'・達成率 / YoY\n・影響因素\n・下月方向',              flex:true},
-  n_gen:         {label:'一般說明',        ph:'・本月重點\n・達成分析',                                flex:false},
-  n_bw:          {label:'鈑烤說明',        ph:'・本月重點\n・達成分析',                                flex:false},
-  n_ext:         {label:'延保說明',        ph:'・本月重點\n・達成分析',                                flex:false},
-  n_cars:        {label:'進廠 & 單車說明', ph:'・本月實際 vs 目標\n・YoY 增減\n・單車銷售額變化',    flex:true},
-  n_wip_overview:{label:'WIP 總覽說明',   ph:'・本月總金額 vs 上月增減\n・積壓原因\n・行動計畫',    flex:true},
-  n_wip_30:      {label:'30天以上說明',    ph:'・滯留原因\n・等零件案件\n・核賠中\n・預計結清時間', flex:false},
-  n_wip_90:      {label:'90天以上說明',    ph:'・各工單詳細原因\n・責任歸屬\n・跟催進度\n・預計結清日', flex:false},
+  n_paid:        {label:'有費說明',        ph:'・達成率 / YoY\n・影響因素\n・下月方向',            flex:true,  defH:110},
+  n_gen:         {label:'一般說明',        ph:'・本月重點\n・達成分析',                              flex:false, defH:80},
+  n_bw:          {label:'鈑烤說明',        ph:'・本月重點\n・達成分析',                              flex:false, defH:80},
+  n_ext:         {label:'延保說明',        ph:'・本月重點\n・達成分析',                              flex:false, defH:80},
+  n_cars:        {label:'進廠 & 單車說明', ph:'・本月實際 vs 目標\n・YoY 增減\n・單車銷售額變化',  flex:true,  defH:100},
+  n_wip_overview:{label:'WIP 總覽說明',   ph:'・本月總金額 vs 上月增減\n・積壓原因\n・行動計畫',  flex:true,  defH:110},
+  n_wip_30:      {label:'30天以上說明',    ph:'・滯留原因\n・等零件案件\n・核賠中\n・預計結清時間', flex:false, defH:85},
+  n_wip_90:      {label:'90天以上說明',    ph:'・各工單詳細原因\n・責任歸屬\n・跟催進度\n・預計結清日', flex:false, defH:85},
 };
 const NOTE_IDS=Object.keys(NOTE_CFG);
 
 let curBr='ALL',curPeriod='',periods=[],tData={},wipRows=[],wipPrev=[],charts={};
 let dbPeriods=new Set();
-const richData={};      // noteId → {images:[{name,data}], tables:[[[header...],[row...]...]]}
-const extraNotes={};    // secId → [{id,title,content,images:[],tables:[]}]
-let pendingTblTarget=null;
+const richData={};    // noteId → {rows:[{id,items:[{id,type,flex,height,data}]}]}
+const extraNotes={};  // secId → [{id,title,rows:[...]}]
 let dragSrcId=null;
 
-// ── Fetch ──
-async function sf(url,opt){try{const r=await fetch(url,opt||{});if(!r.ok)return null;return await r.json();}catch{return null;}}
+// ── Shared image input ──
+const _imgInput=document.createElement('input');
+_imgInput.type='file';_imgInput.accept='image/*';_imgInput.style.display='none';
+document.body.appendChild(_imgInput);
+let _imgTarget=null; // {nid, rowId, itemId, isExtra}
+_imgInput.addEventListener('change',async()=>{
+  if(!_imgTarget||!_imgInput.files[0])return;
+  const{nid,rowId,itemId,isExtra}=_imgTarget;
+  const file=_imgInput.files[0];
+  const rd=new FileReader();
+  rd.onload=async e=>{
+    const comp=await compressImage(e.target.result);
+    const d=isExtra?getExtraRD(nid):getRD(nid);
+    (d.rows||[]).forEach(row=>{
+      if(row.id===rowId)row.items.forEach(item=>{
+        if(item.id===itemId){item.data.src=comp;item.data.name=file.name;}
+      });
+    });
+    reRich(nid,isExtra);
+  };
+  rd.readAsDataURL(file);
+  _imgInput.value='';_imgTarget=null;
+});
+
+// ── Utilities ──
+function uid(){return'x'+Math.random().toString(36).slice(2,9);}
+function sf(url,opt){return fetch(url,opt||{}).then(r=>r.ok?r.json():null).catch(()=>null);}
+function compressImage(dataUrl,maxW=1200,quality=0.75){
+  return new Promise(res=>{
+    const img=new Image();
+    img.onload=()=>{
+      const ratio=Math.min(1,maxW/img.width);
+      const w=Math.round(img.width*ratio),h=Math.round(img.height*ratio);
+      const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      res(cv.toDataURL('image/jpeg',quality));
+    };
+    img.onerror=()=>res(dataUrl);
+    img.src=dataUrl;
+  });
+}
 
 // ── Theme ──
 function toggleTheme(){
@@ -545,7 +602,7 @@ function closePD(){
 }
 async function selectPD(p){
   if(p===curPeriod){closePD();return;}
-  await autoSave(); // 切換月份前先存
+  await autoSave();
   curPeriod=p;closePD();renderPD();loadAll();
 }
 document.addEventListener('click',closePD);
@@ -603,12 +660,11 @@ async function init(){
   setBr('ALL');
 }
 
-// ── Load (帶 race-condition 防護) ──
-let _loadSeq=0; // 每次切換 branch/period 產生新序號，舊的非同步結果就丟棄
-
+// ── Load ──
+let _loadSeq=0;
 async function loadAll(){
   if(!curPeriod){hideLoad();return;}
-  const seq=++_loadSeq; // 快照這次的序號
+  const seq=++_loadSeq;
   showLoad('讀取營收趨勢…');
   const last5=prevMonths(curPeriod,12),prev=prevP(curPeriod);
   const bpQ=curBr==='ALL'?'':`&branch=${curBr}`;
@@ -620,14 +676,14 @@ async function loadAll(){
     ]);
     return{period:p,bd:exBD(bd,curBr),tgt:exTgt(tgt,curBr),cars:exCars(daily,curBr)};
   }));
-  if(seq!==_loadSeq){return;} // 已被更新的切換取代，放棄這次結果
+  if(seq!==_loadSeq)return;
   tData={};tR.forEach(r=>{tData[r.period]=r;});
   showLoad('讀取 WIP…');
   const[w1,w2]=await Promise.all([
     sf(`/api/stats/wip?period=${curPeriod}${bpQ}`),
     sf(`/api/stats/wip?period=${prev}${bpQ}`),
   ]);
-  if(seq!==_loadSeq){return;}
+  if(seq!==_loadSeq)return;
   wipRows=Array.isArray(w1?.rows)?w1.rows:[];
   wipPrev=Array.isArray(w2?.rows)?w2.rows:[];
   buildAll();
@@ -635,9 +691,9 @@ async function loadAll(){
   if(seq===_loadSeq)hideLoad();
 }
 
-// ── Per-chart period state ──
+// ── Per-chart period ──
 const chartPeriods={paid:12,gen:12,bw:12,ext:12,cars:12,rpv:12};
-let last12Months=[]; // 12個月期間陣列，供 setPeriod 使用
+let last12Months=[];
 
 // ── Build charts ──
 function buildAll(){
@@ -645,39 +701,29 @@ function buildAll(){
   last12Months=prevMonths(curPeriod,12);
   const{tc,gc,ptBorder}=chartColors();
   const mainCol=curBr==='ALL'?'#f97316':(BRCOLS[curBr]||'#f97316');
-
-  // 全量 12M 資料（供 KPI 計算）
   const A12=k=>last12Months.map(p=>tData[p]?.bd?.[k]||0);
   const T12=k=>last12Months.map(p=>tData[p]?.tgt?.[k]||0);
   const L12=k=>last12Months.map(p=>tData[p]?.tgt?.[`${k}_ly`]||0);
-
-  // Badge（最新月）
   const li=liIdx(A12('paid'));
   const la=A12('paid')[li],lt=T12('paid')[li],ll=L12('paid')[li];
   document.getElementById('topBadge').innerHTML=
     `有費達成 <strong style="color:${achC(lt>0?la/lt*100:0)}">${lt>0?(la/lt*100).toFixed(0)+'%':'—'}</strong>　YoY <strong style="color:${growC(la,ll)}">${ll>0?((la-ll)/ll*100).toFixed(1)+'%':'—'}</strong>`;
   document.getElementById('topStatus').textContent=`截至 ${fmtP(curPeriod)}`;
-
-  // YTD：只計算當年度月份
   const curYear=curPeriod.slice(0,4);
   const ytdM=last12Months.filter(p=>p.startsWith(curYear));
   rKpi4('kpi_paid',A12('paid'),T12('paid'),L12('paid'),mainCol,
-    ytdM.map(p=>tData[p]?.bd?.paid||0),ytdM.map(p=>tData[p]?.tgt?.paid||0), curYear);
-  rKpi2('kpi_gen', A12('gen'), T12('gen'), L12('gen'), '#3b82f6');
-  rKpi2('kpi_bw',  A12('bw'),  T12('bw'),  L12('bw'),  '#8b5cf6');
-  rKpi2('kpi_ext', A12('ext'), T12('ext'), L12('ext'), '#10b981');
-
-  // 各圖表依自己的 period 重建
-  buildOneRevChart('paid', mainCol, '#94a3b8', tc, gc, ptBorder);
-  buildOneRevChart('gen',  '#3b82f6','#7dd3fc', tc, gc, ptBorder);
-  buildOneRevChart('bw',   '#8b5cf6','#c4b5fd', tc, gc, ptBorder);
-  buildOneRevChart('ext',  '#10b981','#6ee7b7', tc, gc, ptBorder);
-  buildCarsCharts(mainCol, tc, gc, ptBorder);
+    ytdM.map(p=>tData[p]?.bd?.paid||0),ytdM.map(p=>tData[p]?.tgt?.paid||0),curYear);
+  rKpi2('kpi_gen',A12('gen'),T12('gen'),L12('gen'),'#3b82f6');
+  rKpi2('kpi_bw', A12('bw'), T12('bw'), L12('bw'), '#8b5cf6');
+  rKpi2('kpi_ext',A12('ext'),T12('ext'),L12('ext'),'#10b981');
+  buildOneRevChart('paid',mainCol,'#94a3b8',tc,gc,ptBorder);
+  buildOneRevChart('gen','#3b82f6','#7dd3fc',tc,gc,ptBorder);
+  buildOneRevChart('bw','#8b5cf6','#c4b5fd',tc,gc,ptBorder);
+  buildOneRevChart('ext','#10b981','#6ee7b7',tc,gc,ptBorder);
+  buildCarsCharts(mainCol,tc,gc,ptBorder);
   buildWip(tc,gc);
 }
-
-// 重建單一營收圖表（paid / gen / bw / ext）
-function buildOneRevChart(key, lc, lyc, tc, gc, ptBorder){
+function buildOneRevChart(key,lc,lyc,tc,gc,ptBorder){
   const n=chartPeriods[key]||12;
   const months=last12Months.slice(-n);
   const labels=months.map(p=>`${p.slice(2,4)}/${p.slice(4)}`);
@@ -686,62 +732,42 @@ function buildOneRevChart(key, lc, lyc, tc, gc, ptBorder){
   const tgt=months.map(p=>tData[p]?.tgt?.[key]||0);
   if(charts[key]){try{charts[key].destroy();}catch{}}
   charts[key]=mkLine('c_'+key,labels,act,ly,tgt,lc,lyc,'#ef4444',null,true,tc,gc,ptBorder);
-  refreshAvgBadge(key,act,n);
-  refreshPeriodBtns(key,n);
+  refreshAvgBadge(key,act,n);refreshPeriodBtns(key,n);
 }
-
-// 重建進廠 & 單車圖表（cars/rpv 共用同一 period）
-function buildCarsCharts(mainCol, tc, gc, ptBorder){
+function buildCarsCharts(mainCol,tc,gc,ptBorder){
   const n=chartPeriods.cars||12;
   const months=last12Months.slice(-n);
   const labels=months.map(p=>`${p.slice(2,4)}/${p.slice(4)}`);
   const carsAct=months.map(p=>tData[p]?.cars?.act||0);
-  const paid   =months.map(p=>tData[p]?.bd?.paid||0);
+  const paid=months.map(p=>tData[p]?.bd?.paid||0);
   const rpv=carsAct.map((c,i)=>c>0?Math.round(paid[i]*1000/c):0);
   if(charts.cars){try{charts.cars.destroy();}catch{}}
-  if(charts.rpv) {try{charts.rpv.destroy(); }catch{}}
+  if(charts.rpv){try{charts.rpv.destroy();}catch{}}
   charts.cars=mkLine('c_cars',labels,carsAct,[],[],mainCol,'#94a3b8',null,v=>Math.round(v).toLocaleString(),false,tc,gc,ptBorder,v=>Math.round(v).toLocaleString()+'台');
   charts.rpv =mkLine('c_rpv', labels,rpv,   [],[],'#10b981','#6ee7b7',null,v=>Math.round(v).toLocaleString(),false,tc,gc,ptBorder,v=>Math.round(v).toLocaleString()+'元/台');
-  refreshAvgBadge('cars',carsAct,n);
-  refreshAvgBadge('rpv',rpv,n);
-  refreshPeriodBtns('cars',n);
-  refreshPeriodBtns('rpv',n);
+  refreshAvgBadge('cars',carsAct,n);refreshAvgBadge('rpv',rpv,n);
+  refreshPeriodBtns('cars',n);refreshPeriodBtns('rpv',n);
 }
-
-// 切換某圖表的月份區間
-function setPeriod(key, n){
+function setPeriod(key,n){
   if(key==='cars'||key==='rpv'){chartPeriods.cars=n;chartPeriods.rpv=n;}
-  else{chartPeriods[key]=n;}
+  else chartPeriods[key]=n;
   const{tc,gc,ptBorder}=chartColors();
   const mainCol=curBr==='ALL'?'#f97316':(BRCOLS[curBr]||'#f97316');
-  if(key==='cars'||key==='rpv') buildCarsCharts(mainCol,tc,gc,ptBorder);
-  else buildOneRevChart(key,
-    {paid:mainCol,gen:'#3b82f6',bw:'#8b5cf6',ext:'#10b981'}[key],
-    {paid:'#94a3b8',gen:'#7dd3fc',bw:'#c4b5fd',ext:'#6ee7b7'}[key],
-    tc,gc,ptBorder);
+  if(key==='cars'||key==='rpv')buildCarsCharts(mainCol,tc,gc,ptBorder);
+  else buildOneRevChart(key,{paid:mainCol,gen:'#3b82f6',bw:'#8b5cf6',ext:'#10b981'}[key],
+    {paid:'#94a3b8',gen:'#7dd3fc',bw:'#c4b5fd',ext:'#6ee7b7'}[key],tc,gc,ptBorder);
 }
-
-// 更新平均值顯示列
-const AVG_FMT={
-  cars: v=>`${Math.round(v).toLocaleString()} 台`,
-  rpv:  v=>`${Math.round(v).toLocaleString()} 元/台`,
-};
-function refreshAvgBadge(key, actData, n){
+const AVG_FMT={cars:v=>`${Math.round(v).toLocaleString()} 台`,rpv:v=>`${Math.round(v).toLocaleString()} 元/台`};
+function refreshAvgBadge(key,actData,n){
   const el=document.getElementById('avg-'+key);if(!el)return;
-  const valid=actData.filter(v=>v>0);
-  if(!valid.length){el.innerHTML='';return;}
+  const valid=actData.filter(v=>v>0);if(!valid.length){el.innerHTML='';return;}
   const avg=valid.reduce((a,b)=>a+b,0)/valid.length;
   const fmt=AVG_FMT[key]||fK;
   el.innerHTML=`<span class="avgDash"></span>&ensp;<span style="font-size:11px;color:var(--txt3)">${n}M 期間平均</span>&ensp;<strong style="font-size:13px">${fmt(avg)}</strong>`;
 }
-
-// 更新按鈕高亮
-function refreshPeriodBtns(key, n){
-  document.querySelectorAll(`[data-chart="${key}"]`).forEach(btn=>{
-    btn.classList.toggle('active',+btn.dataset.n===n);
-  });
+function refreshPeriodBtns(key,n){
+  document.querySelectorAll(`[data-chart="${key}"]`).forEach(btn=>{btn.classList.toggle('active',+btn.dataset.n===n);});
 }
-
 function buildWip(tc,gc){
   const brs=curBr==='ALL'?BRS_ALL:[curBr];
   const cur=bucketWip(wipRows,curBr),prev=bucketWip(wipPrev,curBr);
@@ -816,21 +842,17 @@ function buildWip(tc,gc){
       scales:{x:{ticks:{font:{size:11},color:tc},grid:{display:false}},y:{ticks:{font:{size:11},color:tc,callback:v=>v+'%'},grid:{color:gc},min:0}}}
   });
 }
-
-// ── mkLine (去年/目標都用粗虛線 2.5px) ──
 function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder,tipFmtFn){
   const allV=[...act,...(ly||[]),...(showTgt&&tgt?tgt:[])].filter(v=>v>0);
   const minV=allV.length?Math.min(...allV):0,maxV=allV.length?Math.max(...allV):100;
   const spread=(maxV-minV)||maxV*.1||5;
   const lo=Math.max(0,minV-spread*.12),hi=maxV+spread*.08;
-  const range=hi-lo||1;
-  const rawStep=range/5;
+  const range=hi-lo||1;const rawStep=range/5;
   const mag=Math.pow(10,Math.floor(Math.log10(rawStep)));
   const step=Math.ceil(rawStep/mag)*mag||1;
-  const niceMin=Math.floor(lo/step)*step;
-  const niceMax=Math.ceil(hi/step)*step;
+  const niceMin=Math.floor(lo/step)*step,niceMax=Math.ceil(hi/step)*step;
   const fmt=yFmt||(v=>Math.round(v).toLocaleString());
-  const tipFmt=tipFmtFn||fK;   // 預設與 KPI 卡片一致；cars/rpv 可傳入自訂格式
+  const tipFmt=tipFmtFn||fK;
   const actV=act.filter(v=>v>0);
   const avg=actV.length>1?actV.reduce((a,b)=>a+b,0)/actV.length:null;
   const avgColor=isDark()?'rgba(255,255,255,0.38)':'rgba(0,0,0,0.30)';
@@ -840,8 +862,8 @@ function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder,tip
     pointBackgroundColor:act.map((v,i)=>tgt&&tgt[i]>0&&v>=tgt[i]?'#10b981':'#ef4444'),
     pointBorderColor:ptBorder||'#0f172a',pointBorderWidth:1.5
   }];
-  if(ly&&ly.some(v=>v>0))ds.push({label:'去年同期',data:ly,borderColor:lyc,borderDash:[7,4],tension:.35,fill:false,pointRadius:3,borderWidth:2.5,pointBackgroundColor:lyc,pointBorderColor:ptBorder||'#0f172a',pointBorderWidth:1});
-  if(showTgt&&tgt&&tgt.some(v=>v>0))ds.push({label:'預算目標',data:tgt,borderColor:'#ef4444',borderDash:[4,3],tension:.35,fill:false,pointRadius:3,borderWidth:2.5,pointBackgroundColor:'#ef4444',pointBorderColor:ptBorder||'#0f172a',pointBorderWidth:1});
+  if(ly&&ly.some(v=>v>0))ds.push({label:'去年同期',data:ly,borderColor:lyc,borderDash:[7,4],tension:.35,fill:false,pointRadius:3,borderWidth:2.5,pointBackgroundColor:lyc,pointBorderColor:ptBorder,pointBorderWidth:1});
+  if(showTgt&&tgt&&tgt.some(v=>v>0))ds.push({label:'預算目標',data:tgt,borderColor:'#ef4444',borderDash:[4,3],tension:.35,fill:false,pointRadius:3,borderWidth:2.5,pointBackgroundColor:'#ef4444',pointBorderColor:ptBorder,pointBorderWidth:1});
   if(avg!==null)ds.push({label:'期間平均',data:Array(act.length).fill(avg),borderColor:avgColor,borderDash:[3,3],borderWidth:1.8,pointRadius:0,fill:false,tension:0});
   return new Chart(document.getElementById(id),{
     type:'line',data:{labels,datasets:ds},
@@ -856,7 +878,7 @@ function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder,tip
 }
 function destCharts(){Object.values(charts).forEach(c=>{try{c.destroy();}catch{}});charts={};}
 
-// ── KPI helpers ──
+// ── KPI ──
 const fK=v=>(+v||0)<1?'0K':Math.round(+v).toLocaleString()+'K';
 const achC=p=>p>=100?'#10b981':p>=85?'#f59e0b':'#ef4444';
 const growC=(a,b)=>a>=b?'#10b981':'#ef4444';
@@ -893,28 +915,19 @@ function dlChart(id,name){
   a.download=`${name}_${curBr}_${curPeriod}_${new Date().toISOString().slice(0,10)}.png`;a.click();
 }
 
-// ── 自動儲存（切換前靜默存檔）──
+// ── Auto save ──
 let _autoSaving=false;
 async function autoSave(){
-  if(_autoSaving)return;
-  _autoSaving=true;
+  if(_autoSaving)return;_autoSaving=true;
   try{
-    SECS.forEach(sec=>(extraNotes[sec]||[]).forEach(n=>{
-      const ta=document.getElementById('eta-'+n.id);if(ta)n.content=ta.value;
-    }));
-    const textEntries=[
-      ...NOTE_IDS.map(id=>({key:nKey(id),value:document.getElementById(id)?.value||''})),
+    collectAllTexts();
+    const entries=[
+      ...NOTE_IDS.map(id=>({key:nKey('rich_'+id),value:JSON.stringify(getRD(id))})),
       ...SECS.map(sec=>({key:nKey('extra_'+sec),value:JSON.stringify(extraNotes[sec]||[])})),
     ];
-    const hasAny=textEntries.some(e=>e.value&&e.value!=='[]');
-    if(!hasAny){_autoSaving=false;return;}
-    const res=await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({entries:textEntries})});
-    // 圖片在 autoSave 時不送（體積大），依賴手動儲存
-    if(res.ok){
-      const hint=document.getElementById('autoSaveHint');
-      if(hint){hint.style.opacity='1';setTimeout(()=>{hint.style.opacity='0';},2000);}
-    }
+    if(!entries.some(e=>e.value&&e.value!=='{"rows":[]}'&&e.value!=='[]')){_autoSaving=false;return;}
+    const res=await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({entries})});
+    if(res.ok){const h=document.getElementById('autoSaveHint');if(h){h.style.opacity='1';setTimeout(()=>{h.style.opacity='0';},2000);}}
   }catch{}
   _autoSaving=false;
 }
@@ -922,7 +935,6 @@ async function autoSave(){
 // ── Branch switch ──
 async function setBr(br){
   if(br===curBr){loadAll();return;}
-  // 切換前先自動儲存當前廠別說明
   await autoSave();
   curBr=br;
   ['ALL','AMA','AMC','AMD'].forEach(b=>{
@@ -937,14 +949,14 @@ async function setBr(br){
 function showLoad(m){document.getElementById('ovl').style.display='flex';document.getElementById('ovlMsg').textContent=m;}
 function hideLoad(){document.getElementById('ovl').style.display='none';}
 
-// ── Drag & Drop (save order to DB) ──
+// ── Drag sections ──
 const SEC_ORDER_KEY='monthly_layout_order';
 function initDrag(){
   document.querySelectorAll('.drag-sec').forEach(el=>{
     el.addEventListener('dragstart',e=>{
-  if(e.target.closest('.richItem'))return;
-  dragSrcId=el.id;el.classList.add('dragging');e.dataTransfer.effectAllowed='move';
-});
+      if(e.target.closest('.rrow'))return;
+      dragSrcId=el.id;el.classList.add('dragging');e.dataTransfer.effectAllowed='move';
+    });
     el.addEventListener('dragend',()=>{el.classList.remove('dragging');document.querySelectorAll('.drag-sec').forEach(s=>s.classList.remove('drag-over'));});
     el.addEventListener('dragover',e=>{e.preventDefault();document.querySelectorAll('.drag-sec').forEach(s=>s.classList.remove('drag-over'));if(el.id!==dragSrcId)el.classList.add('drag-over');});
     el.addEventListener('dragleave',()=>el.classList.remove('drag-over'));
@@ -975,257 +987,377 @@ async function loadLayout(){
   initDrag();
 }
 
-// ── Note area rendering ──
+// ══════════════════════════════════════════════
+// ── RICH EDITOR ──
+// ══════════════════════════════════════════════
+
+// ── Data management ──
+function getRD(nid){
+  if(!richData[nid])richData[nid]=mkDefRD(NOTE_CFG[nid]?.defH||90);
+  else if(!richData[nid].rows)richData[nid]=migrateRD(richData[nid],NOTE_CFG[nid]?.defH||90);
+  return richData[nid];
+}
+function getExtraRD(nid){
+  const[sec,id]=nid.split('|||');
+  const n=(extraNotes[sec]||[]).find(x=>x.id===id);
+  if(!n)return{rows:[]};
+  if(!n.rows){
+    n.rows=migrateRD({images:n.images||[],tables:n.tables||[],colAligns:n.colAligns||[],_textVal:n.content||''}).rows;
+  }
+  return n;
+}
+function mkDefRD(h){
+  return{rows:[{id:uid(),items:[{id:uid(),type:'text',flex:1,height:h||90,data:{content:''}}]}]};
+}
+function mkDefItem(type,h){
+  const height=h||(type==='image'?180:type==='table'?150:90);
+  const data=type==='text'?{content:''}:type==='image'?{src:'',name:''}:{headers:['欄1','欄2','欄3'],rows:[['','','']],colAligns:[]};
+  return{id:uid(),type,flex:1,height,data};
+}
+function migrateRD(old,defH){
+  if(old&&old.rows)return old;
+  const imgs=old?.images||[],tbls=old?.tables||[],cas=old?.colAligns||[];
+  const textPos=old?.textPos||0;
+  const items=[];
+  imgs.forEach(img=>{
+    const src=typeof img==='string'?img:(img.data||'');
+    items.push({id:uid(),type:'image',flex:1,height:180,data:{src,name:img.name||''}});
+  });
+  tbls.forEach((tbl,i)=>{
+    items.push({id:uid(),type:'table',flex:1,height:150,data:{headers:tbl[0]||[],rows:tbl.slice(1)||[],colAligns:cas[i]||[]}});
+  });
+  const ti={id:uid(),type:'text',flex:1,height:defH||90,data:{content:old?._textVal||''}};
+  items.splice(textPos,0,ti);
+  return{rows:items.map(item=>({id:uid(),items:[item]}))};
+}
+
+// ── Collect textarea values into data ──
+function collectTexts(nid,isExtra){
+  const elId=isExtra?'erich-'+nid.split('|||')[1]:'rich-'+nid;
+  const el=document.getElementById(elId);if(!el)return;
+  el.querySelectorAll('textarea[data-ritemid]').forEach(ta=>{
+    const d=isExtra?getExtraRD(nid):getRD(nid);
+    (d.rows||[]).forEach(row=>row.items.forEach(item=>{
+      if(item.id===ta.dataset.ritemid)item.data.content=ta.value;
+    }));
+  });
+}
+function collectAllTexts(){
+  NOTE_IDS.forEach(id=>collectTexts(id,false));
+  SECS.forEach(sec=>(extraNotes[sec]||[]).forEach(n=>collectTexts(sec+'|||'+n.id,true)));
+}
+
+// ── Render ──
 function renderAllNoteAreas(){
   NOTE_IDS.forEach(id=>{
     const cfg=NOTE_CFG[id];
     const el=document.getElementById('note-area-'+id);if(!el)return;
-    el.innerHTML=`
-      <div class="noteLabel"><span class="noteDot"></span>${cfg.label}</div>
-      <div class="noteToolbar">
-        <button class="nToolBtn" onclick="trigImgUpload('${id}')">📷 上傳圖片</button>
-        <button class="nToolBtn" onclick="openTblModal('${id}')">📊 新增表格</button>
-      </div>
-      <input type="file" accept="image/*" id="imgInput-${id}" style="display:none" onchange="handleImg('${id}',this)">
-      <div id="rich-${id}"></div>`;
-    if(!richData[id])richData[id]={images:[],tables:[],textPos:0};
-    renderRich(id);
+    el.innerHTML=`<div class="noteLabel"><span class="noteDot"></span>${cfg.label}</div><div id="rich-${id}"></div>`;
+    if(!richData[id])richData[id]=mkDefRD(cfg.defH);
+    else if(!richData[id].rows)richData[id]=migrateRD(richData[id],cfg.defH);
+    reRich(id,false);
   });
 }
 
-// ── Image upload ──
-function trigImgUpload(nid){document.getElementById('imgInput-'+nid)?.click();}
-// ── 圖片壓縮（上傳時自動縮圖，最大 1200px，品質 0.75）──
-function compressImage(dataUrl, maxW=1200, quality=0.75){
-  return new Promise(resolve=>{
-    const img=new Image();
-    img.onload=()=>{
-      const ratio=Math.min(1, maxW/img.width);
-      const w=Math.round(img.width*ratio), h=Math.round(img.height*ratio);
-      const canvas=document.createElement('canvas');
-      canvas.width=w; canvas.height=h;
-      canvas.getContext('2d').drawImage(img,0,0,w,h);
-      resolve(canvas.toDataURL('image/jpeg', quality));
-    };
-    img.onerror=()=>resolve(dataUrl); // 無法壓縮就用原圖
-    img.src=dataUrl;
-  });
+function reRich(nid,isExtra){
+  collectTexts(nid,isExtra);
+  const elId=isExtra?'erich-'+nid.split('|||')[1]:'rich-'+nid;
+  const el=document.getElementById(elId);if(!el)return;
+  const d=isExtra?getExtraRD(nid):getRD(nid);
+  el.innerHTML=buildRichHTML(nid,d,isExtra);
+  attachResizers(el,nid,d,isExtra);
+  attachRowDrag(el,nid,d,isExtra);
 }
 
-function handleImg(nid,input){
-  const file=input.files[0];if(!file)return;
-  const rd=new FileReader();
-  rd.onload=async e=>{
-    const compressed=await compressImage(e.target.result);
-    if(!richData[nid])richData[nid]={images:[],tables:[]};
-    richData[nid].images.push({name:file.name,data:compressed});
-    renderRich(nid);
-  };
-  rd.readAsDataURL(file);input.value='';
-}
-function delImg(nid,i){richData[nid]?.images.splice(i,1);renderRich(nid);}
+// Aliases to keep backward compat
+function renderRich(nid){reRich(nid,false);}
+function renderExtraRich(sec,noteId){reRich(sec+'|||'+noteId,true);}
 
-// ── Table modal ──
-function openTblModal(target){pendingTblTarget=target;document.getElementById('tableModal').style.display='flex';}
-function confirmAddTable(){
-  const rawHdrs=document.getElementById('tblHeaders').value.trim();
-  const cols=Math.max(1,Math.min(20,parseInt(document.getElementById('tblCols').value)||5));
-  const hdrs=rawHdrs?rawHdrs.split(',').map(s=>s.trim()).filter(Boolean):Array.from({length:cols},(_,i)=>`欄${i+1}`);
-  const rows=Math.max(1,Math.min(30,parseInt(document.getElementById('tblRows').value)||3));
-  if(!pendingTblTarget){closeModal('tableModal');return;}
-  const t=pendingTblTarget;closeModal('tableModal');
-  if(t.startsWith('extra:')){
-    const[,sec,nid]=t.split(':');
-    const n=extraNotes[sec]?.find(x=>x.id===nid);
-    if(n){if(!n.tables)n.tables=[];n.tables.push([hdrs,...Array.from({length:rows},()=>Array(hdrs.length).fill(''))]);renderExtraRich(sec,nid);}
-  }else{
-    if(!richData[t])richData[t]={images:[],tables:[]};
-    richData[t].tables.push([hdrs,...Array.from({length:rows},()=>Array(hdrs.length).fill(''))]);
-    renderRich(t);
-  }
-}
-
-// ── Render rich (images + tables) ──
-function renderRich(nid){
-  const el=document.getElementById('rich-'+nid);if(!el)return;
-  if(!richData[nid])richData[nid]={images:[],tables:[],textPos:0};
-  const d=richData[nid];
-  if(d.textPos===undefined)d.textPos=0;
-  el.innerHTML=buildRichHTML(d,nid,false);
-  // 還原文字框內容
-  const ta=document.getElementById(nid);
-  if(ta&&d._textVal!==undefined)ta.value=d._textVal;
-}
-function buildRichHTML(d,nid,isExtra){
-  const nq=`'${nid}'`;
-  const imgs=d.images||[],tbls=d.tables||[],cas=d.colAligns||[];
-  const textPos=d.textPos!==undefined?d.textPos:0;
-  // 建立統一 items 陣列
-  const items=[];
-  imgs.forEach((_,i)=>items.push({type:'img',idx:i}));
-  tbls.forEach((_,i)=>items.push({type:'tbl',idx:i}));
-  items.splice(textPos,0,{type:'text'});
+function buildRichHTML(nid,d,isExtra){
+  const rows=d.rows||[];
+  const ie=isExtra;
+  const ies=isExtra?'true':'false';
+  const enc=s=>String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
   let h='';
-  items.forEach((item,pos)=>{
-    if(item.type==='text'){
-      const cfg=isExtra?{}:(NOTE_CFG[nid]||{});
-      h+=`<div class="richItem" draggable="false" data-pos="${pos}" data-type="text" data-nid="${nid}" data-isextra="${isExtra}"
-        style="display:flex;align-items:flex-start;gap:4px;width:100%;margin-bottom:6px">
-        <span onmousedown="this.closest('.richItem').draggable=true" onmouseup="this.closest('.richItem').draggable=false"
-          style="cursor:grab;color:var(--txt3);font-size:16px;user-select:none;padding:2px 4px;margin-top:4px;flex-shrink:0">⠿</span>
-        <textarea class="noteBox" id="${isExtra?'eta-'+nid.split('|||')[1]:nid}"
-          style="${cfg.flex?'min-height:110px':'min-height:70px'}"
-          placeholder="${(cfg.ph||'').replace(/\n/g,'&#10;')}…"
-          onchange="${isExtra?`updateExtraContent('${nid.split('|||')[0]}','${nid.split('|||')[1]}',this.value)`:`(richData['${nid}']||{})._textVal=this.value`}"></textarea>
-      </div>`;
-    } else if(item.type==='img'){
-      const i=item.idx;
-      const img=imgs[i]||{};
-      const src=typeof img==='string'?img:(img.data||'');
-      const al=img.align||'left';
-      h+=`<div class="richItem" draggable="false" data-pos="${pos}" data-type="img" data-nid="${nid}" data-isextra="${isExtra}"
-        style="display:flex;flex-direction:column;align-self:${al==='center'?'center':al==='right'?'flex-end':'flex-start'};max-width:100%;margin-bottom:6px;border:1px solid var(--bdr);border-radius:7px;overflow:hidden">
-        <div style="display:flex;align-items:center;gap:4px;padding:3px 6px;background:var(--bg3);border-bottom:1px solid var(--bdr)">
-          <span onmousedown="this.closest('.richItem').draggable=true" onmouseup="this.closest('.richItem').draggable=false"
-            style="cursor:grab;color:var(--txt3);font-size:16px;user-select:none;padding:0 4px">⠿</span>
-          <button onclick="${isExtra?'eImgAlign':'imgAlign'}(${nq},${i},'left')" style="padding:2px 7px;font-size:11px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg2);cursor:pointer;color:${al==='left'?'var(--accent)':'var(--txt2)'}">◀ 靠左</button>
-          <button onclick="${isExtra?'eImgAlign':'imgAlign'}(${nq},${i},'center')" style="padding:2px 7px;font-size:11px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg2);cursor:pointer;color:${al==='center'?'var(--accent)':'var(--txt2)'}">▬ 置中</button>
-          <button onclick="${isExtra?'eImgAlign':'imgAlign'}(${nq},${i},'right')" style="padding:2px 7px;font-size:11px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg2);cursor:pointer;color:${al==='right'?'var(--accent)':'var(--txt2)'}">▶ 靠右</button>
-          <button onclick="${isExtra?'delExtraImg':'delImg'}(${nq},${i})" style="margin-left:auto;padding:2px 7px;font-size:11px;border:1px solid #ef444433;border-radius:4px;background:transparent;cursor:pointer;color:#ef4444">✕ 刪除</button>
+  rows.forEach(row=>{
+    h+=`<div class="rrow" data-rowid="${row.id}">
+      <div class="rrow-handle" title="拖曳排序列">⠿</div>
+      <div class="rrow-body" data-rowid="${row.id}">`;
+    row.items.forEach((item,ii)=>{
+      h+=`<div class="ritem" data-itemid="${item.id}" style="flex:${item.flex||1}">
+        <div class="ritem-tb">
+          <span style="font-size:11px">${{text:'📝',image:'🖼️',table:'📊'}[item.type]||'📝'}</span>
+          ${item.type==='image'?`<button class="ritem-act" onclick="_imgTarget={nid:'${enc(nid)}',rowId:'${row.id}',itemId:'${item.id}',isExtra:${ies}};_imgInput.click()">換圖</button>`:''}
+          <button class="ritem-del" onclick="rDelItem('${enc(nid)}','${row.id}','${item.id}',${ies})">✕</button>
         </div>
-        <img src="${src}" style="width:100%;object-fit:contain;display:block;background:var(--bg3);resize:both;overflow:auto;min-height:80px">
-      </div>`;
-    } else {
-      const ti=item.idx;
-      const tbl=tbls[ti]||[];
-      const hdrs=tbl[0]||[],rows=tbl.slice(1);
-      const ca=cas[ti]||hdrs.map(()=>'left');
-      h+=`<div class="richItem" draggable="false" data-pos="${pos}" data-type="tbl" data-nid="${nid}" data-isextra="${isExtra}"
-        style="display:flex;align-items:flex-start;gap:4px;margin-bottom:6px;width:100%">
-        <span onmousedown="this.closest('.richItem').draggable=true" onmouseup="this.closest('.richItem').draggable=false"
-          style="cursor:grab;color:var(--txt3);font-size:16px;user-select:none;padding:0 4px;margin-top:8px;flex-shrink:0">⠿</span>
-        <div style="flex:1">
-          <div class="noteTbl">
-          <table style="width:100%;border-collapse:collapse;font-size:12px">
-            <thead><tr>
-              ${hdrs.map((hh,ci)=>`<th style="border:1px solid var(--bdr);padding:4px 7px;background:var(--bg3);min-width:60px">
-                <div style="display:flex;gap:1px;margin-bottom:2px">
-                  <button onclick="${isExtra?'eTblCA':'tblCA'}(${nq},${ti},${ci},'left')" style="padding:0 3px;font-size:9px;border:1px solid var(--bdr);background:transparent;cursor:pointer;color:${ca[ci]==='left'?'var(--accent)':'var(--txt3)'}">L</button>
-                  <button onclick="${isExtra?'eTblCA':'tblCA'}(${nq},${ti},${ci},'center')" style="padding:0 3px;font-size:9px;border:1px solid var(--bdr);background:transparent;cursor:pointer;color:${ca[ci]==='center'?'var(--accent)':'var(--txt3)'}">C</button>
-                  <button onclick="${isExtra?'eTblCA':'tblCA'}(${nq},${ti},${ci},'right')" style="padding:0 3px;font-size:9px;border:1px solid var(--bdr);background:transparent;cursor:pointer;color:${ca[ci]==='right'?'var(--accent)':'var(--txt3)'}">R</button>
-                  <button onclick="${isExtra?'eTblDC':'tblDC'}(${nq},${ti},${ci})" style="padding:0 3px;font-size:9px;border:1px solid #ef444433;background:transparent;cursor:pointer;color:#ef4444">✕</button>
-                </div>
-                <span contenteditable class="editableCell" onblur="${isExtra?'updateExtraCell':'updateCell'}(${nq},${ti},0,${ci},this)" style="display:block;outline:none;text-align:${ca[ci]}">${hh}</span>
-              </th>`).join('')}
-              <th style="border:1px solid var(--bdr);background:var(--bg3);width:24px;text-align:center">
-                <button onclick="${isExtra?'eTblAC':'tblAC'}(${nq},${ti})" style="border:none;background:transparent;cursor:pointer;color:var(--txt3);font-size:16px">＋</button>
-              </th>
-            </tr></thead>
-            <tbody>
-              ${rows.map((row,ri)=>`<tr>
-                ${row.map((cell,ci)=>`<td style="border:1px solid var(--bdr);padding:5px 7px;background:var(--bg2);text-align:${ca[ci]||'left'}">
-                  <span contenteditable class="editableCell" onblur="${isExtra?'updateExtraCell':'updateCell'}(${nq},${ti},${ri+1},${ci},this)" style="display:block;outline:none">${cell}</span>
-                </td>`).join('')}
-                <td style="border:1px solid var(--bdr);width:24px;text-align:center;background:var(--bg2)">
-                  <button onclick="${isExtra?'eTblDR':'tblDR'}(${nq},${ti},${ri+1})" style="border:none;background:transparent;cursor:pointer;color:#ef4444">✕</button>
-                </td>
-              </tr>`).join('')}
-            </tbody>
-          </table>
-          </div>
-          <div style="display:flex;gap:4px;margin-top:3px">
-            <button onclick="${isExtra?'eTblAR':'tblAR'}(${nq},${ti})" style="padding:2px 8px;font-size:11px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg3);cursor:pointer;color:var(--txt3)">＋ 加行</button>
-            <button onclick="${isExtra?'delExtraTbl':'delTbl'}(${nq},${ti})" style="padding:2px 8px;font-size:11px;border:1px solid #ef444433;border-radius:4px;background:transparent;cursor:pointer;color:#ef4444">✕ 刪除表格</button>
-          </div>
+        <div class="ritem-content" style="height:${item.height||90}px">
+          ${renderItemHTML(nid,row.id,item,ie,enc)}
         </div>
+        <div class="ritem-vresize" title="↕ 拖曳調整高度"></div>
       </div>`;
-    }
+      if(ii<row.items.length-1)h+=`<div class="rcol-resize" title="↔ 拖曳調整寬度"></div>`;
+    });
+    h+=`<div class="radd-item-btns" title="在此列加欄">
+        <button class="radd-item-btn" title="加文字欄" onclick="rAddItem('${enc(nid)}','${row.id}','text',${ies})">📝</button>
+        <button class="radd-item-btn" title="加圖片欄" onclick="rAddItem('${enc(nid)}','${row.id}','image',${ies})">🖼️</button>
+        <button class="radd-item-btn" title="加表格欄" onclick="rAddItem('${enc(nid)}','${row.id}','table',${ies})">📊</button>
+      </div>
+      </div>
+      <button class="rrow-del" onclick="rDelRow('${enc(nid)}','${row.id}',${ies})">✕列</button>
+    </div>`;
   });
+  h+=`<div class="radd-row-bar">
+    <button class="radd-row-btn" onclick="rAddRow('${enc(nid)}','text',${ies})">＋ 文字列</button>
+    <button class="radd-row-btn" onclick="rAddRow('${enc(nid)}','image',${ies})">＋ 圖片列</button>
+    <button class="radd-row-btn" onclick="rAddRow('${enc(nid)}','table',${ies})">＋ 表格列</button>
+  </div>`;
   return h;
 }
-function moveRich(nid,idx,isTbl,dir,isExtra){
-  const d=isExtra?(()=>{const[s,n]=nid.split('|||');return(extraNotes[s]||[]).find(x=>x.id===n)||{};})():(richData[nid]||{});
-  const imgs=d.images||[],tbls=d.tables||[],cas=d.colAligns||[];
-  const textPos=d.textPos!==undefined?d.textPos:0;
-  const items=[];
-  imgs.forEach((_,i)=>items.push({type:'img',idx:i}));
-  tbls.forEach((_,i)=>items.push({type:'tbl',idx:i}));
-  items.splice(textPos,0,{type:'text'});
-  // 找位置
-  let cur;
-  if(isTbl===null){cur=textPos;}
-  else{cur=items.findIndex(x=>x.type===(isTbl?'tbl':'img')&&x.idx===idx);}
-  const next=cur+dir;
-  if(cur<0||next<0||next>=items.length)return;
-  [items[cur],items[next]]=[items[next],items[cur]];
-  const ni=[],nt=[],nc=[];let newTextPos=0;
-  items.forEach((item,i)=>{
-    if(item.type==='text')newTextPos=i;
-    else if(item.type==='img')ni.push(imgs[item.idx]);
-    else{nt.push(tbls[item.idx]);nc.push(cas[item.idx]||[]);}
-  });
-  d.images=ni;d.tables=nt;d.colAligns=nc;d.textPos=newTextPos;
-  // 保留文字框內容
-  const ta=document.getElementById(isExtra?'eta-'+nid.split('|||')[1]:nid);
-  if(ta)d._textVal=ta.value;
-  if(isExtra){const[s,n]=nid.split('|||');renderExtraRich(s,n);}else renderRich(nid);
+
+function renderItemHTML(nid,rowId,item,isExtra,enc){
+  const ies=isExtra?'true':'false';
+  const args=`'${enc(nid)}','${rowId}','${item.id}'`;
+  if(item.type==='text'){
+    const ph=(NOTE_CFG[nid]?.ph||'輸入說明').replace(/\n/g,'&#10;');
+    return`<textarea data-ritemid="${item.id}"
+      style="width:100%;height:100%;min-height:36px;background:transparent;border:none;color:var(--txt);resize:none;font-family:inherit;font-size:12px;line-height:1.7;outline:none;padding:2px;"
+      placeholder="${ph}…">${(item.data?.content||'').replace(/</g,'&lt;')}</textarea>`;
+  }
+  if(item.type==='image'){
+    if(item.data?.src)
+      return`<img src="${item.data.src}" style="max-width:100%;max-height:100%;object-fit:contain;display:block;cursor:pointer" onclick="_imgTarget={nid:'${enc(nid)}',rowId:'${rowId}',itemId:'${item.id}',isExtra:${ies}};_imgInput.click()" title="點擊換圖">`;
+    return`<div class="rich-img-ph" onclick="_imgTarget={nid:'${enc(nid)}',rowId:'${rowId}',itemId:'${item.id}',isExtra:${ies}};_imgInput.click()"><span style="font-size:28px">📷</span><span>點擊上傳圖片</span></div>`;
+  }
+  if(item.type==='table')return renderTableHTML(nid,rowId,item,isExtra,enc);
+  return'';
 }
-function delTbl(nid,i){richData[nid]?.tables.splice(i,1);renderRich(nid);}
-function updateCell(nid,ti,ri,ci,el){if(richData[nid]?.tables?.[ti])richData[nid].tables[ti][ri][ci]=el.textContent;}
-// 圖片對齊
-function imgAlign(nid,i,al){const d=richData[nid];if(!d?.images?.[i])return;if(typeof d.images[i]==='string')d.images[i]={data:d.images[i],name:'',align:al};else d.images[i].align=al;renderRich(nid);}
-// 表格欄列操作
-function tblCA(nid,ti,ci,al){const d=richData[nid];if(!d)return;if(!d.colAligns)d.colAligns=[];if(!d.colAligns[ti])d.colAligns[ti]=[];d.colAligns[ti][ci]=al;renderRich(nid);}
-function tblDC(nid,ti,ci){const d=richData[nid];if(!d?.tables?.[ti])return;d.tables[ti].forEach(r=>r.splice(ci,1));if(d.colAligns?.[ti])d.colAligns[ti].splice(ci,1);renderRich(nid);}
-function tblAC(nid,ti){const d=richData[nid];if(!d?.tables?.[ti])return;d.tables[ti].forEach(r=>r.push(''));renderRich(nid);}
-function tblAR(nid,ti){const d=richData[nid];if(!d?.tables?.[ti])return;d.tables[ti].push(Array((d.tables[ti][0]||[]).length).fill(''));renderRich(nid);}
-function tblDR(nid,ti,ri){const d=richData[nid];if(!d?.tables?.[ti])return;d.tables[ti].splice(ri,1);renderRich(nid);}
-// 拖曳重排 richItem
-let _rdSrc=null;
-document.addEventListener('dragstart',e=>{
-  const el=e.target.closest('.richItem');if(!el)return;
-  e.stopPropagation();
-  _rdSrc={pos:+el.dataset.pos,type:el.dataset.type,nid:el.dataset.nid,isExtra:el.dataset.isextra==='true'};
-  setTimeout(()=>el.style.opacity='.4',0);
-});
-document.addEventListener('dragend',e=>{
-  const el=e.target.closest('.richItem');if(el)el.style.opacity='';
-    if(el)el.draggable=false;
-  document.querySelectorAll('.richItem').forEach(x=>x.style.outline='');
-  _rdSrc=null;
-});
-document.addEventListener('dragover',e=>{
-  const el=e.target.closest('.richItem');if(!el||!_rdSrc)return;
-  e.preventDefault();e.stopPropagation();
-  document.querySelectorAll('.richItem').forEach(x=>x.style.outline='');
-  el.style.outline='2px solid var(--accent)';
-});
-document.addEventListener('drop',e=>{
-  const el=e.target.closest('.richItem');
-  if(!el||!_rdSrc)return;
-  e.preventDefault();e.stopPropagation();
-  el.style.outline='';
-  const destPos=+el.dataset.pos;
-  const{pos:srcPos,nid,isExtra}=_rdSrc;
-  if(srcPos===destPos)return;
-  const d=isExtra?(()=>{const[s,n]=nid.split('|||');return(extraNotes[s]||[]).find(x=>x.id===n)||{};})():(richData[nid]||{});
-  const imgs=[...(d.images||[])],tbls=[...(d.tables||[])],cas=[...(d.colAligns||[])];
-  const items=[];
-  imgs.forEach((_,i)=>items.push({type:'img',idx:i}));
-  tbls.forEach((_,i)=>items.push({type:'tbl',idx:i}));
-  if(srcPos>=items.length||destPos>=items.length)return;
-const ta=document.getElementById(isExtra?'eta-'+nid.split('|||')[1]:nid);
-if(ta)d._textVal=ta.value;
-const moved=items.splice(srcPos,1)[0];items.splice(destPos,0,moved);
-const ni=[],nt=[],nc=[];let newTp=0;
-items.forEach((item,i)=>{
-  if(item.type==='text')newTp=i;
-  else if(item.type==='img')ni.push(imgs[item.idx]);
-  else{nt.push(tbls[item.idx]);nc.push(cas[item.idx]||[]);}
-});
-d.images=ni;d.tables=nt;d.colAligns=nc;d.textPos=newTp;
-  if(isExtra){const[s,n]=nid.split('|||');renderExtraRich(s,n);}else renderRich(nid);
-});
+
+function renderTableHTML(nid,rowId,item,isExtra,enc){
+  const ies=isExtra?'true':'false';
+  const args=`'${enc(nid)}','${rowId}','${item.id}'`;
+  const{headers=[],rows=[],colAligns=[]}=item.data||{};
+  return`<div class="rtbl-wrap">
+  <table>
+    <thead><tr>
+      ${headers.map((hh,ci)=>{
+        const al=colAligns[ci]||'left';
+        return`<th style="min-width:55px">
+          <div style="display:flex;gap:1px;margin-bottom:2px">
+            ${['left','center','right'].map(a=>`<button onclick="rTCA(${args},${ci},'${a}',${ies})" style="padding:0 3px;font-size:9px;border:1px solid var(--bdr);border-radius:2px;background:${al===a?'var(--accent)':'transparent'};color:${al===a?'#fff':'var(--txt3)'};cursor:pointer">${{left:'L',center:'C',right:'R'}[a]}</button>`).join('')}
+            <button onclick="rTDC(${args},${ci},${ies})" style="padding:0 3px;font-size:9px;border:1px solid rgba(239,68,68,.3);border-radius:2px;background:transparent;color:#ef4444;cursor:pointer">✕</button>
+          </div>
+          <span contenteditable onblur="rTUC(${args},0,${ci},this,${ies})" style="display:block;outline:none;text-align:${al}">${hh}</span>
+        </th>`;
+      }).join('')}
+      <th style="width:20px;text-align:center;vertical-align:bottom;padding-bottom:2px">
+        <button onclick="rTAC(${args},${ies})" style="border:none;background:transparent;cursor:pointer;color:var(--txt3);font-size:14px;line-height:1">＋</button>
+      </th>
+    </tr></thead>
+    <tbody>
+      ${rows.map((row,ri)=>`<tr>
+        ${row.map((cell,ci)=>`<td style="text-align:${colAligns[ci]||'left'}">
+          <span contenteditable onblur="rTUC(${args},${ri+1},${ci},this,${ies})" style="outline:none;display:block;min-width:28px">${cell}</span>
+        </td>`).join('')}
+        <td style="text-align:center;width:20px">
+          <button onclick="rTDR(${args},${ri+1},${ies})" style="border:none;background:transparent;cursor:pointer;color:#ef4444;font-size:12px;padding:0">✕</button>
+        </td>
+      </tr>`).join('')}
+    </tbody>
+  </table>
+  <button onclick="rTAR(${args},${ies})" style="margin-top:3px;padding:1px 7px;font-size:10px;border:1px solid var(--bdr);border-radius:3px;background:var(--bg2);cursor:pointer;color:var(--txt3)">＋ 加行</button>
+  </div>`;
+}
+
+// ── Attach resizers ──
+function attachResizers(containerEl,nid,d,isExtra){
+  // Vertical resize (item height)
+  containerEl.querySelectorAll('.ritem-vresize').forEach(resizer=>{
+    const ritemEl=resizer.closest('.ritem');
+    const contentEl=ritemEl?.querySelector('.ritem-content');
+    if(!contentEl)return;
+    resizer.addEventListener('mousedown',e=>{
+      e.preventDefault();e.stopPropagation();
+      const startY=e.clientY,startH=contentEl.getBoundingClientRect().height;
+      const itemId=ritemEl.dataset.itemid;
+      resizer.classList.add('active');
+      document.body.style.cursor='row-resize';
+      document.body.style.userSelect='none';
+      const onMove=e=>{
+        const newH=Math.max(40,startH+(e.clientY-startY));
+        contentEl.style.height=newH+'px';
+      };
+      const onUp=()=>{
+        document.removeEventListener('mousemove',onMove);
+        resizer.classList.remove('active');
+        document.body.style.cursor='';document.body.style.userSelect='';
+        const finalH=Math.round(contentEl.getBoundingClientRect().height);
+        const dObj=isExtra?getExtraRD(nid):getRD(nid);
+        (dObj.rows||[]).forEach(row=>row.items.forEach(item=>{if(item.id===itemId)item.height=finalH;}));
+      };
+      document.addEventListener('mousemove',onMove);
+      document.addEventListener('mouseup',onUp,{once:true});
+    });
+  });
+  // Horizontal resize (column width via flex)
+  containerEl.querySelectorAll('.rcol-resize').forEach(resizer=>{
+    resizer.addEventListener('mousedown',e=>{
+      e.preventDefault();e.stopPropagation();
+      const rowBody=resizer.closest('.rrow-body');if(!rowBody)return;
+      const leftEl=resizer.previousElementSibling;
+      const rightEl=resizer.nextElementSibling;
+      if(!leftEl||!rightEl||!leftEl.dataset.itemid||!rightEl.dataset.itemid)return;
+      const leftId=leftEl.dataset.itemid,rightId=rightEl.dataset.itemid;
+      const rowId=rowBody.dataset.rowid;
+      const startX=e.clientX;
+      const startLeftW=leftEl.getBoundingClientRect().width;
+      const startRightW=rightEl.getBoundingClientRect().width;
+      resizer.classList.add('active');
+      document.body.style.cursor='col-resize';document.body.style.userSelect='none';
+      const onMove=e=>{
+        const dx=e.clientX-startX;
+        const newLW=Math.max(50,startLeftW+dx);
+        const newRW=Math.max(50,startRightW-dx);
+        leftEl.style.flex=`0 0 ${newLW}px`;
+        rightEl.style.flex=`0 0 ${newRW}px`;
+      };
+      const onUp=()=>{
+        document.removeEventListener('mousemove',onMove);
+        resizer.classList.remove('active');
+        document.body.style.cursor='';document.body.style.userSelect='';
+        // Convert px → flex ratio
+        const finalLW=leftEl.getBoundingClientRect().width;
+        const finalRW=rightEl.getBoundingClientRect().width;
+        const total=finalLW+finalRW;
+        const dObj=isExtra?getExtraRD(nid):getRD(nid);
+        const row=(dObj.rows||[]).find(r=>r.id===rowId);
+        if(row){
+          const lItem=row.items.find(i=>i.id===leftId);
+          const rItem=row.items.find(i=>i.id===rightId);
+          if(lItem&&rItem){
+            const combined=(lItem.flex||1)+(rItem.flex||1);
+            lItem.flex=Math.max(0.1,Math.round(finalLW/total*combined*100)/100);
+            rItem.flex=Math.max(0.1,Math.round(finalRW/total*combined*100)/100);
+          }
+        }
+        // Re-render to reset to flex-based widths
+        reRich(nid,isExtra);
+      };
+      document.addEventListener('mousemove',onMove);
+      document.addEventListener('mouseup',onUp,{once:true});
+    });
+  });
+}
+
+// ── Row drag ──
+function attachRowDrag(containerEl,nid,d,isExtra){
+  containerEl.querySelectorAll('.rrow').forEach(rowEl=>{
+    const handle=rowEl.querySelector('.rrow-handle');if(!handle)return;
+    let dragSrcRow=null;
+    handle.addEventListener('mousedown',()=>{rowEl.draggable=true;});
+    handle.addEventListener('mouseup',()=>{rowEl.draggable=false;});
+    rowEl.addEventListener('dragstart',e=>{
+      dragSrcRow=rowEl;
+      setTimeout(()=>rowEl.classList.add('dragging'),0);
+      e.stopPropagation();
+    });
+    rowEl.addEventListener('dragend',()=>{
+      rowEl.draggable=false;rowEl.classList.remove('dragging');
+      containerEl.querySelectorAll('.rrow').forEach(r=>r.classList.remove('drag-over'));
+    });
+    rowEl.addEventListener('dragover',e=>{
+      if(!dragSrcRow||dragSrcRow===rowEl)return;
+      e.preventDefault();e.stopPropagation();
+      containerEl.querySelectorAll('.rrow').forEach(r=>r.classList.remove('drag-over'));
+      rowEl.classList.add('drag-over');
+    });
+    rowEl.addEventListener('dragleave',()=>rowEl.classList.remove('drag-over'));
+    rowEl.addEventListener('drop',e=>{
+      e.preventDefault();e.stopPropagation();rowEl.classList.remove('drag-over');
+      if(!dragSrcRow||dragSrcRow===rowEl)return;
+      const dObj=isExtra?getExtraRD(nid):getRD(nid);
+      const rows=dObj.rows;
+      const si=rows.findIndex(r=>r.id===dragSrcRow.dataset.rowid);
+      const di=rows.findIndex(r=>r.id===rowEl.dataset.rowid);
+      if(si<0||di<0)return;
+      const[moved]=rows.splice(si,1);rows.splice(di,0,moved);
+      reRich(nid,isExtra);
+    });
+  });
+}
+
+// ── Row/Item CRUD ──
+function rAddRow(nid,type,isExtra){
+  const ie=isExtra===true||isExtra==='true';
+  const dObj=ie?getExtraRD(nid):getRD(nid);
+  dObj.rows.push({id:uid(),items:[mkDefItem(type)]});
+  reRich(nid,ie);
+}
+function rAddItem(nid,rowId,type,isExtra){
+  const ie=isExtra===true||isExtra==='true';
+  const dObj=ie?getExtraRD(nid):getRD(nid);
+  const row=(dObj.rows||[]).find(r=>r.id===rowId);if(!row)return;
+  row.items.push(mkDefItem(type));
+  reRich(nid,ie);
+}
+function rDelItem(nid,rowId,itemId,isExtra){
+  const ie=isExtra===true||isExtra==='true';
+  const dObj=ie?getExtraRD(nid):getRD(nid);
+  const row=(dObj.rows||[]).find(r=>r.id===rowId);if(!row)return;
+  row.items=row.items.filter(i=>i.id!==itemId);
+  if(row.items.length===0)dObj.rows=dObj.rows.filter(r=>r.id!==rowId);
+  reRich(nid,ie);
+}
+function rDelRow(nid,rowId,isExtra){
+  const ie=isExtra===true||isExtra==='true';
+  const dObj=ie?getExtraRD(nid):getRD(nid);
+  dObj.rows=(dObj.rows||[]).filter(r=>r.id!==rowId);
+  reRich(nid,ie);
+}
+
+// ── Table operations ──
+function rTFind(nid,rowId,itemId,isExtra){
+  const ie=isExtra===true||isExtra==='true';
+  const dObj=ie?getExtraRD(nid):getRD(nid);
+  let found=null;
+  (dObj.rows||[]).forEach(row=>{if(row.id===rowId)row.items.forEach(item=>{if(item.id===itemId)found=item;});});
+  return found;
+}
+function rTUC(nid,rowId,itemId,ri,ci,el,isExtra){
+  const item=rTFind(nid,rowId,itemId,isExtra);if(!item?.data)return;
+  if(ri===0)item.data.headers[ci]=el.textContent;
+  else{if(!item.data.rows[ri-1])return;item.data.rows[ri-1][ci]=el.textContent;}
+}
+function rTCA(nid,rowId,itemId,ci,al,isExtra){
+  const ie=isExtra===true||isExtra==='true';
+  const item=rTFind(nid,rowId,itemId,isExtra);if(!item?.data)return;
+  if(!item.data.colAligns)item.data.colAligns=[];item.data.colAligns[ci]=al;
+  reRich(nid,ie);
+}
+function rTDC(nid,rowId,itemId,ci,isExtra){
+  const ie=isExtra===true||isExtra==='true';
+  const item=rTFind(nid,rowId,itemId,isExtra);if(!item?.data)return;
+  item.data.headers.splice(ci,1);item.data.rows.forEach(r=>r.splice(ci,1));
+  if(item.data.colAligns)item.data.colAligns.splice(ci,1);
+  reRich(nid,ie);
+}
+function rTAC(nid,rowId,itemId,isExtra){
+  const ie=isExtra===true||isExtra==='true';
+  const item=rTFind(nid,rowId,itemId,isExtra);if(!item?.data)return;
+  item.data.headers.push('欄'+(item.data.headers.length+1));item.data.rows.forEach(r=>r.push(''));
+  reRich(nid,ie);
+}
+function rTAR(nid,rowId,itemId,isExtra){
+  const ie=isExtra===true||isExtra==='true';
+  const item=rTFind(nid,rowId,itemId,isExtra);if(!item?.data)return;
+  item.data.rows.push(Array(item.data.headers.length).fill(''));
+  reRich(nid,ie);
+}
+function rTDR(nid,rowId,itemId,ri,isExtra){
+  const ie=isExtra===true||isExtra==='true';
+  const item=rTFind(nid,rowId,itemId,isExtra);if(!item?.data)return;
+  item.data.rows.splice(ri-1,1);
+  reRich(nid,ie);
+}
 
 // ── Extra notes ──
 function openAddNote(){document.getElementById('newNoteTitle').value='';document.getElementById('addNoteModal').style.display='flex';}
@@ -1233,7 +1365,7 @@ function confirmAddNote(){
   const title=document.getElementById('newNoteTitle').value.trim()||'補充說明';
   const sec=document.getElementById('newNoteSection').value;
   if(!extraNotes[sec])extraNotes[sec]=[];
-  extraNotes[sec].push({id:'en_'+Date.now(),title,content:'',images:[],tables:[]});
+  extraNotes[sec].push({id:'en_'+Date.now(),title,rows:[{id:uid(),items:[{id:uid(),type:'text',flex:1,height:90,data:{content:''}}]}]});
   renderExtraNotes(sec);closeModal('addNoteModal');
 }
 function renderExtraNotes(sec){
@@ -1242,118 +1374,80 @@ function renderExtraNotes(sec){
   el.innerHTML=list.map(n=>`
     <div class="extraNote">
       <button class="extraNoteDel" onclick="delExtraNote('${sec}','${n.id}')">✕</button>
-      <div class="extraNoteTitle"><span class="noteDot"></span><input value="${n.title.replace(/"/g,'&quot;')}" placeholder="說明標題…" onchange="updateExtraTitle('${sec}','${n.id}',this.value)"></div>
-      <div class="noteToolbar">
-        <button class="nToolBtn" onclick="openTblModal('extra:${sec}:${n.id}')">📊 新增表格</button>
-        <button class="nToolBtn" onclick="trigExtraImg('${sec}','${n.id}')">📷 上傳圖片</button>
-      </div>
-      <textarea class="noteBox" style="min-height:75px" id="eta-${n.id}" onchange="updateExtraContent('${sec}','${n.id}',this.value)">${n.content||''}</textarea>
-      <input type="file" accept="image/*" id="eimg-${n.id}" style="display:none" onchange="handleExtraImg('${sec}','${n.id}',this)">
-      <div class="noteRich" id="erich-${n.id}"></div>
+      <div class="extraNoteTitle"><span class="noteDot"></span><input value="${(n.title||'').replace(/"/g,'&quot;')}" placeholder="說明標題…" onchange="updateExtraTitle('${sec}','${n.id}',this.value)"></div>
+      <div id="erich-${n.id}"></div>
     </div>`).join('');
   list.forEach(n=>renderExtraRich(sec,n.id));
 }
-function renderExtraRich(sec,nid){
-  const el=document.getElementById('erich-'+nid);if(!el)return;
-  const n=(extraNotes[sec]||[]).find(x=>x.id===nid)||{images:[],tables:[]};
-  el.innerHTML=buildRichHTML(n,sec+'|||'+nid,true);
-}
-function eImgAlign(k,i,al){const[s,n]=k.split('|||');const d=(extraNotes[s]||[]).find(x=>x.id===n);if(!d?.images?.[i])return;if(typeof d.images[i]==='string')d.images[i]={data:d.images[i],name:'',align:al};else d.images[i].align=al;renderExtraRich(s,n);}
-function eTblCA(k,ti,ci,al){const[s,n]=k.split('|||');const d=(extraNotes[s]||[]).find(x=>x.id===n);if(!d)return;if(!d.colAligns)d.colAligns=[];if(!d.colAligns[ti])d.colAligns[ti]=[];d.colAligns[ti][ci]=al;renderExtraRich(s,n);}
-function eTblDC(k,ti,ci){const[s,n]=k.split('|||');const d=(extraNotes[s]||[]).find(x=>x.id===n);if(!d?.tables?.[ti])return;d.tables[ti].forEach(r=>r.splice(ci,1));if(d.colAligns?.[ti])d.colAligns[ti].splice(ci,1);renderExtraRich(s,n);}
-function eTblAC(k,ti){const[s,n]=k.split('|||');const d=(extraNotes[s]||[]).find(x=>x.id===n);if(!d?.tables?.[ti])return;d.tables[ti].forEach(r=>r.push(''));renderExtraRich(s,n);}
-function eTblAR(k,ti){const[s,n]=k.split('|||');const d=(extraNotes[s]||[]).find(x=>x.id===n);if(!d?.tables?.[ti])return;d.tables[ti].push(Array((d.tables[ti][0]||[]).length).fill(''));renderExtraRich(s,n);}
-function eTblDR(k,ti,ri){const[s,n]=k.split('|||');const d=(extraNotes[s]||[]).find(x=>x.id===n);if(!d?.tables?.[ti])return;d.tables[ti].splice(ri,1);renderExtraRich(s,n);}
-function trigExtraImg(sec,nid){document.getElementById('eimg-'+nid)?.click();}
-function handleExtraImg(sec,nid,input){
-  const file=input.files[0];if(!file)return;
-  const rd=new FileReader();
-  rd.onload=async e=>{
-    const compressed=await compressImage(e.target.result);
-    const n=(extraNotes[sec]||[]).find(x=>x.id===nid);
-    if(!n)return;if(!n.images)n.images=[];
-    n.images.push({name:file.name,data:compressed});renderExtraRich(sec,nid);
-  };
-  rd.readAsDataURL(file);input.value='';
-}
-function delExtraImg(sec,nid,i){const n=(extraNotes[sec]||[]).find(x=>x.id===nid);if(n){n.images.splice(i,1);renderExtraRich(sec,nid);}}
-function delExtraTbl(sec,nid,i){const n=(extraNotes[sec]||[]).find(x=>x.id===nid);if(n){n.tables.splice(i,1);renderExtraRich(sec,nid);}}
-function updateExtraCell(sec,nid,ti,ri,ci,el){const n=(extraNotes[sec]||[]).find(x=>x.id===nid);if(n?.tables?.[ti])n.tables[ti][ri][ci]=el.textContent;}
 function updateExtraTitle(sec,nid,val){const n=(extraNotes[sec]||[]).find(x=>x.id===nid);if(n)n.title=val;}
-function updateExtraContent(sec,nid,val){const n=(extraNotes[sec]||[]).find(x=>x.id===nid);if(n)n.content=val;}
-function delExtraNote(sec,nid){if(!extraNotes[sec])return;extraNotes[sec]=extraNotes[sec].filter(n=>n.id!==nid);renderExtraNotes(sec);}
+function delExtraNote(sec,nid){
+  if(!extraNotes[sec])return;
+  extraNotes[sec]=extraNotes[sec].filter(n=>n.id!==nid);
+  renderExtraNotes(sec);
+}
+
+// ── Notes DB ──
+function nKey(id){return`${MODULE}_${curBr}_${curPeriod}_${id}`;}
+
+async function loadNotes(seq){
+  NOTE_IDS.forEach(id=>{richData[id]=null;});
+  SECS.forEach(sec=>{extraNotes[sec]=[];const el=document.getElementById('extra-notes-'+sec);if(el)el.innerHTML='';});
+  try{
+    const prefix=`${MODULE}_${curBr}_${curPeriod}_`;
+    const data=await sf(`/api/notes?prefix=${encodeURIComponent(prefix)}`);
+    if(seq!==undefined&&seq!==_loadSeq)return;
+    if(data){
+      NOTE_IDS.forEach(id=>{
+        const rk=nKey('rich_'+id);
+        if(data[rk]){
+          try{
+            const parsed=JSON.parse(data[rk]);
+            richData[id]=parsed.rows?parsed:migrateRD(parsed,NOTE_CFG[id]?.defH);
+          }catch{}
+        }else{
+          // Fall back to old plain text key
+          const textVal=data[nKey(id)]||'';
+          richData[id]={rows:[{id:uid(),items:[{id:uid(),type:'text',flex:1,height:NOTE_CFG[id]?.defH||90,data:{content:textVal}}]}]};
+        }
+      });
+      SECS.forEach(sec=>{
+        const k=nKey('extra_'+sec);
+        if(data[k]){try{extraNotes[sec]=JSON.parse(data[k]);}catch{}}
+      });
+    }
+  }catch{}
+  renderAllNoteAreas();
+  SECS.forEach(sec=>{if(extraNotes[sec]?.length)renderExtraNotes(sec);});
+}
+
+async function saveAll(){
+  const btn=document.getElementById('saveBtn'),ok=document.getElementById('saveOk'),st=document.getElementById('nSt');
+  btn.disabled=true;btn.textContent='儲存中…';st.innerHTML='<span class="sSp"></span>';
+  collectAllTexts();
+  const entries=[
+    ...NOTE_IDS.map(id=>({key:nKey('rich_'+id),value:JSON.stringify(getRD(id))})),
+    ...SECS.map(sec=>({key:nKey('extra_'+sec),value:JSON.stringify(extraNotes[sec]||[])})),
+    // Backward compat: plain text
+    ...NOTE_IDS.map(id=>{
+      const d=getRD(id);
+      const first=d.rows?.flatMap(r=>r.items).find(i=>i.type==='text');
+      return{key:nKey(id),value:first?.data?.content||''};
+    }),
+  ];
+  try{
+    const r=await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({entries})});
+    btn.disabled=false;btn.textContent='💾 儲存說明';
+    if(r.ok){ok.style.opacity='1';st.innerHTML='';setTimeout(()=>{ok.style.opacity='0';},2500);}
+    else{st.textContent='❌ 儲存失敗，請確認網路';st.style.color='#ef4444';setTimeout(()=>{st.textContent='';st.style.color='';},4000);}
+  }catch{
+    btn.disabled=false;btn.textContent='💾 儲存說明';
+    st.textContent='❌ 儲存失敗';st.style.color='#ef4444';
+  }
+}
 
 // ── Modal helpers ──
 function closeModal(id){document.getElementById(id).style.display='none';}
 document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.style.display='none';}));
-
-// ── Notes DB ──
-function nKey(id){return`${MODULE}_${curBr}_${curPeriod}_${id}`;}
-async function loadNotes(seq){
-  // ── 清空記憶體，避免切換 branch/period 時殘留舊資料 ──
-  NOTE_IDS.forEach(id=>{
-    const ta=document.getElementById(id);if(ta)ta.value='';
-    richData[id]=null;
-    const richEl=document.getElementById('rich-'+id);if(richEl)richEl.innerHTML='';
-  });
-  SECS.forEach(sec=>{
-    extraNotes[sec]=[];
-    const el=document.getElementById('extra-notes-'+sec);if(el)el.innerHTML='';
-  });
-  try{
-    const prefix=`${MODULE}_${curBr}_${curPeriod}_`;
-    const data=await sf(`/api/notes?prefix=${encodeURIComponent(prefix)}`);
-    // 若在等待 API 回應期間使用者已切換 branch/period，放棄這次結果
-    if(seq!==undefined&&seq!==_loadSeq)return;
-    if(!data)return;
-    NOTE_IDS.forEach(id=>{
-      const el=document.getElementById(id);if(el)el.value=data[nKey(id)]??'';
-      const rk=nKey('rich_'+id);if(data[rk]){try{richData[id]=JSON.parse(data[rk]);renderRich(id);}catch{}}
-    });
-    SECS.forEach(sec=>{
-      const k=nKey('extra_'+sec);
-      if(data[k]){try{extraNotes[sec]=JSON.parse(data[k]);renderExtraNotes(sec);}catch{}}
-    });
-  }catch{}
-}
-async function saveAll(){
-  const btn=document.getElementById('saveBtn'),ok=document.getElementById('saveOk'),st=document.getElementById('nSt');
-  btn.disabled=true;btn.textContent='儲存中…';st.innerHTML='<span class="sSp"></span>';
-  SECS.forEach(sec=>(extraNotes[sec]||[]).forEach(n=>{const ta=document.getElementById('eta-'+n.id);if(ta)n.content=ta.value;}));
-
-  // 文字類（輕量）與圖片類（較重）分開存，避免圖片讓文字也跟著失敗
-  const textEntries=[
-    ...NOTE_IDS.map(id=>({key:nKey(id),value:document.getElementById(id)?.value||''})),
-    ...SECS.map(sec=>({key:nKey('extra_'+sec),value:JSON.stringify(extraNotes[sec]||[])})),
-  ];
-  const richEntries=NOTE_IDS
-    .filter(id=>richData[id]&&(richData[id].images?.length||richData[id].tables?.length))
-    .map(id=>({key:nKey('rich_'+id),value:JSON.stringify(richData[id])}));
-
-  const postBatch=async(entries)=>{
-    if(!entries.length)return true;
-    try{
-      const r=await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({entries})});
-      return r.ok;
-    }catch{return false;}
-  };
-
-  const textOk=await postBatch(textEntries);
-  const richOk=richEntries.length===0||await postBatch(richEntries);
-
-  btn.disabled=false;btn.textContent='💾 儲存說明';
-  if(textOk&&richOk){
-    ok.style.opacity='1';st.innerHTML='';
-    setTimeout(()=>{ok.style.opacity='0';},2500);
-  }else if(textOk&&!richOk){
-    st.textContent='⚠️ 文字已儲存，圖片過大請洽管理員調整伺服器設定';
-    st.style.color='#f59e0b';setTimeout(()=>{st.textContent='';st.style.color='';},5000);
-  }else{
-    st.textContent='❌ 儲存失敗，請檢查網路連線';
-    st.style.color='#ef4444';setTimeout(()=>{st.textContent='';st.style.color='';},4000);
-  }
-}
 
 init();
 </script>
