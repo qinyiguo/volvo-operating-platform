@@ -652,16 +652,16 @@ function buildWip(tc,gc){
 function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder){
   const allV=[...act,...(ly||[]),...(showTgt&&tgt?tgt:[])].filter(v=>v>0);
   const minV=allV.length?Math.min(...allV):0,maxV=allV.length?Math.max(...allV):100;
-  const pad=(maxV-minV)||maxV*.1||5;
-  const lo=Math.max(0,minV-pad*.15),hi=maxV+pad*.1;
-  // 計算好看的刻度步距
+  const spread=(maxV-minV)||maxV*.1||5;
+  const lo=Math.max(0,minV-spread*.12),hi=maxV+spread*.08;
   const range=hi-lo||1;
   const rawStep=range/5;
   const mag=Math.pow(10,Math.floor(Math.log10(rawStep)));
-  const step=Math.ceil(rawStep/mag)*mag;
+  const step=Math.ceil(rawStep/mag)*mag||1;
   const niceMin=Math.floor(lo/step)*step;
   const niceMax=Math.ceil(hi/step)*step;
-  const fmt=yFmt||(v=>v>=1000?Math.round(v/1000)+'K':Math.round(v));
+  const fmt=yFmt||(v=>Math.round(v).toLocaleString()); // Y軸：直接顯示原始數字（千元）
+  const tipFmt=v=>fK(v); // Tooltip：與 KPI 卡片格式一致（58,872K）
   const ds=[{
     label:'今年實際',data:act,borderColor:lc,backgroundColor:lc+'22',tension:.35,fill:true,
     pointRadius:5,borderWidth:3,
@@ -673,7 +673,7 @@ function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder){
   return new Chart(document.getElementById(id),{
     type:'line',data:{labels,datasets:ds},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${fmt(ctx.raw)}`}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${tipFmt(ctx.raw)}`}}},
       scales:{x:{ticks:{font:{size:10},color:tc},grid:{color:gc}},
               y:{ticks:{font:{size:11},color:tc,callback:fmt},grid:{color:gc},min:niceMin,max:niceMax}}}
   });
