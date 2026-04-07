@@ -93,6 +93,15 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
 .bar-bg{background:var(--bg3);border-radius:3px;height:6px;}
 .dlBtn{position:absolute;top:8px;right:8px;background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.25);border-radius:5px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer;z-index:2;}
 .dlBtn:hover{background:rgba(59,130,246,.28);}
+/* Period selector per chart */
+.cPBar{display:flex;gap:3px;}
+.cPBtn{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;border:1px solid var(--bdr);background:transparent;color:var(--txt3);transition:all .12s;}
+.cPBtn:hover{border-color:var(--accent);color:var(--accent);}
+.cPBtn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.avgRow{display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:11px;color:var(--txt3);}
+.avgRow strong{color:var(--txt);}
+.avgDash{width:18px;height:0;display:inline-block;border-top:2px dashed rgba(255,255,255,.35);}
+[data-theme="light"] .avgDash{border-top-color:rgba(0,0,0,.3);}
 
 /* Notes */
 .noteDot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;}
@@ -188,11 +197,20 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
     <div class="kpiRow" id="kpi_paid"></div>
     <div class="card" style="margin-bottom:10px">
       <button class="dlBtn" onclick="dlChart('c_paid','有費營收')">⬇ 下載</button>
-      <div class="leg">
-        <span class="li"><span class="ld" style="background:#f97316"></span>今年實際</span>
-        <span class="li"><span class="ld-d" style="border-top-color:#94a3b8"></span>去年同期</span>
-        <span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>預算目標</span>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:4px">
+        <div class="leg">
+          <span class="li"><span class="ld" style="background:#f97316"></span>今年實際</span>
+          <span class="li"><span class="ld-d" style="border-top-color:#94a3b8"></span>去年同期</span>
+          <span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>預算目標</span>
+        </div>
+        <div class="cPBar">
+          <button class="cPBtn" data-chart="paid" data-n="1"  onclick="setPeriod('paid',1)">1M</button>
+          <button class="cPBtn" data-chart="paid" data-n="3"  onclick="setPeriod('paid',3)">3M</button>
+          <button class="cPBtn" data-chart="paid" data-n="6"  onclick="setPeriod('paid',6)">6M</button>
+          <button class="cPBtn active" data-chart="paid" data-n="12" onclick="setPeriod('paid',12)">12M</button>
+        </div>
       </div>
+      <div class="avgRow" id="avg-paid"></div>
       <div style="position:relative;height:220px"><canvas id="c_paid"></canvas></div>
     </div>
     <div class="card" style="margin-bottom:4px">
@@ -212,7 +230,16 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
         <div class="kpiRow2" id="kpi_gen"></div>
         <div class="card" style="margin-bottom:8px">
           <button class="dlBtn" onclick="dlChart('c_gen','一般營收')">⬇</button>
-          <div class="leg"><span class="li"><span class="ld" style="background:#3b82f6"></span>今年</span><span class="li"><span class="ld-d" style="border-top-color:#7dd3fc"></span>去年</span><span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>目標</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:3px;margin-bottom:3px">
+            <div class="leg"><span class="li"><span class="ld" style="background:#3b82f6"></span>今年</span><span class="li"><span class="ld-d" style="border-top-color:#7dd3fc"></span>去年</span><span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>目標</span></div>
+            <div class="cPBar">
+              <button class="cPBtn" data-chart="gen" data-n="1"  onclick="setPeriod('gen',1)">1M</button>
+              <button class="cPBtn" data-chart="gen" data-n="3"  onclick="setPeriod('gen',3)">3M</button>
+              <button class="cPBtn" data-chart="gen" data-n="6"  onclick="setPeriod('gen',6)">6M</button>
+              <button class="cPBtn active" data-chart="gen" data-n="12" onclick="setPeriod('gen',12)">12M</button>
+            </div>
+          </div>
+          <div class="avgRow" id="avg-gen"></div>
           <div style="position:relative;height:155px"><canvas id="c_gen"></canvas></div>
         </div>
         <div class="card"><div id="note-area-n_gen"></div></div>
@@ -222,7 +249,16 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
         <div class="kpiRow2" id="kpi_bw"></div>
         <div class="card" style="margin-bottom:8px">
           <button class="dlBtn" onclick="dlChart('c_bw','鈑烤營收')">⬇</button>
-          <div class="leg"><span class="li"><span class="ld" style="background:#8b5cf6"></span>今年</span><span class="li"><span class="ld-d" style="border-top-color:#c4b5fd"></span>去年</span><span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>目標</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:3px;margin-bottom:3px">
+            <div class="leg"><span class="li"><span class="ld" style="background:#8b5cf6"></span>今年</span><span class="li"><span class="ld-d" style="border-top-color:#c4b5fd"></span>去年</span><span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>目標</span></div>
+            <div class="cPBar">
+              <button class="cPBtn" data-chart="bw" data-n="1"  onclick="setPeriod('bw',1)">1M</button>
+              <button class="cPBtn" data-chart="bw" data-n="3"  onclick="setPeriod('bw',3)">3M</button>
+              <button class="cPBtn" data-chart="bw" data-n="6"  onclick="setPeriod('bw',6)">6M</button>
+              <button class="cPBtn active" data-chart="bw" data-n="12" onclick="setPeriod('bw',12)">12M</button>
+            </div>
+          </div>
+          <div class="avgRow" id="avg-bw"></div>
           <div style="position:relative;height:155px"><canvas id="c_bw"></canvas></div>
         </div>
         <div class="card"><div id="note-area-n_bw"></div></div>
@@ -232,7 +268,16 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
         <div class="kpiRow2" id="kpi_ext"></div>
         <div class="card" style="margin-bottom:8px">
           <button class="dlBtn" onclick="dlChart('c_ext','延保營收')">⬇</button>
-          <div class="leg"><span class="li"><span class="ld" style="background:#10b981"></span>今年</span><span class="li"><span class="ld-d" style="border-top-color:#6ee7b7"></span>去年</span><span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>目標</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:3px;margin-bottom:3px">
+            <div class="leg"><span class="li"><span class="ld" style="background:#10b981"></span>今年</span><span class="li"><span class="ld-d" style="border-top-color:#6ee7b7"></span>去年</span><span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>目標</span></div>
+            <div class="cPBar">
+              <button class="cPBtn" data-chart="ext" data-n="1"  onclick="setPeriod('ext',1)">1M</button>
+              <button class="cPBtn" data-chart="ext" data-n="3"  onclick="setPeriod('ext',3)">3M</button>
+              <button class="cPBtn" data-chart="ext" data-n="6"  onclick="setPeriod('ext',6)">6M</button>
+              <button class="cPBtn active" data-chart="ext" data-n="12" onclick="setPeriod('ext',12)">12M</button>
+            </div>
+          </div>
+          <div class="avgRow" id="avg-ext"></div>
           <div style="position:relative;height:155px"><canvas id="c_ext"></canvas></div>
         </div>
         <div class="card"><div id="note-area-n_ext"></div></div>
@@ -249,14 +294,36 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
     <div class="g2" style="margin-bottom:10px">
       <div class="card">
         <button class="dlBtn" onclick="dlChart('c_cars','進廠台數')">⬇</button>
-        <div style="font-size:12px;font-weight:700;color:var(--txt3);margin-bottom:5px">每月進廠台數</div>
-        <div class="leg"><span class="li"><span class="ld" style="background:#3b82f6"></span>今年</span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:3px;margin-bottom:3px">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--txt3)">每月進廠台數</div>
+            <div class="leg"><span class="li"><span class="ld" style="background:#3b82f6"></span>今年</span></div>
+          </div>
+          <div class="cPBar">
+            <button class="cPBtn" data-chart="cars" data-n="1"  onclick="setPeriod('cars',1)">1M</button>
+            <button class="cPBtn" data-chart="cars" data-n="3"  onclick="setPeriod('cars',3)">3M</button>
+            <button class="cPBtn" data-chart="cars" data-n="6"  onclick="setPeriod('cars',6)">6M</button>
+            <button class="cPBtn active" data-chart="cars" data-n="12" onclick="setPeriod('cars',12)">12M</button>
+          </div>
+        </div>
+        <div class="avgRow" id="avg-cars"></div>
         <div style="position:relative;height:155px"><canvas id="c_cars"></canvas></div>
       </div>
       <div class="card">
         <button class="dlBtn" onclick="dlChart('c_rpv','單車銷售額')">⬇</button>
-        <div style="font-size:12px;font-weight:700;color:var(--txt3);margin-bottom:5px">單車銷售額（元/台）</div>
-        <div class="leg"><span class="li"><span class="ld" style="background:#10b981"></span>今年</span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:3px;margin-bottom:3px">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--txt3)">單車銷售額（元/台）</div>
+            <div class="leg"><span class="li"><span class="ld" style="background:#10b981"></span>今年</span></div>
+          </div>
+          <div class="cPBar">
+            <button class="cPBtn" data-chart="rpv" data-n="1"  onclick="setPeriod('rpv',1)">1M</button>
+            <button class="cPBtn" data-chart="rpv" data-n="3"  onclick="setPeriod('rpv',3)">3M</button>
+            <button class="cPBtn" data-chart="rpv" data-n="6"  onclick="setPeriod('rpv',6)">6M</button>
+            <button class="cPBtn active" data-chart="rpv" data-n="12" onclick="setPeriod('rpv',12)">12M</button>
+          </div>
+        </div>
+        <div class="avgRow" id="avg-rpv"></div>
         <div style="position:relative;height:155px"><canvas id="c_rpv"></canvas></div>
       </div>
     </div>
@@ -542,35 +609,106 @@ async function loadAll(){
   hideLoad();
 }
 
+// ── Per-chart period state ──
+const chartPeriods={paid:12,gen:12,bw:12,ext:12,cars:12,rpv:12};
+let last12Months=[]; // 12個月期間陣列，供 setPeriod 使用
+
 // ── Build charts ──
 function buildAll(){
   destCharts();
-  const last5=prevMonths(curPeriod,12);
-  const labels=last5.map(p=>`${p.slice(2,4)}/${p.slice(4)}`);
+  last12Months=prevMonths(curPeriod,12);
   const{tc,gc,ptBorder}=chartColors();
-  const A=k=>last5.map(p=>tData[p]?.bd?.[k]||0);
-  const T=k=>last5.map(p=>tData[p]?.tgt?.[k]||0);
-  const L=k=>last5.map(p=>tData[p]?.tgt?.[`${k}_ly`]||0);
   const mainCol=curBr==='ALL'?'#f97316':(BRCOLS[curBr]||'#f97316');
-  const li=last5.length-1;
-  const la=A('paid')[li],lt=T('paid')[li],ll=L('paid')[li];
+
+  // 全量 12M 資料（供 KPI 計算）
+  const A12=k=>last12Months.map(p=>tData[p]?.bd?.[k]||0);
+  const T12=k=>last12Months.map(p=>tData[p]?.tgt?.[k]||0);
+  const L12=k=>last12Months.map(p=>tData[p]?.tgt?.[`${k}_ly`]||0);
+
+  // Badge（最新月）
+  const li=liIdx(A12('paid'));
+  const la=A12('paid')[li],lt=T12('paid')[li],ll=L12('paid')[li];
   document.getElementById('topBadge').innerHTML=
     `有費達成 <strong style="color:${achC(lt>0?la/lt*100:0)}">${lt>0?(la/lt*100).toFixed(0)+'%':'—'}</strong>　YoY <strong style="color:${growC(la,ll)}">${ll>0?((la-ll)/ll*100).toFixed(1)+'%':'—'}</strong>`;
   document.getElementById('topStatus').textContent=`截至 ${fmtP(curPeriod)}`;
-  rKpi4('kpi_paid',A('paid'),T('paid'),L('paid'),mainCol);
-  rKpi2('kpi_gen',A('gen'),T('gen'),L('gen'),'#3b82f6');
-  rKpi2('kpi_bw',A('bw'),T('bw'),L('bw'),'#8b5cf6');
-  rKpi2('kpi_ext',A('ext'),T('ext'),L('ext'),'#10b981');
-  // 所有目標線改為紅色，去年同期保留各自顏色但粗體虛線
-  charts.paid=mkLine('c_paid',labels,A('paid'),L('paid'),T('paid'),mainCol,'#94a3b8','#ef4444',null,true,tc,gc,ptBorder);
-  charts.gen =mkLine('c_gen', labels,A('gen'), L('gen'), T('gen'), '#3b82f6','#7dd3fc','#ef4444',null,true,tc,gc,ptBorder);
-  charts.bw  =mkLine('c_bw',  labels,A('bw'),  L('bw'),  T('bw'),  '#8b5cf6','#c4b5fd','#ef4444',null,true,tc,gc,ptBorder);
-  charts.ext =mkLine('c_ext', labels,A('ext'), L('ext'), T('ext'), '#10b981','#6ee7b7','#ef4444',null,true,tc,gc,ptBorder);
-  const carsAct=last5.map(p=>tData[p]?.cars?.act||0);
-  charts.cars=mkLine('c_cars',labels,carsAct,[],[],mainCol,'#94a3b8',null,v=>Math.round(v),false,tc,gc,ptBorder);
-  const rpv=carsAct.map((c,i)=>c>0?Math.round(A('paid')[i]*1000/c):0);
-  charts.rpv =mkLine('c_rpv', labels,rpv,   [],[],'#10b981','#6ee7b7',null,v=>v>=1000?Math.round(v/1000)+'K':v,false,tc,gc,ptBorder);
+
+  // YTD：只計算當年度月份
+  const curYear=curPeriod.slice(0,4);
+  const ytdM=last12Months.filter(p=>p.startsWith(curYear));
+  rKpi4('kpi_paid',A12('paid'),T12('paid'),L12('paid'),mainCol,
+    ytdM.map(p=>tData[p]?.bd?.paid||0),ytdM.map(p=>tData[p]?.tgt?.paid||0));
+  rKpi2('kpi_gen', A12('gen'), T12('gen'), L12('gen'), '#3b82f6');
+  rKpi2('kpi_bw',  A12('bw'),  T12('bw'),  L12('bw'),  '#8b5cf6');
+  rKpi2('kpi_ext', A12('ext'), T12('ext'), L12('ext'), '#10b981');
+
+  // 各圖表依自己的 period 重建
+  buildOneRevChart('paid', mainCol, '#94a3b8', tc, gc, ptBorder);
+  buildOneRevChart('gen',  '#3b82f6','#7dd3fc', tc, gc, ptBorder);
+  buildOneRevChart('bw',   '#8b5cf6','#c4b5fd', tc, gc, ptBorder);
+  buildOneRevChart('ext',  '#10b981','#6ee7b7', tc, gc, ptBorder);
+  buildCarsCharts(mainCol, tc, gc, ptBorder);
   buildWip(tc,gc);
+}
+
+// 重建單一營收圖表（paid / gen / bw / ext）
+function buildOneRevChart(key, lc, lyc, tc, gc, ptBorder){
+  const n=chartPeriods[key]||12;
+  const months=last12Months.slice(-n);
+  const labels=months.map(p=>`${p.slice(2,4)}/${p.slice(4)}`);
+  const act=months.map(p=>tData[p]?.bd?.[key]||0);
+  const ly =months.map(p=>tData[p]?.tgt?.[`${key}_ly`]||0);
+  const tgt=months.map(p=>tData[p]?.tgt?.[key]||0);
+  if(charts[key]){try{charts[key].destroy();}catch{}}
+  charts[key]=mkLine('c_'+key,labels,act,ly,tgt,lc,lyc,'#ef4444',null,true,tc,gc,ptBorder);
+  refreshAvgBadge(key,act,n);
+  refreshPeriodBtns(key,n);
+}
+
+// 重建進廠 & 單車圖表（cars/rpv 共用同一 period）
+function buildCarsCharts(mainCol, tc, gc, ptBorder){
+  const n=chartPeriods.cars||12;
+  const months=last12Months.slice(-n);
+  const labels=months.map(p=>`${p.slice(2,4)}/${p.slice(4)}`);
+  const carsAct=months.map(p=>tData[p]?.cars?.act||0);
+  const paid   =months.map(p=>tData[p]?.bd?.paid||0);
+  const rpv=carsAct.map((c,i)=>c>0?Math.round(paid[i]*1000/c):0);
+  if(charts.cars){try{charts.cars.destroy();}catch{}}
+  if(charts.rpv) {try{charts.rpv.destroy(); }catch{}}
+  charts.cars=mkLine('c_cars',labels,carsAct,[],[],mainCol,'#94a3b8',null,v=>Math.round(v),false,tc,gc,ptBorder);
+  charts.rpv =mkLine('c_rpv', labels,rpv,   [],[],'#10b981','#6ee7b7',null,v=>v>=1000?Math.round(v/1000)+'K':v,false,tc,gc,ptBorder);
+  refreshAvgBadge('cars',carsAct,n);
+  refreshAvgBadge('rpv',rpv,n);
+  refreshPeriodBtns('cars',n);
+  refreshPeriodBtns('rpv',n);
+}
+
+// 切換某圖表的月份區間
+function setPeriod(key, n){
+  if(key==='cars'||key==='rpv'){chartPeriods.cars=n;chartPeriods.rpv=n;}
+  else{chartPeriods[key]=n;}
+  const{tc,gc,ptBorder}=chartColors();
+  const mainCol=curBr==='ALL'?'#f97316':(BRCOLS[curBr]||'#f97316');
+  if(key==='cars'||key==='rpv') buildCarsCharts(mainCol,tc,gc,ptBorder);
+  else buildOneRevChart(key,
+    {paid:mainCol,gen:'#3b82f6',bw:'#8b5cf6',ext:'#10b981'}[key],
+    {paid:'#94a3b8',gen:'#7dd3fc',bw:'#c4b5fd',ext:'#6ee7b7'}[key],
+    tc,gc,ptBorder);
+}
+
+// 更新平均值顯示列
+function refreshAvgBadge(key, actData, n){
+  const el=document.getElementById('avg-'+key);if(!el)return;
+  const valid=actData.filter(v=>v>0);
+  if(!valid.length){el.innerHTML='';return;}
+  const avg=valid.reduce((a,b)=>a+b,0)/valid.length;
+  el.innerHTML=`<span class="avgDash"></span> ${n}M 平均&emsp;<strong>${fK(avg)}</strong>`;
+}
+
+// 更新按鈕高亮
+function refreshPeriodBtns(key, n){
+  document.querySelectorAll(`[data-chart="${key}"]`).forEach(btn=>{
+    btn.classList.toggle('active',+btn.dataset.n===n);
+  });
 }
 
 function buildWip(tc,gc){
@@ -670,6 +808,13 @@ function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder){
   }];
   if(ly&&ly.some(v=>v>0))ds.push({label:'去年同期',data:ly,borderColor:lyc,borderDash:[7,4],tension:.35,fill:false,pointRadius:3,borderWidth:2.5,pointBackgroundColor:lyc,pointBorderColor:ptBorder||'#0f172a',pointBorderWidth:1});
   if(showTgt&&tgt&&tgt.some(v=>v>0))ds.push({label:'預算目標',data:tgt,borderColor:'#ef4444',borderDash:[4,3],tension:.35,fill:false,pointRadius:3,borderWidth:2.5,pointBackgroundColor:'#ef4444',pointBorderColor:ptBorder||'#0f172a',pointBorderWidth:1});
+  // 平均線
+  const actV=act.filter(v=>v>0);
+  if(actV.length>1){
+    const avg=actV.reduce((a,b)=>a+b,0)/actV.length;
+    const avgColor=isDark()?'rgba(255,255,255,0.35)':'rgba(0,0,0,0.28)';
+    ds.push({label:'平均',data:Array(act.length).fill(avg),borderColor:avgColor,borderDash:[3,3],borderWidth:1.5,pointRadius:0,fill:false,tension:0});
+  }
   return new Chart(document.getElementById(id),{
     type:'line',data:{labels,datasets:ds},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
@@ -686,10 +831,13 @@ const achC=p=>p>=100?'#10b981':p>=85?'#f59e0b':'#ef4444';
 const growC=(a,b)=>a>=b?'#10b981':'#ef4444';
 const pct=(a,t)=>t>0?(a/t*100).toFixed(0)+'%':'0%';
 const liIdx=arr=>{for(let i=arr.length-1;i>=0;i--)if(arr[i]>0)return i;return arr.length-1;};
-function rKpi4(id,act,tgt,ly,col){
+function rKpi4(id,act,tgt,ly,col,ytdActArr,ytdTgtArr){
   const li=liIdx(act),a=act[li],t=tgt[li],l=ly[li];
   const ach=t>0?a/t*100:null,yoy=l>0?(a-l)/l*100:null;
-  const ytdA=act.reduce((s,v)=>s+v,0),ytdT=tgt.reduce((s,v)=>s+v,0),ytdAch=ytdT>0?ytdA/ytdT*100:null;
+  // YTD 僅計算當年度月份（呼叫方傳入），fallback 為 act 全部
+  const ytdA=(ytdActArr||act).reduce((s,v)=>s+v,0);
+  const ytdT=(ytdTgtArr||tgt).reduce((s,v)=>s+v,0);
+  const ytdAch=ytdT>0?ytdA/ytdT*100:null;
   document.getElementById(id).innerHTML=`
     <div class="kc"><div class="kl">本月實際</div><div class="kv" style="color:${col}">${fK(a)}</div><div class="ks">目標 ${fK(t)}</div></div>
     <div class="kc" style="border-color:${achC(ach||0)}44"><div class="kl">達成率</div><div class="kv" style="color:${achC(ach||0)}">${ach!==null?ach.toFixed(1)+'%':'—'}</div><div class="ks">${ach>=100?'✅ 達標':ach?ach.toFixed(0)+'%':''}</div></div>
