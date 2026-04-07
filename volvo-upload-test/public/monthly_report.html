@@ -1058,11 +1058,10 @@ function buildRichHTML(d,nid,isExtra){
   (d.images||[]).forEach((img,i)=>{
     const src=typeof img==='string'?img:(img.data||'');
     const al=img.align||'left';
-    h+=`<div class="richItem" draggable="true" data-pos="${i}" data-type="img" data-nid="${nid}" data-isextra="${isExtra}"
+    h+=`<div class="richItem" draggable="false" data-pos="${i}" data-type="img" data-nid="${nid}" data-isextra="${isExtra}"
       style="display:flex;flex-direction:column;align-self:${al==='center'?'center':al==='right'?'flex-end':'flex-start'};max-width:100%;margin-bottom:6px;border:1px solid var(--bdr);border-radius:7px;overflow:hidden">
       <div style="display:flex;align-items:center;gap:4px;padding:3px 6px;background:var(--bg3);border-bottom:1px solid var(--bdr)">
-        <button onclick="moveRich(${nq},${i},false,-1,${isExtra})" style="padding:1px 5px;font-size:11px;border:1px solid var(--bdr);border-radius:3px;background:var(--bg2);cursor:pointer;color:var(--txt3)">↑</button>
-        <button onclick="moveRich(${nq},${i},false,1,${isExtra})" style="padding:1px 5px;font-size:11px;border:1px solid var(--bdr);border-radius:3px;background:var(--bg2);cursor:pointer;color:var(--txt3)">↓</button>
+        <span onmousedown="this.closest('.richItem').draggable=true" onmouseup="this.closest('.richItem').draggable=false" style="cursor:grab;color:var(--txt3);font-size:16px;user-select:none;padding:0 4px">⠿</span>
         <button onclick="${isExtra?'eImgAlign':'imgAlign'}(${nq},${i},'left')" style="padding:2px 7px;font-size:11px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg2);cursor:pointer;color:${al==='left'?'var(--accent)':'var(--txt2)'}">◀ 靠左</button>
         <button onclick="${isExtra?'eImgAlign':'imgAlign'}(${nq},${i},'center')" style="padding:2px 7px;font-size:11px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg2);cursor:pointer;color:${al==='center'?'var(--accent)':'var(--txt2)'}">▬ 置中</button>
         <button onclick="${isExtra?'eImgAlign':'imgAlign'}(${nq},${i},'right')" style="padding:2px 7px;font-size:11px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg2);cursor:pointer;color:${al==='right'?'var(--accent)':'var(--txt2)'}">▶ 靠右</button>
@@ -1075,12 +1074,9 @@ function buildRichHTML(d,nid,isExtra){
   (d.tables||[]).forEach((tbl,ti)=>{
     const hdrs=tbl[0]||[],rows=tbl.slice(1);
     const ca=(d.colAligns||[])[ti]||hdrs.map(()=>'left');
-    h+=`<div class="richItem" draggable="true" data-pos="${(d.images||[]).length+ti}" data-type="tbl" data-nid="${nid}" data-isextra="${isExtra}"
+    h+=`<div class="richItem" draggable="false" data-pos="${(d.images||[]).length+ti}" data-type="tbl" data-nid="${nid}" data-isextra="${isExtra}"
       style="display:flex;align-items:flex-start;gap:4px;margin-bottom:6px;width:100%">
-      <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;margin-top:6px">
-  <button onclick="moveRich(${nq},${ti},true,-1,${isExtra})" style="padding:1px 5px;font-size:11px;border:1px solid var(--bdr);border-radius:3px;background:var(--bg2);cursor:pointer;color:var(--txt3)">↑</button>
-  <button onclick="moveRich(${nq},${ti},true,1,${isExtra})" style="padding:1px 5px;font-size:11px;border:1px solid var(--bdr);border-radius:3px;background:var(--bg2);cursor:pointer;color:var(--txt3)">↓</button>
-</div>
+     <span onmousedown="this.closest('.richItem').draggable=true" onmouseup="this.closest('.richItem').draggable=false" style="cursor:grab;color:var(--txt3);font-size:16px;user-select:none;padding:0 4px;margin-top:8px;flex-shrink:0">⠿</span>
       <div style="flex:1">
         <div class="noteTbl">
         <table style="width:100%;border-collapse:collapse;font-size:12px">
@@ -1154,6 +1150,7 @@ document.addEventListener('dragstart',e=>{
 });
 document.addEventListener('dragend',e=>{
   const el=e.target.closest('.richItem');if(el)el.style.opacity='';
+    if(el)el.draggable=false;
   document.querySelectorAll('.richItem').forEach(x=>x.style.outline='');
   _rdSrc=null;
 });
