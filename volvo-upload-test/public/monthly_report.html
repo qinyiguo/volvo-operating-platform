@@ -1,81 +1,156 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>月報分析 — 營收趨勢 & WIP</title>
 <style>
+/* ═══ Theme Variables ═══ */
+:root{
+  --bg:#0f172a; --bg2:#1a2332; --bg3:#0c1524;
+  --bar:#1e293b; --bdr:#2d3f56; --bdr2:#334155;
+  --txt:#e2e8f0; --txt2:#94a3b8; --txt3:#64748b;
+  --accent:#3b82f6;
+  --chart-grid:rgba(255,255,255,0.04);
+  --chart-tick:#64748b;
+  --shadow:0 16px 48px rgba(0,0,0,.8);
+}
+[data-theme="light"]{
+  --bg:#f0f4f8; --bg2:#ffffff; --bg3:#f8fafc;
+  --bar:#ffffff; --bdr:#e2e8f0; --bdr2:#cbd5e1;
+  --txt:#1e293b; --txt2:#475569; --txt3:#94a3b8;
+  --chart-grid:rgba(0,0,0,0.05);
+  --chart-tick:#475569;
+  --shadow:0 8px 32px rgba(0,0,0,.15);
+}
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:#0f172a;color:#e2e8f0;}
+body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--bg);color:var(--txt);transition:background .25s,color .25s;font-size:14px;}
 .root{display:flex;flex-direction:column;min-height:100vh;}
-.topbar{background:#1e293b;border-bottom:1px solid #2d3f56;padding:8px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0;position:sticky;top:0;z-index:50;}
-.ttl{font-size:13px;font-weight:800;color:#fff;white-space:nowrap;}
-.brGroup{display:flex;gap:3px;background:#0f172a;border:1px solid #2d3f56;border-radius:7px;padding:3px;}
-.brBtn{padding:4px 12px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;border:none;background:transparent;color:#64748b;transition:all .12s;}
-/* period picker */
+
+/* Topbar */
+.topbar{background:var(--bar);border-bottom:1px solid var(--bdr);padding:8px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0;position:sticky;top:0;z-index:50;}
+.ttl{font-size:15px;font-weight:800;color:var(--txt);white-space:nowrap;}
+.brGroup{display:flex;gap:3px;background:var(--bg);border:1px solid var(--bdr);border-radius:8px;padding:3px;}
+.brBtn{padding:5px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--txt3);transition:all .12s;}
+.themeBtn{padding:5px 10px;border-radius:7px;font-size:13px;cursor:pointer;border:1px solid var(--bdr);background:var(--bg3);color:var(--txt);font-weight:600;}
+
+/* Period picker */
 .pd-wrap{position:relative;}
-.pd-btn{display:flex;align-items:center;gap:6px;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:5px 10px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;user-select:none;min-width:110px;justify-content:space-between;outline:none;transition:border-color .15s;}
-.pd-btn:hover,.pd-btn.open{border-color:#3b82f6;}
-.pd-yr{font-size:10px;color:#64748b;margin-right:2px;}
-.pd-mo{font-size:15px;font-weight:800;}
-.pd-arr{font-size:9px;color:#475569;transition:transform .2s;}
-.pd-btn.open .pd-arr{transform:rotate(180deg);color:#3b82f6;}
-.pd-dd{position:absolute;top:calc(100% + 6px);left:0;background:#1a2740;border:1px solid #334155;border-radius:10px;box-shadow:0 16px 48px rgba(0,0,0,.8);z-index:999;width:220px;display:none;flex-direction:column;overflow:hidden;}
+.pd-btn{display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--bdr);color:var(--txt);padding:5px 12px;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;user-select:none;min-width:120px;justify-content:space-between;outline:none;}
+.pd-btn:hover,.pd-btn.open{border-color:var(--accent);}
+.pd-yr{font-size:11px;color:var(--txt3);margin-right:2px;}
+.pd-mo{font-size:16px;font-weight:800;}
+.pd-arr{font-size:10px;color:var(--txt3);transition:transform .2s;}
+.pd-btn.open .pd-arr{transform:rotate(180deg);color:var(--accent);}
+.pd-dd{position:absolute;top:calc(100% + 6px);left:0;background:var(--bg2);border:1px solid var(--bdr2);border-radius:10px;box-shadow:var(--shadow);z-index:999;width:220px;display:none;flex-direction:column;overflow:hidden;}
 .pd-dd.open{display:flex;}
 .pd-list{overflow-y:auto;max-height:320px;padding:6px 0;}
 .pd-list::-webkit-scrollbar{width:4px;}
-.pd-list::-webkit-scrollbar-thumb{background:#334155;border-radius:2px;}
-.pd-yr-lbl{font-size:10px;font-weight:700;color:#374151;letter-spacing:.06em;padding:8px 14px 4px;display:flex;align-items:center;gap:6px;}
-.pd-yr-lbl::after{content:'';flex:1;height:1px;background:#1e3050;}
+.pd-list::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:2px;}
+.pd-yr-lbl{font-size:11px;font-weight:700;color:var(--txt3);letter-spacing:.06em;padding:8px 14px 4px;display:flex;align-items:center;gap:6px;}
+.pd-yr-lbl::after{content:'';flex:1;height:1px;background:var(--bdr);}
 .pd-months{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:0 8px 8px;}
-.pd-mo-item{display:flex;flex-direction:column;align-items:center;padding:7px 4px;border-radius:7px;cursor:pointer;transition:all .12s;border:1px solid transparent;}
+.pd-mo-item{display:flex;flex-direction:column;align-items:center;padding:8px 4px;border-radius:7px;cursor:pointer;border:1px solid transparent;transition:all .12s;}
 .pd-mo-item:hover{background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.3);}
-.pd-mo-item.sel{background:rgba(59,130,246,.18);border-color:#3b82f6;}
-.pd-mo-item.no-data{opacity:.4;}
-.pd-mo-item .mn{font-size:14px;font-weight:800;color:#94a3b8;line-height:1;}
-.pd-mo-item.sel .mn{color:#3b82f6;}
-.pd-mo-item .ml{font-size:9px;color:#475569;margin-top:2px;}
-.pd-mo-item .md{width:4px;height:4px;border-radius:50%;background:transparent;margin-top:3px;}
-.pd-mo-item.has-data .md{background:#10b981;}
-.pd-mo-item.sel .md{background:#3b82f6;}
-.scroll{flex:1;overflow-y:auto;padding:12px 14px 80px;}
-.scroll::-webkit-scrollbar{width:4px;}
-.scroll::-webkit-scrollbar-thumb{background:#2d3f56;border-radius:2px;}
-.secDiv{display:flex;align-items:center;gap:10px;margin:18px 0 14px;font-size:13px;font-weight:800;color:#fff;}
-.secDiv::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,#2d3f56,transparent);}
-.secHd{font-size:12px;font-weight:700;color:#fff;margin-bottom:9px;padding-bottom:6px;border-bottom:1px solid #2d3f56;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;}
-.card{background:#1a2332;border:1px solid #2d3f56;border-radius:9px;padding:12px 14px;position:relative;}
-.kpiRow{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:9px;}
-.kpiRow2{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:7px;}
-.kc{background:#0c1524;border:1px solid #2d3f56;border-radius:7px;padding:9px 11px;}
-.kl{font-size:9px;color:#64748b;font-weight:700;margin-bottom:3px;}
-.kv{font-size:16px;font-weight:900;line-height:1.1;}
-.ks{font-size:9px;margin-top:2px;color:#475569;}
+.pd-mo-item.sel{background:rgba(59,130,246,.18);border-color:var(--accent);}
+.pd-mo-item .mn{font-size:15px;font-weight:800;color:var(--txt2);}
+.pd-mo-item.sel .mn{color:var(--accent);}
+.pd-mo-item .ml{font-size:10px;color:var(--txt3);margin-top:2px;}
+.pd-mo-item .md{width:5px;height:5px;border-radius:50%;background:#10b981;margin-top:3px;}
+.pd-mo-item.sel .md{background:var(--accent);}
+
+/* Layout */
+.scroll{flex:1;overflow-y:auto;padding:12px 14px 90px;}
+.scroll::-webkit-scrollbar{width:5px;}
+.scroll::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:2px;}
+
+/* Drag sections */
+.drag-sec{border-radius:10px;transition:opacity .2s,box-shadow .2s;}
+.drag-sec.dragging{opacity:.45;}
+.drag-sec.drag-over{box-shadow:0 0 0 2px var(--accent),0 0 24px rgba(59,130,246,.25);}
+.sec-wrap{padding-bottom:18px;}
+.secDiv{display:flex;align-items:center;gap:8px;margin:14px 0 12px;font-size:14px;font-weight:800;color:var(--txt);}
+.secDiv::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--bdr),transparent);}
+.drag-handle{cursor:grab;color:var(--txt3);font-size:18px;padding:1px 4px;user-select:none;}
+.drag-handle:hover{color:var(--accent);}
+.drag-handle:active{cursor:grabbing;}
+
+/* Cards */
+.secHd{font-size:13px;font-weight:700;color:var(--txt);margin-bottom:9px;padding-bottom:6px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;}
+.card{background:var(--bg2);border:1px solid var(--bdr);border-radius:10px;padding:13px 15px;position:relative;}
+.kpiRow{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;}
+.kpiRow2{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:8px;}
+.kc{background:var(--bg3);border:1px solid var(--bdr);border-radius:8px;padding:11px 13px;}
+.kl{font-size:11px;color:var(--txt3);font-weight:700;margin-bottom:4px;}
+.kv{font-size:20px;font-weight:900;line-height:1.1;}
+.ks{font-size:11px;margin-top:3px;color:var(--txt3);}
 .g2{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(0,1fr);gap:10px;margin-bottom:10px;}
 .g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px;}
-.leg{display:flex;gap:10px;flex-wrap:wrap;font-size:10px;color:#64748b;margin-bottom:8px;}
+.leg{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--txt3);margin-bottom:8px;}
 .li{display:flex;align-items:center;gap:4px;}
-.ld{width:18px;height:3px;border-radius:1px;display:inline-block;}
-.ld-d{width:18px;height:0;display:inline-block;border-top:2.5px dashed;}
-.noteDot{width:5px;height:5px;border-radius:50%;background:#3b82f6;flex-shrink:0;}
-.noteLabel{font-size:10px;font-weight:700;color:#64748b;margin-bottom:5px;display:flex;align-items:center;gap:4px;}
-.noteBox{width:100%;background:#0c1524;border:1px solid #2d3f56;color:#e2e8f0;border-radius:6px;padding:8px 10px;font-size:11px;line-height:1.7;resize:vertical;min-height:96px;outline:none;transition:border-color .15s;font-family:inherit;}
-.noteBox:focus{border-color:#3b82f6;}
-.noteBox::placeholder{color:#243656;}
-.bar-bg{background:#0c1524;border-radius:3px;height:5px;}
-.dlBtn{position:absolute;top:8px;right:8px;background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.25);border-radius:5px;padding:3px 8px;font-size:10px;font-weight:700;cursor:pointer;z-index:2;}
+.ld{width:20px;height:3px;border-radius:1px;display:inline-block;}
+.ld-d{width:20px;height:0;display:inline-block;border-top:2.5px dashed;}
+.bar-bg{background:var(--bg3);border-radius:3px;height:6px;}
+.dlBtn{position:absolute;top:8px;right:8px;background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.25);border-radius:5px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer;z-index:2;}
 .dlBtn:hover{background:rgba(59,130,246,.28);}
-.savebar{background:#1e293b;border-top:1px solid #2d3f56;padding:8px 14px;display:flex;align-items:center;gap:8px;position:fixed;bottom:0;left:0;right:0;z-index:50;}
-.saveBtn{padding:5px 16px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:#3b82f6;color:#fff;border:none;}
+
+/* Notes */
+.noteDot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;}
+.noteLabel{font-size:12px;font-weight:700;color:var(--txt3);margin-bottom:6px;display:flex;align-items:center;gap:5px;}
+.noteBox{width:100%;background:var(--bg3);border:1px solid var(--bdr);color:var(--txt);border-radius:7px;padding:9px 11px;font-size:12px;line-height:1.7;resize:vertical;min-height:96px;outline:none;font-family:inherit;}
+.noteBox:focus{border-color:var(--accent);}
+.noteBox::placeholder{color:var(--bdr2);}
+.noteToolbar{display:flex;gap:5px;margin-bottom:6px;flex-wrap:wrap;}
+.nToolBtn{padding:3px 9px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--bdr);background:var(--bg3);color:var(--txt2);}
+.nToolBtn:hover{border-color:var(--accent);color:var(--accent);}
+.noteRich{margin-top:7px;display:flex;flex-direction:column;gap:7px;}
+.noteImg{position:relative;border-radius:7px;overflow:hidden;border:1px solid var(--bdr);}
+.noteImg img{width:100%;display:block;max-height:260px;object-fit:contain;background:var(--bg3);}
+.noteImgDel{position:absolute;top:5px;right:5px;background:rgba(239,68,68,.85);color:#fff;border:none;border-radius:4px;padding:2px 7px;font-size:11px;cursor:pointer;font-weight:700;}
+.noteTbl{overflow-x:auto;border-radius:7px;border:1px solid var(--bdr);}
+.noteTbl table{width:100%;border-collapse:collapse;font-size:12px;}
+.noteTbl td,.noteTbl th{border:1px solid var(--bdr);padding:7px 10px;color:var(--txt);background:var(--bg2);}
+.noteTbl th{background:var(--bg3);font-weight:700;font-size:11px;}
+.editableCell{outline:none;}
+.editableCell:focus{background:rgba(59,130,246,.08);}
+.noteTblBar{display:flex;justify-content:flex-end;padding:5px 8px;background:var(--bg3);border-top:1px solid var(--bdr);}
+.noteTblBar button{background:rgba(239,68,68,.8);color:#fff;border:none;border-radius:4px;padding:3px 9px;font-size:11px;cursor:pointer;}
+
+/* Extra notes */
+.extraNote{background:var(--bg2);border:1px solid var(--bdr);border-radius:10px;padding:12px 14px;position:relative;margin-top:8px;}
+.extraNoteTitle{font-size:12px;font-weight:800;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.extraNoteTitle input{background:transparent;border:none;border-bottom:1px solid var(--bdr);color:var(--accent);font-size:13px;font-weight:800;outline:none;width:100%;padding:0 0 2px;}
+.extraNoteDel{position:absolute;top:10px;right:10px;background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.25);border-radius:5px;padding:2px 8px;font-size:11px;cursor:pointer;}
+
+/* Savebar */
+.savebar{background:var(--bar);border-top:1px solid var(--bdr);padding:9px 14px;display:flex;align-items:center;gap:8px;position:fixed;bottom:0;left:0;right:0;z-index:50;}
+.saveBtn{padding:6px 16px;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;border:none;}
 .saveBtn:disabled{opacity:.5;cursor:default;}
-.saveOk{font-size:11px;color:#10b981;opacity:0;transition:opacity .3s;}
-.nSt{font-size:10px;color:#64748b;}
-.ovl{position:fixed;inset:0;background:rgba(15,23,42,.8);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(2px);}
-.ovlBox{background:#1a2332;border:1px solid #2d3f56;border-radius:10px;padding:20px 28px;text-align:center;}
-.sp{display:inline-block;width:22px;height:22px;border:2.5px solid #2d3f56;border-top-color:#3b82f6;border-radius:50%;animation:spin .7s linear infinite;margin-bottom:8px;}
-.sSp{display:inline-block;width:10px;height:10px;border:1.5px solid #2d3f56;border-top-color:#3b82f6;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;}
+.addNoteBtn{padding:6px 14px;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.3);}
+.saveOk{font-size:12px;color:#10b981;opacity:0;transition:opacity .3s;}
+.nSt{font-size:11px;color:var(--txt3);}
+
+/* Loading */
+.ovl{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(3px);}
+.ovlBox{background:var(--bg2);border:1px solid var(--bdr);border-radius:12px;padding:22px 28px;text-align:center;}
+.sp{display:inline-block;width:24px;height:24px;border:2.5px solid var(--bdr);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:10px;}
+.sSp{display:inline-block;width:11px;height:11px;border:1.5px solid var(--bdr);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;}
+
+/* Modals */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(3px);}
+.modalBox{background:var(--bg2);border:1px solid var(--bdr);border-radius:12px;padding:24px;min-width:300px;max-width:480px;width:90%;}
+.modalTitle{font-size:15px;font-weight:800;color:var(--txt);margin-bottom:16px;}
+.mRow{margin-bottom:14px;}
+.mLbl{font-size:12px;font-weight:600;color:var(--txt3);margin-bottom:5px;}
+.mInput{width:100%;background:var(--bg3);border:1px solid var(--bdr);color:var(--txt);border-radius:7px;padding:8px 10px;font-size:13px;outline:none;font-family:inherit;}
+.mInput:focus{border-color:var(--accent);}
+.mBtns{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;}
+.mBtn{padding:7px 18px;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;border:none;}
+.mBtnPrimary{background:var(--accent);color:#fff;}
+.mBtnCancel{background:var(--bg3);border:1px solid var(--bdr);color:var(--txt2);}
+
 @keyframes spin{to{transform:rotate(360deg);}}
-@media(max-width:800px){.g2{grid-template-columns:1fr;}.g3{grid-template-columns:1fr;}.kpiRow{grid-template-columns:repeat(2,1fr);}.kpiRow2{grid-template-columns:1fr;}}
+@media(max-width:900px){.g2{grid-template-columns:1fr;}.g3{grid-template-columns:1fr;}.kpiRow{grid-template-columns:repeat(2,1fr);}.kpiRow2{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -96,171 +171,248 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:#0f172
     <button class="brBtn" id="bt-AMC" onclick="setBr('AMC')">AMC</button>
     <button class="brBtn" id="bt-AMD" onclick="setBr('AMD')">AMD</button>
   </div>
-  <div id="topBadge" style="font-size:10px;color:#64748b"></div>
-  <div id="topStatus" style="margin-left:auto;font-size:10px;color:#475569"></div>
+  <div id="topBadge" style="font-size:12px;color:var(--txt3)"></div>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+    <div id="topStatus" style="font-size:11px;color:var(--txt3)"></div>
+    <button class="themeBtn" id="themeBtn" onclick="toggleTheme()">☀️ 亮版</button>
+  </div>
 </div>
 
 <div class="scroll">
-<div class="secDiv">🔶 營收趨勢分析</div>
+<div id="sectionsRoot">
 
-<!-- 有費 -->
-<div style="margin-bottom:18px">
-  <div class="kpiRow" id="kpi_paid"></div>
-  <div class="g2">
-    <div class="card">
-      <button class="dlBtn" onclick="dlChart('c_paid','有費營收')">⬇ 下載</button>
-      <div class="leg">
-        <span class="li"><span class="ld" style="background:#f97316"></span>今年實際</span>
-        <span class="li"><span class="ld-d" style="border-top-color:#94a3b8"></span>去年同期</span>
-        <span class="li"><span class="ld-d" style="border-top-color:#fbbf24"></span>預算目標</span>
-      </div>
-      <div style="position:relative;height:185px"><canvas id="c_paid"></canvas></div>
-    </div>
-    <div class="card" style="display:flex;flex-direction:column">
-      <div class="noteLabel"><span class="noteDot"></span>有費說明</div>
-      <textarea class="noteBox" style="flex:1" id="n_paid" placeholder="有費說明…&#10;・達成率 / YoY&#10;・影響因素&#10;・下月方向"></textarea>
-    </div>
-  </div>
-</div>
-
-<!-- 一般/鈑烤/延保 -->
-<div class="g3" style="margin-bottom:18px">
-  <div>
-    <div class="secHd">💙 一般（P3）<span style="font-size:9px;color:#64748b">千元</span></div>
-    <div class="kpiRow2" id="kpi_gen"></div>
-    <div class="card" style="margin-bottom:7px">
-      <button class="dlBtn" onclick="dlChart('c_gen','一般營收')">⬇</button>
-      <div class="leg"><span class="li"><span class="ld" style="background:#3b82f6"></span>今年</span><span class="li"><span class="ld-d" style="border-top-color:#7dd3fc"></span>去年</span><span class="li"><span class="ld-d" style="border-top-color:#93c5fd"></span>目標</span></div>
-      <div style="position:relative;height:145px"><canvas id="c_gen"></canvas></div>
-    </div>
-    <div class="card"><div class="noteLabel"><span class="noteDot"></span>一般說明</div>
-      <textarea class="noteBox" id="n_gen" style="min-height:70px" placeholder="一般說明…"></textarea></div>
-  </div>
-  <div>
-    <div class="secHd">🔨 鈑烤（PC8+PC3）<span style="font-size:9px;color:#64748b">千元</span></div>
-    <div class="kpiRow2" id="kpi_bw"></div>
-    <div class="card" style="margin-bottom:7px">
-      <button class="dlBtn" onclick="dlChart('c_bw','鈑烤營收')">⬇</button>
-      <div class="leg"><span class="li"><span class="ld" style="background:#8b5cf6"></span>今年</span><span class="li"><span class="ld-d" style="border-top-color:#c4b5fd"></span>去年</span><span class="li"><span class="ld-d" style="border-top-color:#ddd6fe"></span>目標</span></div>
-      <div style="position:relative;height:145px"><canvas id="c_bw"></canvas></div>
-    </div>
-    <div class="card"><div class="noteLabel"><span class="noteDot"></span>鈑烤說明</div>
-      <textarea class="noteBox" id="n_bw" style="min-height:70px" placeholder="鈑烤說明…"></textarea></div>
-  </div>
-  <div>
-    <div class="secHd">🛡️ 延保（P9）<span style="font-size:9px;color:#64748b">千元</span></div>
-    <div class="kpiRow2" id="kpi_ext"></div>
-    <div class="card" style="margin-bottom:7px">
-      <button class="dlBtn" onclick="dlChart('c_ext','延保營收')">⬇</button>
-      <div class="leg"><span class="li"><span class="ld" style="background:#10b981"></span>今年</span><span class="li"><span class="ld-d" style="border-top-color:#6ee7b7"></span>去年</span><span class="li"><span class="ld-d" style="border-top-color:#a7f3d0"></span>目標</span></div>
-      <div style="position:relative;height:145px"><canvas id="c_ext"></canvas></div>
-    </div>
-    <div class="card"><div class="noteLabel"><span class="noteDot"></span>延保說明</div>
-      <textarea class="noteBox" id="n_ext" style="min-height:70px" placeholder="延保說明…"></textarea></div>
-  </div>
-</div>
-
-<!-- 進廠 + 單車 -->
-<div style="margin-bottom:10px">
-  <div class="g2">
-    <div>
-      <div class="card" style="margin-bottom:8px">
-        <button class="dlBtn" onclick="dlChart('c_cars','進廠台數')">⬇</button>
-        <div style="font-size:10px;font-weight:700;color:#64748b;margin-bottom:4px">每月進廠台數</div>
-        <div class="leg"><span class="li"><span class="ld" style="background:#3b82f6"></span>今年</span></div>
-        <div style="position:relative;height:130px"><canvas id="c_cars"></canvas></div>
-      </div>
+  <!-- 有費 section -->
+  <div class="drag-sec" id="sec-revenue" draggable="true">
+  <div class="sec-wrap">
+    <div class="secDiv"><span class="drag-handle" title="拖曳排序">⠿</span>🔶 營收趨勢分析</div>
+    <div class="kpiRow" id="kpi_paid"></div>
+    <div class="g2">
       <div class="card">
-        <button class="dlBtn" onclick="dlChart('c_rpv','單車銷售額')">⬇</button>
-        <div style="font-size:10px;font-weight:700;color:#64748b;margin-bottom:4px">單車銷售額（元/台）</div>
-        <div class="leg"><span class="li"><span class="ld" style="background:#10b981"></span>今年</span></div>
-        <div style="position:relative;height:130px"><canvas id="c_rpv"></canvas></div>
+        <button class="dlBtn" onclick="dlChart('c_paid','有費營收')">⬇ 下載</button>
+        <div class="leg">
+          <span class="li"><span class="ld" style="background:#f97316"></span>今年實際</span>
+          <span class="li"><span class="ld-d" style="border-top-color:#94a3b8"></span>去年同期</span>
+          <span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>預算目標</span>
+        </div>
+        <div style="position:relative;height:200px"><canvas id="c_paid"></canvas></div>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;gap:0">
+        <div id="note-area-n_paid" style="display:flex;flex-direction:column;flex:1"></div>
+        <div id="extra-notes-sec-revenue"></div>
       </div>
     </div>
-    <div class="card" style="display:flex;flex-direction:column">
-      <div class="noteLabel"><span class="noteDot"></span>進廠 & 單車說明</div>
-      <textarea class="noteBox" style="flex:1" id="n_cars" placeholder="進廠 & 單車說明…&#10;・本月實際 vs 目標&#10;・YoY 增減&#10;・單車銷售額變化"></textarea>
-    </div>
   </div>
+  </div>
+
+  <!-- 一般/鈑烤/延保 section -->
+  <div class="drag-sec" id="sec-detail" draggable="true">
+  <div class="sec-wrap">
+    <div class="secDiv"><span class="drag-handle" title="拖曳排序">⠿</span>📋 一般 / 鈑烤 / 延保</div>
+    <div class="g3">
+      <div>
+        <div class="secHd">💙 一般（P3）<span style="font-size:10px;color:var(--txt3)">千元</span></div>
+        <div class="kpiRow2" id="kpi_gen"></div>
+        <div class="card" style="margin-bottom:8px">
+          <button class="dlBtn" onclick="dlChart('c_gen','一般營收')">⬇</button>
+          <div class="leg"><span class="li"><span class="ld" style="background:#3b82f6"></span>今年</span><span class="li"><span class="ld-d" style="border-top-color:#7dd3fc"></span>去年</span><span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>目標</span></div>
+          <div style="position:relative;height:155px"><canvas id="c_gen"></canvas></div>
+        </div>
+        <div class="card"><div id="note-area-n_gen"></div></div>
+      </div>
+      <div>
+        <div class="secHd">🔨 鈑烤（PC8+PC3）<span style="font-size:10px;color:var(--txt3)">千元</span></div>
+        <div class="kpiRow2" id="kpi_bw"></div>
+        <div class="card" style="margin-bottom:8px">
+          <button class="dlBtn" onclick="dlChart('c_bw','鈑烤營收')">⬇</button>
+          <div class="leg"><span class="li"><span class="ld" style="background:#8b5cf6"></span>今年</span><span class="li"><span class="ld-d" style="border-top-color:#c4b5fd"></span>去年</span><span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>目標</span></div>
+          <div style="position:relative;height:155px"><canvas id="c_bw"></canvas></div>
+        </div>
+        <div class="card"><div id="note-area-n_bw"></div></div>
+      </div>
+      <div>
+        <div class="secHd">🛡️ 延保（P9）<span style="font-size:10px;color:var(--txt3)">千元</span></div>
+        <div class="kpiRow2" id="kpi_ext"></div>
+        <div class="card" style="margin-bottom:8px">
+          <button class="dlBtn" onclick="dlChart('c_ext','延保營收')">⬇</button>
+          <div class="leg"><span class="li"><span class="ld" style="background:#10b981"></span>今年</span><span class="li"><span class="ld-d" style="border-top-color:#6ee7b7"></span>去年</span><span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>目標</span></div>
+          <div style="position:relative;height:155px"><canvas id="c_ext"></canvas></div>
+        </div>
+        <div class="card"><div id="note-area-n_ext"></div></div>
+      </div>
+    </div>
+    <div id="extra-notes-sec-detail"></div>
+  </div>
+  </div>
+
+  <!-- 進廠 & 單車 section -->
+  <div class="drag-sec" id="sec-cars" draggable="true">
+  <div class="sec-wrap">
+    <div class="secDiv"><span class="drag-handle" title="拖曳排序">⠿</span>🚗 進廠台數 & 單車銷售額</div>
+    <div class="g2">
+      <div>
+        <div class="card" style="margin-bottom:8px">
+          <button class="dlBtn" onclick="dlChart('c_cars','進廠台數')">⬇</button>
+          <div style="font-size:12px;font-weight:700;color:var(--txt3);margin-bottom:5px">每月進廠台數</div>
+          <div class="leg"><span class="li"><span class="ld" style="background:#3b82f6"></span>今年</span></div>
+          <div style="position:relative;height:140px"><canvas id="c_cars"></canvas></div>
+        </div>
+        <div class="card">
+          <button class="dlBtn" onclick="dlChart('c_rpv','單車銷售額')">⬇</button>
+          <div style="font-size:12px;font-weight:700;color:var(--txt3);margin-bottom:5px">單車銷售額（元/台）</div>
+          <div class="leg"><span class="li"><span class="ld" style="background:#10b981"></span>今年</span></div>
+          <div style="position:relative;height:140px"><canvas id="c_rpv"></canvas></div>
+        </div>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column">
+        <div id="note-area-n_cars" style="flex:1;display:flex;flex-direction:column"></div>
+      </div>
+    </div>
+    <div id="extra-notes-sec-cars"></div>
+  </div>
+  </div>
+
+  <!-- WIP section -->
+  <div class="drag-sec" id="sec-wip" draggable="true">
+  <div class="sec-wrap">
+    <div class="secDiv"><span class="drag-handle" title="拖曳排序">⠿</span>🔧 WIP 未結工單 — 天數分層</div>
+    <div class="kpiRow" id="kpiWip" style="margin-bottom:10px"></div>
+    <div class="g2" style="margin-bottom:10px">
+      <div class="card">
+        <button class="dlBtn" onclick="dlChart('cWipBar','WIP分層')">⬇ 下載</button>
+        <div class="leg">
+          <span class="li"><span class="ld" style="background:#10b981"></span>&lt;30天</span>
+          <span class="li"><span class="ld" style="background:#f59e0b"></span>30~90天</span>
+          <span class="li"><span class="ld" style="background:#ef4444"></span>&gt;90天</span>
+        </div>
+        <div style="position:relative;height:200px"><canvas id="cWipBar"></canvas></div>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column">
+        <div id="note-area-n_wip_overview" style="flex:1;display:flex;flex-direction:column"></div>
+      </div>
+    </div>
+    <div class="secHd" style="margin-bottom:8px">各據點分層<span style="font-size:10px;color:var(--txt3);font-weight:400;margin-left:6px">金額(K) & 件數</span></div>
+    <div class="g3" id="wipCards" style="margin-bottom:10px"></div>
+    <div class="g2">
+      <div>
+        <div class="card" style="margin-bottom:8px">
+          <button class="dlBtn" onclick="dlChart('cWipPie','WIP佔比')">⬇</button>
+          <div style="font-size:12px;font-weight:700;color:var(--txt3);margin-bottom:5px">各層佔比（本月）</div>
+          <div style="position:relative;height:165px"><canvas id="cWipPie"></canvas></div>
+        </div>
+        <div class="card">
+          <button class="dlBtn" onclick="dlChart('cWipPct','逾30天佔比')">⬇</button>
+          <div style="font-size:12px;font-weight:700;color:var(--txt3);margin-bottom:5px">逾30天 / 逾90天 佔比（%）</div>
+          <div style="position:relative;height:130px"><canvas id="cWipPct"></canvas></div>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:8px"><div id="note-area-n_wip_30"></div></div>
+        <div class="card"><div id="note-area-n_wip_90"></div></div>
+      </div>
+    </div>
+    <div id="extra-notes-sec-wip"></div>
+  </div>
+  </div>
+
+</div>
 </div>
 
-<!-- WIP -->
-<div class="secDiv">🔧 WIP 未結工單 — 天數分層</div>
-<div class="kpiRow" id="kpiWip" style="margin-bottom:10px"></div>
-<div class="g2" style="margin-bottom:10px">
-  <div class="card">
-    <button class="dlBtn" onclick="dlChart('cWipBar','WIP分層')">⬇ 下載</button>
-    <div class="leg">
-      <span class="li"><span class="ld" style="background:#10b981"></span>&lt;30天</span>
-      <span class="li"><span class="ld" style="background:#f59e0b"></span>30~90天</span>
-      <span class="li"><span class="ld" style="background:#ef4444"></span>&gt;90天</span>
-    </div>
-    <div style="position:relative;height:185px"><canvas id="cWipBar"></canvas></div>
-  </div>
-  <div class="card" style="display:flex;flex-direction:column">
-    <div class="noteLabel"><span class="noteDot"></span>WIP 總覽說明</div>
-    <textarea class="noteBox" style="flex:1" id="n_wip_overview" placeholder="WIP 說明…&#10;・本月總金額 vs 上月增減&#10;・積壓原因&#10;・行動計畫"></textarea>
-  </div>
-</div>
-
-<div class="secHd" style="margin-bottom:8px">各據點分層<span style="font-size:9px;color:#64748b;font-weight:400;margin-left:6px">金額(K) & 件數</span></div>
-<div class="g3" id="wipCards" style="margin-bottom:10px"></div>
-
-<div class="g2">
-  <div>
-    <div class="card" style="margin-bottom:8px">
-      <button class="dlBtn" onclick="dlChart('cWipPie','WIP佔比')">⬇</button>
-      <div style="font-size:10px;font-weight:700;color:#64748b;margin-bottom:4px">各層佔比（本月）</div>
-      <div style="position:relative;height:155px"><canvas id="cWipPie"></canvas></div>
-    </div>
-    <div class="card">
-      <button class="dlBtn" onclick="dlChart('cWipPct','逾30天佔比')">⬇</button>
-      <div style="font-size:10px;font-weight:700;color:#64748b;margin-bottom:4px">逾30天 / 逾90天 佔比（%）</div>
-      <div style="position:relative;height:120px"><canvas id="cWipPct"></canvas></div>
-    </div>
-  </div>
-  <div>
-    <div class="card" style="margin-bottom:8px">
-      <div class="noteLabel"><span class="noteDot"></span>30天以上說明</div>
-      <textarea class="noteBox" id="n_wip_30" placeholder="30天以上說明…&#10;・滯留原因&#10;・等零件案件&#10;・核賠中&#10;・預計結清時間"></textarea>
-    </div>
-    <div class="card">
-      <div class="noteLabel"><span class="noteDot"></span>90天以上說明</div>
-      <textarea class="noteBox" id="n_wip_90" placeholder="90天以上說明…&#10;・各工單詳細原因&#10;・責任歸屬&#10;・跟催進度&#10;・預計結清日"></textarea>
-    </div>
-  </div>
-</div>
-</div>
-
+<!-- Savebar -->
 <div class="savebar">
   <button class="saveBtn" id="saveBtn" onclick="saveAll()">💾 儲存說明</button>
+  <button class="addNoteBtn" onclick="openAddNote()">➕ 新增說明</button>
   <span id="saveOk" class="saveOk">✅ 已儲存</span>
   <span id="nSt" class="nSt"></span>
-  <div style="margin-left:auto;font-size:10px;color:#475569">說明儲存至伺服器資料庫</div>
+  <div style="margin-left:auto;font-size:11px;color:var(--txt3)">說明儲存至伺服器資料庫</div>
 </div>
 
+<!-- Loading -->
 <div class="ovl" id="ovl" style="display:none">
   <div class="ovlBox">
     <div class="sp"></div>
-    <div style="font-size:12px;color:#64748b;margin-top:4px" id="ovlMsg">讀取中…</div>
+    <div style="font-size:13px;color:var(--txt3);margin-top:4px" id="ovlMsg">讀取中…</div>
   </div>
 </div>
+
+<!-- Add Note Modal -->
+<div class="modal" id="addNoteModal" style="display:none">
+  <div class="modalBox">
+    <div class="modalTitle">➕ 新增說明區塊</div>
+    <div class="mRow"><div class="mLbl">說明標題</div>
+      <input class="mInput" id="newNoteTitle" placeholder="例：備註、執行計畫、重點追蹤…"></div>
+    <div class="mRow"><div class="mLbl">加入位置</div>
+      <select class="mInput" id="newNoteSection">
+        <option value="sec-revenue">🔶 營收趨勢分析</option>
+        <option value="sec-detail">📋 一般/鈑烤/延保</option>
+        <option value="sec-cars">🚗 進廠 & 單車</option>
+        <option value="sec-wip">🔧 WIP</option>
+      </select></div>
+    <div class="mBtns">
+      <button class="mBtn mBtnCancel" onclick="closeModal('addNoteModal')">取消</button>
+      <button class="mBtn mBtnPrimary" onclick="confirmAddNote()">新增</button>
+    </div>
+  </div>
 </div>
 
+<!-- Table Modal -->
+<div class="modal" id="tableModal" style="display:none">
+  <div class="modalBox">
+    <div class="modalTitle">📊 新增表格</div>
+    <div class="mRow"><div class="mLbl">標題列（逗號分隔）</div>
+      <input class="mInput" id="tblHeaders" placeholder="月份,AMA,AMC,AMD,合計"></div>
+    <div class="mRow"><div class="mLbl">資料列數</div>
+      <input class="mInput" id="tblRows" type="number" value="3" min="1" max="30"></div>
+    <div class="mBtns">
+      <button class="mBtn mBtnCancel" onclick="closeModal('tableModal')">取消</button>
+      <button class="mBtn mBtnPrimary" onclick="confirmAddTable()">插入</button>
+    </div>
+  </div>
+</div>
+
+</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-// ══ 常數 ══
 const BRCOLS={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
 const BRS_ALL=['AMA','AMC','AMD'];
-const NOTE_IDS=['n_paid','n_gen','n_bw','n_ext','n_cars','n_wip_overview','n_wip_30','n_wip_90'];
 const MODULE='monthly';
+const SECS=['sec-revenue','sec-detail','sec-cars','sec-wip'];
+const NOTE_CFG={
+  n_paid:        {label:'有費說明',        ph:'・達成率 / YoY\n・影響因素\n・下月方向',              flex:true},
+  n_gen:         {label:'一般說明',        ph:'・本月重點\n・達成分析',                                flex:false},
+  n_bw:          {label:'鈑烤說明',        ph:'・本月重點\n・達成分析',                                flex:false},
+  n_ext:         {label:'延保說明',        ph:'・本月重點\n・達成分析',                                flex:false},
+  n_cars:        {label:'進廠 & 單車說明', ph:'・本月實際 vs 目標\n・YoY 增減\n・單車銷售額變化',    flex:true},
+  n_wip_overview:{label:'WIP 總覽說明',   ph:'・本月總金額 vs 上月增減\n・積壓原因\n・行動計畫',    flex:true},
+  n_wip_30:      {label:'30天以上說明',    ph:'・滯留原因\n・等零件案件\n・核賠中\n・預計結清時間', flex:false},
+  n_wip_90:      {label:'90天以上說明',    ph:'・各工單詳細原因\n・責任歸屬\n・跟催進度\n・預計結清日', flex:false},
+};
+const NOTE_IDS=Object.keys(NOTE_CFG);
 
-let curBr='ALL', curPeriod='', periods=[], tData={}, wipRows=[], wipPrev=[], charts={};
+let curBr='ALL',curPeriod='',periods=[],tData={},wipRows=[],wipPrev=[],charts={};
+let dbPeriods=new Set();
+const richData={};      // noteId → {images:[{name,data}], tables:[[[header...],[row...]...]]}
+const extraNotes={};    // secId → [{id,title,content,images:[],tables:[]}]
+let pendingTblTarget=null;
+let dragSrcId=null;
 
-// ══ Fetch helper ══
-async function sf(url){try{const r=await fetch(url);if(!r.ok)return null;return await r.json();}catch(e){return null;}}
+// ── Fetch ──
+async function sf(url,opt){try{const r=await fetch(url,opt||{});if(!r.ok)return null;return await r.json();}catch{return null;}}
 
-// ══ 期間 ══
+// ── Theme ──
+function toggleTheme(){
+  const html=document.documentElement;
+  const dark=html.getAttribute('data-theme')==='dark';
+  html.setAttribute('data-theme',dark?'light':'dark');
+  document.getElementById('themeBtn').textContent=dark?'🌙 暗版':'☀️ 亮版';
+  destCharts();buildAll();
+}
+function isDark(){return document.documentElement.getAttribute('data-theme')!=='light';}
+function chartColors(){
+  return isDark()?{tc:'#64748b',gc:'rgba(255,255,255,0.04)',ptBorder:'#0f172a'}
+                 :{tc:'#475569',gc:'rgba(0,0,0,0.05)',      ptBorder:'#ffffff'};
+}
+
+// ── Period utils ──
 function prevMonths(base,n){
   let[y,m]=[parseInt(base.slice(0,4)),parseInt(base.slice(4))];
   const out=[];
@@ -269,109 +421,42 @@ function prevMonths(base,n){
 }
 function prevP(p){let y=parseInt(p.slice(0,4)),m=parseInt(p.slice(4));return m===1?`${y-1}12`:`${y}${String(m-1).padStart(2,'0')}`;}
 function fmtP(p){return p?`${p.slice(0,4)}/${p.slice(4)}`:'—';}
-
-// ══ API 資料提取（對應 routes/stats.js + routes/revenue.js 實際格式）══
-
-// /api/stats/income-breakdown → { branches:{ AMA:{general_total,bodywork_total,paid_total,extended,...} } }
-function exBD(res,br){
-  if(!res?.branches)return{paid:0,gen:0,bw:0,ext:0};
-  const brs=br==='ALL'?BRS_ALL:[br];
-  let paid=0,gen=0,bw=0,ext=0;
-  brs.forEach(b=>{const d=res.branches[b]||{};paid+=+(d.paid_total||0);gen+=+(d.general_total||0);bw+=+(d.bodywork_total||0);ext+=+(d.extended||0);});
-  return{paid:paid/1000,gen:gen/1000,bw:bw/1000,ext:ext/1000};
-}
-
-// /api/revenue-targets → Array<{branch,period,paid_target,paid_last_year,general_target,general_last_year,...}>
-function exTgt(res,br){
-  if(!Array.isArray(res))return{paid:0,gen:0,bw:0,ext:0,paid_ly:0,gen_ly:0,bw_ly:0,ext_ly:0};
-  const brs=br==='ALL'?BRS_ALL:[br];
-  let paid=0,gen=0,bw=0,ext=0,pl=0,gl=0,bl=0,el=0;
-  res.filter(r=>brs.includes(r.branch)).forEach(r=>{
-    paid+=+(r.paid_target||0);gen+=+(r.general_target||0);bw+=+(r.bodywork_target||0);ext+=+(r.extended_target||0);
-    pl+=+(r.paid_last_year||0);gl+=+(r.general_last_year||0);bl+=+(r.bodywork_last_year||0);el+=+(r.extended_last_year||0);
-  });
-  return{paid:paid/1000,gen:gen/1000,bw:bw/1000,ext:ext/1000,paid_ly:pl/1000,gen_ly:gl/1000,bw_ly:bl/1000,ext_ly:el/1000};
-}
-
-// /api/stats/daily → { daily:[...], summary:[{branch,total_cars,...}] }
-function exCars(res,br){
-  if(!res?.summary)return{act:0};
-  const brs=br==='ALL'?BRS_ALL:[br];
-  let act=0;
-  res.summary.filter(r=>brs.includes(r.branch)).forEach(r=>{act+=+(r.total_cars||0);});
-  return{act};
-}
-
-// /api/stats/wip → { rows:[{work_order,branch,sales_amt(=repair_amount),days_open,wip_status,...}] }
-function bucketWip(rows,br){
-  const f=br==='ALL'?rows:rows.filter(r=>r.branch===br);
-  const lt30={amt:0,cnt:0},m30={amt:0,cnt:0},gt90={amt:0,cnt:0},urg={amt:0,cnt:0};
-  f.forEach(r=>{
-    const days=r.days_open!=null?parseFloat(r.days_open):null;
-    const amt=+(r.sales_amt||0)/1000;  // sales_amt = repair_amount（業務查詢）
-    if(days===null||days<30){lt30.amt+=amt;lt30.cnt++;}
-    else if(days<=90){m30.amt+=amt;m30.cnt++;}
-    else{gt90.amt+=amt;gt90.cnt++;}
-    if(r.wip_status==='已可結帳'){urg.amt+=amt;urg.cnt++;}
-  });
-  return{lt30,m30,gt90,urg,total:{amt:lt30.amt+m30.amt+gt90.amt,cnt:f.length}};
-}
-
-// ══ Period picker ══
-let dbPeriods=new Set(); // 有實際資料的期間
-
-function nowYM(){
-  const n=new Date(Date.now()+8*3600000);
-  return`${n.getUTCFullYear()}${String(n.getUTCMonth()+1).padStart(2,'0')}`;
-}
+function nowYM(){const n=new Date(Date.now()+8*3600000);return`${n.getUTCFullYear()}${String(n.getUTCMonth()+1).padStart(2,'0')}`;}
 function defaultPeriod(){
-  // 優先上個月；若不在清單再往前找有資料的月份
-  const cur=nowYM();
-  const y=parseInt(cur.slice(0,4)),m=parseInt(cur.slice(4));
+  const cur=nowYM(),y=+cur.slice(0,4),m=+cur.slice(4);
   const prev=m===1?`${y-1}12`:`${y}${String(m-1).padStart(2,'0')}`;
-  if(periods.includes(prev)) return prev;
-  // fallback: 最近一個有 DB 資料的期間
-  const withData=periods.filter(p=>dbPeriods.has(p)).sort().reverse();
-  return withData[0]||periods[periods.length-1]||'';
+  if(periods.includes(prev))return prev;
+  const wd=periods.filter(p=>dbPeriods.has(p)).sort().reverse();
+  return wd[0]||periods[periods.length-1]||'';
 }
 
+// ── Period picker ──
 function renderPD(){
-  const list=document.getElementById('pdList'); if(!list)return;
-  const groups={};
-  // 只顯示有資料的期間（若 dbPeriods 空就顯示全部）
+  const list=document.getElementById('pdList');if(!list)return;
   const show=dbPeriods.size>0?periods.filter(p=>dbPeriods.has(p)):periods;
-  show.slice().reverse().forEach(p=>{
-    const yr=p.slice(0,4);
-    if(!groups[yr])groups[yr]=[];
-    groups[yr].push(p);
-  });
+  const groups={};
+  show.slice().reverse().forEach(p=>{const yr=p.slice(0,4);if(!groups[yr])groups[yr]=[];groups[yr].push(p);});
   let html='';
   Object.keys(groups).sort((a,b)=>b-a).forEach(yr=>{
     html+=`<div class="pd-yr-lbl">${yr}</div><div class="pd-months">`;
     for(let mo=12;mo>=1;mo--){
       const p=`${yr}${String(mo).padStart(2,'0')}`;
-      const has=dbPeriods.has(p)||dbPeriods.size===0;
-      const inList=show.includes(p);
-      if(!inList)continue;
-      const sel=p===curPeriod;
-      html+=`<div class="pd-mo-item ${sel?'sel':''} ${has?'has-data':'no-data'}" onclick="selectPD('${p}')">
-        <span class="mn">${mo}</span><span class="ml">月</span><span class="md"></span>
-      </div>`;
+      if(!show.includes(p))continue;
+      html+=`<div class="pd-mo-item ${p===curPeriod?'sel':''}" onclick="selectPD('${p}')">
+        <span class="mn">${mo}</span><span class="ml">月</span><span class="md"></span></div>`;
     }
     html+='</div>';
   });
-  list.innerHTML=html||'<div style="padding:16px;text-align:center;color:#475569;font-size:12px">無資料</div>';
-  // 更新按鈕顯示
+  list.innerHTML=html||'<div style="padding:16px;text-align:center;color:var(--txt3)">無資料</div>';
   if(curPeriod){
-    const el=document.getElementById('pdYr'); if(el)el.textContent=curPeriod.slice(0,4)+'年';
-    const el2=document.getElementById('pdMo'); if(el2)el2.textContent=parseInt(curPeriod.slice(4))+'月';
+    document.getElementById('pdYr').textContent=curPeriod.slice(0,4)+'年';
+    document.getElementById('pdMo').textContent=+curPeriod.slice(4)+'月';
   }
 }
 function togglePD(e){
   e.stopPropagation();
   const btn=document.getElementById('pdBtn'),dd=document.getElementById('pdDd');
-  const open=dd.classList.contains('open');
-  closePD();
+  const open=dd.classList.contains('open');closePD();
   if(!open){btn.classList.add('open');dd.classList.add('open');}
 }
 function closePD(){
@@ -381,36 +466,64 @@ function closePD(){
 function selectPD(p){curPeriod=p;closePD();renderPD();loadAll();}
 document.addEventListener('click',closePD);
 
-// ══ Init ══
+// ── API helpers ──
+function exBD(res,br){
+  if(!res?.branches)return{paid:0,gen:0,bw:0,ext:0};
+  const brs=br==='ALL'?BRS_ALL:[br];let paid=0,gen=0,bw=0,ext=0;
+  brs.forEach(b=>{const d=res.branches[b]||{};paid+=+(d.paid_total||0);gen+=+(d.general_total||0);bw+=+(d.bodywork_total||0);ext+=+(d.extended||0);});
+  return{paid:paid/1000,gen:gen/1000,bw:bw/1000,ext:ext/1000};
+}
+function exTgt(res,br){
+  if(!Array.isArray(res))return{paid:0,gen:0,bw:0,ext:0,paid_ly:0,gen_ly:0,bw_ly:0,ext_ly:0};
+  const brs=br==='ALL'?BRS_ALL:[br];let paid=0,gen=0,bw=0,ext=0,pl=0,gl=0,bl=0,el=0;
+  res.filter(r=>brs.includes(r.branch)).forEach(r=>{
+    paid+=+(r.paid_target||0);gen+=+(r.general_target||0);bw+=+(r.bodywork_target||0);ext+=+(r.extended_target||0);
+    pl+=+(r.paid_last_year||0);gl+=+(r.general_last_year||0);bl+=+(r.bodywork_last_year||0);el+=+(r.extended_last_year||0);
+  });
+  return{paid:paid/1000,gen:gen/1000,bw:bw/1000,ext:ext/1000,paid_ly:pl/1000,gen_ly:gl/1000,bw_ly:bl/1000,ext_ly:el/1000};
+}
+function exCars(res,br){
+  if(!res?.summary)return{act:0};
+  let act=0;const brs=br==='ALL'?BRS_ALL:[br];
+  res.summary.filter(r=>brs.includes(r.branch)).forEach(r=>{act+=+(r.total_cars||0);});
+  return{act};
+}
+function bucketWip(rows,br){
+  const f=br==='ALL'?rows:rows.filter(r=>r.branch===br);
+  const lt30={amt:0,cnt:0},m30={amt:0,cnt:0},gt90={amt:0,cnt:0},urg={amt:0,cnt:0};
+  f.forEach(r=>{
+    const days=r.days_open!=null?parseFloat(r.days_open):null;
+    const amt=+(r.sales_amt||0)/1000;
+    if(days===null||days<30){lt30.amt+=amt;lt30.cnt++;}
+    else if(days<=90){m30.amt+=amt;m30.cnt++;}
+    else{gt90.amt+=amt;gt90.cnt++;}
+    if(r.wip_status==='已可結帳'){urg.amt+=amt;urg.cnt++;}
+  });
+  return{lt30,m30,gt90,urg,total:{amt:lt30.amt+m30.amt+gt90.amt,cnt:f.length}};
+}
+
+// ── Init ──
 async function init(){
   showLoad('讀取期間…');
   const raw=await sf('/api/periods');
-  // /api/periods 回傳 DESC 順序，包含補全的月份
-  // 先取有實際資料的（透過 income-breakdown 第一筆確認，或直接信任 periods 前段）
   periods=Array.isArray(raw)?raw.filter(Boolean).sort():[];
-
-  // 嘗試判斷哪些期間有真實資料：取最近12個月的 income-breakdown 快速確認
-  const checkPeriods=periods.slice(-12); // 最近12個
-  await Promise.all(checkPeriods.map(async p=>{
+  const checkP=periods.slice(-12);
+  await Promise.all(checkP.map(async p=>{
     const r=await sf(`/api/stats/income-breakdown?period=${p}`);
-    if(r?.branches){
-      const hasData=Object.values(r.branches).some(b=>(b.paid_total||0)>0);
-      if(hasData) dbPeriods.add(p);
-    }
+    if(r?.branches&&Object.values(r.branches).some(b=>(b.paid_total||0)>0))dbPeriods.add(p);
   }));
-
   curPeriod=defaultPeriod();
   renderPD();
+  await loadLayout();
+  renderAllNoteAreas();
   setBr('ALL');
 }
 
-// ══ Load ══
+// ── Load ──
 async function loadAll(){
   if(!curPeriod){hideLoad();return;}
   showLoad('讀取營收趨勢…');
-  const last5=prevMonths(curPeriod,5);
-  const prev=prevP(curPeriod);
-  // branch param：不傳時 API 回傳全部廠別（我們再自行加總）
+  const last5=prevMonths(curPeriod,5),prev=prevP(curPeriod);
   const bpQ=curBr==='ALL'?'':`&branch=${curBr}`;
   const tR=await Promise.all(last5.map(async p=>{
     const[bd,tgt,daily]=await Promise.all([
@@ -433,166 +546,141 @@ async function loadAll(){
   hideLoad();
 }
 
-// ══ Build ══
+// ── Build charts ──
 function buildAll(){
   destCharts();
   const last5=prevMonths(curPeriod,5);
   const labels=last5.map(p=>`${p.slice(2,4)}/${p.slice(4)}`);
-  const tc='#64748b',gc='rgba(255,255,255,0.04)';
+  const{tc,gc,ptBorder}=chartColors();
   const A=k=>last5.map(p=>tData[p]?.bd?.[k]||0);
   const T=k=>last5.map(p=>tData[p]?.tgt?.[k]||0);
   const L=k=>last5.map(p=>tData[p]?.tgt?.[`${k}_ly`]||0);
   const mainCol=curBr==='ALL'?'#f97316':(BRCOLS[curBr]||'#f97316');
-
-  // badge
   const li=last5.length-1;
   const la=A('paid')[li],lt=T('paid')[li],ll=L('paid')[li];
   document.getElementById('topBadge').innerHTML=
     `有費達成 <strong style="color:${achC(lt>0?la/lt*100:0)}">${lt>0?(la/lt*100).toFixed(0)+'%':'—'}</strong>　YoY <strong style="color:${growC(la,ll)}">${ll>0?((la-ll)/ll*100).toFixed(1)+'%':'—'}</strong>`;
   document.getElementById('topStatus').textContent=`截至 ${fmtP(curPeriod)}`;
-
   rKpi4('kpi_paid',A('paid'),T('paid'),L('paid'),mainCol);
   rKpi2('kpi_gen',A('gen'),T('gen'),L('gen'),'#3b82f6');
   rKpi2('kpi_bw',A('bw'),T('bw'),L('bw'),'#8b5cf6');
   rKpi2('kpi_ext',A('ext'),T('ext'),L('ext'),'#10b981');
-
-  charts.paid=mkLine('c_paid',labels,A('paid'),L('paid'),T('paid'),mainCol,'#94a3b8','#fbbf24');
-  charts.gen =mkLine('c_gen', labels,A('gen'), L('gen'), T('gen'), '#3b82f6','#7dd3fc','#93c5fd');
-  charts.bw  =mkLine('c_bw',  labels,A('bw'),  L('bw'),  T('bw'),  '#8b5cf6','#c4b5fd','#ddd6fe');
-  charts.ext =mkLine('c_ext', labels,A('ext'), L('ext'), T('ext'), '#10b981','#6ee7b7','#a7f3d0');
-
+  // 所有目標線改為紅色，去年同期保留各自顏色但粗體虛線
+  charts.paid=mkLine('c_paid',labels,A('paid'),L('paid'),T('paid'),mainCol,'#94a3b8','#ef4444',null,true,tc,gc,ptBorder);
+  charts.gen =mkLine('c_gen', labels,A('gen'), L('gen'), T('gen'), '#3b82f6','#7dd3fc','#ef4444',null,true,tc,gc,ptBorder);
+  charts.bw  =mkLine('c_bw',  labels,A('bw'),  L('bw'),  T('bw'),  '#8b5cf6','#c4b5fd','#ef4444',null,true,tc,gc,ptBorder);
+  charts.ext =mkLine('c_ext', labels,A('ext'), L('ext'), T('ext'), '#10b981','#6ee7b7','#ef4444',null,true,tc,gc,ptBorder);
   const carsAct=last5.map(p=>tData[p]?.cars?.act||0);
-  charts.cars=mkLine('c_cars',labels,carsAct,[],[],mainCol,'#94a3b8',null,v=>Math.round(v),false);
+  charts.cars=mkLine('c_cars',labels,carsAct,[],[],mainCol,'#94a3b8',null,v=>Math.round(v),false,tc,gc,ptBorder);
   const rpv=carsAct.map((c,i)=>c>0?Math.round(A('paid')[i]*1000/c):0);
-  charts.rpv=mkLine('c_rpv',labels,rpv,[],[],  '#10b981','#6ee7b7',null,v=>v>=1000?Math.round(v/1000)+'K':v,false);
-
-  buildWip();
+  charts.rpv =mkLine('c_rpv', labels,rpv,   [],[],'#10b981','#6ee7b7',null,v=>v>=1000?Math.round(v/1000)+'K':v,false,tc,gc,ptBorder);
+  buildWip(tc,gc);
 }
 
-function buildWip(){
+function buildWip(tc,gc){
   const brs=curBr==='ALL'?BRS_ALL:[curBr];
-  const cur=bucketWip(wipRows,curBr), prev=bucketWip(wipPrev,curBr);
-  const tc='#64748b',gc='rgba(255,255,255,0.04)';
+  const cur=bucketWip(wipRows,curBr),prev=bucketWip(wipPrev,curBr);
   const delta=cur.total.amt-prev.total.amt,isUp=delta>=0;
-
   document.getElementById('kpiWip').innerHTML=`
     <div class="kc" style="border-color:${isUp?'#ef444433':'#10b98133'}">
       <div class="kl">WIP 總金額</div><div class="kv" style="color:${isUp?'#ef4444':'#10b981'}">${fK(cur.total.amt)}</div>
       <div class="ks" style="color:${isUp?'#ef4444':'#10b981'}">${isUp?'▲ +':'▼ '}${fK(Math.abs(delta))} vs 上月 ${fK(prev.total.amt)}</div>
     </div>
-    <div class="kc" style="border-color:#10b98133">
-      <div class="kl">✅ &lt;30天</div><div class="kv" style="color:#10b981">${fK(cur.lt30.amt)}</div>
-      <div class="ks">${cur.lt30.cnt} 件　上月 ${fK(prev.lt30?.amt||0)}</div>
-    </div>
-    <div class="kc" style="border-color:#f59e0b33">
-      <div class="kl">⚠️ 30~90天</div><div class="kv" style="color:#f59e0b">${fK(cur.m30.amt)}</div>
-      <div class="ks">${cur.m30.cnt} 件　${pct(cur.m30.amt,cur.total.amt)}</div>
-    </div>
-    <div class="kc" style="border-color:#ef444433">
-      <div class="kl">🔴 &gt;90天</div><div class="kv" style="color:#ef4444">${fK(cur.gt90.amt)}</div>
-      <div class="ks">${cur.gt90.cnt} 件　${pct(cur.gt90.amt,cur.total.amt)}</div>
-    </div>`;
-
+    <div class="kc" style="border-color:#10b98133"><div class="kl">✅ &lt;30天</div><div class="kv" style="color:#10b981">${fK(cur.lt30.amt)}</div><div class="ks">${cur.lt30.cnt}件　上月${fK(prev.lt30?.amt||0)}</div></div>
+    <div class="kc" style="border-color:#f59e0b33"><div class="kl">⚠️ 30~90天</div><div class="kv" style="color:#f59e0b">${fK(cur.m30.amt)}</div><div class="ks">${cur.m30.cnt}件　${pct(cur.m30.amt,cur.total.amt)}</div></div>
+    <div class="kc" style="border-color:#ef444433"><div class="kl">🔴 &gt;90天</div><div class="kv" style="color:#ef4444">${fK(cur.gt90.amt)}</div><div class="ks">${cur.gt90.cnt}件　${pct(cur.gt90.amt,cur.total.amt)}</div></div>`;
   charts.wipBar=new Chart(document.getElementById('cWipBar'),{
-    type:'bar',
-    data:{labels:brs,datasets:[
-      {label:'<30天',  data:brs.map(b=>bucketWip(wipRows,b).lt30.amt),backgroundColor:'#10b981',borderRadius:4},
-      {label:'30~90天',data:brs.map(b=>bucketWip(wipRows,b).m30.amt), backgroundColor:'#f59e0b',borderRadius:4},
-      {label:'>90天',  data:brs.map(b=>bucketWip(wipRows,b).gt90.amt),backgroundColor:'#ef4444',borderRadius:4},
+    type:'bar',data:{labels:brs,datasets:[
+      {label:'<30天',  data:brs.map(b=>bucketWip(wipRows,b).lt30.amt),backgroundColor:'#10b981',borderRadius:5},
+      {label:'30~90天',data:brs.map(b=>bucketWip(wipRows,b).m30.amt), backgroundColor:'#f59e0b',borderRadius:5},
+      {label:'>90天',  data:brs.map(b=>bucketWip(wipRows,b).gt90.amt),backgroundColor:'#ef4444',borderRadius:5},
     ]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${fK(ctx.raw)}`}}},
-      scales:{x:{ticks:{font:{size:brs.length===1?13:11,weight:'bold'},color:tc},grid:{display:false}},
-              y:{ticks:{font:{size:9},color:tc,callback:v=>fK(v)},grid:{color:gc}}}}
+      scales:{x:{ticks:{font:{size:brs.length===1?14:12,weight:'bold'},color:tc},grid:{display:false}},
+              y:{ticks:{font:{size:11},color:tc,callback:v=>fK(v)},grid:{color:gc}}}}
   });
-
   const brCards=document.getElementById('wipCards');
   brCards.style.gridTemplateColumns=brs.length===1?'repeat(2,1fr)':'repeat(3,minmax(0,1fr))';
   brCards.innerHTML=brs.map(br=>{
     const R=bucketWip(wipRows,br),pR=bucketWip(wipPrev,br),col=BRCOLS[br]||'#94a3b8';
     const dt=R.total.amt-pR.total.amt,iUp=dt>=0;
     return`<div class="card" style="border-color:${col}55">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
-        <span style="font-size:13px;font-weight:800;color:${col}">${br}</span>
-        <span style="font-size:10px;font-weight:700;color:${iUp?'#ef4444':'#10b981'}">${iUp?'▲ +':'▼ '}${fK(Math.abs(dt))} vs 上月</span>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:14px;font-weight:800;color:${col}">${br}</span>
+        <span style="font-size:11px;font-weight:700;color:${iUp?'#ef4444':'#10b981'}">${iUp?'▲ +':'▼ '}${fK(Math.abs(dt))} vs 上月</span>
       </div>
-      <div style="font-size:19px;font-weight:900;margin-bottom:1px">${fK(R.total.amt)}<span style="font-size:9px;color:#64748b;margin-left:2px">（${R.total.cnt}件）</span></div>
-      <div style="font-size:9px;color:#64748b;margin-bottom:8px">上月 ${fK(pR.total.amt)}</div>
+      <div style="font-size:21px;font-weight:900;margin-bottom:2px">${fK(R.total.amt)}<span style="font-size:10px;color:var(--txt3);margin-left:3px">（${R.total.cnt}件）</span></div>
+      <div style="font-size:11px;color:var(--txt3);margin-bottom:9px">上月 ${fK(pR.total.amt)}</div>
       ${[['lt30','#10b981','✅','<30天'],['m30','#f59e0b','⚠️','30~90天'],['gt90','#ef4444','🔴','>90天']].map(([k,c,ic,lb])=>{
         const a=R[k].amt,n=R[k].cnt,bw=R.total.amt>0?(a/R.total.amt*100).toFixed(0):0;
         const dA=a-(pR[k]?.amt||0);
-        return`<div style="margin-bottom:7px">
+        return`<div style="margin-bottom:8px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-            <span style="font-size:9px;font-weight:700;color:${c}">${ic} ${lb}</span>
-            <span style="font-size:10px;font-weight:700;color:${c}">${fK(a)}<span style="font-size:8px;color:#64748b;margin-left:3px">${n}件</span></span>
+            <span style="font-size:11px;font-weight:700;color:${c}">${ic} ${lb}</span>
+            <span style="font-size:12px;font-weight:700;color:${c}">${fK(a)}<span style="font-size:10px;color:var(--txt3);margin-left:3px">${n}件</span></span>
           </div>
-          <div class="bar-bg"><div style="width:${Math.max(3,+bw)}%;height:5px;border-radius:3px;background:${c};transition:width .4s"></div></div>
-          <div style="font-size:8px;color:#475569;margin-top:2px;display:flex;justify-content:space-between">
-            <span>佔比 ${bw}%</span>
-            <span style="color:${dA>=0?'#ef4444':'#10b981'}">${dA>=0?'▲ +':'▼ '}${fK(Math.abs(dA))} vs上月</span>
+          <div class="bar-bg"><div style="width:${Math.max(3,+bw)}%;height:6px;border-radius:3px;background:${c}"></div></div>
+          <div style="font-size:10px;color:var(--txt3);margin-top:2px;display:flex;justify-content:space-between">
+            <span>佔比 ${bw}%</span><span style="color:${dA>=0?'#ef4444':'#10b981'}">${dA>=0?'▲ +':'▼ '}${fK(Math.abs(dA))} vs上月</span>
           </div>
         </div>`;
       }).join('')}
-      ${R.urg.cnt>0?`<div style="border-top:1px solid #2d3f56;padding-top:7px;margin-top:2px">
-        <div style="font-size:9px;font-weight:700;color:#ef4444;margin-bottom:3px">💳 應結帳</div>
+      ${R.urg.cnt>0?`<div style="border-top:1px solid var(--bdr);padding-top:7px;margin-top:2px">
+        <div style="font-size:11px;font-weight:700;color:#ef4444;margin-bottom:3px">💳 應結帳</div>
         <div style="display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:14px;font-weight:900;color:#ef4444">${fK(R.urg.amt)}</span>
-          <span style="font-size:9px;color:#64748b">${R.urg.cnt} 件</span>
+          <span style="font-size:16px;font-weight:900;color:#ef4444">${fK(R.urg.amt)}</span>
+          <span style="font-size:10px;color:var(--txt3)">${R.urg.cnt}件</span>
         </div></div>`:''}
     </div>`;
   }).join('');
-
   charts.wipPie=new Chart(document.getElementById('cWipPie'),{
-    type:'doughnut',
-    data:{labels:['<30天','30~90天','>90天'],datasets:[{data:[cur.lt30.amt,cur.m30.amt,cur.gt90.amt],backgroundColor:['#10b981cc','#f59e0bcc','#ef4444cc'],borderWidth:0}]},
+    type:'doughnut',data:{labels:['<30天','30~90天','>90天'],datasets:[{data:[cur.lt30.amt,cur.m30.amt,cur.gt90.amt],backgroundColor:['#10b981cc','#f59e0bcc','#ef4444cc'],borderWidth:0}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
-      plugins:{legend:{display:true,position:'right',labels:{font:{size:10},color:tc,boxWidth:10}},
+      plugins:{legend:{display:true,position:'right',labels:{font:{size:12},color:tc,boxWidth:12}},
         tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fK(ctx.raw)}`}}}}
   });
-
   const pBrs=[...brs,'合計'];
   charts.wipPct=new Chart(document.getElementById('cWipPct'),{
-    type:'bar',
-    data:{labels:pBrs,datasets:[
+    type:'bar',data:{labels:pBrs,datasets:[
       {label:'逾30天%',data:pBrs.map(b=>{const R=bucketWip(wipRows,b==='合計'?'ALL':b);return R.total.amt>0?+((R.m30.amt+R.gt90.amt)/R.total.amt*100).toFixed(1):0;}),backgroundColor:'#f59e0b99',borderRadius:4},
       {label:'逾90天%',data:pBrs.map(b=>{const R=bucketWip(wipRows,b==='合計'?'ALL':b);return R.total.amt>0?+(R.gt90.amt/R.total.amt*100).toFixed(1):0;}),backgroundColor:'#ef444499',borderRadius:4},
     ]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:true,position:'top',labels:{font:{size:9},color:tc,boxWidth:9,boxHeight:9}}},
-      scales:{x:{ticks:{font:{size:9},color:tc},grid:{display:false}},
-              y:{ticks:{font:{size:9},color:tc,callback:v=>v+'%'},grid:{color:gc},min:0}}}
+      plugins:{legend:{display:true,position:'top',labels:{font:{size:11},color:tc,boxWidth:10}}},
+      scales:{x:{ticks:{font:{size:11},color:tc},grid:{display:false}},y:{ticks:{font:{size:11},color:tc,callback:v=>v+'%'},grid:{color:gc},min:0}}}
   });
 }
 
-// ══ Chart factory ══
-function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt=null,showTgt=true){
-  const tc='#64748b';
+// ── mkLine (去年/目標都用粗虛線 2.5px) ──
+function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder){
   const allV=[...act,...(ly||[]),...(showTgt&&tgt?tgt:[])].filter(v=>v>0);
-  const minV=allV.length?Math.min(...allV)*0.88:0,maxV=allV.length?Math.max(...allV)*1.08:100;
+  const minV=allV.length?Math.min(...allV)*.88:0,maxV=allV.length?Math.max(...allV)*1.08:100;
   const fmt=yFmt||(v=>v>=1000?Math.round(v/1000)+'K':Math.round(v));
-  const ds=[
-    {label:'今年實際',data:act,borderColor:lc,backgroundColor:lc+'22',tension:.35,fill:true,pointRadius:4,borderWidth:3,
-     pointBackgroundColor:act.map((v,i)=>tgt&&tgt[i]>0&&v>=tgt[i]?'#10b981':'#ef4444'),pointBorderColor:'#0f172a',pointBorderWidth:1.5},
-  ];
-  if(ly&&ly.some(v=>v>0)) ds.push({label:'去年同期',data:ly,borderColor:lyc,borderDash:[7,4],tension:.35,fill:false,pointRadius:2,borderWidth:2.5});
-  if(showTgt&&tgt&&tgt.some(v=>v>0)) ds.push({label:'預算目標',data:tgt,borderColor:tgtc,borderDash:[4,3],tension:.35,fill:false,pointRadius:2,borderWidth:2.5});
+  const ds=[{
+    label:'今年實際',data:act,borderColor:lc,backgroundColor:lc+'22',tension:.35,fill:true,
+    pointRadius:5,borderWidth:3,
+    pointBackgroundColor:act.map((v,i)=>tgt&&tgt[i]>0&&v>=tgt[i]?'#10b981':'#ef4444'),
+    pointBorderColor:ptBorder||'#0f172a',pointBorderWidth:1.5
+  }];
+  if(ly&&ly.some(v=>v>0))ds.push({label:'去年同期',data:ly,borderColor:lyc,borderDash:[7,4],tension:.35,fill:false,pointRadius:3,borderWidth:2.5,pointBackgroundColor:lyc,pointBorderColor:ptBorder||'#0f172a',pointBorderWidth:1});
+  if(showTgt&&tgt&&tgt.some(v=>v>0))ds.push({label:'預算目標',data:tgt,borderColor:'#ef4444',borderDash:[4,3],tension:.35,fill:false,pointRadius:3,borderWidth:2.5,pointBackgroundColor:'#ef4444',pointBorderColor:ptBorder||'#0f172a',pointBorderWidth:1});
   return new Chart(document.getElementById(id),{
     type:'line',data:{labels,datasets:ds},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${fmt(ctx.raw)}`}}},
-      scales:{x:{ticks:{font:{size:9},color:tc},grid:{color:'rgba(255,255,255,0.04)'}},
-              y:{ticks:{font:{size:9},color:tc,callback:fmt},grid:{color:'rgba(255,255,255,0.04)'},min:Math.floor(minV/100)*100,max:Math.ceil(maxV/100)*100}}}
+      scales:{x:{ticks:{font:{size:11},color:tc},grid:{color:gc}},
+              y:{ticks:{font:{size:11},color:tc,callback:fmt},grid:{color:gc},min:Math.floor(minV/100)*100,max:Math.ceil(maxV/100)*100}}}
   });
 }
-function destCharts(){Object.values(charts).forEach(c=>{try{c.destroy();}catch(e){}});charts={};}
+function destCharts(){Object.values(charts).forEach(c=>{try{c.destroy();}catch{}});charts={};}
 
-// ══ KPI helpers ══
+// ── KPI helpers ──
 const fK=v=>(+v||0)<1?'0K':Math.round(+v).toLocaleString()+'K';
 const achC=p=>p>=100?'#10b981':p>=85?'#f59e0b':'#ef4444';
 const growC=(a,b)=>a>=b?'#10b981':'#ef4444';
 const pct=(a,t)=>t>0?(a/t*100).toFixed(0)+'%':'0%';
 const liIdx=arr=>{for(let i=arr.length-1;i>=0;i--)if(arr[i]>0)return i;return arr.length-1;};
-
 function rKpi4(id,act,tgt,ly,col){
   const li=liIdx(act),a=act[li],t=tgt[li],l=ly[li];
   const ach=t>0?a/t*100:null,yoy=l>0?(a-l)/l*100:null;
@@ -607,55 +695,222 @@ function rKpi2(id,act,tgt,ly,col){
   const li=liIdx(act),a=act[li],t=tgt[li],l=ly[li];
   const ach=t>0?a/t*100:null,yoy=l>0?(a-l)/l*100:null;
   document.getElementById(id).innerHTML=`
-    <div class="kc" style="border-color:${achC(ach||0)}44"><div class="kl">本月 / 達成率</div><div class="kv" style="color:${col};font-size:14px">${fK(a)}</div><div class="ks" style="color:${achC(ach||0)}">${ach!==null?ach.toFixed(0)+'%':'—'} | 目標 ${fK(t)}</div></div>
-    <div class="kc" style="border-color:${yoy>=0?'#10b98133':'#ef444433'}"><div class="kl">YoY</div><div class="kv" style="color:${yoy>=0?'#10b981':'#ef4444'};font-size:14px">${yoy!==null?(yoy>=0?'+':'')+yoy.toFixed(1)+'%':'—'}</div><div class="ks">去年 ${fK(l)}</div></div>`;
+    <div class="kc" style="border-color:${achC(ach||0)}44"><div class="kl">本月 / 達成率</div><div class="kv" style="color:${col};font-size:18px">${fK(a)}</div><div class="ks" style="color:${achC(ach||0)}">${ach!==null?ach.toFixed(0)+'%':'—'} | 目標 ${fK(t)}</div></div>
+    <div class="kc" style="border-color:${yoy>=0?'#10b98133':'#ef444433'}"><div class="kl">YoY</div><div class="kv" style="color:${yoy>=0?'#10b981':'#ef4444'};font-size:18px">${yoy!==null?(yoy>=0?'+':'')+yoy.toFixed(1)+'%':'—'}</div><div class="ks">去年 ${fK(l)}</div></div>`;
 }
 
-// ══ Download ══
+// ── Download ──
 function dlChart(id,name){
   const c=document.getElementById(id);if(!c)return;
   const o=document.createElement('canvas');o.width=c.width;o.height=c.height;
-  const ctx=o.getContext('2d');ctx.fillStyle='#1a2332';ctx.fillRect(0,0,o.width,o.height);ctx.drawImage(c,0,0);
+  const ctx=o.getContext('2d');
+  ctx.fillStyle=isDark()?'#1a2332':'#ffffff';ctx.fillRect(0,0,o.width,o.height);ctx.drawImage(c,0,0);
   const a=document.createElement('a');a.href=o.toDataURL('image/png');
   a.download=`${name}_${curBr}_${curPeriod}_${new Date().toISOString().slice(0,10)}.png`;a.click();
 }
 
-// ══ Switch ══
+// ── Branch switch ──
 function setBr(br){
   curBr=br;
   ['ALL','AMA','AMC','AMD'].forEach(b=>{
     const el=document.getElementById('bt-'+b),on=b===br;
     el.style.background=on?(b==='ALL'?'#f97316':(BRCOLS[b]||'#3b82f6')):'transparent';
-    el.style.color=on?'#fff':'#64748b';
+    el.style.color=on?'#fff':'var(--txt3)';
   });
   loadAll();
 }
-// period change handled by selectPD()
 
-// ══ Loading ══
-function showLoad(msg){document.getElementById('ovl').style.display='flex';document.getElementById('ovlMsg').textContent=msg;}
+// ── Loading ──
+function showLoad(m){document.getElementById('ovl').style.display='flex';document.getElementById('ovlMsg').textContent=m;}
 function hideLoad(){document.getElementById('ovl').style.display='none';}
 
-// ══ Notes ══
+// ── Drag & Drop (save order to DB) ──
+const SEC_ORDER_KEY='monthly_layout_order';
+function initDrag(){
+  document.querySelectorAll('.drag-sec').forEach(el=>{
+    el.addEventListener('dragstart',e=>{dragSrcId=el.id;el.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
+    el.addEventListener('dragend',()=>{el.classList.remove('dragging');document.querySelectorAll('.drag-sec').forEach(s=>s.classList.remove('drag-over'));});
+    el.addEventListener('dragover',e=>{e.preventDefault();document.querySelectorAll('.drag-sec').forEach(s=>s.classList.remove('drag-over'));if(el.id!==dragSrcId)el.classList.add('drag-over');});
+    el.addEventListener('dragleave',()=>el.classList.remove('drag-over'));
+    el.addEventListener('drop',e=>{
+      e.preventDefault();el.classList.remove('drag-over');
+      if(dragSrcId&&dragSrcId!==el.id){
+        const root=document.getElementById('sectionsRoot'),src=document.getElementById(dragSrcId);
+        const all=[...root.children],si=all.indexOf(src),di=all.indexOf(el);
+        if(si<di)root.insertBefore(src,el.nextSibling);else root.insertBefore(src,el);
+        saveLayout();
+      }
+    });
+  });
+}
+async function saveLayout(){
+  const order=[...document.getElementById('sectionsRoot').children].map(el=>el.id);
+  await fetch('/api/notes/'+SEC_ORDER_KEY,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:JSON.stringify(order)})});
+}
+async function loadLayout(){
+  try{
+    const r=await sf('/api/notes/'+SEC_ORDER_KEY);
+    if(r?.value){
+      const order=JSON.parse(r.value);
+      const root=document.getElementById('sectionsRoot');
+      order.forEach(id=>{const el=document.getElementById(id);if(el)root.appendChild(el);});
+    }
+  }catch{}
+  initDrag();
+}
+
+// ── Note area rendering ──
+function renderAllNoteAreas(){
+  NOTE_IDS.forEach(id=>{
+    const cfg=NOTE_CFG[id];
+    const el=document.getElementById('note-area-'+id);if(!el)return;
+    el.innerHTML=`
+      <div class="noteLabel"><span class="noteDot"></span>${cfg.label}</div>
+      <div class="noteToolbar">
+        <button class="nToolBtn" onclick="trigImgUpload('${id}')">📷 上傳圖片</button>
+        <button class="nToolBtn" onclick="openTblModal('${id}')">📊 新增表格</button>
+      </div>
+      <textarea class="noteBox" id="${id}" style="${cfg.flex?'flex:1;min-height:110px':'min-height:70px'}"
+        placeholder="${cfg.ph.replace(/\n/g,'&#10;')}…"></textarea>
+      <input type="file" accept="image/*" id="imgInput-${id}" style="display:none" onchange="handleImg('${id}',this)">
+      <div class="noteRich" id="rich-${id}"></div>`;
+  });
+}
+
+// ── Image upload ──
+function trigImgUpload(nid){document.getElementById('imgInput-'+nid)?.click();}
+function handleImg(nid,input){
+  const file=input.files[0];if(!file)return;
+  const rd=new FileReader();
+  rd.onload=e=>{
+    if(!richData[nid])richData[nid]={images:[],tables:[]};
+    richData[nid].images.push({name:file.name,data:e.target.result});
+    renderRich(nid);
+  };
+  rd.readAsDataURL(file);input.value='';
+}
+function delImg(nid,i){richData[nid]?.images.splice(i,1);renderRich(nid);}
+
+// ── Table modal ──
+function openTblModal(target){pendingTblTarget=target;document.getElementById('tableModal').style.display='flex';}
+function confirmAddTable(){
+  const hdrs=document.getElementById('tblHeaders').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const rows=Math.max(1,Math.min(30,parseInt(document.getElementById('tblRows').value)||3));
+  if(!hdrs.length||!pendingTblTarget){closeModal('tableModal');return;}
+  const t=pendingTblTarget;closeModal('tableModal');
+  if(t.startsWith('extra:')){
+    const[,sec,nid]=t.split(':');
+    const n=extraNotes[sec]?.find(x=>x.id===nid);
+    if(n){if(!n.tables)n.tables=[];n.tables.push([hdrs,...Array.from({length:rows},()=>Array(hdrs.length).fill(''))]);renderExtraRich(sec,nid);}
+  }else{
+    if(!richData[t])richData[t]={images:[],tables:[]};
+    richData[t].tables.push([hdrs,...Array.from({length:rows},()=>Array(hdrs.length).fill(''))]);
+    renderRich(t);
+  }
+}
+
+// ── Render rich (images + tables) ──
+function renderRich(nid){
+  const el=document.getElementById('rich-'+nid);if(!el)return;
+  const d=richData[nid]||{images:[],tables:[]};
+  el.innerHTML=buildRichHTML(d,'delImg',`'${nid}'`,'delTbl',`'${nid}'`,'updateCell',`'${nid}'`);
+}
+function buildRichHTML(d,delImgFn,nidExpr,delTblFn,ntExpr,cellFn,cellNidExpr){
+  let h='';
+  (d.images||[]).forEach((img,i)=>{h+=`<div class="noteImg"><img src="${img.data}"><button class="noteImgDel" onclick="${delImgFn}(${nidExpr},${i})">✕</button></div>`;});
+  (d.tables||[]).forEach((tbl,ti)=>{
+    const hdrs=tbl[0]||[],rows=tbl.slice(1);
+    h+=`<div class="noteTbl"><table><tr>${hdrs.map((hh,ci)=>`<th contenteditable class="editableCell" onblur="${cellFn}(${cellNidExpr},${ti},0,${ci},this)">${hh}</th>`).join('')}</tr>
+      ${rows.map((row,ri)=>`<tr>${row.map((cell,ci)=>`<td contenteditable class="editableCell" onblur="${cellFn}(${cellNidExpr},${ti},${ri+1},${ci},this)">${cell}</td>`).join('')}</tr>`).join('')}
+    </table><div class="noteTblBar"><button onclick="${delTblFn}(${ntExpr},${ti})">✕ 刪除表格</button></div></div>`;
+  });
+  return h;
+}
+function delTbl(nid,i){richData[nid]?.tables.splice(i,1);renderRich(nid);}
+function updateCell(nid,ti,ri,ci,el){if(richData[nid]?.tables?.[ti])richData[nid].tables[ti][ri][ci]=el.textContent;}
+
+// ── Extra notes ──
+function openAddNote(){document.getElementById('newNoteTitle').value='';document.getElementById('addNoteModal').style.display='flex';}
+function confirmAddNote(){
+  const title=document.getElementById('newNoteTitle').value.trim()||'補充說明';
+  const sec=document.getElementById('newNoteSection').value;
+  if(!extraNotes[sec])extraNotes[sec]=[];
+  extraNotes[sec].push({id:'en_'+Date.now(),title,content:'',images:[],tables:[]});
+  renderExtraNotes(sec);closeModal('addNoteModal');
+}
+function renderExtraNotes(sec){
+  const el=document.getElementById('extra-notes-'+sec);if(!el)return;
+  const list=extraNotes[sec]||[];
+  el.innerHTML=list.map(n=>`
+    <div class="extraNote">
+      <button class="extraNoteDel" onclick="delExtraNote('${sec}','${n.id}')">✕</button>
+      <div class="extraNoteTitle"><span class="noteDot"></span><input value="${n.title.replace(/"/g,'&quot;')}" placeholder="說明標題…" onchange="updateExtraTitle('${sec}','${n.id}',this.value)"></div>
+      <div class="noteToolbar">
+        <button class="nToolBtn" onclick="openTblModal('extra:${sec}:${n.id}')">📊 新增表格</button>
+        <button class="nToolBtn" onclick="trigExtraImg('${sec}','${n.id}')">📷 上傳圖片</button>
+      </div>
+      <textarea class="noteBox" style="min-height:75px" id="eta-${n.id}" onchange="updateExtraContent('${sec}','${n.id}',this.value)">${n.content||''}</textarea>
+      <input type="file" accept="image/*" id="eimg-${n.id}" style="display:none" onchange="handleExtraImg('${sec}','${n.id}',this)">
+      <div class="noteRich" id="erich-${n.id}"></div>
+    </div>`).join('');
+  list.forEach(n=>renderExtraRich(sec,n.id));
+}
+function renderExtraRich(sec,nid){
+  const el=document.getElementById('erich-'+nid);if(!el)return;
+  const n=(extraNotes[sec]||[]).find(x=>x.id===nid)||{images:[],tables:[]};
+  el.innerHTML=buildRichHTML(n,'delExtraImg',`'${sec}','${nid}'`,'delExtraTbl',`'${sec}','${nid}'`,'updateExtraCell',`'${sec}','${nid}'`);
+}
+function trigExtraImg(sec,nid){document.getElementById('eimg-'+nid)?.click();}
+function handleExtraImg(sec,nid,input){
+  const file=input.files[0];if(!file)return;
+  const rd=new FileReader();
+  rd.onload=e=>{const n=(extraNotes[sec]||[]).find(x=>x.id===nid);if(!n)return;if(!n.images)n.images=[];n.images.push({name:file.name,data:e.target.result});renderExtraRich(sec,nid);};
+  rd.readAsDataURL(file);input.value='';
+}
+function delExtraImg(sec,nid,i){const n=(extraNotes[sec]||[]).find(x=>x.id===nid);if(n){n.images.splice(i,1);renderExtraRich(sec,nid);}}
+function delExtraTbl(sec,nid,i){const n=(extraNotes[sec]||[]).find(x=>x.id===nid);if(n){n.tables.splice(i,1);renderExtraRich(sec,nid);}}
+function updateExtraCell(sec,nid,ti,ri,ci,el){const n=(extraNotes[sec]||[]).find(x=>x.id===nid);if(n?.tables?.[ti])n.tables[ti][ri][ci]=el.textContent;}
+function updateExtraTitle(sec,nid,val){const n=(extraNotes[sec]||[]).find(x=>x.id===nid);if(n)n.title=val;}
+function updateExtraContent(sec,nid,val){const n=(extraNotes[sec]||[]).find(x=>x.id===nid);if(n)n.content=val;}
+function delExtraNote(sec,nid){if(!extraNotes[sec])return;extraNotes[sec]=extraNotes[sec].filter(n=>n.id!==nid);renderExtraNotes(sec);}
+
+// ── Modal helpers ──
+function closeModal(id){document.getElementById(id).style.display='none';}
+document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.style.display='none';}));
+
+// ── Notes DB ──
 function nKey(id){return`${MODULE}_${curBr}_${curPeriod}_${id}`;}
 async function loadNotes(){
   try{
     const prefix=`${MODULE}_${curBr}_${curPeriod}_`;
     const data=await sf(`/api/notes?prefix=${encodeURIComponent(prefix)}`);
     if(!data)return;
-    NOTE_IDS.forEach(id=>{const el=document.getElementById(id);if(!el)return;el.value=data[nKey(id)]??'';});
-  }catch(e){}
+    NOTE_IDS.forEach(id=>{
+      const el=document.getElementById(id);if(el)el.value=data[nKey(id)]??'';
+      const rk=nKey('rich_'+id);if(data[rk]){try{richData[id]=JSON.parse(data[rk]);renderRich(id);}catch{}}
+    });
+    SECS.forEach(sec=>{
+      const k=nKey('extra_'+sec);
+      if(data[k]){try{extraNotes[sec]=JSON.parse(data[k]);renderExtraNotes(sec);}catch{}}
+    });
+  }catch{}
 }
 async function saveAll(){
   const btn=document.getElementById('saveBtn'),ok=document.getElementById('saveOk'),st=document.getElementById('nSt');
   btn.disabled=true;btn.textContent='儲存中…';st.innerHTML='<span class="sSp"></span>';
-  const entries=NOTE_IDS.map(id=>({key:nKey(id),value:document.getElementById(id)?.value||''}));
+  // Sync extra note content from textareas
+  SECS.forEach(sec=>(extraNotes[sec]||[]).forEach(n=>{const ta=document.getElementById('eta-'+n.id);if(ta)n.content=ta.value;}));
+  const entries=[
+    ...NOTE_IDS.map(id=>({key:nKey(id),value:document.getElementById(id)?.value||''})),
+    ...NOTE_IDS.filter(id=>richData[id]).map(id=>({key:nKey('rich_'+id),value:JSON.stringify(richData[id])})),
+    ...SECS.map(sec=>({key:nKey('extra_'+sec),value:JSON.stringify(extraNotes[sec]||[])})),
+  ];
   try{
     const res=await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({entries})});
     if(!res.ok)throw new Error();
     ok.style.opacity='1';st.innerHTML='';
     setTimeout(()=>{ok.style.opacity='0';},2500);
-  }catch(e){st.textContent='❌ 儲存失敗';st.style.color='#ef4444';setTimeout(()=>{st.textContent='';},3000);}
+  }catch{st.textContent='❌ 儲存失敗';st.style.color='#ef4444';setTimeout(()=>{st.textContent='';st.style.color='';},3e3);}
   finally{btn.disabled=false;btn.textContent='💾 儲存說明';}
 }
 
