@@ -986,13 +986,10 @@ function renderAllNoteAreas(){
         <button class="nToolBtn" onclick="trigImgUpload('${id}')">📷 上傳圖片</button>
         <button class="nToolBtn" onclick="openTblModal('${id}')">📊 新增表格</button>
       </div>
-<div style="display:flex;align-items:flex-start;gap:4px">
-  <span style="cursor:grab;color:var(--txt3);font-size:16px;user-select:none;padding:2px 4px;margin-top:4px;flex-shrink:0">⠿</span>
-  <textarea class="noteBox" id="${id}" style="${cfg.flex?'flex:1;min-height:110px':'min-height:70px;flex:1'}"
-    placeholder="${cfg.ph.replace(/\n/g,'&#10;')}…"></textarea>
-</div>
       <input type="file" accept="image/*" id="imgInput-${id}" style="display:none" onchange="handleImg('${id}',this)">
-      <div class="noteRich" id="rich-${id}"></div>`;
+      <div id="rich-${id}"></div>`;
+    if(!richData[id])richData[id]={images:[],tables:[],textPos:0};
+    renderRich(id);
   });
 }
 
@@ -1051,70 +1048,98 @@ function confirmAddTable(){
 // ── Render rich (images + tables) ──
 function renderRich(nid){
   const el=document.getElementById('rich-'+nid);if(!el)return;
-  const d=richData[nid]||{images:[],tables:[]};
+  if(!richData[nid])richData[nid]={images:[],tables:[],textPos:0};
+  const d=richData[nid];
+  if(d.textPos===undefined)d.textPos=0;
   el.innerHTML=buildRichHTML(d,nid,false);
+  // 還原文字框內容
+  const ta=document.getElementById(nid);
+  if(ta&&d._textVal!==undefined)ta.value=d._textVal;
 }
 function buildRichHTML(d,nid,isExtra){
   const nq=`'${nid}'`;
+  const imgs=d.images||[],tbls=d.tables||[],cas=d.colAligns||[];
+  const textPos=d.textPos!==undefined?d.textPos:0;
+  // 建立統一 items 陣列
+  const items=[];
+  imgs.forEach((_,i)=>items.push({type:'img',idx:i}));
+  tbls.forEach((_,i)=>items.push({type:'tbl',idx:i}));
+  items.splice(textPos,0,{type:'text'});
   let h='';
-  // 圖片
-  (d.images||[]).forEach((img,i)=>{
-    const src=typeof img==='string'?img:(img.data||'');
-    const al=img.align||'left';
-    h+=`<div class="richItem" draggable="false" data-pos="${i}" data-type="img" data-nid="${nid}" data-isextra="${isExtra}"
-      style="display:flex;flex-direction:column;align-self:${al==='center'?'center':al==='right'?'flex-end':'flex-start'};max-width:100%;margin-bottom:6px;border:1px solid var(--bdr);border-radius:7px;overflow:hidden">
-      <div style="display:flex;align-items:center;gap:4px;padding:3px 6px;background:var(--bg3);border-bottom:1px solid var(--bdr)">
-        <span onmousedown="this.closest('.richItem').draggable=true" onmouseup="this.closest('.richItem').draggable=false" style="cursor:grab;color:var(--txt3);font-size:16px;user-select:none;padding:0 4px">⠿</span>
-        <button onclick="${isExtra?'eImgAlign':'imgAlign'}(${nq},${i},'left')" style="padding:2px 7px;font-size:11px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg2);cursor:pointer;color:${al==='left'?'var(--accent)':'var(--txt2)'}">◀ 靠左</button>
-        <button onclick="${isExtra?'eImgAlign':'imgAlign'}(${nq},${i},'center')" style="padding:2px 7px;font-size:11px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg2);cursor:pointer;color:${al==='center'?'var(--accent)':'var(--txt2)'}">▬ 置中</button>
-        <button onclick="${isExtra?'eImgAlign':'imgAlign'}(${nq},${i},'right')" style="padding:2px 7px;font-size:11px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg2);cursor:pointer;color:${al==='right'?'var(--accent)':'var(--txt2)'}">▶ 靠右</button>
-        <button onclick="${isExtra?'delExtraImg':'delImg'}(${nq},${i})" style="margin-left:auto;padding:2px 7px;font-size:11px;border:1px solid #ef444433;border-radius:4px;background:transparent;cursor:pointer;color:#ef4444">✕ 刪除</button>
-      </div>
-      <img src="${src}" style="width:100%;object-fit:contain;display:block;background:var(--bg3);resize:both;overflow:auto;min-height:80px">
-    </div>`;
-  });
-  // 表格
-  (d.tables||[]).forEach((tbl,ti)=>{
-    const hdrs=tbl[0]||[],rows=tbl.slice(1);
-    const ca=(d.colAligns||[])[ti]||hdrs.map(()=>'left');
-    h+=`<div class="richItem" draggable="false" data-pos="${(d.images||[]).length+ti}" data-type="tbl" data-nid="${nid}" data-isextra="${isExtra}"
-      style="display:flex;align-items:flex-start;gap:4px;margin-bottom:6px;width:100%">
-     <span onmousedown="this.closest('.richItem').draggable=true" onmouseup="this.closest('.richItem').draggable=false" style="cursor:grab;color:var(--txt3);font-size:16px;user-select:none;padding:0 4px;margin-top:8px;flex-shrink:0">⠿</span>
-      <div style="flex:1">
-        <div class="noteTbl">
-        <table style="width:100%;border-collapse:collapse;font-size:12px">
-          <thead><tr>
-            ${hdrs.map((hh,ci)=>`<th style="border:1px solid var(--bdr);padding:4px 7px;background:var(--bg3);min-width:60px">
-              <div style="display:flex;gap:1px;margin-bottom:2px">
-                <button onclick="${isExtra?'eTblCA':'tblCA'}(${nq},${ti},${ci},'left')" style="padding:0 3px;font-size:9px;border:1px solid var(--bdr);background:transparent;cursor:pointer;color:${ca[ci]==='left'?'var(--accent)':'var(--txt3)'}">L</button>
-                <button onclick="${isExtra?'eTblCA':'tblCA'}(${nq},${ti},${ci},'center')" style="padding:0 3px;font-size:9px;border:1px solid var(--bdr);background:transparent;cursor:pointer;color:${ca[ci]==='center'?'var(--accent)':'var(--txt3)'}">C</button>
-                <button onclick="${isExtra?'eTblCA':'tblCA'}(${nq},${ti},${ci},'right')" style="padding:0 3px;font-size:9px;border:1px solid var(--bdr);background:transparent;cursor:pointer;color:${ca[ci]==='right'?'var(--accent)':'var(--txt3)'}">R</button>
-                <button onclick="${isExtra?'eTblDC':'tblDC'}(${nq},${ti},${ci})" style="padding:0 3px;font-size:9px;border:1px solid #ef444433;background:transparent;cursor:pointer;color:#ef4444">✕</button>
-              </div>
-              <span contenteditable class="editableCell" onblur="${isExtra?'updateExtraCell':'updateCell'}(${nq},${ti},0,${ci},this)" style="display:block;outline:none;text-align:${ca[ci]}">${hh}</span>
-            </th>`).join('')}
-            <th style="border:1px solid var(--bdr);background:var(--bg3);width:24px;text-align:center">
-              <button onclick="${isExtra?'eTblAC':'tblAC'}(${nq},${ti})" style="border:none;background:transparent;cursor:pointer;color:var(--txt3);font-size:16px">＋</button>
-            </th>
-          </tr></thead>
-          <tbody>
-            ${rows.map((row,ri)=>`<tr>
-              ${row.map((cell,ci)=>`<td style="border:1px solid var(--bdr);padding:5px 7px;background:var(--bg2);text-align:${ca[ci]||'left'}">
-                <span contenteditable class="editableCell" onblur="${isExtra?'updateExtraCell':'updateCell'}(${nq},${ti},${ri+1},${ci},this)" style="display:block;outline:none">${cell}</span>
-              </td>`).join('')}
-              <td style="border:1px solid var(--bdr);width:24px;text-align:center;background:var(--bg2)">
-                <button onclick="${isExtra?'eTblDR':'tblDR'}(${nq},${ti},${ri+1})" style="border:none;background:transparent;cursor:pointer;color:#ef4444">✕</button>
-              </td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
+  items.forEach((item,pos)=>{
+    if(item.type==='text'){
+      const cfg=isExtra?{}:(NOTE_CFG[nid]||{});
+      h+=`<div class="richItem" draggable="false" data-pos="${pos}" data-type="text" data-nid="${nid}" data-isextra="${isExtra}"
+        style="display:flex;align-items:flex-start;gap:4px;width:100%;margin-bottom:6px">
+        <span onmousedown="this.closest('.richItem').draggable=true" onmouseup="this.closest('.richItem').draggable=false"
+          style="cursor:grab;color:var(--txt3);font-size:16px;user-select:none;padding:2px 4px;margin-top:4px;flex-shrink:0">⠿</span>
+        <textarea class="noteBox" id="${isExtra?'eta-'+nid.split('|||')[1]:nid}"
+          style="flex:1;${cfg.flex?'min-height:110px':'min-height:70px'}"
+          placeholder="${(cfg.ph||'').replace(/\n/g,'&#10;')}…"
+          onchange="${isExtra?`updateExtraContent('${nid.split('|||')[0]}','${nid.split('|||')[1]}',this.value)`:`(richData['${nid}']||{})._textVal=this.value`}"></textarea>
+      </div>`;
+    } else if(item.type==='img'){
+      const i=item.idx;
+      const img=imgs[i]||{};
+      const src=typeof img==='string'?img:(img.data||'');
+      const al=img.align||'left';
+      h+=`<div class="richItem" draggable="false" data-pos="${pos}" data-type="img" data-nid="${nid}" data-isextra="${isExtra}"
+        style="display:flex;flex-direction:column;align-self:${al==='center'?'center':al==='right'?'flex-end':'flex-start'};max-width:100%;margin-bottom:6px;border:1px solid var(--bdr);border-radius:7px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:4px;padding:3px 6px;background:var(--bg3);border-bottom:1px solid var(--bdr)">
+          <span onmousedown="this.closest('.richItem').draggable=true" onmouseup="this.closest('.richItem').draggable=false"
+            style="cursor:grab;color:var(--txt3);font-size:16px;user-select:none;padding:0 4px">⠿</span>
+          <button onclick="${isExtra?'eImgAlign':'imgAlign'}(${nq},${i},'left')" style="padding:2px 7px;font-size:11px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg2);cursor:pointer;color:${al==='left'?'var(--accent)':'var(--txt2)'}">◀ 靠左</button>
+          <button onclick="${isExtra?'eImgAlign':'imgAlign'}(${nq},${i},'center')" style="padding:2px 7px;font-size:11px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg2);cursor:pointer;color:${al==='center'?'var(--accent)':'var(--txt2)'}">▬ 置中</button>
+          <button onclick="${isExtra?'eImgAlign':'imgAlign'}(${nq},${i},'right')" style="padding:2px 7px;font-size:11px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg2);cursor:pointer;color:${al==='right'?'var(--accent)':'var(--txt2)'}">▶ 靠右</button>
+          <button onclick="${isExtra?'delExtraImg':'delImg'}(${nq},${i})" style="margin-left:auto;padding:2px 7px;font-size:11px;border:1px solid #ef444433;border-radius:4px;background:transparent;cursor:pointer;color:#ef4444">✕ 刪除</button>
         </div>
-        <div style="display:flex;gap:4px;margin-top:3px">
-          <button onclick="${isExtra?'eTblAR':'tblAR'}(${nq},${ti})" style="padding:2px 8px;font-size:11px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg3);cursor:pointer;color:var(--txt3)">＋ 加行</button>
-          <button onclick="${isExtra?'delExtraTbl':'delTbl'}(${nq},${ti})" style="padding:2px 8px;font-size:11px;border:1px solid #ef444433;border-radius:4px;background:transparent;cursor:pointer;color:#ef4444">✕ 刪除表格</button>
+        <img src="${src}" style="width:100%;object-fit:contain;display:block;background:var(--bg3);resize:both;overflow:auto;min-height:80px">
+      </div>`;
+    } else {
+      const ti=item.idx;
+      const tbl=tbls[ti]||[];
+      const hdrs=tbl[0]||[],rows=tbl.slice(1);
+      const ca=cas[ti]||hdrs.map(()=>'left');
+      h+=`<div class="richItem" draggable="false" data-pos="${pos}" data-type="tbl" data-nid="${nid}" data-isextra="${isExtra}"
+        style="display:flex;align-items:flex-start;gap:4px;margin-bottom:6px;width:100%">
+        <span onmousedown="this.closest('.richItem').draggable=true" onmouseup="this.closest('.richItem').draggable=false"
+          style="cursor:grab;color:var(--txt3);font-size:16px;user-select:none;padding:0 4px;margin-top:8px;flex-shrink:0">⠿</span>
+        <div style="flex:1">
+          <div class="noteTbl">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead><tr>
+              ${hdrs.map((hh,ci)=>`<th style="border:1px solid var(--bdr);padding:4px 7px;background:var(--bg3);min-width:60px">
+                <div style="display:flex;gap:1px;margin-bottom:2px">
+                  <button onclick="${isExtra?'eTblCA':'tblCA'}(${nq},${ti},${ci},'left')" style="padding:0 3px;font-size:9px;border:1px solid var(--bdr);background:transparent;cursor:pointer;color:${ca[ci]==='left'?'var(--accent)':'var(--txt3)'}">L</button>
+                  <button onclick="${isExtra?'eTblCA':'tblCA'}(${nq},${ti},${ci},'center')" style="padding:0 3px;font-size:9px;border:1px solid var(--bdr);background:transparent;cursor:pointer;color:${ca[ci]==='center'?'var(--accent)':'var(--txt3)'}">C</button>
+                  <button onclick="${isExtra?'eTblCA':'tblCA'}(${nq},${ti},${ci},'right')" style="padding:0 3px;font-size:9px;border:1px solid var(--bdr);background:transparent;cursor:pointer;color:${ca[ci]==='right'?'var(--accent)':'var(--txt3)'}">R</button>
+                  <button onclick="${isExtra?'eTblDC':'tblDC'}(${nq},${ti},${ci})" style="padding:0 3px;font-size:9px;border:1px solid #ef444433;background:transparent;cursor:pointer;color:#ef4444">✕</button>
+                </div>
+                <span contenteditable class="editableCell" onblur="${isExtra?'updateExtraCell':'updateCell'}(${nq},${ti},0,${ci},this)" style="display:block;outline:none;text-align:${ca[ci]}">${hh}</span>
+              </th>`).join('')}
+              <th style="border:1px solid var(--bdr);background:var(--bg3);width:24px;text-align:center">
+                <button onclick="${isExtra?'eTblAC':'tblAC'}(${nq},${ti})" style="border:none;background:transparent;cursor:pointer;color:var(--txt3);font-size:16px">＋</button>
+              </th>
+            </tr></thead>
+            <tbody>
+              ${rows.map((row,ri)=>`<tr>
+                ${row.map((cell,ci)=>`<td style="border:1px solid var(--bdr);padding:5px 7px;background:var(--bg2);text-align:${ca[ci]||'left'}">
+                  <span contenteditable class="editableCell" onblur="${isExtra?'updateExtraCell':'updateCell'}(${nq},${ti},${ri+1},${ci},this)" style="display:block;outline:none">${cell}</span>
+                </td>`).join('')}
+                <td style="border:1px solid var(--bdr);width:24px;text-align:center;background:var(--bg2)">
+                  <button onclick="${isExtra?'eTblDR':'tblDR'}(${nq},${ti},${ri+1})" style="border:none;background:transparent;cursor:pointer;color:#ef4444">✕</button>
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+          </div>
+          <div style="display:flex;gap:4px;margin-top:3px">
+            <button onclick="${isExtra?'eTblAR':'tblAR'}(${nq},${ti})" style="padding:2px 8px;font-size:11px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg3);cursor:pointer;color:var(--txt3)">＋ 加行</button>
+            <button onclick="${isExtra?'delExtraTbl':'delTbl'}(${nq},${ti})" style="padding:2px 8px;font-size:11px;border:1px solid #ef444433;border-radius:4px;background:transparent;cursor:pointer;color:#ef4444">✕ 刪除表格</button>
+          </div>
         </div>
-      </div>
-    </div>`;
+      </div>`;
+    }
   });
   return h;
 }
