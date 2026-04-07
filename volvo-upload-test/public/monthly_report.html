@@ -186,6 +186,7 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
   <div id="topBadge" style="font-size:12px;color:var(--txt3)"></div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
     <div id="topStatus" style="font-size:11px;color:var(--txt3)"></div>
+    <div id="autoSaveHint" style="font-size:10px;color:#10b981;opacity:0;transition:opacity .4s">✓ 已自動儲存</div>
     <button class="themeBtn" id="themeBtn" onclick="toggleTheme()">☀️ 亮版</button>
   </div>
 </div>
@@ -542,7 +543,11 @@ function closePD(){
   document.querySelectorAll('.pd-btn.open').forEach(b=>b.classList.remove('open'));
   document.querySelectorAll('.pd-dd.open').forEach(d=>d.classList.remove('open'));
 }
-function selectPD(p){curPeriod=p;closePD();renderPD();loadAll();}
+async function selectPD(p){
+  if(p===curPeriod){closePD();return;}
+  await autoSave(); // 切換月份前先存
+  curPeriod=p;closePD();renderPD();loadAll();
+}
 document.addEventListener('click',closePD);
 
 // ── API helpers ──
@@ -888,8 +893,38 @@ function dlChart(id,name){
   a.download=`${name}_${curBr}_${curPeriod}_${new Date().toISOString().slice(0,10)}.png`;a.click();
 }
 
+// ── 自動儲存（切換前靜默存檔）──
+let _autoSaving=false;
+async function autoSave(){
+  if(_autoSaving)return;
+  _autoSaving=true;
+  try{
+    // 同步 extra note textarea → memory
+    SECS.forEach(sec=>(extraNotes[sec]||[]).forEach(n=>{
+      const ta=document.getElementById('eta-'+n.id);if(ta)n.content=ta.value;
+    }));
+    const entries=[
+      ...NOTE_IDS.map(id=>({key:nKey(id),value:document.getElementById(id)?.value||''})),
+      ...NOTE_IDS.filter(id=>richData[id]).map(id=>({key:nKey('rich_'+id),value:JSON.stringify(richData[id])})),
+      ...SECS.map(sec=>({key:nKey('extra_'+sec),value:JSON.stringify(extraNotes[sec]||[])})),
+    ];
+    const hasAny=entries.some(e=>e.value&&e.value!=='[]'&&e.value!=='{}');
+    if(!hasAny){_autoSaving=false;return;}
+    const res=await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({entries})});
+    if(res.ok){
+      const hint=document.getElementById('autoSaveHint');
+      if(hint){hint.style.opacity='1';setTimeout(()=>{hint.style.opacity='0';},2000);}
+    }
+  }catch{}
+  _autoSaving=false;
+}
+
 // ── Branch switch ──
-function setBr(br){
+async function setBr(br){
+  if(br===curBr){loadAll();return;}
+  // 切換前先自動儲存當前廠別說明
+  await autoSave();
   curBr=br;
   ['ALL','AMA','AMC','AMD'].forEach(b=>{
     const el=document.getElementById('bt-'+b),on=b===br;
