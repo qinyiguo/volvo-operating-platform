@@ -91,6 +91,9 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
 .ld{width:20px;height:3px;border-radius:1px;display:inline-block;}
 .ld-d{width:20px;height:0;display:inline-block;border-top:2.5px dashed;}
 .bar-bg{background:var(--bg3);border-radius:3px;height:6px;}
+.dlBtnI{background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.25);border-radius:5px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.dlBtnI:hover{background:rgba(59,130,246,.28);}
+/* keep old dlBtn for WIP charts that don't have period bar */
 .dlBtn{position:absolute;top:8px;right:8px;background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.25);border-radius:5px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer;z-index:2;}
 .dlBtn:hover{background:rgba(59,130,246,.28);}
 /* Period selector per chart */
@@ -196,18 +199,21 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
     <div class="secDiv"><span class="drag-handle" title="拖曳排序">⠿</span>🔶 營收趨勢分析</div>
     <div class="kpiRow" id="kpi_paid"></div>
     <div class="card" style="margin-bottom:10px">
-      <button class="dlBtn" onclick="dlChart('c_paid','有費營收')">⬇ 下載</button>
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:4px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:5px">
         <div class="leg">
           <span class="li"><span class="ld" style="background:#f97316"></span>今年實際</span>
           <span class="li"><span class="ld-d" style="border-top-color:#94a3b8"></span>去年同期</span>
           <span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>預算目標</span>
+          <span class="li"><span class="ld-d" style="border-top-color:rgba(255,255,255,.35)"></span>期間平均</span>
         </div>
-        <div class="cPBar">
-          <button class="cPBtn" data-chart="paid" data-n="1"  onclick="setPeriod('paid',1)">1M</button>
-          <button class="cPBtn" data-chart="paid" data-n="3"  onclick="setPeriod('paid',3)">3M</button>
-          <button class="cPBtn" data-chart="paid" data-n="6"  onclick="setPeriod('paid',6)">6M</button>
-          <button class="cPBtn active" data-chart="paid" data-n="12" onclick="setPeriod('paid',12)">12M</button>
+        <div style="display:flex;align-items:center;gap:5px">
+          <div class="cPBar">
+            <button class="cPBtn" data-chart="paid" data-n="1"  onclick="setPeriod('paid',1)">1M</button>
+            <button class="cPBtn" data-chart="paid" data-n="3"  onclick="setPeriod('paid',3)">3M</button>
+            <button class="cPBtn" data-chart="paid" data-n="6"  onclick="setPeriod('paid',6)">6M</button>
+            <button class="cPBtn active" data-chart="paid" data-n="12" onclick="setPeriod('paid',12)">12M</button>
+          </div>
+          <button class="dlBtnI" onclick="dlChart('c_paid','有費營收')">⬇ 下載</button>
         </div>
       </div>
       <div class="avgRow" id="avg-paid"></div>
@@ -229,14 +235,16 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
         <div class="secHd">💙 一般（P3）<span style="font-size:10px;color:var(--txt3)">千元</span></div>
         <div class="kpiRow2" id="kpi_gen"></div>
         <div class="card" style="margin-bottom:8px">
-          <button class="dlBtn" onclick="dlChart('c_gen','一般營收')">⬇</button>
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:3px;margin-bottom:3px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:3px;margin-bottom:4px">
             <div class="leg"><span class="li"><span class="ld" style="background:#3b82f6"></span>今年</span><span class="li"><span class="ld-d" style="border-top-color:#7dd3fc"></span>去年</span><span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>目標</span></div>
-            <div class="cPBar">
-              <button class="cPBtn" data-chart="gen" data-n="1"  onclick="setPeriod('gen',1)">1M</button>
-              <button class="cPBtn" data-chart="gen" data-n="3"  onclick="setPeriod('gen',3)">3M</button>
-              <button class="cPBtn" data-chart="gen" data-n="6"  onclick="setPeriod('gen',6)">6M</button>
-              <button class="cPBtn active" data-chart="gen" data-n="12" onclick="setPeriod('gen',12)">12M</button>
+            <div style="display:flex;align-items:center;gap:5px">
+              <div class="cPBar">
+                <button class="cPBtn" data-chart="gen" data-n="1"  onclick="setPeriod('gen',1)">1M</button>
+                <button class="cPBtn" data-chart="gen" data-n="3"  onclick="setPeriod('gen',3)">3M</button>
+                <button class="cPBtn" data-chart="gen" data-n="6"  onclick="setPeriod('gen',6)">6M</button>
+                <button class="cPBtn active" data-chart="gen" data-n="12" onclick="setPeriod('gen',12)">12M</button>
+              </div>
+              <button class="dlBtnI" onclick="dlChart('c_gen','一般營收')">⬇</button>
             </div>
           </div>
           <div class="avgRow" id="avg-gen"></div>
@@ -248,14 +256,16 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
         <div class="secHd">🔨 鈑烤（PC8+PC3）<span style="font-size:10px;color:var(--txt3)">千元</span></div>
         <div class="kpiRow2" id="kpi_bw"></div>
         <div class="card" style="margin-bottom:8px">
-          <button class="dlBtn" onclick="dlChart('c_bw','鈑烤營收')">⬇</button>
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:3px;margin-bottom:3px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:3px;margin-bottom:4px">
             <div class="leg"><span class="li"><span class="ld" style="background:#8b5cf6"></span>今年</span><span class="li"><span class="ld-d" style="border-top-color:#c4b5fd"></span>去年</span><span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>目標</span></div>
-            <div class="cPBar">
-              <button class="cPBtn" data-chart="bw" data-n="1"  onclick="setPeriod('bw',1)">1M</button>
-              <button class="cPBtn" data-chart="bw" data-n="3"  onclick="setPeriod('bw',3)">3M</button>
-              <button class="cPBtn" data-chart="bw" data-n="6"  onclick="setPeriod('bw',6)">6M</button>
-              <button class="cPBtn active" data-chart="bw" data-n="12" onclick="setPeriod('bw',12)">12M</button>
+            <div style="display:flex;align-items:center;gap:5px">
+              <div class="cPBar">
+                <button class="cPBtn" data-chart="bw" data-n="1"  onclick="setPeriod('bw',1)">1M</button>
+                <button class="cPBtn" data-chart="bw" data-n="3"  onclick="setPeriod('bw',3)">3M</button>
+                <button class="cPBtn" data-chart="bw" data-n="6"  onclick="setPeriod('bw',6)">6M</button>
+                <button class="cPBtn active" data-chart="bw" data-n="12" onclick="setPeriod('bw',12)">12M</button>
+              </div>
+              <button class="dlBtnI" onclick="dlChart('c_bw','鈑烤營收')">⬇</button>
             </div>
           </div>
           <div class="avgRow" id="avg-bw"></div>
@@ -267,14 +277,16 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
         <div class="secHd">🛡️ 延保（P9）<span style="font-size:10px;color:var(--txt3)">千元</span></div>
         <div class="kpiRow2" id="kpi_ext"></div>
         <div class="card" style="margin-bottom:8px">
-          <button class="dlBtn" onclick="dlChart('c_ext','延保營收')">⬇</button>
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:3px;margin-bottom:3px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:3px;margin-bottom:4px">
             <div class="leg"><span class="li"><span class="ld" style="background:#10b981"></span>今年</span><span class="li"><span class="ld-d" style="border-top-color:#6ee7b7"></span>去年</span><span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>目標</span></div>
-            <div class="cPBar">
-              <button class="cPBtn" data-chart="ext" data-n="1"  onclick="setPeriod('ext',1)">1M</button>
-              <button class="cPBtn" data-chart="ext" data-n="3"  onclick="setPeriod('ext',3)">3M</button>
-              <button class="cPBtn" data-chart="ext" data-n="6"  onclick="setPeriod('ext',6)">6M</button>
-              <button class="cPBtn active" data-chart="ext" data-n="12" onclick="setPeriod('ext',12)">12M</button>
+            <div style="display:flex;align-items:center;gap:5px">
+              <div class="cPBar">
+                <button class="cPBtn" data-chart="ext" data-n="1"  onclick="setPeriod('ext',1)">1M</button>
+                <button class="cPBtn" data-chart="ext" data-n="3"  onclick="setPeriod('ext',3)">3M</button>
+                <button class="cPBtn" data-chart="ext" data-n="6"  onclick="setPeriod('ext',6)">6M</button>
+                <button class="cPBtn active" data-chart="ext" data-n="12" onclick="setPeriod('ext',12)">12M</button>
+              </div>
+              <button class="dlBtnI" onclick="dlChart('c_ext','延保營收')">⬇</button>
             </div>
           </div>
           <div class="avgRow" id="avg-ext"></div>
@@ -293,34 +305,38 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
     <div class="secDiv"><span class="drag-handle" title="拖曳排序">⠿</span>🚗 進廠台數 & 單車銷售額</div>
     <div class="g2" style="margin-bottom:10px">
       <div class="card">
-        <button class="dlBtn" onclick="dlChart('c_cars','進廠台數')">⬇</button>
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:3px;margin-bottom:3px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
           <div>
             <div style="font-size:12px;font-weight:700;color:var(--txt3)">每月進廠台數</div>
             <div class="leg"><span class="li"><span class="ld" style="background:#3b82f6"></span>今年</span></div>
           </div>
-          <div class="cPBar">
-            <button class="cPBtn" data-chart="cars" data-n="1"  onclick="setPeriod('cars',1)">1M</button>
-            <button class="cPBtn" data-chart="cars" data-n="3"  onclick="setPeriod('cars',3)">3M</button>
-            <button class="cPBtn" data-chart="cars" data-n="6"  onclick="setPeriod('cars',6)">6M</button>
-            <button class="cPBtn active" data-chart="cars" data-n="12" onclick="setPeriod('cars',12)">12M</button>
+          <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+            <div class="cPBar">
+              <button class="cPBtn" data-chart="cars" data-n="1"  onclick="setPeriod('cars',1)">1M</button>
+              <button class="cPBtn" data-chart="cars" data-n="3"  onclick="setPeriod('cars',3)">3M</button>
+              <button class="cPBtn" data-chart="cars" data-n="6"  onclick="setPeriod('cars',6)">6M</button>
+              <button class="cPBtn active" data-chart="cars" data-n="12" onclick="setPeriod('cars',12)">12M</button>
+            </div>
+            <button class="dlBtnI" onclick="dlChart('c_cars','進廠台數')">⬇</button>
           </div>
         </div>
         <div class="avgRow" id="avg-cars"></div>
         <div style="position:relative;height:155px"><canvas id="c_cars"></canvas></div>
       </div>
       <div class="card">
-        <button class="dlBtn" onclick="dlChart('c_rpv','單車銷售額')">⬇</button>
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:3px;margin-bottom:3px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
           <div>
             <div style="font-size:12px;font-weight:700;color:var(--txt3)">單車銷售額（元/台）</div>
             <div class="leg"><span class="li"><span class="ld" style="background:#10b981"></span>今年</span></div>
           </div>
-          <div class="cPBar">
-            <button class="cPBtn" data-chart="rpv" data-n="1"  onclick="setPeriod('rpv',1)">1M</button>
-            <button class="cPBtn" data-chart="rpv" data-n="3"  onclick="setPeriod('rpv',3)">3M</button>
-            <button class="cPBtn" data-chart="rpv" data-n="6"  onclick="setPeriod('rpv',6)">6M</button>
-            <button class="cPBtn active" data-chart="rpv" data-n="12" onclick="setPeriod('rpv',12)">12M</button>
+          <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+            <div class="cPBar">
+              <button class="cPBtn" data-chart="rpv" data-n="1"  onclick="setPeriod('rpv',1)">1M</button>
+              <button class="cPBtn" data-chart="rpv" data-n="3"  onclick="setPeriod('rpv',3)">3M</button>
+              <button class="cPBtn" data-chart="rpv" data-n="6"  onclick="setPeriod('rpv',6)">6M</button>
+              <button class="cPBtn active" data-chart="rpv" data-n="12" onclick="setPeriod('rpv',12)">12M</button>
+            </div>
+            <button class="dlBtnI" onclick="dlChart('c_rpv','單車銷售額')">⬇</button>
           </div>
         </div>
         <div class="avgRow" id="avg-rpv"></div>
@@ -1041,6 +1057,16 @@ document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if
 // ── Notes DB ──
 function nKey(id){return`${MODULE}_${curBr}_${curPeriod}_${id}`;}
 async function loadNotes(){
+  // ── 先清空記憶體，避免切換 branch/period 時殘留舊資料 ──
+  NOTE_IDS.forEach(id=>{
+    const ta=document.getElementById(id);if(ta)ta.value='';
+    richData[id]=null;
+    const richEl=document.getElementById('rich-'+id);if(richEl)richEl.innerHTML='';
+  });
+  SECS.forEach(sec=>{
+    extraNotes[sec]=[];
+    const el=document.getElementById('extra-notes-'+sec);if(el)el.innerHTML='';
+  });
   try{
     const prefix=`${MODULE}_${curBr}_${curPeriod}_`;
     const data=await sf(`/api/notes?prefix=${encodeURIComponent(prefix)}`);
