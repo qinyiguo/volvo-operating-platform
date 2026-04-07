@@ -104,9 +104,9 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
 .nToolBtn{padding:3px 9px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--bdr);background:var(--bg3);color:var(--txt2);}
 .nToolBtn:hover{border-color:var(--accent);color:var(--accent);}
 .noteRich{margin-top:7px;display:flex;flex-direction:column;gap:7px;}
-.noteImg{position:relative;border-radius:7px;overflow:hidden;border:1px solid var(--bdr);}
-.noteImg img{width:100%;display:block;max-height:260px;object-fit:contain;background:var(--bg3);}
-.noteImgDel{position:absolute;top:5px;right:5px;background:rgba(239,68,68,.85);color:#fff;border:none;border-radius:4px;padding:2px 7px;font-size:11px;cursor:pointer;font-weight:700;}
+.noteImgWrap{position:relative;border-radius:7px;overflow:hidden;border:1px solid var(--bdr);resize:both;min-width:120px;min-height:80px;max-width:100%;overflow:auto;}
+.noteImgWrap img{width:100%;height:100%;object-fit:contain;display:block;background:var(--bg3);}
+.noteImgDel{position:absolute;top:5px;right:5px;background:rgba(239,68,68,.85);color:#fff;border:none;border-radius:4px;padding:2px 7px;font-size:11px;cursor:pointer;font-weight:700;z-index:2;}
 .noteTbl{overflow-x:auto;border-radius:7px;border:1px solid var(--bdr);}
 .noteTbl table{width:100%;border-collapse:collapse;font-size:12px;}
 .noteTbl td,.noteTbl th{border:1px solid var(--bdr);padding:7px 10px;color:var(--txt);background:var(--bg2);}
@@ -186,21 +186,19 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
   <div class="sec-wrap">
     <div class="secDiv"><span class="drag-handle" title="拖曳排序">⠿</span>🔶 營收趨勢分析</div>
     <div class="kpiRow" id="kpi_paid"></div>
-    <div class="g2">
-      <div class="card">
-        <button class="dlBtn" onclick="dlChart('c_paid','有費營收')">⬇ 下載</button>
-        <div class="leg">
-          <span class="li"><span class="ld" style="background:#f97316"></span>今年實際</span>
-          <span class="li"><span class="ld-d" style="border-top-color:#94a3b8"></span>去年同期</span>
-          <span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>預算目標</span>
-        </div>
-        <div style="position:relative;height:200px"><canvas id="c_paid"></canvas></div>
+    <div class="card" style="margin-bottom:10px">
+      <button class="dlBtn" onclick="dlChart('c_paid','有費營收')">⬇ 下載</button>
+      <div class="leg">
+        <span class="li"><span class="ld" style="background:#f97316"></span>今年實際</span>
+        <span class="li"><span class="ld-d" style="border-top-color:#94a3b8"></span>去年同期</span>
+        <span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>預算目標</span>
       </div>
-      <div class="card" style="display:flex;flex-direction:column;gap:0">
-        <div id="note-area-n_paid" style="display:flex;flex-direction:column;flex:1"></div>
-        <div id="extra-notes-sec-revenue"></div>
-      </div>
+      <div style="position:relative;height:220px"><canvas id="c_paid"></canvas></div>
     </div>
+    <div class="card" style="margin-bottom:4px">
+      <div id="note-area-n_paid"></div>
+    </div>
+    <div id="extra-notes-sec-revenue"></div>
   </div>
   </div>
 
@@ -248,24 +246,22 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
   <div class="drag-sec" id="sec-cars" draggable="true">
   <div class="sec-wrap">
     <div class="secDiv"><span class="drag-handle" title="拖曳排序">⠿</span>🚗 進廠台數 & 單車銷售額</div>
-    <div class="g2">
-      <div>
-        <div class="card" style="margin-bottom:8px">
-          <button class="dlBtn" onclick="dlChart('c_cars','進廠台數')">⬇</button>
-          <div style="font-size:12px;font-weight:700;color:var(--txt3);margin-bottom:5px">每月進廠台數</div>
-          <div class="leg"><span class="li"><span class="ld" style="background:#3b82f6"></span>今年</span></div>
-          <div style="position:relative;height:140px"><canvas id="c_cars"></canvas></div>
-        </div>
-        <div class="card">
-          <button class="dlBtn" onclick="dlChart('c_rpv','單車銷售額')">⬇</button>
-          <div style="font-size:12px;font-weight:700;color:var(--txt3);margin-bottom:5px">單車銷售額（元/台）</div>
-          <div class="leg"><span class="li"><span class="ld" style="background:#10b981"></span>今年</span></div>
-          <div style="position:relative;height:140px"><canvas id="c_rpv"></canvas></div>
-        </div>
+    <div class="g2" style="margin-bottom:10px">
+      <div class="card">
+        <button class="dlBtn" onclick="dlChart('c_cars','進廠台數')">⬇</button>
+        <div style="font-size:12px;font-weight:700;color:var(--txt3);margin-bottom:5px">每月進廠台數</div>
+        <div class="leg"><span class="li"><span class="ld" style="background:#3b82f6"></span>今年</span></div>
+        <div style="position:relative;height:155px"><canvas id="c_cars"></canvas></div>
       </div>
-      <div class="card" style="display:flex;flex-direction:column">
-        <div id="note-area-n_cars" style="flex:1;display:flex;flex-direction:column"></div>
+      <div class="card">
+        <button class="dlBtn" onclick="dlChart('c_rpv','單車銷售額')">⬇</button>
+        <div style="font-size:12px;font-weight:700;color:var(--txt3);margin-bottom:5px">單車銷售額（元/台）</div>
+        <div class="leg"><span class="li"><span class="ld" style="background:#10b981"></span>今年</span></div>
+        <div style="position:relative;height:155px"><canvas id="c_rpv"></canvas></div>
       </div>
+    </div>
+    <div class="card" style="margin-bottom:4px">
+      <div id="note-area-n_cars"></div>
     </div>
     <div id="extra-notes-sec-cars"></div>
   </div>
@@ -276,39 +272,35 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
   <div class="sec-wrap">
     <div class="secDiv"><span class="drag-handle" title="拖曳排序">⠿</span>🔧 WIP 未結工單 — 天數分層</div>
     <div class="kpiRow" id="kpiWip" style="margin-bottom:10px"></div>
-    <div class="g2" style="margin-bottom:10px">
-      <div class="card">
-        <button class="dlBtn" onclick="dlChart('cWipBar','WIP分層')">⬇ 下載</button>
-        <div class="leg">
-          <span class="li"><span class="ld" style="background:#10b981"></span>&lt;30天</span>
-          <span class="li"><span class="ld" style="background:#f59e0b"></span>30~90天</span>
-          <span class="li"><span class="ld" style="background:#ef4444"></span>&gt;90天</span>
-        </div>
-        <div style="position:relative;height:200px"><canvas id="cWipBar"></canvas></div>
+    <div class="card" style="margin-bottom:10px">
+      <button class="dlBtn" onclick="dlChart('cWipBar','WIP分層')">⬇ 下載</button>
+      <div class="leg">
+        <span class="li"><span class="ld" style="background:#10b981"></span>&lt;30天</span>
+        <span class="li"><span class="ld" style="background:#f59e0b"></span>30~90天</span>
+        <span class="li"><span class="ld" style="background:#ef4444"></span>&gt;90天</span>
       </div>
-      <div class="card" style="display:flex;flex-direction:column">
-        <div id="note-area-n_wip_overview" style="flex:1;display:flex;flex-direction:column"></div>
-      </div>
+      <div style="position:relative;height:200px"><canvas id="cWipBar"></canvas></div>
+    </div>
+    <div class="card" style="margin-bottom:10px">
+      <div id="note-area-n_wip_overview"></div>
     </div>
     <div class="secHd" style="margin-bottom:8px">各據點分層<span style="font-size:10px;color:var(--txt3);font-weight:400;margin-left:6px">金額(K) & 件數</span></div>
     <div class="g3" id="wipCards" style="margin-bottom:10px"></div>
+    <div class="g2" style="margin-bottom:8px">
+      <div class="card">
+        <button class="dlBtn" onclick="dlChart('cWipPie','WIP佔比')">⬇</button>
+        <div style="font-size:12px;font-weight:700;color:var(--txt3);margin-bottom:5px">各層佔比（本月）</div>
+        <div style="position:relative;height:165px"><canvas id="cWipPie"></canvas></div>
+      </div>
+      <div class="card">
+        <button class="dlBtn" onclick="dlChart('cWipPct','逾30天佔比')">⬇</button>
+        <div style="font-size:12px;font-weight:700;color:var(--txt3);margin-bottom:5px">逾30天 / 逾90天 佔比（%）</div>
+        <div style="position:relative;height:165px"><canvas id="cWipPct"></canvas></div>
+      </div>
+    </div>
     <div class="g2">
-      <div>
-        <div class="card" style="margin-bottom:8px">
-          <button class="dlBtn" onclick="dlChart('cWipPie','WIP佔比')">⬇</button>
-          <div style="font-size:12px;font-weight:700;color:var(--txt3);margin-bottom:5px">各層佔比（本月）</div>
-          <div style="position:relative;height:165px"><canvas id="cWipPie"></canvas></div>
-        </div>
-        <div class="card">
-          <button class="dlBtn" onclick="dlChart('cWipPct','逾30天佔比')">⬇</button>
-          <div style="font-size:12px;font-weight:700;color:var(--txt3);margin-bottom:5px">逾30天 / 逾90天 佔比（%）</div>
-          <div style="position:relative;height:130px"><canvas id="cWipPct"></canvas></div>
-        </div>
-      </div>
-      <div>
-        <div class="card" style="margin-bottom:8px"><div id="note-area-n_wip_30"></div></div>
-        <div class="card"><div id="note-area-n_wip_90"></div></div>
-      </div>
+      <div class="card"><div id="note-area-n_wip_30"></div></div>
+      <div class="card"><div id="note-area-n_wip_90"></div></div>
     </div>
     <div id="extra-notes-sec-wip"></div>
   </div>
@@ -358,10 +350,14 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
 <div class="modal" id="tableModal" style="display:none">
   <div class="modalBox">
     <div class="modalTitle">📊 新增表格</div>
-    <div class="mRow"><div class="mLbl">標題列（逗號分隔）</div>
+    <div class="mRow"><div class="mLbl">標題列（逗號分隔欄位名）</div>
       <input class="mInput" id="tblHeaders" placeholder="月份,AMA,AMC,AMD,合計"></div>
-    <div class="mRow"><div class="mLbl">資料列數</div>
-      <input class="mInput" id="tblRows" type="number" value="3" min="1" max="30"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="mRow"><div class="mLbl">資料列數（橫列）</div>
+        <input class="mInput" id="tblRows" type="number" value="3" min="1" max="30"></div>
+      <div class="mRow"><div class="mLbl">欄數（若不用標題列）</div>
+        <input class="mInput" id="tblCols" type="number" value="5" min="1" max="20" placeholder="若填標題列則忽略"></div>
+    </div>
     <div class="mBtns">
       <button class="mBtn mBtnCancel" onclick="closeModal('tableModal')">取消</button>
       <button class="mBtn mBtnPrimary" onclick="confirmAddTable()">插入</button>
@@ -523,7 +519,7 @@ async function init(){
 async function loadAll(){
   if(!curPeriod){hideLoad();return;}
   showLoad('讀取營收趨勢…');
-  const last5=prevMonths(curPeriod,5),prev=prevP(curPeriod);
+  const last5=prevMonths(curPeriod,12),prev=prevP(curPeriod);
   const bpQ=curBr==='ALL'?'':`&branch=${curBr}`;
   const tR=await Promise.all(last5.map(async p=>{
     const[bd,tgt,daily]=await Promise.all([
@@ -549,7 +545,7 @@ async function loadAll(){
 // ── Build charts ──
 function buildAll(){
   destCharts();
-  const last5=prevMonths(curPeriod,5);
+  const last5=prevMonths(curPeriod,12);
   const labels=last5.map(p=>`${p.slice(2,4)}/${p.slice(4)}`);
   const{tc,gc,ptBorder}=chartColors();
   const A=k=>last5.map(p=>tData[p]?.bd?.[k]||0);
@@ -655,7 +651,16 @@ function buildWip(tc,gc){
 // ── mkLine (去年/目標都用粗虛線 2.5px) ──
 function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder){
   const allV=[...act,...(ly||[]),...(showTgt&&tgt?tgt:[])].filter(v=>v>0);
-  const minV=allV.length?Math.min(...allV)*.88:0,maxV=allV.length?Math.max(...allV)*1.08:100;
+  const minV=allV.length?Math.min(...allV):0,maxV=allV.length?Math.max(...allV):100;
+  const pad=(maxV-minV)||maxV*.1||5;
+  const lo=Math.max(0,minV-pad*.15),hi=maxV+pad*.1;
+  // 計算好看的刻度步距
+  const range=hi-lo||1;
+  const rawStep=range/5;
+  const mag=Math.pow(10,Math.floor(Math.log10(rawStep)));
+  const step=Math.ceil(rawStep/mag)*mag;
+  const niceMin=Math.floor(lo/step)*step;
+  const niceMax=Math.ceil(hi/step)*step;
   const fmt=yFmt||(v=>v>=1000?Math.round(v/1000)+'K':Math.round(v));
   const ds=[{
     label:'今年實際',data:act,borderColor:lc,backgroundColor:lc+'22',tension:.35,fill:true,
@@ -669,8 +674,8 @@ function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder){
     type:'line',data:{labels,datasets:ds},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${fmt(ctx.raw)}`}}},
-      scales:{x:{ticks:{font:{size:11},color:tc},grid:{color:gc}},
-              y:{ticks:{font:{size:11},color:tc,callback:fmt},grid:{color:gc},min:Math.floor(minV/100)*100,max:Math.ceil(maxV/100)*100}}}
+      scales:{x:{ticks:{font:{size:10},color:tc},grid:{color:gc}},
+              y:{ticks:{font:{size:11},color:tc,callback:fmt},grid:{color:gc},min:niceMin,max:niceMax}}}
   });
 }
 function destCharts(){Object.values(charts).forEach(c=>{try{c.destroy();}catch{}});charts={};}
@@ -794,9 +799,11 @@ function delImg(nid,i){richData[nid]?.images.splice(i,1);renderRich(nid);}
 // ── Table modal ──
 function openTblModal(target){pendingTblTarget=target;document.getElementById('tableModal').style.display='flex';}
 function confirmAddTable(){
-  const hdrs=document.getElementById('tblHeaders').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const rawHdrs=document.getElementById('tblHeaders').value.trim();
+  const cols=Math.max(1,Math.min(20,parseInt(document.getElementById('tblCols').value)||5));
+  const hdrs=rawHdrs?rawHdrs.split(',').map(s=>s.trim()).filter(Boolean):Array.from({length:cols},(_,i)=>`欄${i+1}`);
   const rows=Math.max(1,Math.min(30,parseInt(document.getElementById('tblRows').value)||3));
-  if(!hdrs.length||!pendingTblTarget){closeModal('tableModal');return;}
+  if(!pendingTblTarget){closeModal('tableModal');return;}
   const t=pendingTblTarget;closeModal('tableModal');
   if(t.startsWith('extra:')){
     const[,sec,nid]=t.split(':');
@@ -817,7 +824,7 @@ function renderRich(nid){
 }
 function buildRichHTML(d,delImgFn,nidExpr,delTblFn,ntExpr,cellFn,cellNidExpr){
   let h='';
-  (d.images||[]).forEach((img,i)=>{h+=`<div class="noteImg"><img src="${img.data}"><button class="noteImgDel" onclick="${delImgFn}(${nidExpr},${i})">✕</button></div>`;});
+  (d.images||[]).forEach((img,i)=>{h+=`<div class="noteImgWrap"><img src="${img.data}"><button class="noteImgDel" onclick="${delImgFn}(${nidExpr},${i})">✕</button></div>`;});
   (d.tables||[]).forEach((tbl,ti)=>{
     const hdrs=tbl[0]||[],rows=tbl.slice(1);
     h+=`<div class="noteTbl"><table><tr>${hdrs.map((hh,ci)=>`<th contenteditable class="editableCell" onblur="${cellFn}(${cellNidExpr},${ti},0,${ci},this)">${hh}</th>`).join('')}</tr>
