@@ -2,9 +2,13 @@
 // 說明欄 API — 儲存至 app_settings 資料表
 // 掛載方式：app.use('/api', require('./routes/notes'))
 //
+// ⚠️  重要：server.js 需設定 body 大小限制，否則圖片儲存會失敗：
+//     app.use(express.json({ limit: '20mb' }));
+//     app.use(express.urlencoded({ extended: true, limit: '20mb' }));
+//
 // GET  /api/notes/:key         — 讀取單一筆記
 // PUT  /api/notes/:key         — 寫入（upsert）單一筆記  body: { value }
-// GET  /api/notes              — 以 prefix 讀取多筆  ?prefix=note_revenue_AMA_
+// GET  /api/notes              — 以 prefix 讀取多筆  ?prefix=monthly_AMA_
 // PUT  /api/notes/batch        — 批次寫入              body: { entries:[{key,value}] }
 
 const router = require('express').Router();
