@@ -109,7 +109,7 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
 /* Notes */
 .noteDot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;}
 .noteLabel{font-size:12px;font-weight:700;color:var(--txt3);margin-bottom:6px;display:flex;align-items:center;gap:5px;}
-.noteBox{width:100%;background:var(--bg3);border:1px solid var(--bdr);color:var(--txt);border-radius:7px;padding:9px 11px;font-size:12px;line-height:1.7;resize:both;overflow:auto;min-height:96px;outline:none;font-family:inherit;}
+.noteBox{width:300px;min-width:150px;background:var(--bg3);border:1px solid var(--bdr);color:var(--txt);border-radius:7px;padding:9px 11px;font-size:12px;line-height:1.7;resize:both;overflow:auto;min-height:96px;outline:none;font-family:inherit;}
 .noteBox:focus{border-color:var(--accent);}
 .noteBox::placeholder{color:var(--bdr2);}
 .noteToolbar{display:flex;gap:5px;margin-bottom:6px;flex-wrap:wrap;}
@@ -1074,7 +1074,7 @@ function buildRichHTML(d,nid,isExtra){
         <span onmousedown="this.closest('.richItem').draggable=true" onmouseup="this.closest('.richItem').draggable=false"
           style="cursor:grab;color:var(--txt3);font-size:16px;user-select:none;padding:2px 4px;margin-top:4px;flex-shrink:0">⠿</span>
         <textarea class="noteBox" id="${isExtra?'eta-'+nid.split('|||')[1]:nid}"
-          style="flex:1;${cfg.flex?'min-height:110px':'min-height:70px'}"
+          style="${cfg.flex?'min-height:110px':'min-height:70px'}"
           placeholder="${(cfg.ph||'').replace(/\n/g,'&#10;')}…"
           onchange="${isExtra?`updateExtraContent('${nid.split('|||')[0]}','${nid.split('|||')[1]}',this.value)`:`(richData['${nid}']||{})._textVal=this.value`}"></textarea>
       </div>`;
