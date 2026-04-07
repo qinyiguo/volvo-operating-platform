@@ -109,7 +109,7 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
 /* Notes */
 .noteDot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;}
 .noteLabel{font-size:12px;font-weight:700;color:var(--txt3);margin-bottom:6px;display:flex;align-items:center;gap:5px;}
-.noteBox{width:100%;background:var(--bg3);border:1px solid var(--bdr);color:var(--txt);border-radius:7px;padding:9px 11px;font-size:12px;line-height:1.7;resize:vertical;min-height:96px;outline:none;font-family:inherit;}
+.noteBox{width:100%;background:var(--bg3);border:1px solid var(--bdr);color:var(--txt);border-radius:7px;padding:9px 11px;font-size:12px;line-height:1.7;resize:both;overflow:auto;min-height:96px;outline:none;font-family:inherit;}
 .noteBox:focus{border-color:var(--accent);}
 .noteBox::placeholder{color:var(--bdr2);}
 .noteToolbar{display:flex;gap:5px;margin-bottom:6px;flex-wrap:wrap;}
@@ -119,7 +119,7 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
 .noteImgWrap{position:relative;border-radius:7px;overflow:hidden;border:1px solid var(--bdr);resize:both;min-width:120px;min-height:80px;max-width:100%;overflow:auto;}
 .noteImgWrap img{width:100%;height:100%;object-fit:contain;display:block;background:var(--bg3);}
 .noteImgDel{position:absolute;top:5px;right:5px;background:rgba(239,68,68,.85);color:#fff;border:none;border-radius:4px;padding:2px 7px;font-size:11px;cursor:pointer;font-weight:700;z-index:2;}
-.noteTbl{overflow-x:auto;border-radius:7px;border:1px solid var(--bdr);}
+.noteTbl{border-radius:7px;border:1px solid var(--bdr);resize:both;overflow:auto;display:inline-block;max-width:100%;min-width:200px;}
 .noteTbl table{width:100%;border-collapse:collapse;font-size:12px;}
 .noteTbl td,.noteTbl th{border:1px solid var(--bdr);padding:7px 10px;color:var(--txt);background:var(--bg2);}
 .noteTbl th{background:var(--bg3);font-weight:700;font-size:11px;}
@@ -1046,21 +1046,121 @@ function confirmAddTable(){
 function renderRich(nid){
   const el=document.getElementById('rich-'+nid);if(!el)return;
   const d=richData[nid]||{images:[],tables:[]};
-  el.innerHTML=buildRichHTML(d,'delImg',`'${nid}'`,'delTbl',`'${nid}'`,'updateCell',`'${nid}'`);
+  el.innerHTML=buildRichHTML(d,nid,false);
 }
-function buildRichHTML(d,delImgFn,nidExpr,delTblFn,ntExpr,cellFn,cellNidExpr){
+function buildRichHTML(d,nid,isExtra){
+  const nq=`'${nid}'`;
   let h='';
-  (d.images||[]).forEach((img,i)=>{h+=`<div class="noteImgWrap"><img src="${img.data}"><button class="noteImgDel" onclick="${delImgFn}(${nidExpr},${i})">✕</button></div>`;});
+  // 圖片
+  (d.images||[]).forEach((img,i)=>{
+    const src=typeof img==='string'?img:(img.data||'');
+    const al=img.align||'left';
+    h+=`<div class="richItem" draggable="true" data-pos="${i}" data-type="img" data-nid="${nid}" data-isextra="${isExtra}"
+      style="display:flex;flex-direction:column;align-self:${al==='center'?'center':al==='right'?'flex-end':'flex-start'};max-width:100%;margin-bottom:6px;border:1px solid var(--bdr);border-radius:7px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:4px;padding:3px 6px;background:var(--bg3);border-bottom:1px solid var(--bdr)">
+        <span style="cursor:grab;color:var(--txt3);font-size:14px;user-select:none">⠿</span>
+        <button onclick="${isExtra?'eImgAlign':'imgAlign'}(${nq},${i},'left')" style="padding:2px 7px;font-size:11px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg2);cursor:pointer;color:${al==='left'?'var(--accent)':'var(--txt2)'}">◀ 靠左</button>
+        <button onclick="${isExtra?'eImgAlign':'imgAlign'}(${nq},${i},'center')" style="padding:2px 7px;font-size:11px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg2);cursor:pointer;color:${al==='center'?'var(--accent)':'var(--txt2)'}">▬ 置中</button>
+        <button onclick="${isExtra?'eImgAlign':'imgAlign'}(${nq},${i},'right')" style="padding:2px 7px;font-size:11px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg2);cursor:pointer;color:${al==='right'?'var(--accent)':'var(--txt2)'}">▶ 靠右</button>
+        <button onclick="${isExtra?'delExtraImg':'delImg'}(${nq},${i})" style="margin-left:auto;padding:2px 7px;font-size:11px;border:1px solid #ef444433;border-radius:4px;background:transparent;cursor:pointer;color:#ef4444">✕ 刪除</button>
+      </div>
+      <img src="${src}" style="width:100%;object-fit:contain;display:block;background:var(--bg3);resize:both;overflow:auto;min-height:80px">
+    </div>`;
+  });
+  // 表格
   (d.tables||[]).forEach((tbl,ti)=>{
     const hdrs=tbl[0]||[],rows=tbl.slice(1);
-    h+=`<div class="noteTbl"><table><tr>${hdrs.map((hh,ci)=>`<th contenteditable class="editableCell" onblur="${cellFn}(${cellNidExpr},${ti},0,${ci},this)">${hh}</th>`).join('')}</tr>
-      ${rows.map((row,ri)=>`<tr>${row.map((cell,ci)=>`<td contenteditable class="editableCell" onblur="${cellFn}(${cellNidExpr},${ti},${ri+1},${ci},this)">${cell}</td>`).join('')}</tr>`).join('')}
-    </table><div class="noteTblBar"><button onclick="${delTblFn}(${ntExpr},${ti})">✕ 刪除表格</button></div></div>`;
+    const ca=(d.colAligns||[])[ti]||hdrs.map(()=>'left');
+    h+=`<div class="richItem" draggable="true" data-pos="${(d.images||[]).length+ti}" data-type="tbl" data-nid="${nid}" data-isextra="${isExtra}"
+      style="display:flex;align-items:flex-start;gap:4px;margin-bottom:6px;width:100%">
+      <span style="cursor:grab;color:var(--txt3);font-size:14px;user-select:none;margin-top:8px;flex-shrink:0">⠿</span>
+      <div style="flex:1">
+        <div class="noteTbl">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead><tr>
+            ${hdrs.map((hh,ci)=>`<th style="border:1px solid var(--bdr);padding:4px 7px;background:var(--bg3);min-width:60px">
+              <div style="display:flex;gap:1px;margin-bottom:2px">
+                <button onclick="${isExtra?'eTblCA':'tblCA'}(${nq},${ti},${ci},'left')" style="padding:0 3px;font-size:9px;border:1px solid var(--bdr);background:transparent;cursor:pointer;color:${ca[ci]==='left'?'var(--accent)':'var(--txt3)'}">L</button>
+                <button onclick="${isExtra?'eTblCA':'tblCA'}(${nq},${ti},${ci},'center')" style="padding:0 3px;font-size:9px;border:1px solid var(--bdr);background:transparent;cursor:pointer;color:${ca[ci]==='center'?'var(--accent)':'var(--txt3)'}">C</button>
+                <button onclick="${isExtra?'eTblCA':'tblCA'}(${nq},${ti},${ci},'right')" style="padding:0 3px;font-size:9px;border:1px solid var(--bdr);background:transparent;cursor:pointer;color:${ca[ci]==='right'?'var(--accent)':'var(--txt3)'}">R</button>
+                <button onclick="${isExtra?'eTblDC':'tblDC'}(${nq},${ti},${ci})" style="padding:0 3px;font-size:9px;border:1px solid #ef444433;background:transparent;cursor:pointer;color:#ef4444">✕</button>
+              </div>
+              <span contenteditable class="editableCell" onblur="${isExtra?'updateExtraCell':'updateCell'}(${nq},${ti},0,${ci},this)" style="display:block;outline:none;text-align:${ca[ci]}">${hh}</span>
+            </th>`).join('')}
+            <th style="border:1px solid var(--bdr);background:var(--bg3);width:24px;text-align:center">
+              <button onclick="${isExtra?'eTblAC':'tblAC'}(${nq},${ti})" style="border:none;background:transparent;cursor:pointer;color:var(--txt3);font-size:16px">＋</button>
+            </th>
+          </tr></thead>
+          <tbody>
+            ${rows.map((row,ri)=>`<tr>
+              ${row.map((cell,ci)=>`<td style="border:1px solid var(--bdr);padding:5px 7px;background:var(--bg2);text-align:${ca[ci]||'left'}">
+                <span contenteditable class="editableCell" onblur="${isExtra?'updateExtraCell':'updateCell'}(${nq},${ti},${ri+1},${ci},this)" style="display:block;outline:none">${cell}</span>
+              </td>`).join('')}
+              <td style="border:1px solid var(--bdr);width:24px;text-align:center;background:var(--bg2)">
+                <button onclick="${isExtra?'eTblDR':'tblDR'}(${nq},${ti},${ri+1})" style="border:none;background:transparent;cursor:pointer;color:#ef4444">✕</button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+        </div>
+        <div style="display:flex;gap:4px;margin-top:3px">
+          <button onclick="${isExtra?'eTblAR':'tblAR'}(${nq},${ti})" style="padding:2px 8px;font-size:11px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg3);cursor:pointer;color:var(--txt3)">＋ 加行</button>
+          <button onclick="${isExtra?'delExtraTbl':'delTbl'}(${nq},${ti})" style="padding:2px 8px;font-size:11px;border:1px solid #ef444433;border-radius:4px;background:transparent;cursor:pointer;color:#ef4444">✕ 刪除表格</button>
+        </div>
+      </div>
+    </div>`;
   });
   return h;
 }
 function delTbl(nid,i){richData[nid]?.tables.splice(i,1);renderRich(nid);}
 function updateCell(nid,ti,ri,ci,el){if(richData[nid]?.tables?.[ti])richData[nid].tables[ti][ri][ci]=el.textContent;}
+// 圖片對齊
+function imgAlign(nid,i,al){const d=richData[nid];if(!d?.images?.[i])return;if(typeof d.images[i]==='string')d.images[i]={data:d.images[i],name:'',align:al};else d.images[i].align=al;renderRich(nid);}
+// 表格欄列操作
+function tblCA(nid,ti,ci,al){const d=richData[nid];if(!d)return;if(!d.colAligns)d.colAligns=[];if(!d.colAligns[ti])d.colAligns[ti]=[];d.colAligns[ti][ci]=al;renderRich(nid);}
+function tblDC(nid,ti,ci){const d=richData[nid];if(!d?.tables?.[ti])return;d.tables[ti].forEach(r=>r.splice(ci,1));if(d.colAligns?.[ti])d.colAligns[ti].splice(ci,1);renderRich(nid);}
+function tblAC(nid,ti){const d=richData[nid];if(!d?.tables?.[ti])return;d.tables[ti].forEach(r=>r.push(''));renderRich(nid);}
+function tblAR(nid,ti){const d=richData[nid];if(!d?.tables?.[ti])return;d.tables[ti].push(Array((d.tables[ti][0]||[]).length).fill(''));renderRich(nid);}
+function tblDR(nid,ti,ri){const d=richData[nid];if(!d?.tables?.[ti])return;d.tables[ti].splice(ri,1);renderRich(nid);}
+// 拖曳重排 richItem
+let _rdSrc=null;
+document.addEventListener('dragstart',e=>{
+  const el=e.target.closest('.richItem');if(!el)return;
+  e.stopPropagation();
+  _rdSrc={pos:+el.dataset.pos,type:el.dataset.type,nid:el.dataset.nid,isExtra:el.dataset.isextra==='true'};
+  setTimeout(()=>el.style.opacity='.4',0);
+});
+document.addEventListener('dragend',e=>{
+  const el=e.target.closest('.richItem');if(el)el.style.opacity='';
+  document.querySelectorAll('.richItem').forEach(x=>x.style.outline='');
+  _rdSrc=null;
+});
+document.addEventListener('dragover',e=>{
+  const el=e.target.closest('.richItem');if(!el||!_rdSrc)return;
+  e.preventDefault();e.stopPropagation();
+  document.querySelectorAll('.richItem').forEach(x=>x.style.outline='');
+  el.style.outline='2px solid var(--accent)';
+});
+document.addEventListener('drop',e=>{
+  const el=e.target.closest('.richItem');
+  if(!el||!_rdSrc)return;
+  e.preventDefault();e.stopPropagation();
+  el.style.outline='';
+  const destPos=+el.dataset.pos;
+  const{pos:srcPos,nid,isExtra}=_rdSrc;
+  if(srcPos===destPos)return;
+  const d=isExtra?(()=>{const[s,n]=nid.split('|||');return(extraNotes[s]||[]).find(x=>x.id===n)||{};})():(richData[nid]||{});
+  const imgs=[...(d.images||[])],tbls=[...(d.tables||[])],cas=[...(d.colAligns||[])];
+  const items=[];
+  imgs.forEach((_,i)=>items.push({type:'img',idx:i}));
+  tbls.forEach((_,i)=>items.push({type:'tbl',idx:i}));
+  if(srcPos>=items.length||destPos>=items.length)return;
+  const moved=items.splice(srcPos,1)[0];items.splice(destPos,0,moved);
+  const ni=[],nt=[],nc=[];
+  items.forEach(item=>{if(item.type==='img')ni.push(imgs[item.idx]);else{nt.push(tbls[item.idx]);nc.push(cas[item.idx]||[]);}});
+  d.images=ni;d.tables=nt;d.colAligns=nc;
+  if(isExtra){const[s,n]=nid.split('|||');renderExtraRich(s,n);}else renderRich(nid);
+});
 
 // ── Extra notes ──
 function openAddNote(){document.getElementById('newNoteTitle').value='';document.getElementById('addNoteModal').style.display='flex';}
@@ -1091,8 +1191,14 @@ function renderExtraNotes(sec){
 function renderExtraRich(sec,nid){
   const el=document.getElementById('erich-'+nid);if(!el)return;
   const n=(extraNotes[sec]||[]).find(x=>x.id===nid)||{images:[],tables:[]};
-  el.innerHTML=buildRichHTML(n,'delExtraImg',`'${sec}','${nid}'`,'delExtraTbl',`'${sec}','${nid}'`,'updateExtraCell',`'${sec}','${nid}'`);
+  el.innerHTML=buildRichHTML(n,sec+'|||'+nid,true);
 }
+function eImgAlign(k,i,al){const[s,n]=k.split('|||');const d=(extraNotes[s]||[]).find(x=>x.id===n);if(!d?.images?.[i])return;if(typeof d.images[i]==='string')d.images[i]={data:d.images[i],name:'',align:al};else d.images[i].align=al;renderExtraRich(s,n);}
+function eTblCA(k,ti,ci,al){const[s,n]=k.split('|||');const d=(extraNotes[s]||[]).find(x=>x.id===n);if(!d)return;if(!d.colAligns)d.colAligns=[];if(!d.colAligns[ti])d.colAligns[ti]=[];d.colAligns[ti][ci]=al;renderExtraRich(s,n);}
+function eTblDC(k,ti,ci){const[s,n]=k.split('|||');const d=(extraNotes[s]||[]).find(x=>x.id===n);if(!d?.tables?.[ti])return;d.tables[ti].forEach(r=>r.splice(ci,1));if(d.colAligns?.[ti])d.colAligns[ti].splice(ci,1);renderExtraRich(s,n);}
+function eTblAC(k,ti){const[s,n]=k.split('|||');const d=(extraNotes[s]||[]).find(x=>x.id===n);if(!d?.tables?.[ti])return;d.tables[ti].forEach(r=>r.push(''));renderExtraRich(s,n);}
+function eTblAR(k,ti){const[s,n]=k.split('|||');const d=(extraNotes[s]||[]).find(x=>x.id===n);if(!d?.tables?.[ti])return;d.tables[ti].push(Array((d.tables[ti][0]||[]).length).fill(''));renderExtraRich(s,n);}
+function eTblDR(k,ti,ri){const[s,n]=k.split('|||');const d=(extraNotes[s]||[]).find(x=>x.id===n);if(!d?.tables?.[ti])return;d.tables[ti].splice(ri,1);renderExtraRich(s,n);}
 function trigExtraImg(sec,nid){document.getElementById('eimg-'+nid)?.click();}
 function handleExtraImg(sec,nid,input){
   const file=input.files[0];if(!file)return;
