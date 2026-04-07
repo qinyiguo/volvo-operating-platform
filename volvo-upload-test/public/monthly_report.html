@@ -1061,7 +1061,8 @@ function buildRichHTML(d,nid,isExtra){
     h+=`<div class="richItem" draggable="true" data-pos="${i}" data-type="img" data-nid="${nid}" data-isextra="${isExtra}"
       style="display:flex;flex-direction:column;align-self:${al==='center'?'center':al==='right'?'flex-end':'flex-start'};max-width:100%;margin-bottom:6px;border:1px solid var(--bdr);border-radius:7px;overflow:hidden">
       <div style="display:flex;align-items:center;gap:4px;padding:3px 6px;background:var(--bg3);border-bottom:1px solid var(--bdr)">
-        <span style="cursor:grab;color:var(--txt3);font-size:14px;user-select:none">⠿</span>
+        <button onclick="moveRich(${nq},${i},false,-1,${isExtra})" style="padding:1px 5px;font-size:11px;border:1px solid var(--bdr);border-radius:3px;background:var(--bg2);cursor:pointer;color:var(--txt3)">↑</button>
+        <button onclick="moveRich(${nq},${i},false,1,${isExtra})" style="padding:1px 5px;font-size:11px;border:1px solid var(--bdr);border-radius:3px;background:var(--bg2);cursor:pointer;color:var(--txt3)">↓</button>
         <button onclick="${isExtra?'eImgAlign':'imgAlign'}(${nq},${i},'left')" style="padding:2px 7px;font-size:11px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg2);cursor:pointer;color:${al==='left'?'var(--accent)':'var(--txt2)'}">◀ 靠左</button>
         <button onclick="${isExtra?'eImgAlign':'imgAlign'}(${nq},${i},'center')" style="padding:2px 7px;font-size:11px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg2);cursor:pointer;color:${al==='center'?'var(--accent)':'var(--txt2)'}">▬ 置中</button>
         <button onclick="${isExtra?'eImgAlign':'imgAlign'}(${nq},${i},'right')" style="padding:2px 7px;font-size:11px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg2);cursor:pointer;color:${al==='right'?'var(--accent)':'var(--txt2)'}">▶ 靠右</button>
@@ -1076,7 +1077,10 @@ function buildRichHTML(d,nid,isExtra){
     const ca=(d.colAligns||[])[ti]||hdrs.map(()=>'left');
     h+=`<div class="richItem" draggable="true" data-pos="${(d.images||[]).length+ti}" data-type="tbl" data-nid="${nid}" data-isextra="${isExtra}"
       style="display:flex;align-items:flex-start;gap:4px;margin-bottom:6px;width:100%">
-      <span style="cursor:grab;color:var(--txt3);font-size:14px;user-select:none;margin-top:8px;flex-shrink:0">⠿</span>
+      <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;margin-top:6px">
+  <button onclick="moveRich(${nq},${ti},true,-1,${isExtra})" style="padding:1px 5px;font-size:11px;border:1px solid var(--bdr);border-radius:3px;background:var(--bg2);cursor:pointer;color:var(--txt3)">↑</button>
+  <button onclick="moveRich(${nq},${ti},true,1,${isExtra})" style="padding:1px 5px;font-size:11px;border:1px solid var(--bdr);border-radius:3px;background:var(--bg2);cursor:pointer;color:var(--txt3)">↓</button>
+</div>
       <div style="flex:1">
         <div class="noteTbl">
         <table style="width:100%;border-collapse:collapse;font-size:12px">
@@ -1114,6 +1118,21 @@ function buildRichHTML(d,nid,isExtra){
     </div>`;
   });
   return h;
+}
+  function moveRich(nid,idx,isTbl,dir,isExtra){
+  const d=isExtra?(()=>{const[s,n]=nid.split('|||');return(extraNotes[s]||[]).find(x=>x.id===n)||{};})():(richData[nid]||{});
+  const imgs=d.images||[],tbls=d.tables||[],cas=d.colAligns||[];
+  const items=[];
+  imgs.forEach((_,i)=>items.push({type:'img',idx:i}));
+  tbls.forEach((_,i)=>items.push({type:'tbl',idx:i}));
+  const cur=items.findIndex(x=>x.type===(isTbl?'tbl':'img')&&x.idx===idx);
+  const next=cur+dir;
+  if(cur<0||next<0||next>=items.length)return;
+  [items[cur],items[next]]=[items[next],items[cur]];
+  const ni=[],nt=[],nc=[];
+  items.forEach(item=>{if(item.type==='img')ni.push(imgs[item.idx]);else{nt.push(tbls[item.idx]);nc.push(cas[item.idx]||[]);}});
+  d.images=ni;d.tables=nt;d.colAligns=nc;
+  if(isExtra){const[s,n]=nid.split('|||');renderExtraRich(s,n);}else renderRich(nid);
 }
 function delTbl(nid,i){richData[nid]?.tables.splice(i,1);renderRich(nid);}
 function updateCell(nid,ti,ri,ci,el){if(richData[nid]?.tables?.[ti])richData[nid].tables[ti][ri][ci]=el.textContent;}
