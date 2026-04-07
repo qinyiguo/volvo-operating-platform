@@ -1143,19 +1143,31 @@ function buildRichHTML(d,nid,isExtra){
   });
   return h;
 }
-  function moveRich(nid,idx,isTbl,dir,isExtra){
+function moveRich(nid,idx,isTbl,dir,isExtra){
   const d=isExtra?(()=>{const[s,n]=nid.split('|||');return(extraNotes[s]||[]).find(x=>x.id===n)||{};})():(richData[nid]||{});
   const imgs=d.images||[],tbls=d.tables||[],cas=d.colAligns||[];
+  const textPos=d.textPos!==undefined?d.textPos:0;
   const items=[];
   imgs.forEach((_,i)=>items.push({type:'img',idx:i}));
   tbls.forEach((_,i)=>items.push({type:'tbl',idx:i}));
-  const cur=items.findIndex(x=>x.type===(isTbl?'tbl':'img')&&x.idx===idx);
+  items.splice(textPos,0,{type:'text'});
+  // 找位置
+  let cur;
+  if(isTbl===null){cur=textPos;}
+  else{cur=items.findIndex(x=>x.type===(isTbl?'tbl':'img')&&x.idx===idx);}
   const next=cur+dir;
   if(cur<0||next<0||next>=items.length)return;
   [items[cur],items[next]]=[items[next],items[cur]];
-  const ni=[],nt=[],nc=[];
-  items.forEach(item=>{if(item.type==='img')ni.push(imgs[item.idx]);else{nt.push(tbls[item.idx]);nc.push(cas[item.idx]||[]);}});
-  d.images=ni;d.tables=nt;d.colAligns=nc;
+  const ni=[],nt=[],nc=[];let newTextPos=0;
+  items.forEach((item,i)=>{
+    if(item.type==='text')newTextPos=i;
+    else if(item.type==='img')ni.push(imgs[item.idx]);
+    else{nt.push(tbls[item.idx]);nc.push(cas[item.idx]||[]);}
+  });
+  d.images=ni;d.tables=nt;d.colAligns=nc;d.textPos=newTextPos;
+  // 保留文字框內容
+  const ta=document.getElementById(isExtra?'eta-'+nid.split('|||')[1]:nid);
+  if(ta)d._textVal=ta.value;
   if(isExtra){const[s,n]=nid.split('|||');renderExtraRich(s,n);}else renderRich(nid);
 }
 function delTbl(nid,i){richData[nid]?.tables.splice(i,1);renderRich(nid);}
@@ -1202,10 +1214,16 @@ document.addEventListener('drop',e=>{
   imgs.forEach((_,i)=>items.push({type:'img',idx:i}));
   tbls.forEach((_,i)=>items.push({type:'tbl',idx:i}));
   if(srcPos>=items.length||destPos>=items.length)return;
-  const moved=items.splice(srcPos,1)[0];items.splice(destPos,0,moved);
-  const ni=[],nt=[],nc=[];
-  items.forEach(item=>{if(item.type==='img')ni.push(imgs[item.idx]);else{nt.push(tbls[item.idx]);nc.push(cas[item.idx]||[]);}});
-  d.images=ni;d.tables=nt;d.colAligns=nc;
+const ta=document.getElementById(isExtra?'eta-'+nid.split('|||')[1]:nid);
+if(ta)d._textVal=ta.value;
+const moved=items.splice(srcPos,1)[0];items.splice(destPos,0,moved);
+const ni=[],nt=[],nc=[];let newTp=0;
+items.forEach((item,i)=>{
+  if(item.type==='text')newTp=i;
+  else if(item.type==='img')ni.push(imgs[item.idx]);
+  else{nt.push(tbls[item.idx]);nc.push(cas[item.idx]||[]);}
+});
+d.images=ni;d.tables=nt;d.colAligns=nc;d.textPos=newTp;
   if(isExtra){const[s,n]=nid.split('|||');renderExtraRich(s,n);}else renderRich(nid);
 });
 
