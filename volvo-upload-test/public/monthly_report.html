@@ -899,19 +899,18 @@ async function autoSave(){
   if(_autoSaving)return;
   _autoSaving=true;
   try{
-    // 同步 extra note textarea → memory
     SECS.forEach(sec=>(extraNotes[sec]||[]).forEach(n=>{
       const ta=document.getElementById('eta-'+n.id);if(ta)n.content=ta.value;
     }));
-    const entries=[
+    const textEntries=[
       ...NOTE_IDS.map(id=>({key:nKey(id),value:document.getElementById(id)?.value||''})),
-      ...NOTE_IDS.filter(id=>richData[id]).map(id=>({key:nKey('rich_'+id),value:JSON.stringify(richData[id])})),
       ...SECS.map(sec=>({key:nKey('extra_'+sec),value:JSON.stringify(extraNotes[sec]||[])})),
     ];
-    const hasAny=entries.some(e=>e.value&&e.value!=='[]'&&e.value!=='{}');
+    const hasAny=textEntries.some(e=>e.value&&e.value!=='[]');
     if(!hasAny){_autoSaving=false;return;}
     const res=await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({entries})});
+      body:JSON.stringify({entries:textEntries})});
+    // 圖片在 autoSave 時不送（體積大），依賴手動儲存
     if(res.ok){
       const hint=document.getElementById('autoSaveHint');
       if(hint){hint.style.opacity='1';setTimeout(()=>{hint.style.opacity='0';},2000);}
@@ -993,12 +992,30 @@ function renderAllNoteAreas(){
 
 // ── Image upload ──
 function trigImgUpload(nid){document.getElementById('imgInput-'+nid)?.click();}
+// ── 圖片壓縮（上傳時自動縮圖，最大 1200px，品質 0.75）──
+function compressImage(dataUrl, maxW=1200, quality=0.75){
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>{
+      const ratio=Math.min(1, maxW/img.width);
+      const w=Math.round(img.width*ratio), h=Math.round(img.height*ratio);
+      const canvas=document.createElement('canvas');
+      canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror=()=>resolve(dataUrl); // 無法壓縮就用原圖
+    img.src=dataUrl;
+  });
+}
+
 function handleImg(nid,input){
   const file=input.files[0];if(!file)return;
   const rd=new FileReader();
-  rd.onload=e=>{
+  rd.onload=async e=>{
+    const compressed=await compressImage(e.target.result);
     if(!richData[nid])richData[nid]={images:[],tables:[]};
-    richData[nid].images.push({name:file.name,data:e.target.result});
+    richData[nid].images.push({name:file.name,data:compressed});
     renderRich(nid);
   };
   rd.readAsDataURL(file);input.value='';
@@ -1080,7 +1097,12 @@ function trigExtraImg(sec,nid){document.getElementById('eimg-'+nid)?.click();}
 function handleExtraImg(sec,nid,input){
   const file=input.files[0];if(!file)return;
   const rd=new FileReader();
-  rd.onload=e=>{const n=(extraNotes[sec]||[]).find(x=>x.id===nid);if(!n)return;if(!n.images)n.images=[];n.images.push({name:file.name,data:e.target.result});renderExtraRich(sec,nid);};
+  rd.onload=async e=>{
+    const compressed=await compressImage(e.target.result);
+    const n=(extraNotes[sec]||[]).find(x=>x.id===nid);
+    if(!n)return;if(!n.images)n.images=[];
+    n.images.push({name:file.name,data:compressed});renderExtraRich(sec,nid);
+  };
   rd.readAsDataURL(file);input.value='';
 }
 function delExtraImg(sec,nid,i){const n=(extraNotes[sec]||[]).find(x=>x.id===nid);if(n){n.images.splice(i,1);renderExtraRich(sec,nid);}}
@@ -1126,20 +1148,40 @@ async function loadNotes(seq){
 async function saveAll(){
   const btn=document.getElementById('saveBtn'),ok=document.getElementById('saveOk'),st=document.getElementById('nSt');
   btn.disabled=true;btn.textContent='儲存中…';st.innerHTML='<span class="sSp"></span>';
-  // Sync extra note content from textareas
   SECS.forEach(sec=>(extraNotes[sec]||[]).forEach(n=>{const ta=document.getElementById('eta-'+n.id);if(ta)n.content=ta.value;}));
-  const entries=[
+
+  // 文字類（輕量）與圖片類（較重）分開存，避免圖片讓文字也跟著失敗
+  const textEntries=[
     ...NOTE_IDS.map(id=>({key:nKey(id),value:document.getElementById(id)?.value||''})),
-    ...NOTE_IDS.filter(id=>richData[id]).map(id=>({key:nKey('rich_'+id),value:JSON.stringify(richData[id])})),
     ...SECS.map(sec=>({key:nKey('extra_'+sec),value:JSON.stringify(extraNotes[sec]||[])})),
   ];
-  try{
-    const res=await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({entries})});
-    if(!res.ok)throw new Error();
+  const richEntries=NOTE_IDS
+    .filter(id=>richData[id]&&(richData[id].images?.length||richData[id].tables?.length))
+    .map(id=>({key:nKey('rich_'+id),value:JSON.stringify(richData[id])}));
+
+  const postBatch=async(entries)=>{
+    if(!entries.length)return true;
+    try{
+      const r=await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({entries})});
+      return r.ok;
+    }catch{return false;}
+  };
+
+  const textOk=await postBatch(textEntries);
+  const richOk=richEntries.length===0||await postBatch(richEntries);
+
+  btn.disabled=false;btn.textContent='💾 儲存說明';
+  if(textOk&&richOk){
     ok.style.opacity='1';st.innerHTML='';
     setTimeout(()=>{ok.style.opacity='0';},2500);
-  }catch{st.textContent='❌ 儲存失敗';st.style.color='#ef4444';setTimeout(()=>{st.textContent='';st.style.color='';},3e3);}
-  finally{btn.disabled=false;btn.textContent='💾 儲存說明';}
+  }else if(textOk&&!richOk){
+    st.textContent='⚠️ 文字已儲存，圖片過大請洽管理員調整伺服器設定';
+    st.style.color='#f59e0b';setTimeout(()=>{st.textContent='';st.style.color='';},5000);
+  }else{
+    st.textContent='❌ 儲存失敗，請檢查網路連線';
+    st.style.color='#ef4444';setTimeout(()=>{st.textContent='';st.style.color='';},4000);
+  }
 }
 
 init();
