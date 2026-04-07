@@ -636,7 +636,7 @@ function buildAll(){
   const curYear=curPeriod.slice(0,4);
   const ytdM=last12Months.filter(p=>p.startsWith(curYear));
   rKpi4('kpi_paid',A12('paid'),T12('paid'),L12('paid'),mainCol,
-    ytdM.map(p=>tData[p]?.bd?.paid||0),ytdM.map(p=>tData[p]?.tgt?.paid||0));
+    ytdM.map(p=>tData[p]?.bd?.paid||0),ytdM.map(p=>tData[p]?.tgt?.paid||0), curYear);
   rKpi2('kpi_gen', A12('gen'), T12('gen'), L12('gen'), '#3b82f6');
   rKpi2('kpi_bw',  A12('bw'),  T12('bw'),  L12('bw'),  '#8b5cf6');
   rKpi2('kpi_ext', A12('ext'), T12('ext'), L12('ext'), '#10b981');
@@ -674,8 +674,8 @@ function buildCarsCharts(mainCol, tc, gc, ptBorder){
   const rpv=carsAct.map((c,i)=>c>0?Math.round(paid[i]*1000/c):0);
   if(charts.cars){try{charts.cars.destroy();}catch{}}
   if(charts.rpv) {try{charts.rpv.destroy(); }catch{}}
-  charts.cars=mkLine('c_cars',labels,carsAct,[],[],mainCol,'#94a3b8',null,v=>Math.round(v),false,tc,gc,ptBorder);
-  charts.rpv =mkLine('c_rpv', labels,rpv,   [],[],'#10b981','#6ee7b7',null,v=>v>=1000?Math.round(v/1000)+'K':v,false,tc,gc,ptBorder);
+  charts.cars=mkLine('c_cars',labels,carsAct,[],[],mainCol,'#94a3b8',null,v=>Math.round(v).toLocaleString(),false,tc,gc,ptBorder,v=>Math.round(v).toLocaleString()+'台');
+  charts.rpv =mkLine('c_rpv', labels,rpv,   [],[],'#10b981','#6ee7b7',null,v=>Math.round(v).toLocaleString(),false,tc,gc,ptBorder,v=>Math.round(v).toLocaleString()+'元/台');
   refreshAvgBadge('cars',carsAct,n);
   refreshAvgBadge('rpv',rpv,n);
   refreshPeriodBtns('cars',n);
@@ -696,12 +696,17 @@ function setPeriod(key, n){
 }
 
 // 更新平均值顯示列
+const AVG_FMT={
+  cars: v=>`${Math.round(v).toLocaleString()} 台`,
+  rpv:  v=>`${Math.round(v).toLocaleString()} 元/台`,
+};
 function refreshAvgBadge(key, actData, n){
   const el=document.getElementById('avg-'+key);if(!el)return;
   const valid=actData.filter(v=>v>0);
   if(!valid.length){el.innerHTML='';return;}
   const avg=valid.reduce((a,b)=>a+b,0)/valid.length;
-  el.innerHTML=`<span class="avgDash"></span> ${n}M 平均&emsp;<strong>${fK(avg)}</strong>`;
+  const fmt=AVG_FMT[key]||fK;
+  el.innerHTML=`<span class="avgDash"></span>&ensp;<span style="font-size:11px;color:var(--txt3)">${n}M 期間平均</span>&ensp;<strong style="font-size:13px">${fmt(avg)}</strong>`;
 }
 
 // 更新按鈕高亮
@@ -787,7 +792,7 @@ function buildWip(tc,gc){
 }
 
 // ── mkLine (去年/目標都用粗虛線 2.5px) ──
-function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder){
+function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder,tipFmtFn){
   const allV=[...act,...(ly||[]),...(showTgt&&tgt?tgt:[])].filter(v=>v>0);
   const minV=allV.length?Math.min(...allV):0,maxV=allV.length?Math.max(...allV):100;
   const spread=(maxV-minV)||maxV*.1||5;
@@ -798,8 +803,11 @@ function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder){
   const step=Math.ceil(rawStep/mag)*mag||1;
   const niceMin=Math.floor(lo/step)*step;
   const niceMax=Math.ceil(hi/step)*step;
-  const fmt=yFmt||(v=>Math.round(v).toLocaleString()); // Y軸：直接顯示原始數字（千元）
-  const tipFmt=v=>fK(v); // Tooltip：與 KPI 卡片格式一致（58,872K）
+  const fmt=yFmt||(v=>Math.round(v).toLocaleString());
+  const tipFmt=tipFmtFn||fK;   // 預設與 KPI 卡片一致；cars/rpv 可傳入自訂格式
+  const actV=act.filter(v=>v>0);
+  const avg=actV.length>1?actV.reduce((a,b)=>a+b,0)/actV.length:null;
+  const avgColor=isDark()?'rgba(255,255,255,0.38)':'rgba(0,0,0,0.30)';
   const ds=[{
     label:'今年實際',data:act,borderColor:lc,backgroundColor:lc+'22',tension:.35,fill:true,
     pointRadius:5,borderWidth:3,
@@ -808,17 +816,14 @@ function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder){
   }];
   if(ly&&ly.some(v=>v>0))ds.push({label:'去年同期',data:ly,borderColor:lyc,borderDash:[7,4],tension:.35,fill:false,pointRadius:3,borderWidth:2.5,pointBackgroundColor:lyc,pointBorderColor:ptBorder||'#0f172a',pointBorderWidth:1});
   if(showTgt&&tgt&&tgt.some(v=>v>0))ds.push({label:'預算目標',data:tgt,borderColor:'#ef4444',borderDash:[4,3],tension:.35,fill:false,pointRadius:3,borderWidth:2.5,pointBackgroundColor:'#ef4444',pointBorderColor:ptBorder||'#0f172a',pointBorderWidth:1});
-  // 平均線
-  const actV=act.filter(v=>v>0);
-  if(actV.length>1){
-    const avg=actV.reduce((a,b)=>a+b,0)/actV.length;
-    const avgColor=isDark()?'rgba(255,255,255,0.35)':'rgba(0,0,0,0.28)';
-    ds.push({label:'平均',data:Array(act.length).fill(avg),borderColor:avgColor,borderDash:[3,3],borderWidth:1.5,pointRadius:0,fill:false,tension:0});
-  }
+  if(avg!==null)ds.push({label:'期間平均',data:Array(act.length).fill(avg),borderColor:avgColor,borderDash:[3,3],borderWidth:1.8,pointRadius:0,fill:false,tension:0});
   return new Chart(document.getElementById(id),{
     type:'line',data:{labels,datasets:ds},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${tipFmt(ctx.raw)}`}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{
+        if(ctx.dataset.label==='期間平均')return`期間平均: ${tipFmt(ctx.raw)}`;
+        return`${ctx.dataset.label}: ${tipFmt(ctx.raw)}`;
+      }}}},
       scales:{x:{ticks:{font:{size:10},color:tc},grid:{color:gc}},
               y:{ticks:{font:{size:11},color:tc,callback:fmt},grid:{color:gc},min:niceMin,max:niceMax}}}
   });
@@ -831,18 +836,18 @@ const achC=p=>p>=100?'#10b981':p>=85?'#f59e0b':'#ef4444';
 const growC=(a,b)=>a>=b?'#10b981':'#ef4444';
 const pct=(a,t)=>t>0?(a/t*100).toFixed(0)+'%':'0%';
 const liIdx=arr=>{for(let i=arr.length-1;i>=0;i--)if(arr[i]>0)return i;return arr.length-1;};
-function rKpi4(id,act,tgt,ly,col,ytdActArr,ytdTgtArr){
+function rKpi4(id,act,tgt,ly,col,ytdActArr,ytdTgtArr,yr){
   const li=liIdx(act),a=act[li],t=tgt[li],l=ly[li];
   const ach=t>0?a/t*100:null,yoy=l>0?(a-l)/l*100:null;
-  // YTD 僅計算當年度月份（呼叫方傳入），fallback 為 act 全部
   const ytdA=(ytdActArr||act).reduce((s,v)=>s+v,0);
   const ytdT=(ytdTgtArr||tgt).reduce((s,v)=>s+v,0);
   const ytdAch=ytdT>0?ytdA/ytdT*100:null;
+  const yrLabel=yr?`（${yr}年）`:'';
   document.getElementById(id).innerHTML=`
     <div class="kc"><div class="kl">本月實際</div><div class="kv" style="color:${col}">${fK(a)}</div><div class="ks">目標 ${fK(t)}</div></div>
     <div class="kc" style="border-color:${achC(ach||0)}44"><div class="kl">達成率</div><div class="kv" style="color:${achC(ach||0)}">${ach!==null?ach.toFixed(1)+'%':'—'}</div><div class="ks">${ach>=100?'✅ 達標':ach?ach.toFixed(0)+'%':''}</div></div>
     <div class="kc" style="border-color:${yoy>=0?'#10b98133':'#ef444433'}"><div class="kl">YoY vs 去年</div><div class="kv" style="color:${yoy>=0?'#10b981':'#ef4444'}">${yoy!==null?(yoy>=0?'+':'')+yoy.toFixed(1)+'%':'—'}</div><div class="ks">去年 ${fK(l)}</div></div>
-    <div class="kc"><div class="kl">YTD 達成率</div><div class="kv" style="color:${achC(ytdAch||0)}">${ytdAch!==null?ytdAch.toFixed(1)+'%':'—'}</div><div class="ks">累計 ${fK(ytdA)}</div></div>`;
+    <div class="kc"><div class="kl">YTD 達成率${yrLabel}</div><div class="kv" style="color:${achC(ytdAch||0)}">${ytdAch!==null?ytdAch.toFixed(1)+'%':'—'}</div><div class="ks">累計 ${fK(ytdA)} ／ 目標 ${fK(ytdT)}</div></div>`;
 }
 function rKpi2(id,act,tgt,ly,col){
   const li=liIdx(act),a=act[li],t=tgt[li],l=ly[li];
