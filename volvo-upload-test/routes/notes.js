@@ -12,7 +12,7 @@ const pool   = require('../db/pool');
 
 const KEY_PREFIX = 'note_';
 const MAX_KEY_LEN = 200;
-const MAX_VAL_LEN = 65535;
+const MAX_VAL_LEN = 5 * 1024 * 1024; // 5MB — PostgreSQL TEXT 支援，足夠 base64 圖片
 
 function safeKey(k) {
   if (!k || typeof k !== 'string') return null;
