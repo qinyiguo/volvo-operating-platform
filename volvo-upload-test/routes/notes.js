@@ -39,23 +39,6 @@ router.get('/notes/:key', async (req, res) => {
   }
 });
 
-// PUT /api/notes/:key  — body: { value: string }
-router.put('/notes/:key', async (req, res) => {
-  const key = safeKey(req.params.key);
-  if (!key) return res.status(400).json({ error: 'invalid key' });
-  const value = String(req.body?.value ?? '').slice(0, MAX_VAL_LEN);
-  try {
-    await pool.query(
-      `INSERT INTO app_settings (key, value) VALUES ($1, $2)
-       ON CONFLICT (key) DO UPDATE SET value = $2`,
-      [key, value]
-    );
-    res.json({ ok: true, key: req.params.key });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 // GET /api/notes?prefix=revenue_AMA_
 router.get('/notes', async (req, res) => {
   const prefix = KEY_PREFIX + (req.query.prefix || '');
@@ -99,6 +82,23 @@ router.put('/notes/batch', async (req, res) => {
     res.status(500).json({ error: err.message });
   } finally {
     client.release();
+  }
+});
+
+// PUT /api/notes/:key  — body: { value: string }
+router.put('/notes/:key', async (req, res) => {
+  const key = safeKey(req.params.key);
+  if (!key) return res.status(400).json({ error: 'invalid key' });
+  const value = String(req.body?.value ?? '').slice(0, MAX_VAL_LEN);
+  try {
+    await pool.query(
+      `INSERT INTO app_settings (key, value) VALUES ($1, $2)
+       ON CONFLICT (key) DO UPDATE SET value = $2`,
+      [key, value]
+    );
+    res.json({ ok: true, key: req.params.key });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
