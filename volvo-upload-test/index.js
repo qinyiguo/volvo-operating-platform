@@ -28,6 +28,7 @@ app.use('/api', require('./routes/vctl'));
 app.use('/api', require('./routes/promoBonus'));
 app.use('/api/manager-review', require('./routes/managerReview'));
 app.use('/api', require('./routes/bodyshopBonus'));
+app.use('/api', require('./routes/notes'));
 
 // ── Health check（防 Zeabur 冷啟動）──
 app.get('/health', (req, res) => res.json({ ok: true }));
