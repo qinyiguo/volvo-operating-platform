@@ -941,7 +941,10 @@ function hideLoad(){document.getElementById('ovl').style.display='none';}
 const SEC_ORDER_KEY='monthly_layout_order';
 function initDrag(){
   document.querySelectorAll('.drag-sec').forEach(el=>{
-    el.addEventListener('dragstart',e=>{dragSrcId=el.id;el.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
+    el.addEventListener('dragstart',e=>{
+  if(e.target.closest('.richItem'))return;
+  dragSrcId=el.id;el.classList.add('dragging');e.dataTransfer.effectAllowed='move';
+});
     el.addEventListener('dragend',()=>{el.classList.remove('dragging');document.querySelectorAll('.drag-sec').forEach(s=>s.classList.remove('drag-over'));});
     el.addEventListener('dragover',e=>{e.preventDefault();document.querySelectorAll('.drag-sec').forEach(s=>s.classList.remove('drag-over'));if(el.id!==dragSrcId)el.classList.add('drag-over');});
     el.addEventListener('dragleave',()=>el.classList.remove('drag-over'));
