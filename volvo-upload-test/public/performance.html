@@ -932,6 +932,17 @@ function renderEstInputTab(ws) {
     {key:'extended', label:'🛡️ 延保',col:'#10b981'},
   ];
   const allLocked = BRANCHES.every(function(br){return ws.submissions[br];});
+ 
+  // ─── NEW: 從歷史紀錄取每廠最近一次提交，供未填廠預填 ───
+  const history = _estModalData.history || [];
+  const lastSub = {};
+  BRANCHES.forEach(function(br) {
+    const brHist = history
+      .filter(function(h){ return h.branch === br; })
+      .sort(function(a,b){ return b.week_key.localeCompare(a.week_key); });
+    if (brHist.length) lastSub[br] = brHist[0];
+  });
+ 
   let html = '<div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#94a3b8;margin-bottom:16px;line-height:1.9">'
     +'📅 本週：<strong style="color:#e2e8f0">'+ws.week_label+'</strong>（週一 '+ws.week_key+'）<br>'
     +'💡 每自然週（週一～週日）可提交一次預估，提交後本週鎖定，下週可提交新版本。'
@@ -948,32 +959,43 @@ function renderEstInputTab(ws) {
     }).join('')
     +'<th style="padding:9px 12px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:center;min-width:90px">狀態</th>'
     +'</tr></thead><tbody>';
-
+ 
   BRANCHES.forEach(function(br) {
     const sub    = ws.submissions[br];
     const locked = !!sub;
     const col    = brColors[br];
+    const prev   = lastSub[br]; // 上週（或最近一次）的提交資料
+ 
     html += '<tr style="background:'+(locked?'rgba(16,185,129,.03)':'transparent')+'">'
       +'<td style="padding:12px;border-bottom:1px solid rgba(45,63,86,.3)">'
       +'<span style="background:'+col+'22;color:'+col+';padding:4px 12px;border-radius:6px;font-size:12px;font-weight:800">'+br+'</span></td>';
-
+ 
     KEYS.forEach(function(k) {
-      const raw = sub ? Math.round((sub[k.key+'_estimate']||0)/1000) : '';
+      // 已提交：顯示本週已提交的值
+      // 未提交：預填上週值（若有），讓使用者直接修改
+      const thisRaw  = sub  ? Math.round((sub[k.key+'_estimate']||0)/1000)  : null;
+      const prevRaw  = prev ? Math.round((prev[k.key+'_estimate']||0)/1000) : null;
+ 
       if (locked) {
         html += '<td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right">'
-          +'<span style="color:'+k.col+';font-weight:700;font-size:14px">'+(raw||'—')+'</span></td>';
+          +'<span style="color:'+k.col+';font-weight:700;font-size:14px">'+(thisRaw||'—')+'</span></td>';
       } else {
         const isPaid = k.key==='paid';
-        // 有費欄位：底色稍深，加上自動標籤
-        const inputBg = isPaid ? '#1a1200' : '#0f172a';
+        const inputBg     = isPaid ? '#1a1200' : '#0f172a';
         const inputBorder = isPaid ? '#f97316' : '#2d3f56';
+        // 預填值：優先使用上週資料，沒有則空白
+        const prefill = prevRaw > 0 ? prevRaw : '';
         const autoTag = isPaid
           ? '<div id="paidAutoTag-'+br+'" style="font-size:9px;color:#f97316;margin-top:2px;text-align:right;min-height:12px">自動加總</div>'
+          : '';
+        // 若有預填，加上淡色標示
+        const prevHint = (!isPaid && prevRaw > 0)
+          ? '<div style="font-size:9px;color:#475569;text-align:right;margin-top:1px">↑ 上週 '+prevRaw+'K</div>'
           : '';
         html += '<td style="padding:7px 8px;border-bottom:1px solid rgba(45,63,86,.3)'+(isPaid?';background:rgba(249,115,22,.04)':'')+'">'
           +'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:0">'
           +'<div style="display:flex;align-items:center;gap:4px">'
-          +'<input type="number" id="weekEst-'+k.key+'-'+br+'" value="'+(raw||'')+'" placeholder="—" min="0" step="1" '
+          +'<input type="number" id="weekEst-'+k.key+'-'+br+'" value="'+(prefill)+'" placeholder="—" min="0" step="1" '
           +'style="background:'+inputBg+';border:1.5px solid '+inputBorder+';color:'+k.col+';padding:7px 8px;border-radius:5px;font-size:13px;font-weight:700;width:96px;text-align:right;outline:none" '
           +(isPaid
             ? 'oninput="_estPaidManual[\''+br+'\']=true;_estUpdatePaidTag(\''+br+'\')" '
@@ -982,10 +1004,11 @@ function renderEstInputTab(ws) {
           +'onfocus="this.style.borderColor=\''+k.col+'\'" onblur="this.style.borderColor=\''+inputBorder+'\'">'
           +'<span style="font-size:10px;color:#475569">K</span></div>'
           +autoTag
+          +prevHint
           +'</div></td>';
       }
     });
-
+ 
     // 狀態欄
     if (locked) {
       const ts = new Date(sub.submitted_at).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
@@ -994,28 +1017,29 @@ function renderEstInputTab(ws) {
         +'<span style="background:rgba(16,185,129,.15);color:#10b981;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700">✅ 已提交</span>'
         +'<span style="font-size:10px;color:#475569">'+ts+'</span></div></td>';
     } else {
+      const hasLast = prev && (prev.paid_estimate || prev.general_estimate);
       html += '<td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center">'
-        +'<span style="background:rgba(245,158,11,.1);color:#f59e0b;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700">⏳ 待提交</span></td>';
+        +'<div style="display:inline-flex;flex-direction:column;align-items:center;gap:3px">'
+        +'<span style="background:rgba(245,158,11,.1);color:#f59e0b;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700">⏳ 待提交</span>'
+        +(hasLast?'<span style="font-size:9px;color:#475569">已預填上週值</span>':'')
+        +'</div></td>';
     }
     html += '</tr>';
   });
-
+ 
   html += '</tbody></table></div>';
   if (allLocked) {
     html += '<div style="margin-top:14px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:8px;padding:10px 14px;font-size:12px;color:#10b981;text-align:center">'
       +'✅ 本週三個據點均已提交完畢，下週可再次提交更新版預估。</div>';
   }
-
+ 
   document.getElementById('estTabContent-input').innerHTML = html;
-
-  // 初始化「是否手動覆蓋有費」旗標
+ 
   window._estPaidManual = {};
-
-  // 初始化後對已有數值的列觸發一次自動加總
   ['AMA','AMC','AMD'].forEach(function(br) {
     if (!ws.submissions[br]) _estAutoCalcPaid(br);
   });
-
+ 
   const btn = document.getElementById('btnSubmitEst');
   if (btn) btn.style.display = allLocked ? 'none' : '';
 }
@@ -1044,72 +1068,135 @@ function _estUpdatePaidTag(br) {
 
 function renderEstHistoryTab(history) {
   const el = document.getElementById('estTabContent-history');
-  if (!history || !history.length) {
-    el.innerHTML = '<div style="padding:40px;text-align:center;color:#64748b">📭 此期間尚無歷史預估紀錄</div>';
+  const period = _estModalData.period || '';
+ 
+  // 產生當月所有週的骨架
+  const allWeeks = period ? _getWeeksInMonth(period) : [];
+ 
+  // 從歷史資料建立 week_key → {branches} 的 map
+  const weekMap = {};
+  (history || []).forEach(function(h) {
+    if (!weekMap[h.week_key]) weekMap[h.week_key] = { week_key: h.week_key, week_label: h.week_label, branches: {} };
+    weekMap[h.week_key].branches[h.branch] = h;
+  });
+ 
+  // 合併：allWeeks 保留順序，覆蓋 week_label（用 API 回傳的較準確）
+  const displayWeeks = allWeeks.map(function(w) {
+    if (weekMap[w.week_key]) {
+      weekMap[w.week_key]._inMonth = true;
+      return weekMap[w.week_key];
+    }
+    return { week_key: w.week_key, week_label: w.week_label, branches: {}, _empty: true };
+  });
+  // 也補上歷史中有、但 _getWeeksInMonth 沒算到的週（跨月邊界等罕見情況）
+  Object.values(weekMap).forEach(function(w) {
+    if (!w._inMonth) displayWeeks.push(w);
+  });
+  displayWeeks.sort(function(a,b){ return b.week_key.localeCompare(a.week_key); });
+ 
+  if (!displayWeeks.length) {
+    el.innerHTML = '<div style="padding:40px;text-align:center;color:#64748b">📭 此期間尚無資料</div>';
     return;
   }
-  const weeks = {};
-  history.forEach(function(h) {
-    if (!weeks[h.week_key]) weeks[h.week_key] = { week_key: h.week_key, week_label: h.week_label, branches: {} };
-    weeks[h.week_key].branches[h.branch] = h;
-  });
-  const BRANCHES = ['AMA', 'AMC', 'AMD'];
-  const brColors = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b' };
-  const fmtK = function(v) { return v ? Math.round(parseFloat(v) / 1000).toLocaleString() : '—'; };
-  const fmtTs = function(v) {
-    return new Date(v).toLocaleString('zh-TW', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
-  };
-  const sorted = Object.values(weeks).sort(function(a, b) { return b.week_key.localeCompare(a.week_key); });
-
-  const TH = 'padding:8px 12px;background:#0c1524;color:#475569;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;white-space:nowrap;';
-  const THR = TH + 'text-align:right;';
-
+ 
+  const BRANCHES = ['AMA','AMC','AMD'];
+  const brColors  = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b' };
+  const fmtKH = function(v){ return v ? Math.round(parseFloat(v)/1000).toLocaleString() : '—'; };
+  const fmtTs = function(v){ return new Date(v).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}); };
+ 
+  const TH  = 'padding:8px 12px;background:#0c1524;color:#475569;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;white-space:nowrap;';
+  const THR = TH+'text-align:right;';
+ 
+  // 判斷是否為「本週」
+  const todayKey = (function(){
+    const d=new Date(); let cur=new Date(d);
+    const dow=cur.getDay(); cur.setDate(cur.getDate()-(dow===0?6:dow-1));
+    return cur.getFullYear()+String(cur.getMonth()+1).padStart(2,'0')+String(cur.getDate()).padStart(2,'0');
+  })();
+ 
   let html = '';
-  sorted.forEach(function(week, wi) {
-    const allSubmitted = BRANCHES.every(function(br) { return !!week.branches[br]; });
-    html += '<div style="margin-bottom:14px;border:1px solid ' + (allSubmitted ? 'rgba(16,185,129,.3)' : '#2d3f56') + ';border-radius:10px;overflow:hidden">'
-      + '<div style="padding:10px 16px;background:' + (allSubmitted ? 'rgba(16,185,129,.07)' : 'rgba(255,255,255,.02)') + ';display:flex;align-items:center;gap:10px;border-bottom:1px solid #2d3f56">'
-        + '<div>'
-          + '<span style="font-size:13px;font-weight:800;color:#e2e8f0">' + week.week_label + '</span>'
-          + '<span style="font-size:11px;color:#475569;margin-left:8px">' + week.week_key + '</span>'
-        + '</div>'
-        + (allSubmitted ? '<span style="margin-left:auto;font-size:11px;background:rgba(16,185,129,.15);color:#10b981;padding:2px 8px;border-radius:5px;font-weight:700">✅ 三站已提交</span>' : '<span style="margin-left:auto;font-size:11px;background:rgba(245,158,11,.1);color:#f59e0b;padding:2px 8px;border-radius:5px;font-weight:700">⚠️ 部分未提交</span>')
-      + '</div>'
-      + '<table style="width:100%;border-collapse:collapse;font-size:12px">'
-      + '<thead><tr>'
-        + '<th style="' + TH + 'width:60px">據點</th>'
-        + '<th style="' + THR + 'color:#f97316">有費 K</th>'
-        + '<th style="' + THR + 'color:#3b82f6">一般 K</th>'
-        + '<th style="' + THR + 'color:#8b5cf6">鈑烤 K</th>'
-        + '<th style="' + THR + 'color:#10b981">延保 K</th>'
-        + '<th style="' + TH + 'text-align:center;color:#64748b">提交時間</th>'
-      + '</tr></thead><tbody>';
-
-    BRANCHES.forEach(function(br, bi) {
-      const sub = week.branches[br];
-      const col = brColors[br];
-      const bg = bi % 2 === 0 ? 'transparent' : 'rgba(255,255,255,.02)';
-      const TD = 'padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);';
-      const TDR = TD + 'text-align:right;font-variant-numeric:tabular-nums;font-weight:700;';
-      html += '<tr style="background:' + bg + '">'
-        + '<td style="' + TD + '">'
-          + '<span style="background:' + col + '22;color:' + col + ';padding:3px 10px;border-radius:5px;font-size:12px;font-weight:800">' + br + '</span>'
-        + '</td>';
-      if (sub) {
-        html += '<td style="' + TDR + 'color:#f97316">' + fmtK(sub.paid_estimate) + '</td>'
-          + '<td style="' + TDR + 'color:#3b82f6">' + fmtK(sub.general_estimate) + '</td>'
-          + '<td style="' + TDR + 'color:#8b5cf6">' + fmtK(sub.bodywork_estimate) + '</td>'
-          + '<td style="' + TDR + 'color:#10b981">' + fmtK(sub.extended_estimate) + '</td>'
-          + '<td style="' + TD + 'text-align:center;color:#475569;font-size:11px">' + fmtTs(sub.submitted_at) + '</td>';
-      } else {
-        html += '<td colspan="5" style="' + TD + 'text-align:center;color:#334155;font-size:11px">— 未提交 —</td>';
-      }
-      html += '</tr>';
-    });
-
-    html += '</tbody></table></div>';
+  displayWeeks.forEach(function(week) {
+    const isCurrent = week.week_key === todayKey;
+    const isEmpty   = week._empty;
+    const anySubmitted = BRANCHES.some(function(br){ return !!week.branches[br]; });
+    const allSubmitted = BRANCHES.every(function(br){ return !!week.branches[br]; });
+ 
+    const headerBg    = isEmpty   ? 'rgba(255,255,255,.01)'
+                      : allSubmitted ? 'rgba(16,185,129,.07)' : 'rgba(255,255,255,.02)';
+    const borderColor = isEmpty   ? '#1e293b'
+                      : allSubmitted ? 'rgba(16,185,129,.3)' : '#2d3f56';
+    const weekLabel   = (weekMap[week.week_key]?.week_label || week.week_label);
+    const statusBadge = isEmpty
+      ? '<span style="margin-left:auto;font-size:11px;background:rgba(100,116,139,.1);color:#475569;padding:2px 8px;border-radius:5px;font-weight:700">— 未提交</span>'
+      : allSubmitted
+        ? '<span style="margin-left:auto;font-size:11px;background:rgba(16,185,129,.15);color:#10b981;padding:2px 8px;border-radius:5px;font-weight:700">✅ 三站已提交</span>'
+        : '<span style="margin-left:auto;font-size:11px;background:rgba(245,158,11,.1);color:#f59e0b;padding:2px 8px;border-radius:5px;font-weight:700">⚠️ 部分未提交</span>';
+ 
+    html += '<div style="margin-bottom:12px;border:1px solid '+borderColor+';border-radius:10px;overflow:hidden'+(isCurrent?';box-shadow:0 0 0 1.5px #3b82f644':'')+'">'
+      +'<div style="padding:10px 16px;background:'+headerBg+';display:flex;align-items:center;gap:10px;border-bottom:1px solid #1e293b">'
+        +'<div>'
+          +'<span style="font-size:13px;font-weight:800;color:'+(isCurrent?'#3b82f6':'#e2e8f0')+'">'+weekLabel+'</span>'
+          +(isCurrent?'<span style="margin-left:8px;font-size:10px;background:rgba(59,130,246,.15);color:#3b82f6;padding:1px 6px;border-radius:4px;font-weight:700">本週</span>':'')
+          +'<span style="font-size:10px;color:#374151;margin-left:8px">'+week.week_key+'</span>'
+        +'</div>'
+        +statusBadge
+      +'</div>';
+ 
+    if (isEmpty) {
+      // 空週：顯示三欄都是 — 未提交
+      html += '<table style="width:100%;border-collapse:collapse;font-size:12px">'
+        +'<thead><tr>'
+        +'<th style="'+TH+'width:60px">據點</th>'
+        +'<th style="'+THR+'color:#f97316">有費 K</th>'
+        +'<th style="'+THR+'color:#3b82f6">一般 K</th>'
+        +'<th style="'+THR+'color:#8b5cf6">鈑烤 K</th>'
+        +'<th style="'+THR+'color:#10b981">延保 K</th>'
+        +'<th style="'+TH+'text-align:center;color:#64748b">提交時間</th>'
+        +'</tr></thead><tbody>';
+      BRANCHES.forEach(function(br,bi){
+        const col = brColors[br];
+        const bg  = bi%2===0?'transparent':'rgba(255,255,255,.02)';
+        const TD  = 'padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);';
+        html += '<tr style="background:'+bg+'">'
+          +'<td style="'+TD+'"><span style="background:'+col+'22;color:'+col+';padding:3px 10px;border-radius:5px;font-size:12px;font-weight:800">'+br+'</span></td>'
+          +'<td colspan="5" style="'+TD+'text-align:center;color:#2d3f56;font-size:11px">— 本週未提交 —</td>'
+          +'</tr>';
+      });
+      html += '</tbody></table>';
+    } else {
+      html += '<table style="width:100%;border-collapse:collapse;font-size:12px">'
+        +'<thead><tr>'
+        +'<th style="'+TH+'width:60px">據點</th>'
+        +'<th style="'+THR+'color:#f97316">有費 K</th>'
+        +'<th style="'+THR+'color:#3b82f6">一般 K</th>'
+        +'<th style="'+THR+'color:#8b5cf6">鈑烤 K</th>'
+        +'<th style="'+THR+'color:#10b981">延保 K</th>'
+        +'<th style="'+TH+'text-align:center;color:#64748b">提交時間</th>'
+        +'</tr></thead><tbody>';
+      BRANCHES.forEach(function(br,bi){
+        const sub = week.branches[br];
+        const col = brColors[br];
+        const bg  = bi%2===0?'transparent':'rgba(255,255,255,.02)';
+        const TD  = 'padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);';
+        const TDR = TD+'text-align:right;font-variant-numeric:tabular-nums;font-weight:700;';
+        html += '<tr style="background:'+bg+'">'
+          +'<td style="'+TD+'"><span style="background:'+col+'22;color:'+col+';padding:3px 10px;border-radius:5px;font-size:12px;font-weight:800">'+br+'</span></td>';
+        if (sub) {
+          html += '<td style="'+TDR+'color:#f97316">'+fmtKH(sub.paid_estimate)+'</td>'
+            +'<td style="'+TDR+'color:#3b82f6">'+fmtKH(sub.general_estimate)+'</td>'
+            +'<td style="'+TDR+'color:#8b5cf6">'+fmtKH(sub.bodywork_estimate)+'</td>'
+            +'<td style="'+TDR+'color:#10b981">'+fmtKH(sub.extended_estimate)+'</td>'
+            +'<td style="'+TD+'text-align:center;color:#475569;font-size:11px">'+fmtTs(sub.submitted_at)+'</td>';
+        } else {
+          html += '<td colspan="5" style="'+TD+'text-align:center;color:#334155;font-size:11px">— 未提交 —</td>';
+        }
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+    }
+    html += '</div>';
   });
-
+ 
   el.innerHTML = html;
 }
 
@@ -1122,18 +1209,19 @@ async function submitWeeklyEstimate() {
   const entries = [];
   let hasAny = false;
   BRANCHES.forEach(function(br) {
-    if (ws.submissions[br]) return;
+    if (ws.submissions[br]) return;  // 已提交的廠跳過
     const get = function(k) {
       const v = parseFloat((document.getElementById('weekEst-'+k+'-'+br)||{}).value);
       return (!isNaN(v) && v >= 0) ? Math.round(v*1000) : null;
     };
     const e = {branch:br, paid:get('paid'), general:get('general'), bodywork:get('bodywork'), extended:get('extended')};
-if ([e.paid,e.general,e.bodywork,e.extended].some(function(v){return v!==null;})) {
-  hasAny = true;
-  entries.push(e);  // 只有有填值的據點才納入
-}
-  });  // ← 補上這行，關閉 BRANCHES.forEach
-if (!entries.length) { alert('請先填入至少一個廠別的預估數值'); return; }
+    // 只有這廠真的有填值才加進去，避免空白廠別被誤鎖
+    if ([e.paid,e.general,e.bodywork,e.extended].some(function(v){return v!==null;})) {
+      hasAny = true;
+      entries.push(e);
+    }
+  });  // ← 正確關閉 forEach（這行就是修正的核心）
+  if (!entries.length) { alert('請先填入至少一個廠別的預估數值'); return; }
   if (!hasAny) { alert('請至少填入一個預估值（0 以上）'); return; }
   const btn = document.getElementById('btnSubmitEst');
   if (btn) { btn.disabled=true; btn.textContent='提交中...'; }
