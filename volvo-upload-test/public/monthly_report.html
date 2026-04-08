@@ -699,9 +699,9 @@ function buildAll(){
 function buildOneRevChart(key, lc, lyc, tc, gc, ptBorder){
   const n=chartPeriods[key]||12;
   const curYear=curPeriod.slice(0,4);
-  const months=n==='ytd'
-    ? last12Months.filter(p=>p.startsWith(curYear))
-    : last12Months.slice(-n);
+const months=n==='ytd'
+  ? Array.from({length:12},(_,i)=>`${curYear}${String(i+1).padStart(2,'0')}`)
+  : last12Months.slice(-n);
   const labels=months.map(p=>`${p.slice(2,4)}/${p.slice(4)}`);
   const act=months.map(p=>tData[p]?.bd?.[key]||0);
   const ly =months.map(p=>tData[p]?.tgt?.[`${key}_ly`]||0);
@@ -715,9 +715,9 @@ function buildOneRevChart(key, lc, lyc, tc, gc, ptBorder){
 function buildCarsCharts(tc, gc, ptBorder){
   const n=chartPeriods.cars||12;
   const curYear=curPeriod.slice(0,4);
-  const months=n==='ytd'
-    ? last12Months.filter(p=>p.startsWith(curYear))
-    : last12Months.slice(-n);
+const months=n==='ytd'
+  ? Array.from({length:12},(_,i)=>`${curYear}${String(i+1).padStart(2,'0')}`)
+  : last12Months.slice(-n);
   const labels=months.map(p=>`${p.slice(2,4)}/${p.slice(4)}`);
   const carsAct=months.map(p=>tData[p]?.cars?.act||0);
   const paid   =months.map(p=>tData[p]?.bd?.paid||0);
