@@ -934,13 +934,15 @@ function renderEstInputTab(ws) {
   const allLocked = BRANCHES.every(function(br){return ws.submissions[br];});
  
   // ─── NEW: 從歷史紀錄取每廠最近一次提交，供未填廠預填 ───
-  const history = _estModalData.history || [];
-  const lastSub = {};
-  BRANCHES.forEach(function(br) {
-    const brHist = history
-      .filter(function(h){ return h.branch === br; })
-      .sort(function(a,b){ return b.week_key.localeCompare(a.week_key); });
-    if (brHist.length) lastSub[br] = brHist[0];
+const brHist = history
+    .filter(function(h){
+      return h.branch === br
+        && h.week_key !== ws.week_key   // 排除本週（不拿本週當預填來源）
+        && (h.paid_estimate || h.general_estimate  // 至少有一個值不是空的
+            || h.bodywork_estimate || h.extended_estimate);
+    })
+    .sort(function(a,b){ return b.week_key.localeCompare(a.week_key); });
+  if (brHist.length) lastSub[br] = brHist[0];
   });
  
   let html = '<div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#94a3b8;margin-bottom:16px;line-height:1.9">'
