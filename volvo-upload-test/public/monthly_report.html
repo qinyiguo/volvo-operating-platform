@@ -112,6 +112,8 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
 .noteBox{width:300px;min-width:150px;background:var(--bg3);border:1px solid var(--bdr);color:var(--txt);border-radius:7px;padding:9px 11px;font-size:12px;line-height:1.7;resize:both;overflow:auto;min-height:96px;outline:none;font-family:inherit;}
 .noteBox:focus{border-color:var(--accent);}
 .noteBox::placeholder{color:var(--bdr2);}
+.noteBoxWrap{display:inline-flex;flex-direction:column;align-items:flex-end;gap:2px;}
+.noteBoxDel{background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.25);border-radius:4px;padding:1px 7px;font-size:11px;cursor:pointer;}
 .noteToolbar{display:flex;gap:5px;margin-bottom:6px;flex-wrap:wrap;}
 .nToolBtn{padding:3px 9px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--bdr);background:var(--bg3);color:var(--txt2);}
 .nToolBtn:hover{border-color:var(--accent);color:var(--accent);}
@@ -902,8 +904,8 @@ async function autoSave(){
     SECS.forEach(sec=>(extraNotes[sec]||[]).forEach(n=>{
       const ta=document.getElementById('eta-'+n.id);if(ta)n.content=ta.value;
     }));
-    const textEntries=[
-      ...NOTE_IDS.map(id=>({key:nKey(id),value:document.getElementById(id)?.value||''})),
+const textEntries=[
+    ...NOTE_IDS.map(id=>({key:nKey(id),value:(richData[id]?.texts||[''])[0]||''})),
       ...SECS.map(sec=>({key:nKey('extra_'+sec),value:JSON.stringify(extraNotes[sec]||[])})),
     ];
     const hasAny=textEntries.some(e=>e.value&&e.value!=='[]');
@@ -979,15 +981,13 @@ function renderAllNoteAreas(){
     const el=document.getElementById('note-area-'+id);if(!el)return;
     el.innerHTML=`
       <div class="noteLabel"><span class="noteDot"></span>${cfg.label}</div>
-      <div class="noteToolbar">
+<div class="noteToolbar">
+        <button class="nToolBtn" onclick="addTextBox('${id}')">📝 文字框</button>
         <button class="nToolBtn" onclick="trigImgUpload('${id}')">📷 上傳圖片</button>
         <button class="nToolBtn" onclick="openTblModal('${id}')">📊 新增表格</button>
       </div>
       <input type="file" accept="image/*" id="imgInput-${id}" style="display:none" onchange="handleImg('${id}',this)">
-      <div class="noteRich" id="rich-${id}">
-        <textarea class="noteBox" id="${id}" style="${cfg.flex?'min-height:110px':'min-height:70px'}"
-          placeholder="${cfg.ph.replace(/\n/g,'&#10;')}…"></textarea>
-      </div>`;
+      <div class="noteRich" id="rich-${id}"></div>`;
   });
 }
 
@@ -1022,7 +1022,20 @@ function handleImg(nid,input){
   rd.readAsDataURL(file);input.value='';
 }
 function delImg(nid,i){richData[nid]?.images.splice(i,1);renderRich(nid);}
-
+function addTextBox(nid){
+  if(!richData[nid])richData[nid]={images:[],tables:[],texts:[]};
+  if(!richData[nid].texts)richData[nid].texts=[];
+  richData[nid].texts.push('');
+  renderRich(nid);
+}
+function delTextBox(nid,i){
+  richData[nid]?.texts?.splice(i,1);
+  renderRich(nid);
+}
+function updateTextBox(nid,i,val){
+  if(richData[nid]?.texts)richData[nid].texts[i]=val;
+}
+  
 // ── Table modal ──
 function openTblModal(target){pendingTblTarget=target;document.getElementById('tableModal').style.display='flex';}
 function confirmAddTable(){
@@ -1046,13 +1059,18 @@ function confirmAddTable(){
 // ── Render rich (images + tables) ──
 function renderRich(nid){
   const el=document.getElementById('rich-'+nid);if(!el)return;
-  const d=richData[nid]||{images:[],tables:[]};
-  // 移除舊的圖片/表格節點（保留 textarea）
-  [...el.children].forEach(c=>{if(!c.classList.contains('noteBox'))c.remove();});
+  const d=richData[nid]||{images:[],tables:[],texts:[]};
+  el.innerHTML='';
   el.insertAdjacentHTML('beforeend',buildRichHTML(d,'delImg',`'${nid}'`,'delTbl',`'${nid}'`,'updateCell',`'${nid}'`));
 }
 function buildRichHTML(d,delImgFn,nidExpr,delTblFn,ntExpr,cellFn,cellNidExpr){
   let h='';
+  (d.texts||[]).forEach((txt,i)=>{
+    h+=`<div class="noteBoxWrap">
+      <button class="noteBoxDel" onclick="delTextBox(${nidExpr},${i})">✕</button>
+      <textarea class="noteBox" onblur="updateTextBox(${nidExpr},${i},this.value)">${txt||''}</textarea>
+    </div>`;
+  });
   (d.images||[]).forEach((img,i)=>{h+=`<div class="noteImgWrap"><img src="${img.data}"><button class="noteImgDel" onclick="${delImgFn}(${nidExpr},${i})">✕</button></div>`;});
   (d.tables||[]).forEach((tbl,ti)=>{
     const hdrs=tbl[0]||[],rows=tbl.slice(1);
@@ -1126,9 +1144,8 @@ function nKey(id){return`${MODULE}_${curBr}_${curPeriod}_${id}`;}
 async function loadNotes(seq){
   // ── 清空記憶體，避免切換 branch/period 時殘留舊資料 ──
 NOTE_IDS.forEach(id=>{
-    const ta=document.getElementById(id);if(ta)ta.value='';
-    richData[id]={images:[],tables:[]};
-    const richEl=document.getElementById('rich-'+id);
+    richData[id]={images:[],tables:[],texts:[]};
+    const richEl=document.getElementById('rich-'+id);if(richEl)richEl.innerHTML='';
     if(richEl)[...richEl.children].forEach(c=>{if(!c.classList.contains('noteBox'))c.remove();});
   });
   SECS.forEach(sec=>{
@@ -1141,9 +1158,16 @@ NOTE_IDS.forEach(id=>{
     // 若在等待 API 回應期間使用者已切換 branch/period，放棄這次結果
     if(seq!==undefined&&seq!==_loadSeq)return;
     if(!data)return;
-    NOTE_IDS.forEach(id=>{
-      const el=document.getElementById(id);if(el)el.value=data[nKey(id)]??'';
-      const rk=nKey('rich_'+id);if(data[rk]){try{richData[id]=JSON.parse(data[rk]);renderRich(id);}catch{}}
+NOTE_IDS.forEach(id=>{
+      const oldText=data[nKey(id)]??'';
+      const rk=nKey('rich_'+id);
+      let rd={images:[],tables:[],texts:[]};
+      if(data[rk]){try{rd=JSON.parse(data[rk]);}catch{}}
+      if(!rd.texts)rd.texts=[];
+      if(!rd.texts.length)rd.texts=[oldText];
+      else if(!rd.texts[0]&&oldText)rd.texts[0]=oldText;
+      richData[id]=rd;
+      renderRich(id);
     });
     SECS.forEach(sec=>{
       const k=nKey('extra_'+sec);
@@ -1157,8 +1181,8 @@ async function saveAll(){
   SECS.forEach(sec=>(extraNotes[sec]||[]).forEach(n=>{const ta=document.getElementById('eta-'+n.id);if(ta)n.content=ta.value;}));
 
   // 文字類（輕量）與圖片類（較重）分開存，避免圖片讓文字也跟著失敗
-  const textEntries=[
-    ...NOTE_IDS.map(id=>({key:nKey(id),value:document.getElementById(id)?.value||''})),
+const textEntries=[
+    ...NOTE_IDS.map(id=>({key:nKey(id),value:(richData[id]?.texts||[''])[0]||''})),
     ...SECS.map(sec=>({key:nKey('extra_'+sec),value:JSON.stringify(extraNotes[sec]||[])})),
   ];
 const richEntries=NOTE_IDS
