@@ -1130,10 +1130,10 @@ async function submitWeeklyEstimate() {
     const e = {branch:br, paid:get('paid'), general:get('general'), bodywork:get('bodywork'), extended:get('extended')};
 if ([e.paid,e.general,e.bodywork,e.extended].some(function(v){return v!==null;})) {
   hasAny = true;
-  entries.push(e);
+  entries.push(e);  // 只有有填值的據點才納入
 }
   });  // ← 補上這行，關閉 BRANCHES.forEach
-  if (!entries.length) { alert('所有據點本週均已提交'); return; }
+if (!entries.length) { alert('請先填入至少一個廠別的預估數值'); return; }
   if (!hasAny) { alert('請至少填入一個預估值（0 以上）'); return; }
   const btn = document.getElementById('btnSubmitEst');
   if (btn) { btn.disabled=true; btn.textContent='提交中...'; }
