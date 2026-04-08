@@ -908,12 +908,12 @@ const textEntries=[
     ...NOTE_IDS.map(id=>({key:nKey(id),value:(richData[id]?.texts||[''])[0]||''})),
       ...SECS.map(sec=>({key:nKey('extra_'+sec),value:JSON.stringify(extraNotes[sec]||[])})),
     ];
-    const hasAny=textEntries.some(e=>e.value&&e.value!=='[]');
-    if(!hasAny){_autoSaving=false;return;}
-const res=await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({entries:textEntries})});
-    const richEntries=NOTE_IDS.filter(id=>richData[id]!=null)
+const richEntries=NOTE_IDS.filter(id=>richData[id]!=null)
       .map(id=>({key:nKey('rich_'+id),value:JSON.stringify(richData[id])}));
+    const hasAny=textEntries.some(e=>e.value&&e.value!=='[]')||richEntries.length>0;
+    if(!hasAny){_autoSaving=false;return;}
+    await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({entries:textEntries})});
     if(richEntries.length){
       await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({entries:richEntries})});
