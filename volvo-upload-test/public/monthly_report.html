@@ -863,17 +863,17 @@ function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder,tip
   const ds=[{
     label:'今年實際',data:act,borderColor:lc,backgroundColor:lc+'22',tension:.35,fill:true,
     pointStyle:'circle',pointRadius:3,pointBorderWidth:0,
-    pointBorderColor:ptColors,pointBorderWidth:2.5
+    pointBackgroundColor:ptColors,
   }];
   if(ly&&ly.some(v=>v>0))ds.push({
     label:'去年同期',data:ly,borderColor:lyc,borderDash:[7,4],tension:.35,fill:false,
     pointStyle:'circle',pointRadius:3,pointBorderWidth:0,
-    pointBorderColor:lyc,pointBorderWidth:2
+    pointBackgroundColor:lyc,
   });
   if(showTgt&&tgt&&tgt.some(v=>v>0))ds.push({
     label:'預算目標',data:tgt,borderColor:TGT_COLOR,borderDash:[4,3],tension:.35,fill:false,
     pointStyle:'circle',pointRadius:3,pointBorderWidth:0,
-    pointBorderColor:TGT_COLOR,pointBorderWidth:2
+    pointBackgroundColor:TGT_COLOR,
   });
   if(avg!==null)ds.push({label:'期間平均',data:Array(act.length).fill(avg),borderColor:avgColor,borderDash:[3,3],borderWidth:1.8,pointRadius:0,fill:false,tension:0});
   return new Chart(document.getElementById(id),{
