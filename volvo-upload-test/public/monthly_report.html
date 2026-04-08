@@ -910,8 +910,14 @@ const textEntries=[
     ];
     const hasAny=textEntries.some(e=>e.value&&e.value!=='[]');
     if(!hasAny){_autoSaving=false;return;}
-    const res=await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},
+const res=await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({entries:textEntries})});
+    const richEntries=NOTE_IDS.filter(id=>richData[id]!=null)
+      .map(id=>({key:nKey('rich_'+id),value:JSON.stringify(richData[id])}));
+    if(richEntries.length){
+      await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({entries:richEntries})});
+    }
     // 圖片在 autoSave 時不送（體積大），依賴手動儲存
     if(res.ok){
       const hint=document.getElementById('autoSaveHint');
@@ -1145,8 +1151,7 @@ async function loadNotes(seq){
   // ── 清空記憶體，避免切換 branch/period 時殘留舊資料 ──
 NOTE_IDS.forEach(id=>{
     richData[id]={images:[],tables:[],texts:[]};
-    const richEl=document.getElementById('rich-'+id);if(richEl)richEl.innerHTML='';
-    if(richEl)[...richEl.children].forEach(c=>{if(!c.classList.contains('noteBox'))c.remove();});
+const richEl=document.getElementById('rich-'+id);if(richEl)richEl.innerHTML='';
   });
   SECS.forEach(sec=>{
     extraNotes[sec]=[];
@@ -1164,7 +1169,7 @@ NOTE_IDS.forEach(id=>{
       let rd={images:[],tables:[],texts:[]};
       if(data[rk]){try{rd=JSON.parse(data[rk]);}catch{}}
       if(!rd.texts)rd.texts=[];
-      if(!rd.texts.length)rd.texts=[oldText];
+if(!rd.texts.length&&oldText)rd.texts=[oldText];
       else if(!rd.texts[0]&&oldText)rd.texts[0]=oldText;
       richData[id]=rd;
       renderRich(id);
