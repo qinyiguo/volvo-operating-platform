@@ -909,15 +909,15 @@ const textEntries=[
       ...SECS.map(sec=>({key:nKey('extra_'+sec),value:JSON.stringify(extraNotes[sec]||[])})),
     ];
 const richEntries=NOTE_IDS.filter(id=>richData[id]!=null)
-      .map(id=>({key:nKey('rich_'+id),value:JSON.stringify(richData[id])}));
-    const hasAny=textEntries.some(e=>e.value&&e.value!=='[]')||richEntries.length>0;
-    if(!hasAny){_autoSaving=false;return;}
-    await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({entries:textEntries})});
-    if(richEntries.length){
-      await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({entries:richEntries})});
-    }
+  .map(id=>({key:nKey('rich_'+id),value:JSON.stringify(richData[id])}));
+const hasAny=textEntries.some(e=>e.value&&e.value!=='[]')||richEntries.length>0;
+if(!hasAny){_autoSaving=false;return;}
+const res=await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({entries:textEntries})});
+if(richEntries.length){
+  await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({entries:richEntries})});
+}
     // 圖片在 autoSave 時不送（體積大），依賴手動儲存
     if(res.ok){
       const hint=document.getElementById('autoSaveHint');
