@@ -627,9 +627,21 @@ async function loadAll(){
   if(!curPeriod){hideLoad();return;}
   const seq=++_loadSeq;
   showLoad('讀取營收趨勢…');
-  const last5=prevMonths(curPeriod,12),prev=prevP(curPeriod);
-  const bpQ=curBr==='ALL'?'':`&branch=${curBr}`;
-  const tR=await Promise.all(last5.map(async p=>{
+const last5=prevMonths(curPeriod,12),prev=prevP(curPeriod);
+const bpQ=curBr==='ALL'?'':`&branch=${curBr}`;
+
+// YTD 需要補抓當年剩餘月份的目標和去年同期
+const curYear=curPeriod.slice(0,4);
+const ytdFuture=Array.from({length:12},(_,i)=>`${curYear}${String(i+1).padStart(2,'0')}`)
+  .filter(p=>p>curPeriod&&!last5.includes(p));
+
+const tR=await Promise.all([...last5,...ytdFuture].map(async p=>{
+  const isFuture=p>curPeriod;
+  const[bd,tgt,daily]=await Promise.all([
+    isFuture?Promise.resolve(null):sf(`/api/stats/income-breakdown?period=${p}${bpQ}`),
+    sf(`/api/revenue-targets?period=${p}${bpQ}`),
+    isFuture?Promise.resolve(null):sf(`/api/stats/daily?period=${p}${bpQ}`),
+  ]);
     const[bd,tgt,daily]=await Promise.all([
       sf(`/api/stats/income-breakdown?period=${p}${bpQ}`),
       sf(`/api/revenue-targets?period=${p}${bpQ}`),
