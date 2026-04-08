@@ -93,7 +93,6 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
 .bar-bg{background:var(--bg3);border-radius:3px;height:6px;}
 .dlBtnI{background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.25);border-radius:5px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;}
 .dlBtnI:hover{background:rgba(59,130,246,.28);}
-/* keep old dlBtn for WIP charts that don't have period bar */
 .dlBtn{position:absolute;top:8px;right:8px;background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.25);border-radius:5px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer;z-index:2;}
 .dlBtn:hover{background:rgba(59,130,246,.28);}
 /* Period selector per chart */
@@ -171,11 +170,11 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
 <div class="root">
 
 <div class="topbar">
-  <div class="ttl">📊 月報分析</div>
+  <div class="ttl">&#128202; 月報分析</div>
   <div class="pd-wrap" id="pdWrap">
     <button class="pd-btn" id="pdBtn" onclick="togglePD(event)">
       <span><span class="pd-yr" id="pdYr">--</span><span class="pd-mo" id="pdMo">月</span></span>
-      <span class="pd-arr">▼</span>
+      <span class="pd-arr">&#9660;</span>
     </button>
     <div class="pd-dd" id="pdDd"><div class="pd-list" id="pdList"></div></div>
   </div>
@@ -188,8 +187,8 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
   <div id="topBadge" style="font-size:12px;color:var(--txt3)"></div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
     <div id="topStatus" style="font-size:11px;color:var(--txt3)"></div>
-    <div id="autoSaveHint" style="font-size:10px;color:#10b981;opacity:0;transition:opacity .4s">✓ 已自動儲存</div>
-    <button class="themeBtn" id="themeBtn" onclick="toggleTheme()">☀️ 亮版</button>
+    <div id="autoSaveHint" style="font-size:10px;color:#10b981;opacity:0;transition:opacity .4s">&#10003; 已自動儲存</div>
+    <button class="themeBtn" id="themeBtn" onclick="toggleTheme()">&#9728;&#65039; 亮版</button>
   </div>
 </div>
 
@@ -199,28 +198,30 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
   <!-- 有費 section -->
   <div class="drag-sec" id="sec-revenue" draggable="true">
   <div class="sec-wrap">
-    <div class="secDiv"><span class="drag-handle" title="拖曳排序">⠿</span>🔶 營收趨勢分析</div>
-    <div class="kpiRow" id="kpi_paid"></div>
-    <div class="card" style="margin-bottom:10px">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:5px">
-        <div class="leg">
-          <span class="li"><span class="ld" style="background:#f97316"></span>今年實際</span>
-          <span class="li"><span class="ld-d" style="border-top-color:#94a3b8"></span>去年同期</span>
-          <span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>預算目標</span>
-          <span class="li"><span class="ld-d" style="border-top-color:rgba(255,255,255,.35)"></span>期間平均</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:5px">
-          <div class="cPBar">
-            <button class="cPBtn" data-chart="paid" data-n="1"  onclick="setPeriod('paid',1)">1M</button>
-            <button class="cPBtn" data-chart="paid" data-n="3"  onclick="setPeriod('paid',3)">3M</button>
-            <button class="cPBtn" data-chart="paid" data-n="6"  onclick="setPeriod('paid',6)">6M</button>
-            <button class="cPBtn active" data-chart="paid" data-n="12" onclick="setPeriod('paid',12)">12M</button>
+    <div class="secDiv"><span class="drag-handle" title="拖曳排序">⠿</span>&#128310; 營收趨勢分析</div>
+    <!-- DOWNLOAD WRAPPER: paid KPI + chart -->
+    <div id="dl-wrap-paid" style="background:var(--bg);border-radius:10px;padding:8px;margin-bottom:4px;">
+      <div class="kpiRow" id="kpi_paid"></div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:5px">
+          <div class="leg">
+            <span class="li"><span class="ld" style="background:#f97316"></span>今年實際</span>
+            <span class="li"><span class="ld-d" style="border-top-color:#94a3b8"></span>去年同期</span>
+            <span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>預算目標</span>
+            <span class="li"><span class="ld-d" style="border-top-color:rgba(255,255,255,.35)"></span>期間平均</span>
           </div>
-          <button class="dlBtnI" onclick="dlChart('c_paid','有費營收')">⬇ 下載</button>
+          <div style="display:flex;align-items:center;gap:5px">
+            <div class="cPBar">
+              <button class="cPBtn" data-chart="paid" data-n="3"  onclick="setPeriod('paid',3)">3M</button>
+              <button class="cPBtn" data-chart="paid" data-n="6"  onclick="setPeriod('paid',6)">6M</button>
+              <button class="cPBtn active" data-chart="paid" data-n="12" onclick="setPeriod('paid',12)">12M</button>
+            </div>
+            <button class="dlBtnI" onclick="dlChart('c_paid','有費營收')">&#11015; 下載</button>
+          </div>
         </div>
+        <div class="avgRow" id="avg-paid"></div>
+        <div style="position:relative;height:220px"><canvas id="c_paid"></canvas></div>
       </div>
-      <div class="avgRow" id="avg-paid"></div>
-      <div style="position:relative;height:220px"><canvas id="c_paid"></canvas></div>
     </div>
     <div class="card" style="margin-bottom:4px">
       <div id="note-area-n_paid"></div>
@@ -232,22 +233,22 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
   <!-- 一般/鈑烤/延保 section -->
   <div class="drag-sec" id="sec-detail" draggable="true">
   <div class="sec-wrap">
-    <div class="secDiv"><span class="drag-handle" title="拖曳排序">⠿</span>📋 一般 / 鈑烤 / 延保</div>
+    <div class="secDiv"><span class="drag-handle" title="拖曳排序">⠿</span>&#128203; 一般 / 鈑烤 / 延保</div>
     <div class="g3">
-      <div>
-        <div class="secHd">💙 一般（P3）<span style="font-size:10px;color:var(--txt3)">千元</span></div>
+      <!-- GEN COLUMN -->
+      <div id="dl-wrap-gen" style="background:var(--bg);border-radius:10px;padding:6px;">
+        <div class="secHd">&#128153; 一般（P3）<span style="font-size:10px;color:var(--txt3)">千元</span></div>
         <div class="kpiRow2" id="kpi_gen"></div>
         <div class="card" style="margin-bottom:8px">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:3px;margin-bottom:4px">
-            <div class="leg"><span class="li"><span class="ld" style="background:#3b82f6"></span>今年</span><span class="li"><span class="ld-d" style="border-top-color:#7dd3fc"></span>去年</span><span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>目標</span></div>
+            <div class="leg"><span class="li"><span class="ld" style="background:#f97316"></span>今年</span><span class="li"><span class="ld-d" style="border-top-color:#94a3b8"></span>去年</span><span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>目標</span></div>
             <div style="display:flex;align-items:center;gap:5px">
               <div class="cPBar">
-                <button class="cPBtn" data-chart="gen" data-n="1"  onclick="setPeriod('gen',1)">1M</button>
                 <button class="cPBtn" data-chart="gen" data-n="3"  onclick="setPeriod('gen',3)">3M</button>
                 <button class="cPBtn" data-chart="gen" data-n="6"  onclick="setPeriod('gen',6)">6M</button>
                 <button class="cPBtn active" data-chart="gen" data-n="12" onclick="setPeriod('gen',12)">12M</button>
               </div>
-              <button class="dlBtnI" onclick="dlChart('c_gen','一般營收')">⬇</button>
+              <button class="dlBtnI" onclick="dlChart('c_gen','一般營收')">&#11015;</button>
             </div>
           </div>
           <div class="avgRow" id="avg-gen"></div>
@@ -255,20 +256,20 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
         </div>
         <div class="card"><div id="note-area-n_gen"></div></div>
       </div>
-      <div>
-        <div class="secHd">🔨 鈑烤（PC8+PC3）<span style="font-size:10px;color:var(--txt3)">千元</span></div>
+      <!-- BW COLUMN -->
+      <div id="dl-wrap-bw" style="background:var(--bg);border-radius:10px;padding:6px;">
+        <div class="secHd">&#128296; 鈑烤（PC8+PC3）<span style="font-size:10px;color:var(--txt3)">千元</span></div>
         <div class="kpiRow2" id="kpi_bw"></div>
         <div class="card" style="margin-bottom:8px">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:3px;margin-bottom:4px">
-            <div class="leg"><span class="li"><span class="ld" style="background:#8b5cf6"></span>今年</span><span class="li"><span class="ld-d" style="border-top-color:#c4b5fd"></span>去年</span><span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>目標</span></div>
+            <div class="leg"><span class="li"><span class="ld" style="background:#f97316"></span>今年</span><span class="li"><span class="ld-d" style="border-top-color:#94a3b8"></span>去年</span><span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>目標</span></div>
             <div style="display:flex;align-items:center;gap:5px">
               <div class="cPBar">
-                <button class="cPBtn" data-chart="bw" data-n="1"  onclick="setPeriod('bw',1)">1M</button>
                 <button class="cPBtn" data-chart="bw" data-n="3"  onclick="setPeriod('bw',3)">3M</button>
                 <button class="cPBtn" data-chart="bw" data-n="6"  onclick="setPeriod('bw',6)">6M</button>
                 <button class="cPBtn active" data-chart="bw" data-n="12" onclick="setPeriod('bw',12)">12M</button>
               </div>
-              <button class="dlBtnI" onclick="dlChart('c_bw','鈑烤營收')">⬇</button>
+              <button class="dlBtnI" onclick="dlChart('c_bw','鈑烤營收')">&#11015;</button>
             </div>
           </div>
           <div class="avgRow" id="avg-bw"></div>
@@ -276,20 +277,20 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
         </div>
         <div class="card"><div id="note-area-n_bw"></div></div>
       </div>
-      <div>
-        <div class="secHd">🛡️ 延保（P9）<span style="font-size:10px;color:var(--txt3)">千元</span></div>
+      <!-- EXT COLUMN -->
+      <div id="dl-wrap-ext" style="background:var(--bg);border-radius:10px;padding:6px;">
+        <div class="secHd">&#128737;&#65039; 延保（P9）<span style="font-size:10px;color:var(--txt3)">千元</span></div>
         <div class="kpiRow2" id="kpi_ext"></div>
         <div class="card" style="margin-bottom:8px">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:3px;margin-bottom:4px">
-            <div class="leg"><span class="li"><span class="ld" style="background:#10b981"></span>今年</span><span class="li"><span class="ld-d" style="border-top-color:#6ee7b7"></span>去年</span><span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>目標</span></div>
+            <div class="leg"><span class="li"><span class="ld" style="background:#f97316"></span>今年</span><span class="li"><span class="ld-d" style="border-top-color:#94a3b8"></span>去年</span><span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>目標</span></div>
             <div style="display:flex;align-items:center;gap:5px">
               <div class="cPBar">
-                <button class="cPBtn" data-chart="ext" data-n="1"  onclick="setPeriod('ext',1)">1M</button>
                 <button class="cPBtn" data-chart="ext" data-n="3"  onclick="setPeriod('ext',3)">3M</button>
                 <button class="cPBtn" data-chart="ext" data-n="6"  onclick="setPeriod('ext',6)">6M</button>
                 <button class="cPBtn active" data-chart="ext" data-n="12" onclick="setPeriod('ext',12)">12M</button>
               </div>
-              <button class="dlBtnI" onclick="dlChart('c_ext','延保營收')">⬇</button>
+              <button class="dlBtnI" onclick="dlChart('c_ext','延保營收')">&#11015;</button>
             </div>
           </div>
           <div class="avgRow" id="avg-ext"></div>
@@ -305,45 +306,49 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
   <!-- 進廠 & 單車 section -->
   <div class="drag-sec" id="sec-cars" draggable="true">
   <div class="sec-wrap">
-    <div class="secDiv"><span class="drag-handle" title="拖曳排序">⠿</span>🚗 進廠台數 & 單車銷售額</div>
+    <div class="secDiv"><span class="drag-handle" title="拖曳排序">⠿</span>&#128663; 進廠台數 & 單車銷售額</div>
     <div class="g2" style="margin-bottom:10px">
-      <div class="card">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
-          <div>
-            <div style="font-size:12px;font-weight:700;color:var(--txt3)">每月進廠台數</div>
-            <div class="leg"><span class="li"><span class="ld" style="background:#3b82f6"></span>今年</span></div>
-          </div>
-          <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
-            <div class="cPBar">
-              <button class="cPBtn" data-chart="cars" data-n="1"  onclick="setPeriod('cars',1)">1M</button>
-              <button class="cPBtn" data-chart="cars" data-n="3"  onclick="setPeriod('cars',3)">3M</button>
-              <button class="cPBtn" data-chart="cars" data-n="6"  onclick="setPeriod('cars',6)">6M</button>
-              <button class="cPBtn active" data-chart="cars" data-n="12" onclick="setPeriod('cars',12)">12M</button>
+      <!-- CARS WRAP -->
+      <div id="dl-wrap-cars" style="background:var(--bg);border-radius:10px;padding:6px;">
+        <div class="card">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
+            <div>
+              <div style="font-size:12px;font-weight:700;color:var(--txt3)">每月進廠台數</div>
+              <div class="leg"><span class="li"><span class="ld" style="background:#f97316"></span>今年</span></div>
             </div>
-            <button class="dlBtnI" onclick="dlChart('c_cars','進廠台數')">⬇</button>
+            <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+              <div class="cPBar">
+                <button class="cPBtn" data-chart="cars" data-n="3"  onclick="setPeriod('cars',3)">3M</button>
+                <button class="cPBtn" data-chart="cars" data-n="6"  onclick="setPeriod('cars',6)">6M</button>
+                <button class="cPBtn active" data-chart="cars" data-n="12" onclick="setPeriod('cars',12)">12M</button>
+              </div>
+              <button class="dlBtnI" onclick="dlChart('c_cars','進廠台數')">&#11015;</button>
+            </div>
           </div>
+          <div class="avgRow" id="avg-cars"></div>
+          <div style="position:relative;height:155px"><canvas id="c_cars"></canvas></div>
         </div>
-        <div class="avgRow" id="avg-cars"></div>
-        <div style="position:relative;height:155px"><canvas id="c_cars"></canvas></div>
       </div>
-      <div class="card">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
-          <div>
-            <div style="font-size:12px;font-weight:700;color:var(--txt3)">單車銷售額（元/台）</div>
-            <div class="leg"><span class="li"><span class="ld" style="background:#10b981"></span>今年</span></div>
-          </div>
-          <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
-            <div class="cPBar">
-              <button class="cPBtn" data-chart="rpv" data-n="1"  onclick="setPeriod('rpv',1)">1M</button>
-              <button class="cPBtn" data-chart="rpv" data-n="3"  onclick="setPeriod('rpv',3)">3M</button>
-              <button class="cPBtn" data-chart="rpv" data-n="6"  onclick="setPeriod('rpv',6)">6M</button>
-              <button class="cPBtn active" data-chart="rpv" data-n="12" onclick="setPeriod('rpv',12)">12M</button>
+      <!-- RPV WRAP -->
+      <div id="dl-wrap-rpv" style="background:var(--bg);border-radius:10px;padding:6px;">
+        <div class="card">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
+            <div>
+              <div style="font-size:12px;font-weight:700;color:var(--txt3)">單車銷售額（元/台）</div>
+              <div class="leg"><span class="li"><span class="ld" style="background:#f97316"></span>今年</span></div>
             </div>
-            <button class="dlBtnI" onclick="dlChart('c_rpv','單車銷售額')">⬇</button>
+            <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+              <div class="cPBar">
+                <button class="cPBtn" data-chart="rpv" data-n="3"  onclick="setPeriod('rpv',3)">3M</button>
+                <button class="cPBtn" data-chart="rpv" data-n="6"  onclick="setPeriod('rpv',6)">6M</button>
+                <button class="cPBtn active" data-chart="rpv" data-n="12" onclick="setPeriod('rpv',12)">12M</button>
+              </div>
+              <button class="dlBtnI" onclick="dlChart('c_rpv','單車銷售額')">&#11015;</button>
+            </div>
           </div>
+          <div class="avgRow" id="avg-rpv"></div>
+          <div style="position:relative;height:155px"><canvas id="c_rpv"></canvas></div>
         </div>
-        <div class="avgRow" id="avg-rpv"></div>
-        <div style="position:relative;height:155px"><canvas id="c_rpv"></canvas></div>
       </div>
     </div>
     <div class="card" style="margin-bottom:4px">
@@ -356,16 +361,19 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
   <!-- WIP section -->
   <div class="drag-sec" id="sec-wip" draggable="true">
   <div class="sec-wrap">
-    <div class="secDiv"><span class="drag-handle" title="拖曳排序">⠿</span>🔧 WIP 未結工單 — 天數分層</div>
-    <div class="kpiRow" id="kpiWip" style="margin-bottom:10px"></div>
-    <div class="card" style="margin-bottom:10px">
-      <button class="dlBtn" onclick="dlChart('cWipBar','WIP分層')">⬇ 下載</button>
-      <div class="leg">
-        <span class="li"><span class="ld" style="background:#10b981"></span>&lt;30天</span>
-        <span class="li"><span class="ld" style="background:#f59e0b"></span>30~90天</span>
-        <span class="li"><span class="ld" style="background:#ef4444"></span>&gt;90天</span>
+    <div class="secDiv"><span class="drag-handle" title="拖曳排序">⠿</span>&#128295; WIP 未結工單 — 天數分層</div>
+    <!-- DOWNLOAD WRAPPER: WIP KPI + bar chart -->
+    <div id="dl-wrap-wip" style="background:var(--bg);border-radius:10px;padding:8px;margin-bottom:4px;">
+      <div class="kpiRow" id="kpiWip" style="margin-bottom:10px"></div>
+      <div class="card">
+        <button class="dlBtn" onclick="dlChart('cWipBar','WIP分層')">&#11015; 下載</button>
+        <div class="leg">
+          <span class="li"><span class="ld" style="background:#10b981"></span>&lt;30天</span>
+          <span class="li"><span class="ld" style="background:#f59e0b"></span>30~90天</span>
+          <span class="li"><span class="ld" style="background:#ef4444"></span>&gt;90天</span>
+        </div>
+        <div style="position:relative;height:200px"><canvas id="cWipBar"></canvas></div>
       </div>
-      <div style="position:relative;height:200px"><canvas id="cWipBar"></canvas></div>
     </div>
     <div class="card" style="margin-bottom:10px">
       <div id="note-area-n_wip_overview"></div>
@@ -374,12 +382,12 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
     <div class="g3" id="wipCards" style="margin-bottom:10px"></div>
     <div class="g2" style="margin-bottom:8px">
       <div class="card">
-        <button class="dlBtn" onclick="dlChart('cWipPie','WIP佔比')">⬇</button>
+        <button class="dlBtn" onclick="dlChart('cWipPie','WIP佔比')">&#11015;</button>
         <div style="font-size:12px;font-weight:700;color:var(--txt3);margin-bottom:5px">各層佔比（本月）</div>
         <div style="position:relative;height:165px"><canvas id="cWipPie"></canvas></div>
       </div>
       <div class="card">
-        <button class="dlBtn" onclick="dlChart('cWipPct','逾30天佔比')">⬇</button>
+        <button class="dlBtn" onclick="dlChart('cWipPct','逾30天佔比')">&#11015;</button>
         <div style="font-size:12px;font-weight:700;color:var(--txt3);margin-bottom:5px">逾30天 / 逾90天 佔比（%）</div>
         <div style="position:relative;height:165px"><canvas id="cWipPct"></canvas></div>
       </div>
@@ -397,9 +405,9 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
 
 <!-- Savebar -->
 <div class="savebar">
-  <button class="saveBtn" id="saveBtn" onclick="saveAll()">💾 儲存說明</button>
-  <button class="addNoteBtn" onclick="openAddNote()">➕ 新增說明</button>
-  <span id="saveOk" class="saveOk">✅ 已儲存</span>
+  <button class="saveBtn" id="saveBtn" onclick="saveAll()">&#128190; 儲存說明</button>
+  <button class="addNoteBtn" onclick="openAddNote()">&#10133; 新增說明</button>
+  <span id="saveOk" class="saveOk">&#9989; 已儲存</span>
   <span id="nSt" class="nSt"></span>
   <div style="margin-left:auto;font-size:11px;color:var(--txt3)">說明儲存至伺服器資料庫</div>
 </div>
@@ -415,15 +423,15 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
 <!-- Add Note Modal -->
 <div class="modal" id="addNoteModal" style="display:none">
   <div class="modalBox">
-    <div class="modalTitle">➕ 新增說明區塊</div>
+    <div class="modalTitle">&#10133; 新增說明區塊</div>
     <div class="mRow"><div class="mLbl">說明標題</div>
       <input class="mInput" id="newNoteTitle" placeholder="例：備註、執行計畫、重點追蹤…"></div>
     <div class="mRow"><div class="mLbl">加入位置</div>
       <select class="mInput" id="newNoteSection">
-        <option value="sec-revenue">🔶 營收趨勢分析</option>
-        <option value="sec-detail">📋 一般/鈑烤/延保</option>
-        <option value="sec-cars">🚗 進廠 & 單車</option>
-        <option value="sec-wip">🔧 WIP</option>
+        <option value="sec-revenue">&#128310; 營收趨勢分析</option>
+        <option value="sec-detail">&#128203; 一般/鈑烤/延保</option>
+        <option value="sec-cars">&#128663; 進廠 & 單車</option>
+        <option value="sec-wip">&#128295; WIP</option>
       </select></div>
     <div class="mBtns">
       <button class="mBtn mBtnCancel" onclick="closeModal('addNoteModal')">取消</button>
@@ -435,7 +443,7 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
 <!-- Table Modal -->
 <div class="modal" id="tableModal" style="display:none">
   <div class="modalBox">
-    <div class="modalTitle">📊 新增表格</div>
+    <div class="modalTitle">&#128202; 新增表格</div>
     <div class="mRow"><div class="mLbl">標題列（逗號分隔欄位名）</div>
       <input class="mInput" id="tblHeaders" placeholder="月份,AMA,AMC,AMD,合計"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -452,6 +460,7 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
 </div>
 
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 const BRCOLS={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
@@ -472,8 +481,8 @@ const NOTE_IDS=Object.keys(NOTE_CFG);
 
 let curBr='ALL',curPeriod='',periods=[],tData={},wipRows=[],wipPrev=[],charts={};
 let dbPeriods=new Set();
-const richData={};      // noteId → {images:[{name,data}], tables:[[[header...],[row...]...]]}
-const extraNotes={};    // secId → [{id,title,content,images:[],tables:[]}]
+const richData={};
+const extraNotes={};
 let pendingTblTarget=null;
 let dragSrcId=null;
 
@@ -483,7 +492,7 @@ async function sf(url,opt){try{const r=await fetch(url,opt||{});if(!r.ok)return 
 // ── Theme ──
 function toggleTheme(){
   const html=document.documentElement;
-  const dark=html.getAttribute('data-theme')==='dark';
+  const dark=html.getAttribute('data-theme')=='dark';
   html.setAttribute('data-theme',dark?'light':'dark');
   document.getElementById('themeBtn').textContent=dark?'🌙 暗版':'☀️ 亮版';
   destCharts();buildAll();
@@ -502,7 +511,7 @@ function prevMonths(base,n){
   return out;
 }
 function prevP(p){let y=parseInt(p.slice(0,4)),m=parseInt(p.slice(4));return m===1?`${y-1}12`:`${y}${String(m-1).padStart(2,'0')}`;}
-function fmtP(p){return p?`${p.slice(0,4)}/${p.slice(4)}`:'—';}
+function fmtP(p){return p?`${p.slice(0,4)}/${p.slice(4)}`:'-';}
 function nowYM(){const n=new Date(Date.now()+8*3600000);return`${n.getUTCFullYear()}${String(n.getUTCMonth()+1).padStart(2,'0')}`;}
 function defaultPeriod(){
   const cur=nowYM(),y=+cur.slice(0,4),m=+cur.slice(4);
@@ -547,7 +556,7 @@ function closePD(){
 }
 async function selectPD(p){
   if(p===curPeriod){closePD();return;}
-  await autoSave(); // 切換月份前先存
+  await autoSave();
   curPeriod=p;closePD();renderPD();loadAll();
 }
 document.addEventListener('click',closePD);
@@ -605,12 +614,12 @@ async function init(){
   setBr('ALL');
 }
 
-// ── Load (帶 race-condition 防護) ──
-let _loadSeq=0; // 每次切換 branch/period 產生新序號，舊的非同步結果就丟棄
+// ── Load ──
+let _loadSeq=0;
 
 async function loadAll(){
   if(!curPeriod){hideLoad();return;}
-  const seq=++_loadSeq; // 快照這次的序號
+  const seq=++_loadSeq;
   showLoad('讀取營收趨勢…');
   const last5=prevMonths(curPeriod,12),prev=prevP(curPeriod);
   const bpQ=curBr==='ALL'?'':`&branch=${curBr}`;
@@ -622,7 +631,7 @@ async function loadAll(){
     ]);
     return{period:p,bd:exBD(bd,curBr),tgt:exTgt(tgt,curBr),cars:exCars(daily,curBr)};
   }));
-  if(seq!==_loadSeq){return;} // 已被更新的切換取代，放棄這次結果
+  if(seq!==_loadSeq){return;}
   tData={};tR.forEach(r=>{tData[r.period]=r;});
   showLoad('讀取 WIP…');
   const[w1,w2]=await Promise.all([
@@ -639,46 +648,48 @@ async function loadAll(){
 
 // ── Per-chart period state ──
 const chartPeriods={paid:12,gen:12,bw:12,ext:12,cars:12,rpv:12};
-let last12Months=[]; // 12個月期間陣列，供 setPeriod 使用
+let last12Months=[];
+
+// ── UNIFIED color constants ──
+const LINE_COLOR='#f97316';   // 集團橘 — 所有曲線統一
+const LY_COLOR  ='#94a3b8';   // 去年同期灰色虛線
+const TGT_COLOR ='#ef4444';   // 預算目標紅色虛線
 
 // ── Build charts ──
 function buildAll(){
   destCharts();
   last12Months=prevMonths(curPeriod,12);
   const{tc,gc,ptBorder}=chartColors();
-  const mainCol=curBr==='ALL'?'#f97316':(BRCOLS[curBr]||'#f97316');
 
-  // 全量 12M 資料（供 KPI 計算）
   const A12=k=>last12Months.map(p=>tData[p]?.bd?.[k]||0);
   const T12=k=>last12Months.map(p=>tData[p]?.tgt?.[k]||0);
   const L12=k=>last12Months.map(p=>tData[p]?.tgt?.[`${k}_ly`]||0);
 
-  // Badge（最新月）
+  // Badge
   const li=liIdx(A12('paid'));
   const la=A12('paid')[li],lt=T12('paid')[li],ll=L12('paid')[li];
   document.getElementById('topBadge').innerHTML=
     `有費達成 <strong style="color:${achC(lt>0?la/lt*100:0)}">${lt>0?(la/lt*100).toFixed(0)+'%':'—'}</strong>　YoY <strong style="color:${growC(la,ll)}">${ll>0?((la-ll)/ll*100).toFixed(1)+'%':'—'}</strong>`;
   document.getElementById('topStatus').textContent=`截至 ${fmtP(curPeriod)}`;
 
-  // YTD：只計算當年度月份
+  // YTD
   const curYear=curPeriod.slice(0,4);
   const ytdM=last12Months.filter(p=>p.startsWith(curYear));
-  rKpi4('kpi_paid',A12('paid'),T12('paid'),L12('paid'),mainCol,
+  rKpi4('kpi_paid',A12('paid'),T12('paid'),L12('paid'),LINE_COLOR,
     ytdM.map(p=>tData[p]?.bd?.paid||0),ytdM.map(p=>tData[p]?.tgt?.paid||0), curYear);
-  rKpi2('kpi_gen', A12('gen'), T12('gen'), L12('gen'), '#3b82f6');
-  rKpi2('kpi_bw',  A12('bw'),  T12('bw'),  L12('bw'),  '#8b5cf6');
-  rKpi2('kpi_ext', A12('ext'), T12('ext'), L12('ext'), '#10b981');
+  rKpi2('kpi_gen', A12('gen'), T12('gen'), L12('gen'), LINE_COLOR);
+  rKpi2('kpi_bw',  A12('bw'),  T12('bw'),  L12('bw'),  LINE_COLOR);
+  rKpi2('kpi_ext', A12('ext'), T12('ext'), L12('ext'), LINE_COLOR);
 
-  // 各圖表依自己的 period 重建
-  buildOneRevChart('paid', mainCol, '#94a3b8', tc, gc, ptBorder);
-  buildOneRevChart('gen',  '#3b82f6','#7dd3fc', tc, gc, ptBorder);
-  buildOneRevChart('bw',   '#8b5cf6','#c4b5fd', tc, gc, ptBorder);
-  buildOneRevChart('ext',  '#10b981','#6ee7b7', tc, gc, ptBorder);
-  buildCarsCharts(mainCol, tc, gc, ptBorder);
+  // 所有趨勢圖統一用橘色
+  buildOneRevChart('paid', LINE_COLOR, LY_COLOR, tc, gc, ptBorder);
+  buildOneRevChart('gen',  LINE_COLOR, LY_COLOR, tc, gc, ptBorder);
+  buildOneRevChart('bw',   LINE_COLOR, LY_COLOR, tc, gc, ptBorder);
+  buildOneRevChart('ext',  LINE_COLOR, LY_COLOR, tc, gc, ptBorder);
+  buildCarsCharts(tc, gc, ptBorder);
   buildWip(tc,gc);
 }
 
-// 重建單一營收圖表（paid / gen / bw / ext）
 function buildOneRevChart(key, lc, lyc, tc, gc, ptBorder){
   const n=chartPeriods[key]||12;
   const months=last12Months.slice(-n);
@@ -687,13 +698,12 @@ function buildOneRevChart(key, lc, lyc, tc, gc, ptBorder){
   const ly =months.map(p=>tData[p]?.tgt?.[`${key}_ly`]||0);
   const tgt=months.map(p=>tData[p]?.tgt?.[key]||0);
   if(charts[key]){try{charts[key].destroy();}catch{}}
-  charts[key]=mkLine('c_'+key,labels,act,ly,tgt,lc,lyc,'#ef4444',null,true,tc,gc,ptBorder);
+  charts[key]=mkLine('c_'+key,labels,act,ly,tgt,lc,lyc,TGT_COLOR,null,true,tc,gc,ptBorder);
   refreshAvgBadge(key,act,n);
   refreshPeriodBtns(key,n);
 }
 
-// 重建進廠 & 單車圖表（cars/rpv 共用同一 period）
-function buildCarsCharts(mainCol, tc, gc, ptBorder){
+function buildCarsCharts(tc, gc, ptBorder){
   const n=chartPeriods.cars||12;
   const months=last12Months.slice(-n);
   const labels=months.map(p=>`${p.slice(2,4)}/${p.slice(4)}`);
@@ -702,28 +712,22 @@ function buildCarsCharts(mainCol, tc, gc, ptBorder){
   const rpv=carsAct.map((c,i)=>c>0?Math.round(paid[i]*1000/c):0);
   if(charts.cars){try{charts.cars.destroy();}catch{}}
   if(charts.rpv) {try{charts.rpv.destroy(); }catch{}}
-  charts.cars=mkLine('c_cars',labels,carsAct,[],[],mainCol,'#94a3b8',null,v=>Math.round(v).toLocaleString(),false,tc,gc,ptBorder,v=>Math.round(v).toLocaleString()+'台');
-  charts.rpv =mkLine('c_rpv', labels,rpv,   [],[],'#10b981','#6ee7b7',null,v=>Math.round(v).toLocaleString(),false,tc,gc,ptBorder,v=>Math.round(v).toLocaleString()+'元/台');
+  charts.cars=mkLine('c_cars',labels,carsAct,[],[],LINE_COLOR,LY_COLOR,null,v=>Math.round(v).toLocaleString(),false,tc,gc,ptBorder,v=>Math.round(v).toLocaleString()+'台');
+  charts.rpv =mkLine('c_rpv', labels,rpv,   [],[]  ,LINE_COLOR,LY_COLOR,null,v=>Math.round(v).toLocaleString(),false,tc,gc,ptBorder,v=>Math.round(v).toLocaleString()+'元/台');
   refreshAvgBadge('cars',carsAct,n);
   refreshAvgBadge('rpv',rpv,n);
   refreshPeriodBtns('cars',n);
   refreshPeriodBtns('rpv',n);
 }
 
-// 切換某圖表的月份區間
 function setPeriod(key, n){
   if(key==='cars'||key==='rpv'){chartPeriods.cars=n;chartPeriods.rpv=n;}
   else{chartPeriods[key]=n;}
   const{tc,gc,ptBorder}=chartColors();
-  const mainCol=curBr==='ALL'?'#f97316':(BRCOLS[curBr]||'#f97316');
-  if(key==='cars'||key==='rpv') buildCarsCharts(mainCol,tc,gc,ptBorder);
-  else buildOneRevChart(key,
-    {paid:mainCol,gen:'#3b82f6',bw:'#8b5cf6',ext:'#10b981'}[key],
-    {paid:'#94a3b8',gen:'#7dd3fc',bw:'#c4b5fd',ext:'#6ee7b7'}[key],
-    tc,gc,ptBorder);
+  if(key==='cars'||key==='rpv') buildCarsCharts(tc,gc,ptBorder);
+  else buildOneRevChart(key, LINE_COLOR, LY_COLOR, tc,gc,ptBorder);
 }
 
-// 更新平均值顯示列
 const AVG_FMT={
   cars: v=>`${Math.round(v).toLocaleString()} 台`,
   rpv:  v=>`${Math.round(v).toLocaleString()} 元/台`,
@@ -737,7 +741,6 @@ function refreshAvgBadge(key, actData, n){
   el.innerHTML=`<span class="avgDash"></span>&ensp;<span style="font-size:11px;color:var(--txt3)">${n}M 期間平均</span>&ensp;<strong style="font-size:13px">${fmt(avg)}</strong>`;
 }
 
-// 更新按鈕高亮
 function refreshPeriodBtns(key, n){
   document.querySelectorAll(`[data-chart="${key}"]`).forEach(btn=>{
     btn.classList.toggle('active',+btn.dataset.n===n);
@@ -819,7 +822,7 @@ function buildWip(tc,gc){
   });
 }
 
-// ── mkLine (去年/目標都用粗虛線 2.5px) ──
+// ── mkLine — 標記點改用線條 pointStyle:'line' ──
 function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder,tipFmtFn){
   const allV=[...act,...(ly||[]),...(showTgt&&tgt?tgt:[])].filter(v=>v>0);
   const minV=allV.length?Math.min(...allV):0,maxV=allV.length?Math.max(...allV):100;
@@ -832,26 +835,41 @@ function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder,tip
   const niceMin=Math.floor(lo/step)*step;
   const niceMax=Math.ceil(hi/step)*step;
   const fmt=yFmt||(v=>Math.round(v).toLocaleString());
-  const tipFmt=tipFmtFn||fK;   // 預設與 KPI 卡片一致；cars/rpv 可傳入自訂格式
+  const tipFmt=tipFmtFn||fK;
   const actV=act.filter(v=>v>0);
   const avg=actV.length>1?actV.reduce((a,b)=>a+b,0)/actV.length:null;
   const avgColor=isDark()?'rgba(255,255,255,0.38)':'rgba(0,0,0,0.30)';
+  // 達標用綠色線段標記，未達標用紅色
+  const ptColors=act.map((v,i)=>tgt&&tgt[i]>0&&v>=tgt[i]?'#10b981':'#ef4444');
   const ds=[{
     label:'今年實際',data:act,borderColor:lc,backgroundColor:lc+'22',tension:.35,fill:true,
-    pointRadius:5,borderWidth:3,
-    pointBackgroundColor:act.map((v,i)=>tgt&&tgt[i]>0&&v>=tgt[i]?'#10b981':'#ef4444'),
-    pointBorderColor:ptBorder||'#0f172a',pointBorderWidth:1.5
+    pointStyle:'line',pointRadius:7,pointRotation:0,borderWidth:3,
+    pointBorderColor:ptColors,pointBorderWidth:2.5
   }];
-  if(ly&&ly.some(v=>v>0))ds.push({label:'去年同期',data:ly,borderColor:lyc,borderDash:[7,4],tension:.35,fill:false,pointRadius:3,borderWidth:2.5,pointBackgroundColor:lyc,pointBorderColor:ptBorder||'#0f172a',pointBorderWidth:1});
-  if(showTgt&&tgt&&tgt.some(v=>v>0))ds.push({label:'預算目標',data:tgt,borderColor:'#ef4444',borderDash:[4,3],tension:.35,fill:false,pointRadius:3,borderWidth:2.5,pointBackgroundColor:'#ef4444',pointBorderColor:ptBorder||'#0f172a',pointBorderWidth:1});
+  if(ly&&ly.some(v=>v>0))ds.push({
+    label:'去年同期',data:ly,borderColor:lyc,borderDash:[7,4],tension:.35,fill:false,
+    pointStyle:'line',pointRadius:5,pointRotation:0,borderWidth:2.5,
+    pointBorderColor:lyc,pointBorderWidth:2
+  });
+  if(showTgt&&tgt&&tgt.some(v=>v>0))ds.push({
+    label:'預算目標',data:tgt,borderColor:TGT_COLOR,borderDash:[4,3],tension:.35,fill:false,
+    pointStyle:'line',pointRadius:5,pointRotation:0,borderWidth:2.5,
+    pointBorderColor:TGT_COLOR,pointBorderWidth:2
+  });
   if(avg!==null)ds.push({label:'期間平均',data:Array(act.length).fill(avg),borderColor:avgColor,borderDash:[3,3],borderWidth:1.8,pointRadius:0,fill:false,tension:0});
   return new Chart(document.getElementById(id),{
     type:'line',data:{labels,datasets:ds},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{
-        if(ctx.dataset.label==='期間平均')return`期間平均: ${tipFmt(ctx.raw)}`;
-        return`${ctx.dataset.label}: ${tipFmt(ctx.raw)}`;
-      }}}},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          usePointStyle:true,
+          callbacks:{label:ctx=>{
+            if(ctx.dataset.label==='期間平均')return`期間平均: ${tipFmt(ctx.raw)}`;
+            return`${ctx.dataset.label}: ${tipFmt(ctx.raw)}`;
+          }}
+        }
+      },
       scales:{x:{ticks:{font:{size:10},color:tc},grid:{color:gc}},
               y:{ticks:{font:{size:11},color:tc,callback:fmt},grid:{color:gc},min:niceMin,max:niceMax}}}
   });
@@ -885,17 +903,48 @@ function rKpi2(id,act,tgt,ly,col){
     <div class="kc" style="border-color:${yoy>=0?'#10b98133':'#ef444433'}"><div class="kl">YoY</div><div class="kv" style="color:${yoy>=0?'#10b981':'#ef4444'};font-size:18px">${yoy!==null?(yoy>=0?'+':'')+yoy.toFixed(1)+'%':'—'}</div><div class="ks">去年 ${fK(l)}</div></div>`;
 }
 
-// ── Download ──
-function dlChart(id,name){
+// ── Download — 包含 KPI 數值卡片 ──
+// Canvas ID → wrapper div ID mapping
+const DL_WRAP_MAP={
+  'c_paid':'dl-wrap-paid',
+  'c_gen': 'dl-wrap-gen',
+  'c_bw':  'dl-wrap-bw',
+  'c_ext': 'dl-wrap-ext',
+  'c_cars':'dl-wrap-cars',
+  'c_rpv': 'dl-wrap-rpv',
+  'cWipBar':'dl-wrap-wip',
+};
+
+async function dlChart(id,name){
   const c=document.getElementById(id);if(!c)return;
+  const wrapId=DL_WRAP_MAP[id];
+  const target=wrapId?document.getElementById(wrapId):null;
+  const bgColor=isDark()?'#1a2332':'#ffffff';
+
+  if(target && typeof html2canvas!=='undefined'){
+    try{
+      const canvas=await html2canvas(target,{
+        backgroundColor:bgColor,
+        scale:2,
+        useCORS:true,
+        logging:false,
+      });
+      const a=document.createElement('a');
+      a.href=canvas.toDataURL('image/png');
+      a.download=`${name}_${curBr}_${curPeriod}_${new Date().toISOString().slice(0,10)}.png`;
+      a.click();
+      return;
+    }catch(e){console.warn('html2canvas failed, fallback',e);}
+  }
+  // Fallback: canvas only
   const o=document.createElement('canvas');o.width=c.width;o.height=c.height;
   const ctx=o.getContext('2d');
-  ctx.fillStyle=isDark()?'#1a2332':'#ffffff';ctx.fillRect(0,0,o.width,o.height);ctx.drawImage(c,0,0);
+  ctx.fillStyle=bgColor;ctx.fillRect(0,0,o.width,o.height);ctx.drawImage(c,0,0);
   const a=document.createElement('a');a.href=o.toDataURL('image/png');
   a.download=`${name}_${curBr}_${curPeriod}_${new Date().toISOString().slice(0,10)}.png`;a.click();
 }
 
-// ── 自動儲存（切換前靜默存檔）──
+// ── 自動儲存 ──
 let _autoSaving=false;
 async function autoSave(){
   if(_autoSaving)return;
@@ -904,21 +953,20 @@ async function autoSave(){
     SECS.forEach(sec=>(extraNotes[sec]||[]).forEach(n=>{
       const ta=document.getElementById('eta-'+n.id);if(ta)n.content=ta.value;
     }));
-const textEntries=[
-    ...NOTE_IDS.map(id=>({key:nKey(id),value:(richData[id]?.texts||[''])[0]||''})),
+    const textEntries=[
+      ...NOTE_IDS.map(id=>({key:nKey(id),value:(richData[id]?.texts||[''])[0]||''  })),
       ...SECS.map(sec=>({key:nKey('extra_'+sec),value:JSON.stringify(extraNotes[sec]||[])})),
     ];
-const richEntries=NOTE_IDS.filter(id=>richData[id]!=null)
-  .map(id=>({key:nKey('rich_'+id),value:JSON.stringify(richData[id])}));
-const hasAny=textEntries.some(e=>e.value&&e.value!=='[]')||richEntries.length>0;
-if(!hasAny){_autoSaving=false;return;}
-const res=await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},
-  body:JSON.stringify({entries:textEntries})});
-if(richEntries.length){
-  await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({entries:richEntries})});
-}
-    // 圖片在 autoSave 時不送（體積大），依賴手動儲存
+    const richEntries=NOTE_IDS.filter(id=>richData[id]!=null)
+      .map(id=>({key:nKey('rich_'+id),value:JSON.stringify(richData[id])}));
+    const hasAny=textEntries.some(e=>e.value&&e.value!=='[]')||richEntries.length>0;
+    if(!hasAny){_autoSaving=false;return;}
+    const res=await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({entries:textEntries})});
+    if(richEntries.length){
+      await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({entries:richEntries})});
+    }
     if(res.ok){
       const hint=document.getElementById('autoSaveHint');
       if(hint){hint.style.opacity='1';setTimeout(()=>{hint.style.opacity='0';},2000);}
@@ -930,7 +978,6 @@ if(richEntries.length){
 // ── Branch switch ──
 async function setBr(br){
   if(br===curBr){loadAll();return;}
-  // 切換前先自動儲存當前廠別說明
   await autoSave();
   curBr=br;
   ['ALL','AMA','AMC','AMD'].forEach(b=>{
@@ -945,7 +992,7 @@ async function setBr(br){
 function showLoad(m){document.getElementById('ovl').style.display='flex';document.getElementById('ovlMsg').textContent=m;}
 function hideLoad(){document.getElementById('ovl').style.display='none';}
 
-// ── Drag & Drop (save order to DB) ──
+// ── Drag & Drop ──
 const SEC_ORDER_KEY='monthly_layout_order';
 function initDrag(){
   document.querySelectorAll('.drag-sec').forEach(el=>{
@@ -987,7 +1034,7 @@ function renderAllNoteAreas(){
     const el=document.getElementById('note-area-'+id);if(!el)return;
     el.innerHTML=`
       <div class="noteLabel"><span class="noteDot"></span>${cfg.label}</div>
-<div class="noteToolbar">
+      <div class="noteToolbar">
         <button class="nToolBtn" onclick="addTextBox('${id}')">📝 文字框</button>
         <button class="nToolBtn" onclick="trigImgUpload('${id}')">📷 上傳圖片</button>
         <button class="nToolBtn" onclick="openTblModal('${id}')">📊 新增表格</button>
@@ -999,7 +1046,6 @@ function renderAllNoteAreas(){
 
 // ── Image upload ──
 function trigImgUpload(nid){document.getElementById('imgInput-'+nid)?.click();}
-// ── 圖片壓縮（上傳時自動縮圖，最大 1200px，品質 0.75）──
 function compressImage(dataUrl, maxW=1200, quality=0.75){
   return new Promise(resolve=>{
     const img=new Image();
@@ -1011,11 +1057,10 @@ function compressImage(dataUrl, maxW=1200, quality=0.75){
       canvas.getContext('2d').drawImage(img,0,0,w,h);
       resolve(canvas.toDataURL('image/jpeg', quality));
     };
-    img.onerror=()=>resolve(dataUrl); // 無法壓縮就用原圖
+    img.onerror=()=>resolve(dataUrl);
     img.src=dataUrl;
   });
 }
-
 function handleImg(nid,input){
   const file=input.files[0];if(!file)return;
   const rd=new FileReader();
@@ -1041,7 +1086,7 @@ function delTextBox(nid,i){
 function updateTextBox(nid,i,val){
   if(richData[nid]?.texts)richData[nid].texts[i]=val;
 }
-  
+
 // ── Table modal ──
 function openTblModal(target){pendingTblTarget=target;document.getElementById('tableModal').style.display='flex';}
 function confirmAddTable(){
@@ -1062,7 +1107,7 @@ function confirmAddTable(){
   }
 }
 
-// ── Render rich (images + tables) ──
+// ── Render rich ──
 function renderRich(nid){
   const el=document.getElementById('rich-'+nid);if(!el)return;
   const d=richData[nid]||{images:[],tables:[],texts:[]};
@@ -1148,10 +1193,9 @@ document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if
 // ── Notes DB ──
 function nKey(id){return`${MODULE}_${curBr}_${curPeriod}_${id}`;}
 async function loadNotes(seq){
-  // ── 清空記憶體，避免切換 branch/period 時殘留舊資料 ──
-NOTE_IDS.forEach(id=>{
+  NOTE_IDS.forEach(id=>{
     richData[id]={images:[],tables:[],texts:[]};
-const richEl=document.getElementById('rich-'+id);if(richEl)richEl.innerHTML='';
+    const richEl=document.getElementById('rich-'+id);if(richEl)richEl.innerHTML='';
   });
   SECS.forEach(sec=>{
     extraNotes[sec]=[];
@@ -1160,16 +1204,15 @@ const richEl=document.getElementById('rich-'+id);if(richEl)richEl.innerHTML='';
   try{
     const prefix=`${MODULE}_${curBr}_${curPeriod}_`;
     const data=await sf(`/api/notes?prefix=${encodeURIComponent(prefix)}`);
-    // 若在等待 API 回應期間使用者已切換 branch/period，放棄這次結果
     if(seq!==undefined&&seq!==_loadSeq)return;
     if(!data)return;
-NOTE_IDS.forEach(id=>{
+    NOTE_IDS.forEach(id=>{
       const oldText=data[nKey(id)]??'';
       const rk=nKey('rich_'+id);
       let rd={images:[],tables:[],texts:[]};
       if(data[rk]){try{rd=JSON.parse(data[rk]);}catch{}}
       if(!rd.texts)rd.texts=[];
-if(!rd.texts.length&&oldText)rd.texts=[oldText];
+      if(!rd.texts.length&&oldText)rd.texts=[oldText];
       else if(!rd.texts[0]&&oldText)rd.texts[0]=oldText;
       richData[id]=rd;
       renderRich(id);
@@ -1184,16 +1227,13 @@ async function saveAll(){
   const btn=document.getElementById('saveBtn'),ok=document.getElementById('saveOk'),st=document.getElementById('nSt');
   btn.disabled=true;btn.textContent='儲存中…';st.innerHTML='<span class="sSp"></span>';
   SECS.forEach(sec=>(extraNotes[sec]||[]).forEach(n=>{const ta=document.getElementById('eta-'+n.id);if(ta)n.content=ta.value;}));
-
-  // 文字類（輕量）與圖片類（較重）分開存，避免圖片讓文字也跟著失敗
-const textEntries=[
-    ...NOTE_IDS.map(id=>({key:nKey(id),value:(richData[id]?.texts||[''])[0]||''})),
+  const textEntries=[
+    ...NOTE_IDS.map(id=>({key:nKey(id),value:(richData[id]?.texts||[''])[0]||''  })),
     ...SECS.map(sec=>({key:nKey('extra_'+sec),value:JSON.stringify(extraNotes[sec]||[])})),
   ];
-const richEntries=NOTE_IDS
+  const richEntries=NOTE_IDS
     .filter(id=>richData[id]!=null)
     .map(id=>({key:nKey('rich_'+id),value:JSON.stringify(richData[id])}));
-
   const postBatch=async(entries)=>{
     if(!entries.length)return true;
     try{
@@ -1202,10 +1242,8 @@ const richEntries=NOTE_IDS
       return r.ok;
     }catch{return false;}
   };
-
   const textOk=await postBatch(textEntries);
   const richOk=richEntries.length===0||await postBatch(richEntries);
-
   btn.disabled=false;btn.textContent='💾 儲存說明';
   if(textOk&&richOk){
     ok.style.opacity='1';st.innerHTML='';
