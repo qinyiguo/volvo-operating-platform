@@ -215,6 +215,7 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
               <button class="cPBtn" data-chart="paid" data-n="3"  onclick="setPeriod('paid',3)">3M</button>
               <button class="cPBtn" data-chart="paid" data-n="6"  onclick="setPeriod('paid',6)">6M</button>
               <button class="cPBtn active" data-chart="paid" data-n="12" onclick="setPeriod('paid',12)">12M</button>
+              <button class="cPBtn" data-chart="paid" data-n="ytd" onclick="setPeriod('paid','ytd')">YTD</button>
             </div>
             <button class="dlBtnI" onclick="dlChart('c_paid','有費營收')">&#11015; 下載</button>
           </div>
@@ -247,6 +248,7 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
                 <button class="cPBtn" data-chart="gen" data-n="3"  onclick="setPeriod('gen',3)">3M</button>
                 <button class="cPBtn" data-chart="gen" data-n="6"  onclick="setPeriod('gen',6)">6M</button>
                 <button class="cPBtn active" data-chart="gen" data-n="12" onclick="setPeriod('gen',12)">12M</button>
+                <button class="cPBtn" data-chart="gen" data-n="ytd" onclick="setPeriod('gen','ytd')">YTD</button>
               </div>
               <button class="dlBtnI" onclick="dlChart('c_gen','一般營收')">&#11015;</button>
             </div>
@@ -268,6 +270,7 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
                 <button class="cPBtn" data-chart="bw" data-n="3"  onclick="setPeriod('bw',3)">3M</button>
                 <button class="cPBtn" data-chart="bw" data-n="6"  onclick="setPeriod('bw',6)">6M</button>
                 <button class="cPBtn active" data-chart="bw" data-n="12" onclick="setPeriod('bw',12)">12M</button>
+                <button class="cPBtn" data-chart="bw" data-n="ytd" onclick="setPeriod('bw','ytd')">YTD</button>
               </div>
               <button class="dlBtnI" onclick="dlChart('c_bw','鈑烤營收')">&#11015;</button>
             </div>
@@ -289,6 +292,7 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
                 <button class="cPBtn" data-chart="ext" data-n="3"  onclick="setPeriod('ext',3)">3M</button>
                 <button class="cPBtn" data-chart="ext" data-n="6"  onclick="setPeriod('ext',6)">6M</button>
                 <button class="cPBtn active" data-chart="ext" data-n="12" onclick="setPeriod('ext',12)">12M</button>
+                <button class="cPBtn" data-chart="ext" data-n="ytd" onclick="setPeriod('ext','ytd')">YTD</button>
               </div>
               <button class="dlBtnI" onclick="dlChart('c_ext','延保營收')">&#11015;</button>
             </div>
@@ -321,6 +325,7 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
                 <button class="cPBtn" data-chart="cars" data-n="3"  onclick="setPeriod('cars',3)">3M</button>
                 <button class="cPBtn" data-chart="cars" data-n="6"  onclick="setPeriod('cars',6)">6M</button>
                 <button class="cPBtn active" data-chart="cars" data-n="12" onclick="setPeriod('cars',12)">12M</button>
+                <button class="cPBtn" data-chart="cars" data-n="ytd" onclick="setPeriod('cars','ytd')">YTD</button>
               </div>
               <button class="dlBtnI" onclick="dlChart('c_cars','進廠台數')">&#11015;</button>
             </div>
@@ -342,6 +347,7 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
                 <button class="cPBtn" data-chart="rpv" data-n="3"  onclick="setPeriod('rpv',3)">3M</button>
                 <button class="cPBtn" data-chart="rpv" data-n="6"  onclick="setPeriod('rpv',6)">6M</button>
                 <button class="cPBtn active" data-chart="rpv" data-n="12" onclick="setPeriod('rpv',12)">12M</button>
+                <button class="cPBtn" data-chart="rpv" data-n="ytd" onclick="setPeriod('rpv','ytd')">YTD</button>
               </div>
               <button class="dlBtnI" onclick="dlChart('c_rpv','單車銷售額')">&#11015;</button>
             </div>
@@ -692,7 +698,10 @@ function buildAll(){
 
 function buildOneRevChart(key, lc, lyc, tc, gc, ptBorder){
   const n=chartPeriods[key]||12;
-  const months=last12Months.slice(-n);
+  const curYear=curPeriod.slice(0,4);
+  const months=n==='ytd'
+    ? last12Months.filter(p=>p.startsWith(curYear))
+    : last12Months.slice(-n);
   const labels=months.map(p=>`${p.slice(2,4)}/${p.slice(4)}`);
   const act=months.map(p=>tData[p]?.bd?.[key]||0);
   const ly =months.map(p=>tData[p]?.tgt?.[`${key}_ly`]||0);
@@ -705,7 +714,10 @@ function buildOneRevChart(key, lc, lyc, tc, gc, ptBorder){
 
 function buildCarsCharts(tc, gc, ptBorder){
   const n=chartPeriods.cars||12;
-  const months=last12Months.slice(-n);
+  const curYear=curPeriod.slice(0,4);
+  const months=n==='ytd'
+    ? last12Months.filter(p=>p.startsWith(curYear))
+    : last12Months.slice(-n);
   const labels=months.map(p=>`${p.slice(2,4)}/${p.slice(4)}`);
   const carsAct=months.map(p=>tData[p]?.cars?.act||0);
   const paid   =months.map(p=>tData[p]?.bd?.paid||0);
@@ -722,7 +734,7 @@ function buildCarsCharts(tc, gc, ptBorder){
 
 function setPeriod(key, n){
   if(key==='cars'||key==='rpv'){chartPeriods.cars=n;chartPeriods.rpv=n;}
-  else{chartPeriods[key]=n;}
+  else{chartPeriods[key]=n;}  
   const{tc,gc,ptBorder}=chartColors();
   if(key==='cars'||key==='rpv') buildCarsCharts(tc,gc,ptBorder);
   else buildOneRevChart(key, LINE_COLOR, LY_COLOR, tc,gc,ptBorder);
@@ -743,7 +755,7 @@ function refreshAvgBadge(key, actData, n){
 
 function refreshPeriodBtns(key, n){
   document.querySelectorAll(`[data-chart="${key}"]`).forEach(btn=>{
-    btn.classList.toggle('active',+btn.dataset.n===n);
+    btn.classList.toggle('active', btn.dataset.n === String(n));
   });
 }
 
