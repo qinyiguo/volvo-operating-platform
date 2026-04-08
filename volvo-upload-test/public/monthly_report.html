@@ -1125,10 +1125,11 @@ document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if
 function nKey(id){return`${MODULE}_${curBr}_${curPeriod}_${id}`;}
 async function loadNotes(seq){
   // ── 清空記憶體，避免切換 branch/period 時殘留舊資料 ──
-  NOTE_IDS.forEach(id=>{
+NOTE_IDS.forEach(id=>{
     const ta=document.getElementById(id);if(ta)ta.value='';
-    richData[id]=null;
-    const richEl=document.getElementById('rich-'+id);if(richEl)richEl.innerHTML='';
+    richData[id]={images:[],tables:[]};
+    const richEl=document.getElementById('rich-'+id);
+    if(richEl)[...richEl.children].forEach(c=>{if(!c.classList.contains('noteBox'))c.remove();});
   });
   SECS.forEach(sec=>{
     extraNotes[sec]=[];
@@ -1160,8 +1161,8 @@ async function saveAll(){
     ...NOTE_IDS.map(id=>({key:nKey(id),value:document.getElementById(id)?.value||''})),
     ...SECS.map(sec=>({key:nKey('extra_'+sec),value:JSON.stringify(extraNotes[sec]||[])})),
   ];
-  const richEntries=NOTE_IDS
-    .filter(id=>richData[id]&&(richData[id].images?.length||richData[id].tables?.length))
+const richEntries=NOTE_IDS
+    .filter(id=>richData[id]!=null)
     .map(id=>({key:nKey('rich_'+id),value:JSON.stringify(richData[id])}));
 
   const postBatch=async(entries)=>{
