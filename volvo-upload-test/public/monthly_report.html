@@ -214,8 +214,8 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
             <div class="cPBar">
               <button class="cPBtn" data-chart="paid" data-n="3"  onclick="setPeriod('paid',3)">3M</button>
               <button class="cPBtn" data-chart="paid" data-n="6"  onclick="setPeriod('paid',6)">6M</button>
-              <button class="cPBtn active" data-chart="paid" data-n="12" onclick="setPeriod('paid',12)">12M</button>
-              <button class="cPBtn" data-chart="paid" data-n="ytd" onclick="setPeriod('paid','ytd')">YTD</button>
+              <button class="cPBtn" data-chart="paid" data-n="12" onclick="setPeriod('paid',12)">12M</button>
+              <button class="cPBtn active" data-chart="paid" data-n="ytd" onclick="setPeriod('paid','ytd')">YTD</button>
             </div>
             <button class="dlBtnI" onclick="dlChart('c_paid','有費營收')">&#11015; 下載</button>
           </div>
@@ -653,7 +653,7 @@ async function loadAll(){
 }
 
 // ── Per-chart period state ──
-const chartPeriods={paid:12,gen:12,bw:12,ext:12,cars:12,rpv:12};
+const chartPeriods={paid:'ytd',gen:'ytd',bw:'ytd',ext:'ytd',cars:'ytd',rpv:'ytd'};
 let last12Months=[];
 
 // ── UNIFIED color constants ──
