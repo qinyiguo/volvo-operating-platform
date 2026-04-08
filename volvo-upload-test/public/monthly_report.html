@@ -841,7 +841,7 @@ function buildWip(tc,gc){
   });
 }
 
-// ── mkLine — 標記點改用線條 pointStyle:'line' ──
+// ── mkLine — 標記點改用線條 pointStyle:'circle' ──
 function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder,tipFmtFn){
   const allV=[...act,...(ly||[]),...(showTgt&&tgt?tgt:[])].filter(v=>v>0);
   const minV=allV.length?Math.min(...allV):0,maxV=allV.length?Math.max(...allV):100;
@@ -862,17 +862,17 @@ function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder,tip
   const ptColors=act.map((v,i)=>tgt&&tgt[i]>0&&v>=tgt[i]?'#10b981':'#ef4444');
   const ds=[{
     label:'今年實際',data:act,borderColor:lc,backgroundColor:lc+'22',tension:.35,fill:true,
-    pointStyle:'line',pointRadius:7,pointRotation:0,borderWidth:3,
+    pointStyle:'circle',pointRadius:7,pointRotation:0,borderWidth:3,
     pointBorderColor:ptColors,pointBorderWidth:2.5
   }];
   if(ly&&ly.some(v=>v>0))ds.push({
     label:'去年同期',data:ly,borderColor:lyc,borderDash:[7,4],tension:.35,fill:false,
-    pointStyle:'line',pointRadius:5,pointRotation:0,borderWidth:2.5,
+    pointStyle:'circle',pointRadius:5,pointRotation:0,borderWidth:2.5,
     pointBorderColor:lyc,pointBorderWidth:2
   });
   if(showTgt&&tgt&&tgt.some(v=>v>0))ds.push({
     label:'預算目標',data:tgt,borderColor:TGT_COLOR,borderDash:[4,3],tension:.35,fill:false,
-    pointStyle:'line',pointRadius:5,pointRotation:0,borderWidth:2.5,
+    pointStyle:'circle',pointRadius:5,pointRotation:0,borderWidth:2.5,
     pointBorderColor:TGT_COLOR,pointBorderWidth:2
   });
   if(avg!==null)ds.push({label:'期間平均',data:Array(act.length).fill(avg),borderColor:avgColor,borderDash:[3,3],borderWidth:1.8,pointRadius:0,fill:false,tension:0});
