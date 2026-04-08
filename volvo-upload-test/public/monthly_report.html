@@ -881,7 +881,9 @@ function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder,tip
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{
         legend:{display:false},
-        tooltip:{
+tooltip:{
+          boxWidth:20,
+          boxHeight:2,
           callbacks:{label:ctx=>{
             if(ctx.dataset.label==='期間平均')return`期間平均: ${tipFmt(ctx.raw)}`;
             return`${ctx.dataset.label}: ${tipFmt(ctx.raw)}`;
