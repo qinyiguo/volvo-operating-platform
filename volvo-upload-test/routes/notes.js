@@ -24,6 +24,35 @@ function safeKey(k) {
   return KEY_PREFIX + cleaned;
 }
 
+// PUT /api/notes/batch  — body: { entries:[{key,value}] }
+router.put('/notes/batch', async (req, res) => {
+  const entries = req.body?.entries;
+  if (!Array.isArray(entries) || !entries.length)
+    return res.status(400).json({ error: 'entries must be a non-empty array' });
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    for (const e of entries) {
+      const key = safeKey(e.key);
+      if (!key) continue;
+      const value = String(e.value ?? '').slice(0, MAX_VAL_LEN);
+      await client.query(
+        `INSERT INTO app_settings (key, value) VALUES ($1, $2)
+         ON CONFLICT (key) DO UPDATE SET value = $2`,
+        [key, value]
+      );
+    }
+    await client.query('COMMIT');
+    res.json({ ok: true, count: entries.length });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+});
+
+
 // GET /api/notes/:key
 router.get('/notes/:key', async (req, res) => {
   const key = safeKey(req.params.key);
@@ -71,34 +100,6 @@ router.get('/notes', async (req, res) => {
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
-  }
-});
-
-// PUT /api/notes/batch  — body: { entries:[{key,value}] }
-router.put('/notes/batch', async (req, res) => {
-  const entries = req.body?.entries;
-  if (!Array.isArray(entries) || !entries.length)
-    return res.status(400).json({ error: 'entries must be a non-empty array' });
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    for (const e of entries) {
-      const key = safeKey(e.key);
-      if (!key) continue;
-      const value = String(e.value ?? '').slice(0, MAX_VAL_LEN);
-      await client.query(
-        `INSERT INTO app_settings (key, value) VALUES ($1, $2)
-         ON CONFLICT (key) DO UPDATE SET value = $2`,
-        [key, value]
-      );
-    }
-    await client.query('COMMIT');
-    res.json({ ok: true, count: entries.length });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    res.status(500).json({ error: err.message });
-  } finally {
-    client.release();
   }
 });
 
