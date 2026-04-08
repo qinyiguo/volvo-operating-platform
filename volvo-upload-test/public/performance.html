@@ -1066,6 +1066,31 @@ function _estUpdatePaidTag(br) {
   tag.style.color  = isManual ? '#f59e0b' : '#f97316';
 }
 
+ function _getWeeksInMonth(period) {
+  const year  = parseInt(period.slice(0,4));
+  const month = parseInt(period.slice(4)) - 1;
+  const firstDay = new Date(year, month, 1);
+  const lastDay  = new Date(year, month+1, 0);
+  const weeks = [];
+  let cur = new Date(firstDay);
+  const dow = cur.getDay();
+  cur.setDate(cur.getDate() - (dow === 0 ? 6 : dow - 1));
+  while (cur <= lastDay) {
+    const wStart = new Date(cur);
+    const wEnd   = new Date(cur); wEnd.setDate(wEnd.getDate() + 6);
+    if (wEnd >= firstDay && wStart <= lastDay) {
+      const wKey = wStart.getFullYear()
+        + String(wStart.getMonth()+1).padStart(2,'0')
+        + String(wStart.getDate()).padStart(2,'0');
+      const s = (wStart.getMonth()+1)+'/'+wStart.getDate();
+      const e = (wEnd.getMonth()+1)+'/'+wEnd.getDate();
+      weeks.push({ week_key: wKey, week_label: s+'-'+e });
+    }
+    cur.setDate(cur.getDate() + 7);
+  }
+  return weeks;
+}
+ 
 function renderEstHistoryTab(history) {
   const el = document.getElementById('estTabContent-history');
   const period = _estModalData.period || '';
