@@ -637,18 +637,13 @@ const ytdFuture=Array.from({length:12},(_,i)=>`${curYear}${String(i+1).padStart(
 
 const tR=await Promise.all([...last5,...ytdFuture].map(async p=>{
   const isFuture=p>curPeriod;
-  const[bd,tgt,daily]=await Promise.all([
+  const[bdR,tgtR,dailyR]=await Promise.all([
     isFuture?Promise.resolve(null):sf(`/api/stats/income-breakdown?period=${p}${bpQ}`),
     sf(`/api/revenue-targets?period=${p}${bpQ}`),
     isFuture?Promise.resolve(null):sf(`/api/stats/daily?period=${p}${bpQ}`),
   ]);
-    const[bd,tgt,daily]=await Promise.all([
-      sf(`/api/stats/income-breakdown?period=${p}${bpQ}`),
-      sf(`/api/revenue-targets?period=${p}${bpQ}`),
-      sf(`/api/stats/daily?period=${p}${bpQ}`),
-    ]);
-    return{period:p,bd:exBD(bd,curBr),tgt:exTgt(tgt,curBr),cars:exCars(daily,curBr)};
-  }));
+  return{period:p,bd:exBD(bdR,curBr),tgt:exTgt(tgtR,curBr),cars:exCars(dailyR,curBr)};
+}));
   if(seq!==_loadSeq){return;}
   tData={};tR.forEach(r=>{tData[r.period]=r;});
   showLoad('讀取 WIP…');
