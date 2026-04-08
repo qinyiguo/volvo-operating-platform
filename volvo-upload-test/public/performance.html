@@ -1021,12 +1021,14 @@ const history = _estModalData.history || [];
         +'<div style="display:inline-flex;flex-direction:column;align-items:center;gap:3px">'
         +'<span style="background:rgba(16,185,129,.15);color:#10b981;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700">✅ 已提交</span>'
         +'<span style="font-size:10px;color:#475569">'+ts+'</span></div></td>';
-    } else {
+} else {
       const hasLast = prev && (prev.paid_estimate || prev.general_estimate);
       html += '<td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center">'
-        +'<div style="display:inline-flex;flex-direction:column;align-items:center;gap:3px">'
+        +'<div style="display:inline-flex;flex-direction:column;align-items:center;gap:4px">'
         +'<span style="background:rgba(245,158,11,.1);color:#f59e0b;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700">⏳ 待提交</span>'
         +(hasLast?'<span style="font-size:9px;color:#475569">已預填上週值</span>':'')
+        +'<button id="btnSubmitBranch-'+br+'" onclick="submitBranchEstimate(\''+br+'\')" '
+        +'style="padding:4px 12px;background:#3b82f6;color:#fff;border:none;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;margin-top:2px">🚀 提交</button>'
         +'</div></td>';
     }
     html += '</tr>';
@@ -1267,6 +1269,40 @@ async function submitWeeklyEstimate() {
     alert('提交失敗：'+e.message);
   } finally {
     if (btn) { btn.disabled=false; btn.textContent='🚀 提交本週預估'; }
+  }
+}
+
+ async function submitBranchEstimate(br) {
+  const period = getPeriod();
+  if (!period) return;
+  const ws = _estModalData.weekStatus;
+  if (!ws) return;
+  if (ws.submissions[br]) { alert(br + ' 本週已提交'); return; }
+
+  const get = function(k) {
+    const v = parseFloat((document.getElementById('weekEst-'+k+'-'+br)||{}).value);
+    return (!isNaN(v) && v >= 0) ? Math.round(v*1000) : null;
+  };
+  const e = {branch:br, paid:get('paid'), general:get('general'), bodywork:get('bodywork'), extended:get('extended')};
+
+  if (![e.paid,e.general,e.bodywork,e.extended].some(function(v){return v!==null;})) {
+    alert(br + ' 請先填入至少一個預估值');
+    return;
+  }
+
+  const btn = document.getElementById('btnSubmitBranch-'+br);
+  if (btn) { btn.disabled=true; btn.textContent='提交中...'; }
+  try {
+    const res = await fetch('/api/revenue-estimates/weekly-submit', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({period, entries:[e]}),
+    }).then(function(r){return r.json();});
+    if (res.error) throw new Error(res.error);
+    await loadEstimateModalData(period);
+    await loadRevenueKPI(period, document.getElementById('selBranch').value);
+  } catch(err) {
+    alert(br + ' 提交失敗：'+err.message);
+    if (btn) { btn.disabled=false; btn.textContent='🚀 提交'; }
   }
 }
 
