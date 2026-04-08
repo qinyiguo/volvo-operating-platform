@@ -1128,9 +1128,10 @@ async function submitWeeklyEstimate() {
       return (!isNaN(v) && v >= 0) ? Math.round(v*1000) : null;
     };
     const e = {branch:br, paid:get('paid'), general:get('general'), bodywork:get('bodywork'), extended:get('extended')};
-    if ([e.paid,e.general,e.bodywork,e.extended].some(function(v){return v!==null;})) hasAny=true;
-    entries.push(e);
-  });
+if ([e.paid,e.general,e.bodywork,e.extended].some(function(v){return v!==null;})) {
+  hasAny = true;
+  entries.push(e);  // 只有有填值的據點才納入
+}
   if (!entries.length) { alert('所有據點本週均已提交'); return; }
   if (!hasAny) { alert('請至少填入一個預估值（0 以上）'); return; }
   const btn = document.getElementById('btnSubmitEst');
