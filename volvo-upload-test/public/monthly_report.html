@@ -95,7 +95,6 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
 .dlBtnI:hover{background:rgba(59,130,246,.28);}
 .dlBtn{position:absolute;top:8px;right:8px;background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.25);border-radius:5px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer;z-index:2;}
 .dlBtn:hover{background:rgba(59,130,246,.28);}
-/* Period selector per chart */
 .cPBar{display:flex;gap:3px;}
 .cPBtn{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;border:1px solid var(--bdr);background:transparent;color:var(--txt3);transition:all .12s;}
 .cPBtn:hover{border-color:var(--accent);color:var(--accent);}
@@ -162,6 +161,9 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
 .mBtnPrimary{background:var(--accent);color:#fff;}
 .mBtnCancel{background:var(--bg3);border:1px solid var(--bdr);color:var(--txt2);}
 
+/* AME badge */
+.ame-badge{display:inline-block;background:rgba(236,72,153,.15);color:#ec4899;border:1px solid rgba(236,72,153,.4);border-radius:6px;padding:2px 10px;font-size:11px;font-weight:700;margin-left:6px;}
+
 @keyframes spin{to{transform:rotate(360deg);}}
 @media(max-width:900px){.g2{grid-template-columns:1fr;}.g3{grid-template-columns:1fr;}.kpiRow{grid-template-columns:repeat(2,1fr);}.kpiRow2{grid-template-columns:1fr;}}
 </style>
@@ -183,6 +185,7 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
     <button class="brBtn" id="bt-AMA" onclick="setBr('AMA')">AMA</button>
     <button class="brBtn" id="bt-AMC" onclick="setBr('AMC')">AMC</button>
     <button class="brBtn" id="bt-AMD" onclick="setBr('AMD')">AMD</button>
+    <button class="brBtn" id="bt-AME" onclick="setBr('AME')" title="鈑烤廠（集團鈑烤）">AME</button>
   </div>
   <div id="topBadge" style="font-size:12px;color:var(--txt3)"></div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
@@ -195,16 +198,15 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
 <div class="scroll">
 <div id="sectionsRoot">
 
-  <!-- 有費 section -->
+  <!-- 有費 / 鈑烤 revenue section -->
   <div class="drag-sec" id="sec-revenue" draggable="true">
   <div class="sec-wrap">
-    <div class="secDiv"><span class="drag-handle" title="拖曳排序">⠿</span>&#128310; 營收趨勢分析</div>
-    <!-- DOWNLOAD WRAPPER: paid KPI + chart -->
+    <div class="secDiv" id="secDiv-revenue"><span class="drag-handle" title="拖曳排序">⠿</span>&#128310; 營收趨勢分析</div>
     <div id="dl-wrap-paid" style="background:var(--bg);border-radius:10px;padding:8px;margin-bottom:4px;">
       <div class="kpiRow" id="kpi_paid"></div>
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:5px">
-          <div class="leg">
+          <div class="leg" id="leg-paid">
             <span class="li"><span class="ld" style="background:#f97316"></span>今年實際</span>
             <span class="li"><span class="ld-d" style="border-top-color:#94a3b8"></span>去年同期</span>
             <span class="li"><span class="ld-d" style="border-top-color:#ef4444"></span>預算目標</span>
@@ -217,7 +219,7 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
               <button class="cPBtn" data-chart="paid" data-n="12" onclick="setPeriod('paid',12)">12M</button>
               <button class="cPBtn active" data-chart="paid" data-n="ytd" onclick="setPeriod('paid','ytd')">YTD</button>
             </div>
-            <button class="dlBtnI" onclick="dlChart('c_paid','有費營收')">&#11015; 下載</button>
+            <button class="dlBtnI" onclick="dlChart('c_paid','鈑烤營收')">&#11015; 下載</button>
           </div>
         </div>
         <div class="avgRow" id="avg-paid"></div>
@@ -231,12 +233,11 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
   </div>
   </div>
 
-  <!-- 一般/鈑烤/延保 section -->
+  <!-- 一般/鈑烤/延保 section — hidden in AME mode -->
   <div class="drag-sec" id="sec-detail" draggable="true">
   <div class="sec-wrap">
     <div class="secDiv"><span class="drag-handle" title="拖曳排序">⠿</span>&#128203; 一般 / 鈑烤 / 延保</div>
     <div class="g3">
-      <!-- GEN COLUMN -->
       <div id="dl-wrap-gen" style="background:var(--bg);border-radius:10px;padding:6px;">
         <div class="secHd">&#128153; 一般（P3）<span style="font-size:10px;color:var(--txt3)">千元</span></div>
         <div class="kpiRow2" id="kpi_gen"></div>
@@ -258,7 +259,6 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
         </div>
         <div class="card"><div id="note-area-n_gen"></div></div>
       </div>
-      <!-- BW COLUMN -->
       <div id="dl-wrap-bw" style="background:var(--bg);border-radius:10px;padding:6px;">
         <div class="secHd">&#128296; 鈑烤（PC8+PC3）<span style="font-size:10px;color:var(--txt3)">千元</span></div>
         <div class="kpiRow2" id="kpi_bw"></div>
@@ -280,7 +280,6 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
         </div>
         <div class="card"><div id="note-area-n_bw"></div></div>
       </div>
-      <!-- EXT COLUMN -->
       <div id="dl-wrap-ext" style="background:var(--bg);border-radius:10px;padding:6px;">
         <div class="secHd">&#128737;&#65039; 延保（P9）<span style="font-size:10px;color:var(--txt3)">千元</span></div>
         <div class="kpiRow2" id="kpi_ext"></div>
@@ -307,17 +306,16 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
   </div>
   </div>
 
-  <!-- 進廠 & 單車 section -->
+  <!-- 進廠台數 section -->
   <div class="drag-sec" id="sec-cars" draggable="true">
   <div class="sec-wrap">
-    <div class="secDiv"><span class="drag-handle" title="拖曳排序">⠿</span>&#128663; 進廠台數 & 單車銷售額</div>
+    <div class="secDiv" id="secDiv-cars"><span class="drag-handle" title="拖曳排序">⠿</span>&#128663; 進廠台數 &amp; 單車銷售額</div>
     <div class="g2" style="margin-bottom:10px">
-      <!-- CARS WRAP -->
       <div id="dl-wrap-cars" style="background:var(--bg);border-radius:10px;padding:6px;">
         <div class="card">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
             <div>
-              <div style="font-size:12px;font-weight:700;color:var(--txt3)">每月進廠台數</div>
+              <div style="font-size:12px;font-weight:700;color:var(--txt3)" id="cars-chart-label">每月進廠台數</div>
               <div class="leg"><span class="li"><span class="ld" style="background:#f97316"></span>今年</span></div>
             </div>
             <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
@@ -334,7 +332,6 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
           <div style="position:relative;height:155px"><canvas id="c_cars"></canvas></div>
         </div>
       </div>
-      <!-- RPV WRAP -->
       <div id="dl-wrap-rpv" style="background:var(--bg);border-radius:10px;padding:6px;">
         <div class="card">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
@@ -368,10 +365,11 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
   <div class="drag-sec" id="sec-wip" draggable="true">
   <div class="sec-wrap">
     <div class="secDiv"><span class="drag-handle" title="拖曳排序">⠿</span>&#128295; WIP 未結工單 — 天數分層</div>
-    <!-- DOWNLOAD WRAPPER: WIP KPI + bar chart -->
     <div id="dl-wrap-wip" style="background:var(--bg);border-radius:10px;padding:8px;margin-bottom:4px;">
       <div class="kpiRow" id="kpiWip" style="margin-bottom:10px"></div>
-      <div class="card">
+      <!-- AME WIP special view -->
+      <div id="ame-wip-panel" style="display:none;margin-bottom:10px"></div>
+      <div class="card" id="wip-bar-card">
         <button class="dlBtn" onclick="dlChart('cWipBar','WIP分層')">&#11015; 下載</button>
         <div class="leg">
           <span class="li"><span class="ld" style="background:#10b981"></span>&lt;30天</span>
@@ -384,7 +382,7 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
     <div class="card" style="margin-bottom:10px">
       <div id="note-area-n_wip_overview"></div>
     </div>
-    <div class="secHd" style="margin-bottom:8px">各據點分層<span style="font-size:10px;color:var(--txt3);font-weight:400;margin-left:6px">金額(K) & 件數</span></div>
+    <div class="secHd" style="margin-bottom:8px">各據點分層<span style="font-size:10px;color:var(--txt3);font-weight:400;margin-left:6px">金額(K) &amp; 件數</span></div>
     <div class="g3" id="wipCards" style="margin-bottom:10px"></div>
     <div class="g2" style="margin-bottom:8px">
       <div class="card">
@@ -436,7 +434,7 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
       <select class="mInput" id="newNoteSection">
         <option value="sec-revenue">&#128310; 營收趨勢分析</option>
         <option value="sec-detail">&#128203; 一般/鈑烤/延保</option>
-        <option value="sec-cars">&#128663; 進廠 & 單車</option>
+        <option value="sec-cars">&#128663; 進廠 &amp; 單車</option>
         <option value="sec-wip">&#128295; WIP</option>
       </select></div>
     <div class="mBtns">
@@ -469,12 +467,13 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-const BRCOLS={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
+// ── AME = 集團鈑烤廠（事故保險 + 鈑噴合計）──
+const BRCOLS={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b',AME:'#ec4899'};
 const BRS_ALL=['AMA','AMC','AMD'];
 const MODULE='monthly';
 const SECS=['sec-revenue','sec-detail','sec-cars','sec-wip'];
 const NOTE_CFG={
-  n_paid:        {label:'有費說明',        ph:'・達成率 / YoY\n・影響因素\n・下月方向',              flex:true},
+  n_paid:        {label:'鈑烤說明',        ph:'・達成率 / YoY\n・影響因素\n・下月方向',              flex:true},
   n_gen:         {label:'一般說明',        ph:'・本月重點\n・達成分析',                                flex:false},
   n_bw:          {label:'鈑烤說明',        ph:'・本月重點\n・達成分析',                                flex:false},
   n_ext:         {label:'延保說明',        ph:'・本月重點\n・達成分析',                                flex:false},
@@ -492,7 +491,9 @@ const extraNotes={};
 let pendingTblTarget=null;
 let dragSrcId=null;
 
-// ── Fetch ──
+// ── bodywork car count cache (for AME) ──
+let bwCarsData={}; // period → visits count
+
 async function sf(url,opt){try{const r=await fetch(url,opt||{});if(!r.ok)return null;return await r.json();}catch{return null;}}
 
 // ── Theme ──
@@ -570,27 +571,53 @@ document.addEventListener('click',closePD);
 // ── API helpers ──
 function exBD(res,br){
   if(!res?.branches)return{paid:0,gen:0,bw:0,ext:0};
-  const brs=br==='ALL'?BRS_ALL:[br];let paid=0,gen=0,bw=0,ext=0;
+  const brs=(br==='ALL'||br==='AME')?BRS_ALL:[br];
+  let paid=0,gen=0,bw=0,ext=0;
   brs.forEach(b=>{const d=res.branches[b]||{};paid+=+(d.paid_total||0);gen+=+(d.general_total||0);bw+=+(d.bodywork_total||0);ext+=+(d.extended||0);});
+  if(br==='AME'){
+    // AME: treat bodywork as "paid" metric
+    return{paid:bw/1000,gen:0,bw:bw/1000,ext:0};
+  }
   return{paid:paid/1000,gen:gen/1000,bw:bw/1000,ext:ext/1000};
 }
 function exTgt(res,br){
   if(!Array.isArray(res))return{paid:0,gen:0,bw:0,ext:0,paid_ly:0,gen_ly:0,bw_ly:0,ext_ly:0};
-  const brs=br==='ALL'?BRS_ALL:[br];let paid=0,gen=0,bw=0,ext=0,pl=0,gl=0,bl=0,el=0;
+  const brs=(br==='ALL'||br==='AME')?BRS_ALL:[br];
+  let paid=0,gen=0,bw=0,ext=0,pl=0,gl=0,bl=0,el=0;
   res.filter(r=>brs.includes(r.branch)).forEach(r=>{
     paid+=+(r.paid_target||0);gen+=+(r.general_target||0);bw+=+(r.bodywork_target||0);ext+=+(r.extended_target||0);
     pl+=+(r.paid_last_year||0);gl+=+(r.general_last_year||0);bl+=+(r.bodywork_last_year||0);el+=+(r.extended_last_year||0);
   });
+  if(br==='AME'){
+    // AME: bodywork as paid
+    return{paid:bw/1000,gen:0,bw:bw/1000,ext:0,paid_ly:bl/1000,gen_ly:0,bw_ly:bl/1000,ext_ly:0};
+  }
   return{paid:paid/1000,gen:gen/1000,bw:bw/1000,ext:ext/1000,paid_ly:pl/1000,gen_ly:gl/1000,bw_ly:bl/1000,ext_ly:el/1000};
 }
 function exCars(res,br){
+  if(br==='AME'){
+    // For AME, return bodywork car count from bwCarsData cache
+    return{act:bwCarsData[curPeriod]||0};
+  }
   if(!res?.summary)return{act:0};
   let act=0;const brs=br==='ALL'?BRS_ALL:[br];
   res.summary.filter(r=>brs.includes(r.branch)).forEach(r=>{act+=+(r.total_cars||0);});
   return{act};
 }
+
+// ── Filter WIP rows for AME (事故保險 + 鈑噴) ──
+function isBodyworkWip(r){
+  const at=(r.account_type||r.repair_type||'').toLowerCase();
+  return at.includes('保險')||at.includes('鈑')||at.includes('烤')||at.includes('bw')||at.includes('pc8');
+}
+
 function bucketWip(rows,br){
-  const f=br==='ALL'?rows:rows.filter(r=>r.branch===br);
+  let f;
+  if(br==='AME'){
+    f=rows.filter(r=>isBodyworkWip(r));
+  } else {
+    f=br==='ALL'?rows:rows.filter(r=>r.branch===br);
+  }
   const lt30={amt:0,cnt:0},m30={amt:0,cnt:0},gt90={amt:0,cnt:0},urg={amt:0,cnt:0};
   f.forEach(r=>{
     const days=r.days_open!=null?parseFloat(r.days_open):null;
@@ -601,6 +628,96 @@ function bucketWip(rows,br){
     if(r.wip_status==='已可結帳'){urg.amt+=amt;urg.cnt++;}
   });
   return{lt30,m30,gt90,urg,total:{amt:lt30.amt+m30.amt+gt90.amt,cnt:f.length}};
+}
+
+// ── AME WIP: last month comparison panel ──
+function buildAmeWipPanel(curRows,prevRows){
+  // Filter to bodywork
+  const cur=curRows.filter(r=>isBodyworkWip(r));
+  const prev=prevRows.filter(r=>isBodyworkWip(r));
+
+  // Group by account type
+  const AT_INS=['保險','事故保險','vehicle insurance'];
+  const AT_BW=['鈑噴','自費鈑烤','bodywork','鈑金','烤漆'];
+  const classify=r=>{
+    const at=(r.account_type||r.repair_type||'').toLowerCase();
+    if(at.includes('保險'))return'ins';
+    return'bw';
+  };
+
+  const groupCur={ins:[],bw:[]};
+  const groupPrev={ins:[],bw:[]};
+  cur.forEach(r=>{const g=classify(r);if(groupCur[g])groupCur[g].push(r);});
+  prev.forEach(r=>{const g=classify(r);if(groupPrev[g])groupPrev[g].push(r);});
+
+  const sum=rows=>rows.reduce((s,r)=>s++(r.sales_amt||0)/1000,0);
+  const curY=curPeriod.slice(0,4),curM=+curPeriod.slice(4);
+  const prevP2=prevP(curPeriod);
+  const prevM=+prevP2.slice(4);
+
+  const renderGroup=(label,col,cRows,pRows)=>{
+    const cAmt=sum(cRows),pAmt=sum(pRows);
+    const cCnt=cRows.length,pCnt=pRows.length;
+    // Count by age bucket
+    const cOver30=cRows.filter(r=>r.days_open!=null&&parseFloat(r.days_open)>30).length;
+    const cOver90=cRows.filter(r=>r.days_open!=null&&parseFloat(r.days_open)>90).length;
+    // Compare with prev
+    const delta=cAmt-pAmt;const isUp=delta>=0;
+    // Settlement: prev rows that are now settled (not in cur) = pCnt - overlap
+    const curWOs=new Set(cRows.map(r=>r.work_order));
+    const settled=pRows.filter(r=>!curWOs.has(r.work_order));
+    const stillOpen=pRows.filter(r=>curWOs.has(r.work_order));
+    return`<div style="flex:1;min-width:240px;background:var(--bg3);border:1.5px solid ${col}55;border-radius:10px;padding:14px">
+      <div style="font-size:13px;font-weight:800;color:${col};margin-bottom:10px">${label}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div style="background:var(--bg2);border-radius:7px;padding:10px;text-align:center">
+          <div style="font-size:10px;color:var(--txt3);margin-bottom:4px">本月未結（${curM}月）</div>
+          <div style="font-size:26px;font-weight:900;color:${col}">${cCnt}</div>
+          <div style="font-size:11px;color:var(--txt3);margin-top:3px">${fK(cAmt)}</div>
+        </div>
+        <div style="background:var(--bg2);border-radius:7px;padding:10px;text-align:center">
+          <div style="font-size:10px;color:var(--txt3);margin-bottom:4px">上月未結（${prevM}月）</div>
+          <div style="font-size:26px;font-weight:900;color:var(--txt2)">${pCnt}</div>
+          <div style="font-size:11px;color:var(--txt3);margin-top:3px">${fK(pAmt)}</div>
+        </div>
+      </div>
+      <div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:7px;padding:8px 10px;margin-bottom:6px">
+        <div style="font-size:10px;color:#10b981;font-weight:700;margin-bottom:4px">✅ 上月已結清（本月未見）</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:20px;font-weight:900;color:#10b981">${settled.length} 件</span>
+          <span style="font-size:13px;color:#34d399;font-weight:700">${fK(sum(settled))}</span>
+        </div>
+      </div>
+      <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:7px;padding:8px 10px;margin-bottom:6px">
+        <div style="font-size:10px;color:#f59e0b;font-weight:700;margin-bottom:4px">⏳ 跨月仍未結</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:20px;font-weight:900;color:#f59e0b">${stillOpen.length} 件</span>
+          <span style="font-size:13px;color:#fbbf24;font-weight:700">${fK(sum(stillOpen))}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;font-size:11px;color:var(--txt3)">
+        <span style="background:rgba(239,68,68,.12);color:#ef4444;padding:2px 8px;border-radius:5px;font-weight:700">逾30天 ${cOver30}件</span>
+        <span style="background:rgba(239,68,68,.2);color:#ef4444;padding:2px 8px;border-radius:5px;font-weight:700">逾90天 ${cOver90}件</span>
+        <span style="color:${isUp?'#ef4444':'#10b981'}">${isUp?'▲ +':`▼ `}${fK(Math.abs(delta))} vs上月</span>
+      </div>
+    </div>`;
+  };
+
+  const insHtml=renderGroup('🔵 事故保險','#3b82f6',groupCur.ins,groupPrev.ins);
+  const bwHtml =renderGroup('🔨 鈑噴','#f97316',groupCur.bw, groupPrev.bw);
+  const totalCur=sum(cur),totalPrev=sum(prev);
+  const totalDelta=totalCur-totalPrev;
+
+  return`<div style="background:rgba(236,72,153,.07);border:1px solid rgba(236,72,153,.3);border-radius:10px;padding:14px;margin-bottom:10px">
+    <div style="font-size:13px;font-weight:800;color:#ec4899;margin-bottom:12px">
+      🏭 鈑烤廠 WIP 月份比較
+      <span style="font-size:11px;font-weight:400;color:var(--txt3);margin-left:8px">
+        ${prevM}月 → ${curM}月 ｜ 合計本月 ${cur.length} 件 ${fK(totalCur)}
+        <span style="color:${totalDelta>=0?'#ef4444':'#10b981'}">${totalDelta>=0?'▲ +':`▼ `}${fK(Math.abs(totalDelta))}</span>
+      </span>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">${insHtml}${bwHtml}</div>
+  </div>`;
 }
 
 // ── Init ──
@@ -627,29 +744,45 @@ async function loadAll(){
   if(!curPeriod){hideLoad();return;}
   const seq=++_loadSeq;
   showLoad('讀取營收趨勢…');
-const last5=prevMonths(curPeriod,12),prev=prevP(curPeriod);
-const bpQ=curBr==='ALL'?'':`&branch=${curBr}`;
+  const last5=prevMonths(curPeriod,12),prev=prevP(curPeriod);
+  // For AME, no branch filter; for others filter by branch
+  const bpQ=(curBr==='ALL'||curBr==='AME')?'':`&branch=${curBr}`;
 
-// YTD 需要補抓當年剩餘月份的目標和去年同期
-const curYear=curPeriod.slice(0,4);
-const ytdFuture=Array.from({length:12},(_,i)=>`${curYear}${String(i+1).padStart(2,'0')}`)
-  .filter(p=>p>curPeriod&&!last5.includes(p));
+  const curYear=curPeriod.slice(0,4);
+  const ytdFuture=Array.from({length:12},(_,i)=>`${curYear}${String(i+1).padStart(2,'0')}`)
+    .filter(p=>p>curPeriod&&!last5.includes(p));
 
-const tR=await Promise.all([...last5,...ytdFuture].map(async p=>{
-  const isFuture=p>curPeriod;
-  const[bdR,tgtR,dailyR]=await Promise.all([
-    isFuture?Promise.resolve(null):sf(`/api/stats/income-breakdown?period=${p}${bpQ}`),
-    sf(`/api/revenue-targets?period=${p}${bpQ}`),
-    isFuture?Promise.resolve(null):sf(`/api/stats/daily?period=${p}${bpQ}`),
-  ]);
-  return{period:p,bd:exBD(bdR,curBr),tgt:exTgt(tgtR,curBr),cars:exCars(dailyR,curBr)};
-}));
+  const tR=await Promise.all([...last5,...ytdFuture].map(async p=>{
+    const isFuture=p>curPeriod;
+    const[bdR,tgtR,dailyR]=await Promise.all([
+      isFuture?Promise.resolve(null):sf(`/api/stats/income-breakdown?period=${p}${bpQ}`),
+      sf(`/api/revenue-targets?period=${p}${bpQ}`),
+      isFuture?Promise.resolve(null):sf(`/api/stats/daily?period=${p}${bpQ}`),
+    ]);
+    return{period:p,bd:exBD(bdR,curBr),tgt:exTgt(tgtR,curBr),cars:exCars(dailyR,curBr)};
+  }));
+
   if(seq!==_loadSeq){return;}
   tData={};tR.forEach(r=>{tData[r.period]=r;});
+
+  // ── Fetch bodywork car counts for AME ──
+  if(curBr==='AME'){
+    showLoad('讀取鈑烤進廠台數…');
+    const allPeriods=[...last5,...ytdFuture].filter(p=>p<=curPeriod);
+    await Promise.all(allPeriods.map(async p=>{
+      const res=await sf(`/api/stats/tech-turnover?period=${p}`);
+      if(res?.bodywork?.total_visits!=null){
+        bwCarsData[p]=res.bodywork.total_visits;
+        // Also update tData cars for AME
+        if(tData[p])tData[p].cars={act:res.bodywork.total_visits};
+      }
+    }));
+  }
+
   showLoad('讀取 WIP…');
   const[w1,w2]=await Promise.all([
-    sf(`/api/stats/wip?period=${curPeriod}${bpQ}`),
-    sf(`/api/stats/wip?period=${prev}${bpQ}`),
+    sf(`/api/stats/wip?period=${curPeriod}`), // always fetch all for AME filter
+    sf(`/api/stats/wip?period=${prev}`),
   ]);
   if(seq!==_loadSeq){return;}
   wipRows=Array.isArray(w1?.rows)?w1.rows:[];
@@ -663,52 +796,91 @@ const tR=await Promise.all([...last5,...ytdFuture].map(async p=>{
 const chartPeriods={paid:'ytd',gen:'ytd',bw:'ytd',ext:'ytd',cars:'ytd',rpv:'ytd'};
 let last12Months=[];
 
-// ── UNIFIED color constants ──
-const LINE_COLOR='#f97316';   // 集團橘 — 所有曲線統一
-const LY_COLOR  ='#94a3b8';   // 去年同期灰色虛線
-const TGT_COLOR ='#ef4444';   // 預算目標紅色虛線
+const LINE_COLOR='#f97316';
+const BW_LINE_COLOR='#ec4899'; // pink for AME/bodywork
+const LY_COLOR  ='#94a3b8';
+const TGT_COLOR ='#ef4444';
 
 // ── Build charts ──
 function buildAll(){
   destCharts();
   last12Months=prevMonths(curPeriod,12);
   const{tc,gc,ptBorder}=chartColors();
+  const isAME=curBr==='AME';
 
   const A12=k=>last12Months.map(p=>tData[p]?.bd?.[k]||0);
   const T12=k=>last12Months.map(p=>tData[p]?.tgt?.[k]||0);
   const L12=k=>last12Months.map(p=>tData[p]?.tgt?.[`${k}_ly`]||0);
 
+  // Determine active line color
+  const activeLineColor=isAME?BW_LINE_COLOR:LINE_COLOR;
+
   // Badge
   const li=liIdx(A12('paid'));
   const la=A12('paid')[li],lt=T12('paid')[li],ll=L12('paid')[li];
+  const badgeLabel=isAME?'鈑烤達成':'有費達成';
   document.getElementById('topBadge').innerHTML=
-    `有費達成 <strong style="color:${achC(lt>0?la/lt*100:0)}">${lt>0?(la/lt*100).toFixed(0)+'%':'—'}</strong>　YoY <strong style="color:${growC(la,ll)}">${ll>0?((la-ll)/ll*100).toFixed(1)+'%':'—'}</strong>`;
+    `${badgeLabel} <strong style="color:${achC(lt>0?la/lt*100:0)}">${lt>0?(la/lt*100).toFixed(0)+'%':'—'}</strong>　YoY <strong style="color:${growC(la,ll)}">${ll>0?((la-ll)/ll*100).toFixed(1)+'%':'—'}</strong>`;
   document.getElementById('topStatus').textContent=`截至 ${fmtP(curPeriod)}`;
+
+  // Update section title for AME
+  const secDivRev=document.getElementById('secDiv-revenue');
+  if(secDivRev){
+    secDivRev.innerHTML=isAME
+      ?`<span class="drag-handle" title="拖曳排序">⠿</span>🔨 鈑烤廠 營收趨勢 <span class="ame-badge">AME</span>`
+      :`<span class="drag-handle" title="拖曳排序">⠿</span>📊 營收趨勢分析`;
+  }
+  const secDivCars=document.getElementById('secDiv-cars');
+  if(secDivCars){
+    secDivCars.innerHTML=isAME
+      ?`<span class="drag-handle" title="拖曳排序">⠿</span>🔨 鈑烤進廠台數 <span class="ame-badge">AME</span>`
+      :`<span class="drag-handle" title="拖曳排序">⠿</span>🚗 進廠台數 &amp; 單車銷售額`;
+  }
+  const carsLabel=document.getElementById('cars-chart-label');
+  if(carsLabel)carsLabel.textContent=isAME?'每月鈑烤台數（集團合計）':'每月進廠台數';
+
+  // Hide/show detail section (gen/bw/ext) in AME mode
+  const secDetail=document.getElementById('sec-detail');
+  if(secDetail)secDetail.style.display=isAME?'none':'';
+
+  // Hide/show RPV chart in AME mode
+  const rpvWrap=document.getElementById('dl-wrap-rpv');
+  if(rpvWrap)rpvWrap.style.display=isAME?'none':'';
 
   // YTD
   const curYear=curPeriod.slice(0,4);
   const ytdM=last12Months.filter(p=>p.startsWith(curYear));
-  rKpi4('kpi_paid',A12('paid'),T12('paid'),L12('paid'),LINE_COLOR,
-    ytdM.map(p=>tData[p]?.bd?.paid||0),ytdM.map(p=>tData[p]?.tgt?.paid||0), curYear);
-  rKpi2('kpi_gen', A12('gen'), T12('gen'), L12('gen'), LINE_COLOR);
-  rKpi2('kpi_bw',  A12('bw'),  T12('bw'),  L12('bw'),  LINE_COLOR);
-  rKpi2('kpi_ext', A12('ext'), T12('ext'), L12('ext'), LINE_COLOR);
 
-  // 所有趨勢圖統一用橘色
-  buildOneRevChart('paid', LINE_COLOR, LY_COLOR, tc, gc, ptBorder);
-  buildOneRevChart('gen',  LINE_COLOR, LY_COLOR, tc, gc, ptBorder);
-  buildOneRevChart('bw',   LINE_COLOR, LY_COLOR, tc, gc, ptBorder);
-  buildOneRevChart('ext',  LINE_COLOR, LY_COLOR, tc, gc, ptBorder);
-  buildCarsCharts(tc, gc, ptBorder);
-  buildWip(tc,gc);
+  // KPI row label for AME
+  rKpi4('kpi_paid',A12('paid'),T12('paid'),L12('paid'),activeLineColor,
+    ytdM.map(p=>tData[p]?.bd?.paid||0),ytdM.map(p=>tData[p]?.tgt?.paid||0), curYear,
+    isAME?'鈑烤':'有費');
+
+  if(!isAME){
+    rKpi2('kpi_gen', A12('gen'), T12('gen'), L12('gen'), LINE_COLOR);
+    rKpi2('kpi_bw',  A12('bw'),  T12('bw'),  L12('bw'),  LINE_COLOR);
+    rKpi2('kpi_ext', A12('ext'), T12('ext'), L12('ext'), LINE_COLOR);
+  }
+
+  // Revenue trend chart (for AME: shows bodywork as paid)
+  buildOneRevChart('paid', activeLineColor, LY_COLOR, tc, gc, ptBorder);
+
+  if(!isAME){
+    buildOneRevChart('gen',  LINE_COLOR, LY_COLOR, tc, gc, ptBorder);
+    buildOneRevChart('bw',   LINE_COLOR, LY_COLOR, tc, gc, ptBorder);
+    buildOneRevChart('ext',  LINE_COLOR, LY_COLOR, tc, gc, ptBorder);
+  }
+
+  buildCarsCharts(tc, gc, ptBorder, isAME);
+  buildWip(tc,gc,isAME);
 }
 
 function buildOneRevChart(key, lc, lyc, tc, gc, ptBorder){
   const n=chartPeriods[key]||12;
   const curYear=curPeriod.slice(0,4);
-const months=n==='ytd'
-  ? Array.from({length:12},(_,i)=>`${curYear}${String(i+1).padStart(2,'0')}`)
-  : last12Months.slice(-n);
+  const months=n==='ytd'
+    ? Array.from({length:12},(_,i)=>`${curYear}${String(i+1).padStart(2,'0')}`)
+    : last12Months.slice(-n);
   const labels=months.map(p=>`${p.slice(2,4)}/${p.slice(4)}`);
   const act=months.map(p=>p>curPeriod ? null : (tData[p]?.bd?.[key]||0));
   const ly =months.map(p=>tData[p]?.tgt?.[`${key}_ly`]||0);
@@ -719,32 +891,38 @@ const months=n==='ytd'
   refreshPeriodBtns(key,n);
 }
 
-function buildCarsCharts(tc, gc, ptBorder){
+function buildCarsCharts(tc, gc, ptBorder, isAME){
   const n=chartPeriods.cars||12;
   const curYear=curPeriod.slice(0,4);
-const months=n==='ytd'
-  ? Array.from({length:12},(_,i)=>`${curYear}${String(i+1).padStart(2,'0')}`)
-  : last12Months.slice(-n);
+  const months=n==='ytd'
+    ? Array.from({length:12},(_,i)=>`${curYear}${String(i+1).padStart(2,'0')}`)
+    : last12Months.slice(-n);
   const labels=months.map(p=>`${p.slice(2,4)}/${p.slice(4)}`);
   const carsAct=months.map(p=>p>curPeriod ? null : (tData[p]?.cars?.act||0));
-  const paid   =months.map(p=>tData[p]?.bd?.paid||0);
-  const rpv=carsAct.map((c,i)=>c>0?Math.round(paid[i]*1000/c):0);
+  const lc=isAME?BW_LINE_COLOR:LINE_COLOR;
+
   if(charts.cars){try{charts.cars.destroy();}catch{}}
-  if(charts.rpv) {try{charts.rpv.destroy(); }catch{}}
-  charts.cars=mkLine('c_cars',labels,carsAct,[],[],LINE_COLOR,LY_COLOR,null,v=>Math.round(v).toLocaleString(),false,tc,gc,ptBorder,v=>Math.round(v).toLocaleString()+'台');
-  charts.rpv =mkLine('c_rpv', labels,rpv,   [],[]  ,LINE_COLOR,LY_COLOR,null,v=>Math.round(v).toLocaleString(),false,tc,gc,ptBorder,v=>Math.round(v).toLocaleString()+'元/台');
+  charts.cars=mkLine('c_cars',labels,carsAct,[],[],lc,LY_COLOR,null,v=>Math.round(v).toLocaleString(),false,tc,gc,ptBorder,v=>Math.round(v).toLocaleString()+'台');
   refreshAvgBadge('cars',carsAct,n);
-  refreshAvgBadge('rpv',rpv,n);
   refreshPeriodBtns('cars',n);
-  refreshPeriodBtns('rpv',n);
+
+  if(!isAME){
+    const paid=months.map(p=>tData[p]?.bd?.paid||0);
+    const rpv=carsAct.map((c,i)=>c>0?Math.round(paid[i]*1000/c):0);
+    if(charts.rpv){try{charts.rpv.destroy();}catch{}}
+    charts.rpv=mkLine('c_rpv',labels,rpv,[],[],LINE_COLOR,LY_COLOR,null,v=>Math.round(v).toLocaleString(),false,tc,gc,ptBorder,v=>Math.round(v).toLocaleString()+'元/台');
+    refreshAvgBadge('rpv',rpv,n);
+    refreshPeriodBtns('rpv',n);
+  }
 }
 
 function setPeriod(key, n){
   if(key==='cars'||key==='rpv'){chartPeriods.cars=n;chartPeriods.rpv=n;}
-  else{chartPeriods[key]=n;}  
+  else{chartPeriods[key]=n;}
   const{tc,gc,ptBorder}=chartColors();
-  if(key==='cars'||key==='rpv') buildCarsCharts(tc,gc,ptBorder);
-  else buildOneRevChart(key, LINE_COLOR, LY_COLOR, tc,gc,ptBorder);
+  const isAME=curBr==='AME';
+  if(key==='cars'||key==='rpv') buildCarsCharts(tc,gc,ptBorder,isAME);
+  else buildOneRevChart(key, curBr==='AME'?BW_LINE_COLOR:LINE_COLOR, LY_COLOR, tc,gc,ptBorder);
 }
 
 const AVG_FMT={
@@ -757,7 +935,8 @@ function refreshAvgBadge(key, actData, n){
   if(!valid.length){el.innerHTML='';return;}
   const avg=valid.reduce((a,b)=>a+b,0)/valid.length;
   const fmt=AVG_FMT[key]||fK;
-  el.innerHTML=`<span class="avgDash"></span>&ensp;<span style="font-size:11px;color:var(--txt3)">${n}M 期間平均</span>&ensp;<strong style="font-size:13px">${fmt(avg)}</strong>`;
+  const label=n==='ytd'?'ytdM 期間平均':`${n}M 期間平均`;
+  el.innerHTML=`<span class="avgDash"></span>&ensp;<span style="font-size:11px;color:var(--txt3)">${label}</span>&ensp;<strong style="font-size:13px">${fmt(avg)}</strong>`;
 }
 
 function refreshPeriodBtns(key, n){
@@ -766,10 +945,12 @@ function refreshPeriodBtns(key, n){
   });
 }
 
-function buildWip(tc,gc){
-  const brs=curBr==='ALL'?BRS_ALL:[curBr];
-  const cur=bucketWip(wipRows,curBr),prev=bucketWip(wipPrev,curBr);
+function buildWip(tc,gc,isAME){
+  const brs=isAME?['AME']:curBr==='ALL'?BRS_ALL:[curBr];
+  const cur=bucketWip(wipRows,isAME?'AME':curBr);
+  const prev=bucketWip(wipPrev,isAME?'AME':curBr);
   const delta=cur.total.amt-prev.total.amt,isUp=delta>=0;
+
   document.getElementById('kpiWip').innerHTML=`
     <div class="kc" style="border-color:${isUp?'#ef444433':'#10b98133'}">
       <div class="kl">WIP 總金額</div><div class="kv" style="color:${isUp?'#ef4444':'#10b981'}">${fK(cur.total.amt)}</div>
@@ -778,62 +959,165 @@ function buildWip(tc,gc){
     <div class="kc" style="border-color:#10b98133"><div class="kl">✅ &lt;30天</div><div class="kv" style="color:#10b981">${fK(cur.lt30.amt)}</div><div class="ks">${cur.lt30.cnt}件　上月${fK(prev.lt30?.amt||0)}</div></div>
     <div class="kc" style="border-color:#f59e0b33"><div class="kl">⚠️ 30~90天</div><div class="kv" style="color:#f59e0b">${fK(cur.m30.amt)}</div><div class="ks">${cur.m30.cnt}件　${pct(cur.m30.amt,cur.total.amt)}</div></div>
     <div class="kc" style="border-color:#ef444433"><div class="kl">🔴 &gt;90天</div><div class="kv" style="color:#ef4444">${fK(cur.gt90.amt)}</div><div class="ks">${cur.gt90.cnt}件　${pct(cur.gt90.amt,cur.total.amt)}</div></div>`;
-  charts.wipBar=new Chart(document.getElementById('cWipBar'),{
-    type:'bar',data:{labels:brs,datasets:[
-      {label:'<30天',  data:brs.map(b=>bucketWip(wipRows,b).lt30.amt),backgroundColor:'#10b981',borderRadius:5},
-      {label:'30~90天',data:brs.map(b=>bucketWip(wipRows,b).m30.amt), backgroundColor:'#f59e0b',borderRadius:5},
-      {label:'>90天',  data:brs.map(b=>bucketWip(wipRows,b).gt90.amt),backgroundColor:'#ef4444',borderRadius:5},
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${fK(ctx.raw)}`}}},
-      scales:{x:{ticks:{font:{size:brs.length===1?14:12,weight:'bold'},color:tc},grid:{display:false}},
-              y:{ticks:{font:{size:11},color:tc,callback:v=>fK(v)},grid:{color:gc}}}}
-  });
-  const brCards=document.getElementById('wipCards');
-  brCards.style.gridTemplateColumns=brs.length===1?'repeat(2,1fr)':'repeat(3,minmax(0,1fr))';
-  brCards.innerHTML=brs.map(br=>{
-    const R=bucketWip(wipRows,br),pR=bucketWip(wipPrev,br),col=BRCOLS[br]||'#94a3b8';
-    const dt=R.total.amt-pR.total.amt,iUp=dt>=0;
-    return`<div class="card" style="border-color:${col}55">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <span style="font-size:14px;font-weight:800;color:${col}">${br}</span>
-        <span style="font-size:11px;font-weight:700;color:${iUp?'#ef4444':'#10b981'}">${iUp?'▲ +':'▼ '}${fK(Math.abs(dt))} vs 上月</span>
-      </div>
-      <div style="font-size:21px;font-weight:900;margin-bottom:2px">${fK(R.total.amt)}<span style="font-size:10px;color:var(--txt3);margin-left:3px">（${R.total.cnt}件）</span></div>
-      <div style="font-size:11px;color:var(--txt3);margin-bottom:9px">上月 ${fK(pR.total.amt)}</div>
-      ${[['lt30','#10b981','✅','<30天'],['m30','#f59e0b','⚠️','30~90天'],['gt90','#ef4444','🔴','>90天']].map(([k,c,ic,lb])=>{
-        const a=R[k].amt,n=R[k].cnt,bw=R.total.amt>0?(a/R.total.amt*100).toFixed(0):0;
-        const dA=a-(pR[k]?.amt||0);
-        return`<div style="margin-bottom:8px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-            <span style="font-size:11px;font-weight:700;color:${c}">${ic} ${lb}</span>
-            <span style="font-size:12px;font-weight:700;color:${c}">${fK(a)}<span style="font-size:10px;color:var(--txt3);margin-left:3px">${n}件</span></span>
-          </div>
-          <div class="bar-bg"><div style="width:${Math.max(3,+bw)}%;height:6px;border-radius:3px;background:${c}"></div></div>
-          <div style="font-size:10px;color:var(--txt3);margin-top:2px;display:flex;justify-content:space-between">
-            <span>佔比 ${bw}%</span><span style="color:${dA>=0?'#ef4444':'#10b981'}">${dA>=0?'▲ +':'▼ '}${fK(Math.abs(dA))} vs上月</span>
-          </div>
-        </div>`;
-      }).join('')}
-      ${R.urg.cnt>0?`<div style="border-top:1px solid var(--bdr);padding-top:7px;margin-top:2px">
-        <div style="font-size:11px;font-weight:700;color:#ef4444;margin-bottom:3px">💳 應結帳</div>
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:16px;font-weight:900;color:#ef4444">${fK(R.urg.amt)}</span>
-          <span style="font-size:10px;color:var(--txt3)">${R.urg.cnt}件</span>
-        </div></div>`:''}
-    </div>`;
-  }).join('');
+
+  // AME: show special panel
+  const amePanel=document.getElementById('ame-wip-panel');
+  const wipBarCard=document.getElementById('wip-bar-card');
+  if(isAME){
+    amePanel.style.display='';
+    amePanel.innerHTML=buildAmeWipPanel(wipRows,wipPrev);
+    // Also show bar chart but only for AME account types grouped by type
+    wipBarCard.style.display='';
+    const insRows=wipRows.filter(r=>isBodyworkWip(r)&&(r.account_type||r.repair_type||'').includes('保險'));
+    const bwRowsF=wipRows.filter(r=>isBodyworkWip(r)&&!(r.account_type||r.repair_type||'').includes('保險'));
+    const bucketRows=(rows)=>{
+      const lt30={amt:0,cnt:0},m30={amt:0,cnt:0},gt90={amt:0,cnt:0};
+      rows.forEach(r=>{
+        const days=r.days_open!=null?parseFloat(r.days_open):null;
+        const amt=+(r.sales_amt||0)/1000;
+        if(days===null||days<30){lt30.amt+=amt;lt30.cnt++;}
+        else if(days<=90){m30.amt+=amt;m30.cnt++;}
+        else{gt90.amt+=amt;gt90.cnt++;}
+      });
+      return{lt30,m30,gt90};
+    };
+    const insB=bucketRows(insRows),bwB=bucketRows(bwRowsF);
+    charts.wipBar=new Chart(document.getElementById('cWipBar'),{
+      type:'bar',data:{labels:['事故保險','鈑噴'],datasets:[
+        {label:'<30天',  data:[insB.lt30.amt,bwB.lt30.amt],backgroundColor:'#10b981',borderRadius:5},
+        {label:'30~90天',data:[insB.m30.amt, bwB.m30.amt], backgroundColor:'#f59e0b',borderRadius:5},
+        {label:'>90天',  data:[insB.gt90.amt,bwB.gt90.amt],backgroundColor:'#ef4444',borderRadius:5},
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${fK(ctx.raw)}`}}},
+        scales:{x:{ticks:{font:{size:13,weight:'bold'},color:tc},grid:{display:false}},
+                y:{ticks:{font:{size:11},color:tc,callback:v=>fK(v)},grid:{color:gc}}}}
+    });
+
+    // Branch cards for AME: show by account type groups
+    const wipCards=document.getElementById('wipCards');
+    wipCards.style.gridTemplateColumns='repeat(2,1fr)';
+    const renderTypeCard=(label,col,cRows,pRows)=>{
+      const cAmt=cRows.reduce((s,r)=>s++(r.sales_amt||0)/1000,0);
+      const pAmt=pRows.reduce((s,r)=>s++(r.sales_amt||0)/1000,0);
+      const dt=cAmt-pAmt,iUp=dt>=0;
+      const bk=bucketRows(cRows);
+      return`<div class="card" style="border-color:${col}55">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:14px;font-weight:800;color:${col}">${label}</span>
+          <span style="font-size:11px;font-weight:700;color:${iUp?'#ef4444':'#10b981'}">${iUp?'▲ +':'▼ '}${fK(Math.abs(dt))} vs 上月</span>
+        </div>
+        <div style="font-size:21px;font-weight:900;margin-bottom:2px">${fK(cAmt)}<span style="font-size:10px;color:var(--txt3);margin-left:3px">（${cRows.length}件）</span></div>
+        <div style="font-size:11px;color:var(--txt3);margin-bottom:9px">上月 ${fK(pAmt)}</div>
+        ${[['lt30','#10b981','✅','<30天'],['m30','#f59e0b','⚠️','30~90天'],['gt90','#ef4444','🔴','>90天']].map(([k,c,ic,lb])=>{
+          const a=bk[k].amt,n2=bk[k].cnt,bw2=cAmt>0?(a/cAmt*100).toFixed(0):0;
+          return`<div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+              <span style="font-size:11px;font-weight:700;color:${c}">${ic} ${lb}</span>
+              <span style="font-size:12px;font-weight:700;color:${c}">${fK(a)}<span style="font-size:10px;color:var(--txt3);margin-left:3px">${n2}件</span></span>
+            </div>
+            <div class="bar-bg"><div style="width:${Math.max(3,+bw2)}%;height:6px;border-radius:3px;background:${c}"></div></div>
+            <div style="font-size:10px;color:var(--txt3);margin-top:2px">佔比 ${bw2}%</div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    };
+    const insCardRows=wipRows.filter(r=>isBodyworkWip(r)&&(r.account_type||r.repair_type||'').includes('保險'));
+    const bwCardRows =wipRows.filter(r=>isBodyworkWip(r)&&!(r.account_type||r.repair_type||'').includes('保險'));
+    const insCardPrev=wipPrev.filter(r=>isBodyworkWip(r)&&(r.account_type||r.repair_type||'').includes('保險'));
+    const bwCardPrev =wipPrev.filter(r=>isBodyworkWip(r)&&!(r.account_type||r.repair_type||'').includes('保險'));
+    wipCards.innerHTML=renderTypeCard('🔵 事故保險','#3b82f6',insCardRows,insCardPrev)
+                      +renderTypeCard('🔨 鈑噴','#f97316',bwCardRows,bwCardPrev);
+  } else {
+    amePanel.style.display='none';
+    wipBarCard.style.display='';
+    const barBrs=curBr==='ALL'?BRS_ALL:[curBr];
+    charts.wipBar=new Chart(document.getElementById('cWipBar'),{
+      type:'bar',data:{labels:barBrs,datasets:[
+        {label:'<30天',  data:barBrs.map(b=>bucketWip(wipRows,b).lt30.amt),backgroundColor:'#10b981',borderRadius:5},
+        {label:'30~90天',data:barBrs.map(b=>bucketWip(wipRows,b).m30.amt), backgroundColor:'#f59e0b',borderRadius:5},
+        {label:'>90天',  data:barBrs.map(b=>bucketWip(wipRows,b).gt90.amt),backgroundColor:'#ef4444',borderRadius:5},
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${fK(ctx.raw)}`}}},
+        scales:{x:{ticks:{font:{size:barBrs.length===1?14:12,weight:'bold'},color:tc},grid:{display:false}},
+                y:{ticks:{font:{size:11},color:tc,callback:v=>fK(v)},grid:{color:gc}}}}
+    });
+
+    const brCards=document.getElementById('wipCards');
+    brCards.style.gridTemplateColumns=brs.length===1?'repeat(2,1fr)':'repeat(3,minmax(0,1fr))';
+    brCards.innerHTML=brs.map(br=>{
+      const R=bucketWip(wipRows,br),pR=bucketWip(wipPrev,br),col=BRCOLS[br]||'#94a3b8';
+      const dt=R.total.amt-pR.total.amt,iUp=dt>=0;
+      return`<div class="card" style="border-color:${col}55">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:14px;font-weight:800;color:${col}">${br}</span>
+          <span style="font-size:11px;font-weight:700;color:${iUp?'#ef4444':'#10b981'}">${iUp?'▲ +':'▼ '}${fK(Math.abs(dt))} vs 上月</span>
+        </div>
+        <div style="font-size:21px;font-weight:900;margin-bottom:2px">${fK(R.total.amt)}<span style="font-size:10px;color:var(--txt3);margin-left:3px">（${R.total.cnt}件）</span></div>
+        <div style="font-size:11px;color:var(--txt3);margin-bottom:9px">上月 ${fK(pR.total.amt)}</div>
+        ${[['lt30','#10b981','✅','<30天'],['m30','#f59e0b','⚠️','30~90天'],['gt90','#ef4444','🔴','>90天']].map(([k,c,ic,lb])=>{
+          const a=R[k].amt,n2=R[k].cnt,bw2=R.total.amt>0?(a/R.total.amt*100).toFixed(0):0;
+          const dA=a-(pR[k]?.amt||0);
+          return`<div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+              <span style="font-size:11px;font-weight:700;color:${c}">${ic} ${lb}</span>
+              <span style="font-size:12px;font-weight:700;color:${c}">${fK(a)}<span style="font-size:10px;color:var(--txt3);margin-left:3px">${n2}件</span></span>
+            </div>
+            <div class="bar-bg"><div style="width:${Math.max(3,+bw2)}%;height:6px;border-radius:3px;background:${c}"></div></div>
+            <div style="font-size:10px;color:var(--txt3);margin-top:2px;display:flex;justify-content:space-between">
+              <span>佔比 ${bw2}%</span><span style="color:${dA>=0?'#ef4444':'#10b981'}">${dA>=0?'▲ +':'▼ '}${fK(Math.abs(dA))} vs上月</span>
+            </div>
+          </div>`;
+        }).join('')}
+        ${R.urg.cnt>0?`<div style="border-top:1px solid var(--bdr);padding-top:7px;margin-top:2px">
+          <div style="font-size:11px;font-weight:700;color:#ef4444;margin-bottom:3px">💳 應結帳</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:16px;font-weight:900;color:#ef4444">${fK(R.urg.amt)}</span>
+            <span style="font-size:10px;color:var(--txt3)">${R.urg.cnt}件</span>
+          </div></div>`:''}
+      </div>`;
+    }).join('');
+  }
+
+  const curData=isAME?bucketWip(wipRows,'AME'):cur;
   charts.wipPie=new Chart(document.getElementById('cWipPie'),{
-    type:'doughnut',data:{labels:['<30天','30~90天','>90天'],datasets:[{data:[cur.lt30.amt,cur.m30.amt,cur.gt90.amt],backgroundColor:['#10b981cc','#f59e0bcc','#ef4444cc'],borderWidth:0}]},
+    type:'doughnut',data:{labels:['<30天','30~90天','>90天'],datasets:[{data:[curData.lt30.amt,curData.m30.amt,curData.gt90.amt],backgroundColor:['#10b981cc','#f59e0bcc','#ef4444cc'],borderWidth:0}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
       plugins:{legend:{display:true,position:'right',labels:{font:{size:12},color:tc,boxWidth:12}},
         tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fK(ctx.raw)}`}}}}
   });
-  const pBrs=[...brs,'合計'];
+
+  const pBrs=isAME?['事故保險','鈑噴','合計']:([...brs,'合計']);
   charts.wipPct=new Chart(document.getElementById('cWipPct'),{
     type:'bar',data:{labels:pBrs,datasets:[
-      {label:'逾30天%',data:pBrs.map(b=>{const R=bucketWip(wipRows,b==='合計'?'ALL':b);return R.total.amt>0?+((R.m30.amt+R.gt90.amt)/R.total.amt*100).toFixed(1):0;}),backgroundColor:'#f59e0b99',borderRadius:4},
-      {label:'逾90天%',data:pBrs.map(b=>{const R=bucketWip(wipRows,b==='合計'?'ALL':b);return R.total.amt>0?+(R.gt90.amt/R.total.amt*100).toFixed(1):0;}),backgroundColor:'#ef444499',borderRadius:4},
+      {label:'逾30天%',data:pBrs.map(b=>{
+        let rows;
+        if(isAME){
+          if(b==='合計')rows=wipRows.filter(r=>isBodyworkWip(r));
+          else if(b==='事故保險')rows=wipRows.filter(r=>isBodyworkWip(r)&&(r.account_type||r.repair_type||'').includes('保險'));
+          else rows=wipRows.filter(r=>isBodyworkWip(r)&&!(r.account_type||r.repair_type||'').includes('保險'));
+        } else {
+          const R2=bucketWip(wipRows,b==='合計'?'ALL':b);
+          return R2.total.amt>0?+((R2.m30.amt+R2.gt90.amt)/R2.total.amt*100).toFixed(1):0;
+        }
+        const tot=rows.reduce((s,r)=>s++(r.sales_amt||0)/1000,0);
+        const over30=rows.filter(r=>r.days_open!=null&&parseFloat(r.days_open)>30).reduce((s,r)=>s++(r.sales_amt||0)/1000,0);
+        return tot>0?(over30/tot*100).toFixed(1):0;
+      }),backgroundColor:'#f59e0b99',borderRadius:4},
+      {label:'逾90天%',data:pBrs.map(b=>{
+        if(isAME){
+          let rows;
+          if(b==='合計')rows=wipRows.filter(r=>isBodyworkWip(r));
+          else if(b==='事故保險')rows=wipRows.filter(r=>isBodyworkWip(r)&&(r.account_type||r.repair_type||'').includes('保險'));
+          else rows=wipRows.filter(r=>isBodyworkWip(r)&&!(r.account_type||r.repair_type||'').includes('保險'));
+          const tot=rows.reduce((s,r)=>s++(r.sales_amt||0)/1000,0);
+          const over90=rows.filter(r=>r.days_open!=null&&parseFloat(r.days_open)>90).reduce((s,r)=>s++(r.sales_amt||0)/1000,0);
+          return tot>0?(over90/tot*100).toFixed(1):0;
+        }
+        const R2=bucketWip(wipRows,b==='合計'?'ALL':b);
+        return R2.total.amt>0?+(R2.gt90.amt/R2.total.amt*100).toFixed(1):0;
+      }),backgroundColor:'#ef444499',borderRadius:4},
     ]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:true,position:'top',labels:{font:{size:11},color:tc,boxWidth:10}}},
@@ -841,7 +1125,7 @@ function buildWip(tc,gc){
   });
 }
 
-// ── mkLine — 標記點改用線條 pointStyle:'circle' ──
+// ── mkLine ──
 function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder,tipFmtFn){
   const allV=[...act,...(ly||[]),...(showTgt&&tgt?tgt:[])].filter(v=>v>0);
   const minV=allV.length?Math.min(...allV):0,maxV=allV.length?Math.max(...allV):100;
@@ -858,7 +1142,6 @@ function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder,tip
   const actV=act.filter(v=>v>0);
   const avg=actV.length>1?actV.reduce((a,b)=>a+b,0)/actV.length:null;
   const avgColor=isDark()?'rgba(255,255,255,0.38)':'rgba(0,0,0,0.30)';
-  // 達標用綠色線段標記，未達標用紅色
   const ptColors=act.map((v,i)=>tgt&&tgt[i]>0&&v>=tgt[i]?'#10b981':'#ef4444');
   const ds=[{
     label:'今年實際',data:act,borderColor:lc,backgroundColor:lc+'22',tension:.35,fill:true,
@@ -867,13 +1150,11 @@ function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder,tip
   }];
   if(ly&&ly.some(v=>v>0))ds.push({
     label:'去年同期',data:ly,borderColor:lyc,borderDash:[7,4],tension:.35,fill:false,
-    pointStyle:'circle',pointRadius:3,pointBorderWidth:0,
-    pointBackgroundColor:lyc,
+    pointStyle:'circle',pointRadius:3,pointBorderWidth:0,pointBackgroundColor:lyc,
   });
   if(showTgt&&tgt&&tgt.some(v=>v>0))ds.push({
     label:'預算目標',data:tgt,borderColor:TGT_COLOR,borderDash:[4,3],tension:.35,fill:false,
-    pointStyle:'circle',pointRadius:3,pointBorderWidth:0,
-    pointBackgroundColor:TGT_COLOR,
+    pointStyle:'circle',pointRadius:3,pointBorderWidth:0,pointBackgroundColor:TGT_COLOR,
   });
   if(avg!==null)ds.push({label:'期間平均',data:Array(act.length).fill(avg),borderColor:avgColor,borderDash:[3,3],borderWidth:1.8,pointRadius:0,fill:false,tension:0});
   return new Chart(document.getElementById(id),{
@@ -881,14 +1162,10 @@ function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder,tip
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{
         legend:{display:false},
-tooltip:{
-          boxWidth:20,
-          boxHeight:2,
-          callbacks:{label:ctx=>{
-            if(ctx.dataset.label==='期間平均')return`期間平均: ${tipFmt(ctx.raw)}`;
-            return`${ctx.dataset.label}: ${tipFmt(ctx.raw)}`;
-          }}
-        }
+        tooltip:{boxWidth:20,boxHeight:2,callbacks:{label:ctx=>{
+          if(ctx.dataset.label==='期間平均')return`期間平均: ${tipFmt(ctx.raw)}`;
+          return`${ctx.dataset.label}: ${tipFmt(ctx.raw)}`;
+        }}}
       },
       scales:{x:{ticks:{font:{size:10},color:tc},grid:{color:gc}},
               y:{ticks:{font:{size:11},color:tc,callback:fmt},grid:{color:gc},min:niceMin,max:niceMax}}}
@@ -902,7 +1179,9 @@ const achC=p=>p>=100?'#10b981':p>=85?'#f59e0b':'#ef4444';
 const growC=(a,b)=>a>=b?'#10b981':'#ef4444';
 const pct=(a,t)=>t>0?(a/t*100).toFixed(0)+'%':'0%';
 const liIdx=arr=>{for(let i=arr.length-1;i>=0;i--)if(arr[i]>0)return i;return arr.length-1;};
-function rKpi4(id,act,tgt,ly,col,ytdActArr,ytdTgtArr,yr){
+
+function rKpi4(id,act,tgt,ly,col,ytdActArr,ytdTgtArr,yr,label){
+  const lbl=label||'有費';
   const li=liIdx(act),a=act[li],t=tgt[li],l=ly[li];
   const ach=t>0?a/t*100:null,yoy=l>0?(a-l)/l*100:null;
   const ytdA=(ytdActArr||act).reduce((s,v)=>s+v,0);
@@ -923,40 +1202,25 @@ function rKpi2(id,act,tgt,ly,col){
     <div class="kc" style="border-color:${yoy>=0?'#10b98133':'#ef444433'}"><div class="kl">YoY</div><div class="kv" style="color:${yoy>=0?'#10b981':'#ef4444'};font-size:18px">${yoy!==null?(yoy>=0?'+':'')+yoy.toFixed(1)+'%':'—'}</div><div class="ks">去年 ${fK(l)}</div></div>`;
 }
 
-// ── Download — 包含 KPI 數值卡片 ──
-// Canvas ID → wrapper div ID mapping
+// ── Download ──
 const DL_WRAP_MAP={
-  'c_paid':'dl-wrap-paid',
-  'c_gen': 'dl-wrap-gen',
-  'c_bw':  'dl-wrap-bw',
-  'c_ext': 'dl-wrap-ext',
-  'c_cars':'dl-wrap-cars',
-  'c_rpv': 'dl-wrap-rpv',
-  'cWipBar':'dl-wrap-wip',
+  'c_paid':'dl-wrap-paid','c_gen':'dl-wrap-gen','c_bw':'dl-wrap-bw',
+  'c_ext':'dl-wrap-ext','c_cars':'dl-wrap-cars','c_rpv':'dl-wrap-rpv','cWipBar':'dl-wrap-wip',
 };
-
 async function dlChart(id,name){
   const c=document.getElementById(id);if(!c)return;
   const wrapId=DL_WRAP_MAP[id];
   const target=wrapId?document.getElementById(wrapId):null;
   const bgColor=isDark()?'#1a2332':'#ffffff';
-
-  if(target && typeof html2canvas!=='undefined'){
+  if(target&&typeof html2canvas!=='undefined'){
     try{
-      const canvas=await html2canvas(target,{
-        backgroundColor:bgColor,
-        scale:2,
-        useCORS:true,
-        logging:false,
-      });
+      const canvas=await html2canvas(target,{backgroundColor:bgColor,scale:2,useCORS:true,logging:false});
       const a=document.createElement('a');
       a.href=canvas.toDataURL('image/png');
       a.download=`${name}_${curBr}_${curPeriod}_${new Date().toISOString().slice(0,10)}.png`;
-      a.click();
-      return;
-    }catch(e){console.warn('html2canvas failed, fallback',e);}
+      a.click();return;
+    }catch(e){console.warn('html2canvas failed',e);}
   }
-  // Fallback: canvas only
   const o=document.createElement('canvas');o.width=c.width;o.height=c.height;
   const ctx=o.getContext('2d');
   ctx.fillStyle=bgColor;ctx.fillRect(0,0,o.width,o.height);ctx.drawImage(c,0,0);
@@ -964,33 +1228,22 @@ async function dlChart(id,name){
   a.download=`${name}_${curBr}_${curPeriod}_${new Date().toISOString().slice(0,10)}.png`;a.click();
 }
 
-// ── 自動儲存 ──
+// ── Auto save ──
 let _autoSaving=false;
 async function autoSave(){
-  if(_autoSaving)return;
-  _autoSaving=true;
+  if(_autoSaving)return;_autoSaving=true;
   try{
-    SECS.forEach(sec=>(extraNotes[sec]||[]).forEach(n=>{
-      const ta=document.getElementById('eta-'+n.id);if(ta)n.content=ta.value;
-    }));
+    SECS.forEach(sec=>(extraNotes[sec]||[]).forEach(n=>{const ta=document.getElementById('eta-'+n.id);if(ta)n.content=ta.value;}));
     const textEntries=[
-      ...NOTE_IDS.map(id=>({key:nKey(id),value:(richData[id]?.texts||[''])[0]||''  })),
+      ...NOTE_IDS.map(id=>({key:nKey(id),value:(richData[id]?.texts||[''])[0]||''})),
       ...SECS.map(sec=>({key:nKey('extra_'+sec),value:JSON.stringify(extraNotes[sec]||[])})),
     ];
-    const richEntries=NOTE_IDS.filter(id=>richData[id]!=null)
-      .map(id=>({key:nKey('rich_'+id),value:JSON.stringify(richData[id])}));
+    const richEntries=NOTE_IDS.filter(id=>richData[id]!=null).map(id=>({key:nKey('rich_'+id),value:JSON.stringify(richData[id])}));
     const hasAny=textEntries.some(e=>e.value&&e.value!=='[]')||richEntries.length>0;
     if(!hasAny){_autoSaving=false;return;}
-    const res=await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({entries:textEntries})});
-    if(richEntries.length){
-      await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({entries:richEntries})});
-    }
-    if(res.ok){
-      const hint=document.getElementById('autoSaveHint');
-      if(hint){hint.style.opacity='1';setTimeout(()=>{hint.style.opacity='0';},2000);}
-    }
+    const res=await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({entries:textEntries})});
+    if(richEntries.length){await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({entries:richEntries})});}
+    if(res.ok){const hint=document.getElementById('autoSaveHint');if(hint){hint.style.opacity='1';setTimeout(()=>{hint.style.opacity='0';},2000);}}
   }catch{}
   _autoSaving=false;
 }
@@ -1000,9 +1253,11 @@ async function setBr(br){
   if(br===curBr){loadAll();return;}
   await autoSave();
   curBr=br;
-  ['ALL','AMA','AMC','AMD'].forEach(b=>{
-    const el=document.getElementById('bt-'+b),on=b===br;
-    el.style.background=on?(b==='ALL'?'#f97316':(BRCOLS[b]||'#3b82f6')):'transparent';
+  ['ALL','AMA','AMC','AMD','AME'].forEach(b=>{
+    const el=document.getElementById('bt-'+b);if(!el)return;
+    const on=b===br;
+    const col=b==='ALL'?'#f97316':(BRCOLS[b]||'#3b82f6');
+    el.style.background=on?col:'transparent';
     el.style.color=on?'#fff':'var(--txt3)';
   });
   loadAll();
@@ -1038,16 +1293,12 @@ async function saveLayout(){
 async function loadLayout(){
   try{
     const r=await sf('/api/notes/'+SEC_ORDER_KEY);
-    if(r?.value){
-      const order=JSON.parse(r.value);
-      const root=document.getElementById('sectionsRoot');
-      order.forEach(id=>{const el=document.getElementById(id);if(el)root.appendChild(el);});
-    }
+    if(r?.value){const order=JSON.parse(r.value);const root=document.getElementById('sectionsRoot');order.forEach(id=>{const el=document.getElementById(id);if(el)root.appendChild(el);});}
   }catch{}
   initDrag();
 }
 
-// ── Note area rendering ──
+// ── Note areas ──
 function renderAllNoteAreas(){
   NOTE_IDS.forEach(id=>{
     const cfg=NOTE_CFG[id];
@@ -1064,21 +1315,16 @@ function renderAllNoteAreas(){
   });
 }
 
-// ── Image upload ──
 function trigImgUpload(nid){document.getElementById('imgInput-'+nid)?.click();}
-function compressImage(dataUrl, maxW=1200, quality=0.75){
+function compressImage(dataUrl,maxW=1200,quality=0.75){
   return new Promise(resolve=>{
     const img=new Image();
     img.onload=()=>{
-      const ratio=Math.min(1, maxW/img.width);
-      const w=Math.round(img.width*ratio), h=Math.round(img.height*ratio);
-      const canvas=document.createElement('canvas');
-      canvas.width=w; canvas.height=h;
-      canvas.getContext('2d').drawImage(img,0,0,w,h);
-      resolve(canvas.toDataURL('image/jpeg', quality));
+      const ratio=Math.min(1,maxW/img.width);const w=Math.round(img.width*ratio),h=Math.round(img.height*ratio);
+      const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);resolve(canvas.toDataURL('image/jpeg',quality));
     };
-    img.onerror=()=>resolve(dataUrl);
-    img.src=dataUrl;
+    img.onerror=()=>resolve(dataUrl);img.src=dataUrl;
   });
 }
 function handleImg(nid,input){
@@ -1087,8 +1333,7 @@ function handleImg(nid,input){
   rd.onload=async e=>{
     const compressed=await compressImage(e.target.result);
     if(!richData[nid])richData[nid]={images:[],tables:[]};
-    richData[nid].images.push({name:file.name,data:compressed});
-    renderRich(nid);
+    richData[nid].images.push({name:file.name,data:compressed});renderRich(nid);
   };
   rd.readAsDataURL(file);input.value='';
 }
@@ -1096,18 +1341,10 @@ function delImg(nid,i){richData[nid]?.images.splice(i,1);renderRich(nid);}
 function addTextBox(nid){
   if(!richData[nid])richData[nid]={images:[],tables:[],texts:[]};
   if(!richData[nid].texts)richData[nid].texts=[];
-  richData[nid].texts.push('');
-  renderRich(nid);
+  richData[nid].texts.push('');renderRich(nid);
 }
-function delTextBox(nid,i){
-  richData[nid]?.texts?.splice(i,1);
-  renderRich(nid);
-}
-function updateTextBox(nid,i,val){
-  if(richData[nid]?.texts)richData[nid].texts[i]=val;
-}
-
-// ── Table modal ──
+function delTextBox(nid,i){richData[nid]?.texts?.splice(i,1);renderRich(nid);}
+function updateTextBox(nid,i,val){if(richData[nid]?.texts)richData[nid].texts[i]=val;}
 function openTblModal(target){pendingTblTarget=target;document.getElementById('tableModal').style.display='flex';}
 function confirmAddTable(){
   const rawHdrs=document.getElementById('tblHeaders').value.trim();
@@ -1122,12 +1359,9 @@ function confirmAddTable(){
     if(n){if(!n.tables)n.tables=[];n.tables.push([hdrs,...Array.from({length:rows},()=>Array(hdrs.length).fill(''))]);renderExtraRich(sec,nid);}
   }else{
     if(!richData[t])richData[t]={images:[],tables:[]};
-    richData[t].tables.push([hdrs,...Array.from({length:rows},()=>Array(hdrs.length).fill(''))]);
-    renderRich(t);
+    richData[t].tables.push([hdrs,...Array.from({length:rows},()=>Array(hdrs.length).fill(''))]);renderRich(t);
   }
 }
-
-// ── Render rich ──
 function renderRich(nid){
   const el=document.getElementById('rich-'+nid);if(!el)return;
   const d=richData[nid]||{images:[],tables:[],texts:[]};
@@ -1137,10 +1371,7 @@ function renderRich(nid){
 function buildRichHTML(d,delImgFn,nidExpr,delTblFn,ntExpr,cellFn,cellNidExpr){
   let h='';
   (d.texts||[]).forEach((txt,i)=>{
-    h+=`<div class="noteBoxWrap">
-      <button class="noteBoxDel" onclick="delTextBox(${nidExpr},${i})">✕</button>
-      <textarea class="noteBox" onblur="updateTextBox(${nidExpr},${i},this.value)">${txt||''}</textarea>
-    </div>`;
+    h+=`<div class="noteBoxWrap"><button class="noteBoxDel" onclick="delTextBox(${nidExpr},${i})">✕</button><textarea class="noteBox" onblur="updateTextBox(${nidExpr},${i},this.value)">${txt||''}</textarea></div>`;
   });
   (d.images||[]).forEach((img,i)=>{h+=`<div class="noteImgWrap"><img src="${img.data}"><button class="noteImgDel" onclick="${delImgFn}(${nidExpr},${i})">✕</button></div>`;});
   (d.tables||[]).forEach((tbl,ti)=>{
@@ -1234,8 +1465,7 @@ async function loadNotes(seq){
       if(!rd.texts)rd.texts=[];
       if(!rd.texts.length&&oldText)rd.texts=[oldText];
       else if(!rd.texts[0]&&oldText)rd.texts[0]=oldText;
-      richData[id]=rd;
-      renderRich(id);
+      richData[id]=rd;renderRich(id);
     });
     SECS.forEach(sec=>{
       const k=nKey('extra_'+sec);
@@ -1243,37 +1473,29 @@ async function loadNotes(seq){
     });
   }catch{}
 }
+
 async function saveAll(){
   const btn=document.getElementById('saveBtn'),ok=document.getElementById('saveOk'),st=document.getElementById('nSt');
   btn.disabled=true;btn.textContent='儲存中…';st.innerHTML='<span class="sSp"></span>';
   SECS.forEach(sec=>(extraNotes[sec]||[]).forEach(n=>{const ta=document.getElementById('eta-'+n.id);if(ta)n.content=ta.value;}));
   const textEntries=[
-    ...NOTE_IDS.map(id=>({key:nKey(id),value:(richData[id]?.texts||[''])[0]||''  })),
+    ...NOTE_IDS.map(id=>({key:nKey(id),value:(richData[id]?.texts||[''])[0]||''})),
     ...SECS.map(sec=>({key:nKey('extra_'+sec),value:JSON.stringify(extraNotes[sec]||[])})),
   ];
-  const richEntries=NOTE_IDS
-    .filter(id=>richData[id]!=null)
-    .map(id=>({key:nKey('rich_'+id),value:JSON.stringify(richData[id])}));
+  const richEntries=NOTE_IDS.filter(id=>richData[id]!=null).map(id=>({key:nKey('rich_'+id),value:JSON.stringify(richData[id])}));
   const postBatch=async(entries)=>{
     if(!entries.length)return true;
-    try{
-      const r=await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({entries})});
-      return r.ok;
-    }catch{return false;}
+    try{const r=await fetch('/api/notes/batch',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({entries})});return r.ok;}catch{return false;}
   };
   const textOk=await postBatch(textEntries);
   const richOk=richEntries.length===0||await postBatch(richEntries);
   btn.disabled=false;btn.textContent='💾 儲存說明';
   if(textOk&&richOk){
-    ok.style.opacity='1';st.innerHTML='';
-    setTimeout(()=>{ok.style.opacity='0';},2500);
+    ok.style.opacity='1';st.innerHTML='';setTimeout(()=>{ok.style.opacity='0';},2500);
   }else if(textOk&&!richOk){
-    st.textContent='⚠️ 文字已儲存，圖片過大請洽管理員調整伺服器設定';
-    st.style.color='#f59e0b';setTimeout(()=>{st.textContent='';st.style.color='';},5000);
+    st.textContent='⚠️ 文字已儲存，圖片過大請洽管理員';st.style.color='#f59e0b';setTimeout(()=>{st.textContent='';st.style.color='';},5000);
   }else{
-    st.textContent='❌ 儲存失敗，請檢查網路連線';
-    st.style.color='#ef4444';setTimeout(()=>{st.textContent='';st.style.color='';},4000);
+    st.textContent='❌ 儲存失敗，請檢查網路連線';st.style.color='#ef4444';setTimeout(()=>{st.textContent='';st.style.color='';},4000);
   }
 }
 
