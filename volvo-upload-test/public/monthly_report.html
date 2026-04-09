@@ -650,7 +650,7 @@ function buildAmeWipPanel(curRows,prevRows){
   cur.forEach(r=>{const g=classify(r);if(groupCur[g])groupCur[g].push(r);});
   prev.forEach(r=>{const g=classify(r);if(groupPrev[g])groupPrev[g].push(r);});
 
-  const sum=rows=>rows.reduce((s,r)=>s++(r.sales_amt||0)/1000,0);
+  const sum=rows=>rows.reduce((s,r)=>s + +(r.sales_amt||0)/1000, 0);
   const curY=curPeriod.slice(0,4),curM=+curPeriod.slice(4);
   const prevP2=prevP(curPeriod);
   const prevM=+prevP2.slice(4);
@@ -698,7 +698,7 @@ function buildAmeWipPanel(curRows,prevRows){
       <div style="display:flex;gap:6px;font-size:11px;color:var(--txt3)">
         <span style="background:rgba(239,68,68,.12);color:#ef4444;padding:2px 8px;border-radius:5px;font-weight:700">逾30天 ${cOver30}件</span>
         <span style="background:rgba(239,68,68,.2);color:#ef4444;padding:2px 8px;border-radius:5px;font-weight:700">逾90天 ${cOver90}件</span>
-        <span style="color:${isUp?'#ef4444':'#10b981'}">${isUp?'▲ +':`▼ `}${fK(Math.abs(delta))} vs上月</span>
+        <span style="color:${isUp?'#ef4444':'#10b981'}">${isUp?'▲ +':'▼ '}${fK(Math.abs(delta))} vs上月</span>
       </div>
     </div>`;
   };
@@ -713,7 +713,7 @@ function buildAmeWipPanel(curRows,prevRows){
       🏭 鈑烤廠 WIP 月份比較
       <span style="font-size:11px;font-weight:400;color:var(--txt3);margin-left:8px">
         ${prevM}月 → ${curM}月 ｜ 合計本月 ${cur.length} 件 ${fK(totalCur)}
-        <span style="color:${totalDelta>=0?'#ef4444':'#10b981'}">${totalDelta>=0?'▲ +':`▼ `}${fK(Math.abs(totalDelta))}</span>
+        <span style="color:${totalDelta>=0?'#ef4444':'#10b981'}">${totalDelta>=0?'▲ +':'▼ '}${fK(Math.abs(totalDelta))}</span>
       </span>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">${insHtml}${bwHtml}</div>
@@ -998,8 +998,8 @@ function buildWip(tc,gc,isAME){
     const wipCards=document.getElementById('wipCards');
     wipCards.style.gridTemplateColumns='repeat(2,1fr)';
     const renderTypeCard=(label,col,cRows,pRows)=>{
-      const cAmt=cRows.reduce((s,r)=>s++(r.sales_amt||0)/1000,0);
-      const pAmt=pRows.reduce((s,r)=>s++(r.sales_amt||0)/1000,0);
+      const cAmt=cRows.reduce((s,r)=>s + +(r.sales_amt||0)/1000, 0);
+      const pAmt=pRows.reduce((s,r)=>s + +(r.sales_amt||0)/1000, 0);
       const dt=cAmt-pAmt,iUp=dt>=0;
       const bk=bucketRows(cRows);
       return`<div class="card" style="border-color:${col}55">
@@ -1101,8 +1101,8 @@ function buildWip(tc,gc,isAME){
           const R2=bucketWip(wipRows,b==='合計'?'ALL':b);
           return R2.total.amt>0?+((R2.m30.amt+R2.gt90.amt)/R2.total.amt*100).toFixed(1):0;
         }
-        const tot=rows.reduce((s,r)=>s++(r.sales_amt||0)/1000,0);
-        const over30=rows.filter(r=>r.days_open!=null&&parseFloat(r.days_open)>30).reduce((s,r)=>s++(r.sales_amt||0)/1000,0);
+        const tot=rows.reduce((s,r)=>s + +(r.sales_amt||0)/1000, 0);
+        const over30=rows.filter(r=>r.days_open!=null&&parseFloat(r.days_open)>30).reduce((s,r)=>s + +(r.sales_amt||0)/1000, 0);
         return tot>0?(over30/tot*100).toFixed(1):0;
       }),backgroundColor:'#f59e0b99',borderRadius:4},
       {label:'逾90天%',data:pBrs.map(b=>{
@@ -1111,8 +1111,8 @@ function buildWip(tc,gc,isAME){
           if(b==='合計')rows=wipRows.filter(r=>isBodyworkWip(r));
           else if(b==='事故保險')rows=wipRows.filter(r=>isBodyworkWip(r)&&(r.account_type||r.repair_type||'').includes('保險'));
           else rows=wipRows.filter(r=>isBodyworkWip(r)&&!(r.account_type||r.repair_type||'').includes('保險'));
-          const tot=rows.reduce((s,r)=>s++(r.sales_amt||0)/1000,0);
-          const over90=rows.filter(r=>r.days_open!=null&&parseFloat(r.days_open)>90).reduce((s,r)=>s++(r.sales_amt||0)/1000,0);
+          const tot=rows.reduce((s,r)=>s + +(r.sales_amt||0)/1000, 0);
+          const over90=rows.filter(r=>r.days_open!=null&&parseFloat(r.days_open)>90).reduce((s,r)=>s + +(r.sales_amt||0)/1000, 0);
           return tot>0?(over90/tot*100).toFixed(1):0;
         }
         const R2=bucketWip(wipRows,b==='合計'?'ALL':b);
