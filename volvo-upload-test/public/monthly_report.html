@@ -340,7 +340,7 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
         <div class="card">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px">
             <div>
-              <div style="font-size:12px;font-weight:700;color:var(--txt3)">單車銷售額（元/台）</div>
+              <div style="font-size:12px;font-weight:700;color:var(--txt3)" id="rpv-chart-label">單車銷售額（元/台）</div>
               <div class="leg"><span class="li"><span class="ld" style="background:#f97316"></span>今年</span></div>
             </div>
             <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
@@ -852,19 +852,21 @@ function buildAll(){
   const secDivCars=document.getElementById('secDiv-cars');
   if(secDivCars){
     secDivCars.innerHTML=isAME
-      ?`<span class="drag-handle" title="拖曳排序">⠿</span>🔨 鈑烤進廠台數 <span class="ame-badge">AME</span>`
+      ?`<span class="drag-handle" title="拖曳排序">⠿</span>🔨 鈑烤進廠台數 &amp; 單車消費額 <span class="ame-badge">AME</span>`
       :`<span class="drag-handle" title="拖曳排序">⠿</span>🚗 進廠台數 &amp; 單車銷售額`;
   }
   const carsLabel=document.getElementById('cars-chart-label');
   if(carsLabel)carsLabel.textContent=isAME?'每月鈑烤台數（集團合計）':'每月進廠台數';
+  const rpvLabel=document.getElementById('rpv-chart-label');
+  if(rpvLabel)rpvLabel.textContent=isAME?'鈑烤單車消費額（元/台）':'單車銷售額（元/台）';
 
   // Hide/show detail section (gen/bw/ext) in AME mode
   const secDetail=document.getElementById('sec-detail');
   if(secDetail)secDetail.style.display=isAME?'none':'';
 
-  // Hide/show RPV chart in AME mode
+  // Always show RPV chart (AME uses bw revenue / bw cars)
   const rpvWrap=document.getElementById('dl-wrap-rpv');
-  if(rpvWrap)rpvWrap.style.display=isAME?'none':'';
+  if(rpvWrap)rpvWrap.style.display='';
 
   // YTD
   const curYear=curPeriod.slice(0,4);
@@ -925,10 +927,17 @@ function buildCarsCharts(tc, gc, ptBorder, isAME){
   refreshAvgBadge('cars',carsAct,n);
   refreshPeriodBtns('cars',n);
 
-  if(!isAME){
+  if(charts.rpv){try{charts.rpv.destroy();}catch{}}
+  if(isAME){
+    // AME: RPV = bw revenue (K) * 1000 / bw car count
+    const bwRev=months.map(p=>tData[p]?.bd?.bw||0);
+    const rpv=carsAct.map((c,i)=>c>0?Math.round(bwRev[i]*1000/c):0);
+    charts.rpv=mkLine('c_rpv',labels,rpv,[],[],BW_LINE_COLOR,LY_COLOR,null,v=>Math.round(v).toLocaleString(),false,tc,gc,ptBorder,v=>Math.round(v).toLocaleString()+'元/台');
+    refreshAvgBadge('rpv',rpv,n);
+    refreshPeriodBtns('rpv',n);
+  } else {
     const paid=months.map(p=>tData[p]?.bd?.paid||0);
     const rpv=carsAct.map((c,i)=>c>0?Math.round(paid[i]*1000/c):0);
-    if(charts.rpv){try{charts.rpv.destroy();}catch{}}
     charts.rpv=mkLine('c_rpv',labels,rpv,[],[],LINE_COLOR,LY_COLOR,null,v=>Math.round(v).toLocaleString(),false,tc,gc,ptBorder,v=>Math.round(v).toLocaleString()+'元/台');
     refreshAvgBadge('rpv',rpv,n);
     refreshPeriodBtns('rpv',n);
