@@ -251,7 +251,7 @@ router.get('/stats/sa-sales-matrix', async (req, res) => {
         if (viewParam === 'pickup_person') {
           r = await pool.query(`SELECT tp.branch, COALESCE(NULLIF(${canonicalExpr},''),'（未知）') AS sa_name, ${statExpr} AS val FROM tech_performance tp ${where} GROUP BY tp.branch, sa_name`, params);
         } else {
-          r = await pool.query(`SELECT tp.branch, COALESCE(NULLIF(ps_uniq.person_name,''),'（未知）') AS sa_name, ${statExpr} AS val FROM tech_performance tp LEFT JOIN (SELECT DISTINCT ON (branch, work_order) branch, work_order, sales_person AS person_name FROM parts_sales ORDER BY branch, work_order, id) ps_uniq ON ps_uniq.work_order=tp.work_order AND ps_uniq.branch=tp.branch ${where} GROUP BY tp.branch, sa_name`, params);
+          r = await pool.query(`SELECT tp.branch, COALESCE(NULLIF(ps_uniq.person_name,''), NULLIF(bq_sa.service_advisor,''), '（未知）') AS sa_name, ${statExpr} AS val FROM tech_performance tp LEFT JOIN (SELECT DISTINCT ON (branch, work_order) branch, work_order, sales_person AS person_name FROM parts_sales ORDER BY branch, work_order, id) ps_uniq ON ps_uniq.work_order=tp.work_order AND ps_uniq.branch=tp.branch LEFT JOIN (SELECT DISTINCT ON (branch, work_order) branch, work_order, service_advisor FROM business_query ORDER BY branch, work_order) bq_sa ON bq_sa.work_order=tp.work_order AND bq_sa.branch=tp.branch ${where} GROUP BY tp.branch, sa_name`, params);
         }
         for (const row of r.rows) {
           const key = `${row.branch}|||${row.sa_name}`;
@@ -926,7 +926,7 @@ async function computeSaMatrix(period, branch, view) {
       if (viewParam === 'pickup_person') {
         r = await pool.query(`SELECT tp.branch, COALESCE(NULLIF(${canonicalExpr},''),'（未知）') AS sa_name, ${statExpr} AS val FROM tech_performance tp ${where} GROUP BY tp.branch, sa_name`, params);
       } else {
-        r = await pool.query(`SELECT tp.branch, COALESCE(NULLIF(ps_uniq.person_name,''),'（未知）') AS sa_name, ${statExpr} AS val FROM tech_performance tp LEFT JOIN (SELECT DISTINCT ON (branch, work_order) branch, work_order, sales_person AS person_name FROM parts_sales ORDER BY branch, work_order, id) ps_uniq ON ps_uniq.work_order=tp.work_order AND ps_uniq.branch=tp.branch ${where} GROUP BY tp.branch, sa_name`, params);
+        r = await pool.query(`SELECT tp.branch, COALESCE(NULLIF(ps_uniq.person_name,''), NULLIF(bq_sa.service_advisor,''), '（未知）') AS sa_name, ${statExpr} AS val FROM tech_performance tp LEFT JOIN (SELECT DISTINCT ON (branch, work_order) branch, work_order, sales_person AS person_name FROM parts_sales ORDER BY branch, work_order, id) ps_uniq ON ps_uniq.work_order=tp.work_order AND ps_uniq.branch=tp.branch LEFT JOIN (SELECT DISTINCT ON (branch, work_order) branch, work_order, service_advisor FROM business_query ORDER BY branch, work_order) bq_sa ON bq_sa.work_order=tp.work_order AND bq_sa.branch=tp.branch ${where} GROUP BY tp.branch, sa_name`, params);
       }
       for (const row of r.rows) {
         const key = `${row.branch}|||${row.sa_name}`;
