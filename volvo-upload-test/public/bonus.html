@@ -1569,14 +1569,15 @@ async function renderProgressContent() {
 
     if (!_rosterData.length) await loadRoster();
     // ── 從後端載入所有部門的團體/個人模式 ──
-    var deptKeys = [];
-    _rosterData.forEach(function(person) {
-      var fc = person.factory || '售後服務處';
-      var dk = person.dept_code || '—';
-      var key = fc + '-' + dk;
-      if (deptKeys.indexOf(key) === -1) deptKeys.push(key);
-    });
-    await _loadAllPromoTeamModes(deptKeys);   
+   var deptKeys = [];
+   _rosterData.forEach(function(person) {
+     var fc = person.factory || '售後服務處';
+     var dk = person.dept_code || '—';
+     var key = fc + '-' + dk;
+     if (deptKeys.indexOf(key) === -1) deptKeys.push(key);
+   });
+   await _loadAllTeamModes(deptKeys);
+   await _loadAllPromoTeamModes(deptKeys);
     var rLbl=document.getElementById('rosterPeriodLabel');
     if (rLbl&&_rosterLoadedPeriod) rLbl.textContent=_rosterLoadedPeriod.slice(0,4)+'年'+parseInt(_rosterLoadedPeriod.slice(4))+'月（最新）';
 
