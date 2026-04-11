@@ -1576,8 +1576,7 @@ async function renderProgressContent() {
       var key = fc + '-' + dk;
       if (deptKeys.indexOf(key) === -1) deptKeys.push(key);
     });
-    await _loadAllTeamModes(deptKeys);
-    
+    await _loadAllPromoTeamModes(deptKeys);   
     var rLbl=document.getElementById('rosterPeriodLabel');
     if (rLbl&&_rosterLoadedPeriod) rLbl.textContent=_rosterLoadedPeriod.slice(0,4)+'年'+parseInt(_rosterLoadedPeriod.slice(4))+'月（最新）';
 
