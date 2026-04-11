@@ -498,9 +498,11 @@ router.get('/bonus/progress', async (req, res) => {
 
       // ── revenue ──
       if (m.metric_source === 'revenue') {
-        const revBranchF = filters.find(f=>f.type==='branch')?.value || null;
+        const revBranchF = filters.find(f=>f.type==='branch')?.value
+          || filters.find(f=>f.type==='branch_override')?.value
+          || null;
         const revType    = filters.find(f=>f.type==='revenue_type')?.value || 'paid';
-        const useBranch  = effectiveBranch || revBranchF;
+        const useBranch  = (['AMA','AMC','AMD'].includes(effectiveBranch) ? effectiveBranch : null) || revBranchF;
         try {
           actual     = await computeRevenueActual(actualPeriod, useBranch, revType);
           perfTarget = await getRevenueTarget(period, useBranch, revType);
