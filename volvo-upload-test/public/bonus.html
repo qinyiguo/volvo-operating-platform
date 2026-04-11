@@ -2056,7 +2056,19 @@ var promoDetailData = encodeURIComponent(JSON.stringify(
         if (k.length>=2&&(k.indexOf(p4.emp_name)>=0||p4.emp_name.indexOf(k)>=0)){amt=brMap[k];break;}  // ← 同樣改
       }
     }
-    return { name: cfg2.rule_name||'（未知）', amount: parseFloat(amt||0) };
+    var qtyMap = ((_promoApiResults.resultsByConfig[cid]||{}).qtyByBranch||{})[fc]||{};
+    var qty = parseFloat(qtyMap[p4.emp_name]||0);
+    var ruleType = cfg2.rule_type||'';
+    var perQty = parseFloat(cfg2.per_qty||1);
+    var bonusUnit = parseFloat(cfg2.bonus_per_unit||0);
+    var bonusPct = parseFloat(cfg2.bonus_pct||0);
+    // 若 API 沒回傳 qty，就反推
+    if (!qty && ruleType==='sa_qty' && bonusUnit>0) qty = Math.round(parseFloat(amt||0) * perQty / bonusUnit);
+    var salesAmt = (ruleType==='sa_pct'||ruleType==='parts_discount') && bonusPct>0
+      ? Math.round(parseFloat(amt||0) / (bonusPct/100)) : 0;
+    return { name: cfg2.rule_name||'（未知）', amount: parseFloat(amt||0),
+      rule_type: ruleType, per_qty: perQty, bonus_per_unit: bonusUnit,
+      bonus_pct: bonusPct, qty: qty, sales_amt: salesAmt };
   }).filter(function(x){return x.amount>0;})
 ));
 var extraAmt = mRow.extraBonus||0;
@@ -2923,9 +2935,21 @@ async function clearActualOverride(metricId, period, branch) {
 
   function _openPromoDetail(empName, dataJSON) {
   var items = JSON.parse(decodeURIComponent(dataJSON));
-  var rows = items.map(function(item){
-    return '<tr><td style="padding:8px 12px;color:#e2e8f0;font-size:13px">'+item.name+'</td>'
-      +'<td style="padding:8px 12px;text-align:right;color:#10b981;font-size:13px;font-weight:700">'+item.amount.toLocaleString()+' 元</td></tr>';
+    var rows = items.map(function(item){
+    var breakdown = '';
+    if (item.rule_type==='sa_qty' && item.qty>0 && item.bonus_per_unit>0) {
+      breakdown = '<div style="font-size:11px;color:#64748b;margin-top:3px">'
+        +item.qty+'件 × '+item.bonus_per_unit.toLocaleString()+'元'
+        +(item.per_qty>1?' （每'+item.per_qty+'件觸發）':'')
+        +' = <span style="color:#10b981">'+item.amount.toLocaleString()+'元</span></div>';
+    } else if ((item.rule_type==='sa_pct'||item.rule_type==='parts_discount') && item.sales_amt>0) {
+      breakdown = '<div style="font-size:11px;color:#64748b;margin-top:3px">'
+        +item.sales_amt.toLocaleString()+'元 × '+item.bonus_pct+'%'
+        +' = <span style="color:#10b981">'+item.amount.toLocaleString()+'元</span></div>';
+    }
+    return '<tr><td style="padding:8px 12px;color:#e2e8f0;font-size:13px">'
+      +item.name+breakdown+'</td>'
+      +'<td style="padding:8px 12px;text-align:right;color:#10b981;font-size:13px;font-weight:700;vertical-align:top">'+item.amount.toLocaleString()+' 元</td></tr>';
   }).join('');
   var total = items.reduce(function(s,x){return s+x.amount;},0);
   var html = '<div id="promoDetailBg" onclick="if(event.target===this)this.remove()"'
