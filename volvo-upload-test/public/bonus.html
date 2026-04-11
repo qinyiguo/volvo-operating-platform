@@ -3406,7 +3406,9 @@ async function saveExtraBonus() {
     document.getElementById('ebReason').value='';
     await loadExtraBonus();
     await loadBeautyBranches();
-    renderEbList();
+    var _fc = document.getElementById('ebBranch').value;
+    var _dk = document.getElementById('ebDept').value;
+    renderEbList(_fc, _dk);
     var inner=document.getElementById('progressInner');
     if(inner){inner.innerHTML='<div class="loading"><span class="spinner"></span>重新計算中</div>';renderProgressContent();}
   } catch(e){ alert('儲存失敗：'+e.message); }
