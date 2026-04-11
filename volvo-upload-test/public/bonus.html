@@ -1860,7 +1860,8 @@ if(isTeamDept){
 var isBeautyDept = fc === '聯合' && (dept.dept_name || '').includes('美容');
 var deptPromoPool = 0;
 var deptPromoTotalW = 0;
-if (isTeamDept && !isBeautyDept) {
+var isPromoTeamDept = !!_promoTeamModeCache[fc + '-' + dkey];
+if (isPromoTeamDept && !isBeautyDept) {
   dept.members.forEach(function(p) {
     deptPromoPool += calcPromoBonus(null, null, fc, p.emp_name, p.job_title || '');
   });
@@ -1883,7 +1884,7 @@ _mrModalDepts[fc+'-'+dkey] = dept.members.map(function(p){
       for (var mi3=0;mi3<dept.members.length;mi3++) {
                 var person3=dept.members[mi3], personBonuses={}, personTotal=0;
                 var personPromoBonus;
-if (isTeamDept && !isBeautyDept && deptPromoPool > 0) {
+if (isPromoTeamDept && !isBeautyDept && deptPromoPool > 0) {
   // 團體制：依權重分配促銷獎金池
   var myW_promo = savedWeights[person3.emp_id] !== undefined ? savedWeights[person3.emp_id] : 1;
   personPromoBonus = deptPromoTotalW > 0 ? Math.round(deptPromoPool * myW_promo / deptPromoTotalW) : 0;
@@ -1962,6 +1963,17 @@ memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonu
                   +' title="設定分配權重">⚖️ 權重設定</span>';
               })()
       : '')
+         +(function(){
+  var isPromoTeam = !!_promoTeamModeCache[fc + '-' + dkey];
+  var isBeautyDept2 = fc === '聯合' && (dept.dept_name||'').includes('美容');
+  if (isBeautyDept2) return '';
+  return '&nbsp;<span onclick="event.stopPropagation();_togglePromoTeamMode(\''+fc+'\',\''+dkey+'\','+isPromoTeam+')"'
+    +' style="font-size:10px;padding:3px 10px;border-radius:5px;font-weight:700;cursor:pointer;user-select:none;'
+    +'border:1.5px solid '+(isPromoTeam?'#10b981':'#64748b')+';'
+    +'background:'+(isPromoTeam?'rgba(16,185,129,.15)':'transparent')+';'
+    +'color:'+(isPromoTeam?'#10b981':'#64748b')+'"'
+    +' title="促銷獎金計算模式">🎁 促銷'+(isPromoTeam?'團體':'個人')+'</span>';
+})()
          +(fc==='聯合'&&(dept.dept_name||'').includes('美容')
   ? '<button onclick="event.stopPropagation();_openBeautyBranchModal(\''+fc+'\',\''+dkey+'\')" style="margin-left:4px;padding:2px 10px;border-radius:5px;border:1px solid #0ea5e9;background:rgba(14,165,233,.15);color:#38bdf8;font-size:11px;cursor:pointer;font-weight:700">🎨 美容據點分配</button>'
   : '')
@@ -1998,7 +2010,7 @@ memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonu
         if (!deptHasMetrics) html+='<th style="'+thBase+'min-width:120px;text-align:center;color:#334155">（尚無獎金指標）</th>';
         html+='<th style="'+thBase+'min-width:100px;text-align:right;background:#0c1524;color:#60a5fa">💵 額外獎金</th>'
         html+='<th style="'+thBase+'min-width:100px;text-align:right;background:#0c1524;color:#10b981">'
-  +(isTeamDept&&!isBeautyDept&&deptPromoPool>0
+  +(isPromoTeamDept&&!isBeautyDept&&deptPromoPool>0
     ? '🎁 促銷獎金 <span style="font-size:9px;color:#064e3b;background:#bbf7d0;padding:1px 4px;border-radius:3px">池 '+deptPromoPool.toLocaleString()+'元</span>'
     : '🎁 促銷獎金')
 +'</th>'
@@ -2373,7 +2385,8 @@ async function deletePromoCfg(id, name) {
 
 // ── 團體/個人模式 helpers ──
 var _teamModeCache = {};
-var _weightsCache = {};  // 跨裝置權重快取（由伺服器載入）
+var _weightsCache = {}; 
+var _promoTeamModeCache = {};
 
 function _ppGetTeamMode(fc, dkey) {
   var cacheKey = fc + '-' + dkey;
@@ -2392,12 +2405,35 @@ async function _loadAllTeamModes(deptKeys) {
     } catch(e) {}
   }));
 }
+ async function _loadAllPromoTeamModes(deptKeys) {
+  await Promise.all(deptKeys.map(async function(key) {
+    var parts = key.split('-');
+    var fc = parts[0], dkey = parts.slice(1).join('-');
+    try {
+      var r = await fetch('/api/bonus/promo-dept-mode?branch=' + fc + '&dept_code=' + encodeURIComponent(dkey)).then(function(r){ return r.json(); });
+      _promoTeamModeCache[fc + '-' + dkey] = !!r.team_mode;
+    } catch(e) {}
+  }));
+}
 
 async function _toggleTeamMode(fc, dkey, current) {
   var newMode = !current;
   _teamModeCache[fc + '-' + dkey] = newMode;
   try {
     await fetch('/api/bonus/dept-mode', {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ branch: fc, dept_code: dkey, team_mode: newMode })
+    });
+  } catch(e) {}
+  var inner = document.getElementById('progressInner');
+  if (inner) { inner.innerHTML = '<div class="loading"><span class="spinner"></span>重新計算中</div>'; renderProgressContent(); }
+}
+ async function _togglePromoTeamMode(fc, dkey, current) {
+  var newMode = !current;
+  _promoTeamModeCache[fc + '-' + dkey] = newMode;
+  try {
+    await fetch('/api/bonus/promo-dept-mode', {
       method: 'PUT',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ branch: fc, dept_code: dkey, team_mode: newMode })
