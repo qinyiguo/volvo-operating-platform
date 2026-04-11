@@ -1812,6 +1812,7 @@ var eff0=te0?te0.rate:(meta00.useAuto?meta00.autoRate:null);
           }
           pTotal0 += calcPromoBonus(null, null, fc, p0.emp_name, p0.job_title||'');
           pTotal0 += (_extraBonusMap[p0.emp_id]||0);
+          pTotal0 += (_managerReviewMap[p0.emp_id]&&_managerReviewMap[p0.emp_id].amount)||0;
           if (pTotal0>0) fcBonusPpl++;
           fcTotalBonus+=pTotal0;
         }
