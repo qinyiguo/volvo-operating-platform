@@ -1857,6 +1857,19 @@ if(isTeamDept){
           });
         }
 
+       // ── 促銷獎金：計算部門總池（團體制）──
+var isBeautyDept = fc === '聯合' && (dept.dept_name || '').includes('美容');
+var deptPromoPool = 0;
+var deptPromoTotalW = 0;
+if (isTeamDept && !isBeautyDept) {
+  dept.members.forEach(function(p) {
+    deptPromoPool += calcPromoBonus(null, null, fc, p.emp_name, p.job_title || '');
+  });
+  deptPromoTotalW = dept.members.reduce(function(s, p) {
+    return s + (savedWeights[p.emp_id] !== undefined ? savedWeights[p.emp_id] : 1);
+  }, 0);
+}
+
         // 收集本部門資料供主管考核 Modal 使用
         if (!_mrModalDepts) _mrModalDepts = {};
 _mrModalDepts[fc+'-'+dkey] = dept.members.map(function(p){
@@ -1870,7 +1883,15 @@ _mrModalDepts[fc+'-'+dkey] = dept.members.map(function(p){
         });
       for (var mi3=0;mi3<dept.members.length;mi3++) {
                 var person3=dept.members[mi3], personBonuses={}, personTotal=0;
-                var personPromoBonus = calcPromoBonus(null, null, fc, person3.emp_name, person3.job_title||'');
+                var personPromoBonus;
+if (isTeamDept && !isBeautyDept && deptPromoPool > 0) {
+  // 團體制：依權重分配促銷獎金池
+  var myW_promo = savedWeights[person3.emp_id] !== undefined ? savedWeights[person3.emp_id] : 1;
+  personPromoBonus = deptPromoTotalW > 0 ? Math.round(deptPromoPool * myW_promo / deptPromoTotalW) : 0;
+} else {
+  // 個人制（或美容部特殊邏輯）
+  personPromoBonus = calcPromoBonus(null, null, fc, person3.emp_name, person3.job_title || '');
+}
                 for (var mii2=0;mii2<deptMetricIds.length;mii2++) {
                   var mId3=deptMetricIds[mii2], meta3=metaById[mId3];
                   var te3=(empTargets[person3.emp_id]&&empTargets[person3.emp_id][mId3])?empTargets[person3.emp_id][mId3]:(deptTargets[person3.dept_code]&&deptTargets[person3.dept_code][mId3])?deptTargets[person3.dept_code][mId3]:null;
@@ -1977,7 +1998,11 @@ memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonu
 
         if (!deptHasMetrics) html+='<th style="'+thBase+'min-width:120px;text-align:center;color:#334155">（尚無獎金指標）</th>';
         html+='<th style="'+thBase+'min-width:100px;text-align:right;background:#0c1524;color:#60a5fa">💵 額外獎金</th>'
-        html+='<th style="'+thBase+'min-width:100px;text-align:right;background:#0c1524;color:#10b981">🎁 促銷獎金</th>'
+        html+='<th style="'+thBase+'min-width:100px;text-align:right;background:#0c1524;color:#10b981">'
+  +(isTeamDept&&!isBeautyDept&&deptPromoPool>0
+    ? '🎁 促銷獎金 <span style="font-size:9px;color:#064e3b;background:#bbf7d0;padding:1px 4px;border-radius:3px">池 '+deptPromoPool.toLocaleString()+'元</span>'
+    : '🎁 促銷獎金')
++'</th>'
         html+='<th style="'+thBase+'min-width:140px;text-align:center;background:#0c1524;color:#a78bfa">🎯 主管考核</th>'
     +'<th style="'+thBase+'min-width:80px;text-align:right;background:#0c1524;color:#f59e0b'+(deptHasMetrics?'':';display:none')+'">總獎金</th>'
           +'</tr></thead><tbody>';
