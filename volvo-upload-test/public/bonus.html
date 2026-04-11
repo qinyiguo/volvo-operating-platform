@@ -2710,14 +2710,13 @@ function _mrDebounce(el) {
 }
 
 function _updateSectionTotals(triggerTd) {
-  // 找到所屬的 section（.branch-section 或最近的 section 容器）
-  // 策略：掃同一個 tbody 內所有 number input，加總後更新小計 td
   var tbody = triggerTd ? triggerTd.closest('tbody') : null;
   if (!tbody) return;
 
   var mrSum = 0;
-  tbody.querySelectorAll('input[type="number"][data-empid]').forEach(function(inp) {
-    mrSum += parseInt(inp.value) || 0;
+  tbody.querySelectorAll('td[data-mrcell]').forEach(function(td) {
+    var empId = td.getAttribute('data-mrcell');
+    mrSum += (_managerReviewMap[empId] && _managerReviewMap[empId].amount) || 0;
   });
 
   // 小計列（最後一個 tr，包含「小計」文字或沒有 data-empid input 的列）
