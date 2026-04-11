@@ -1055,8 +1055,18 @@ async function loadDeptCheckboxes(selectedCodes) {
         const checked=selectedCodes.includes(d.dept_code);
         const isDup=codeCount[d.dept_code]>1;
         const dupWarn=isDup?'<span style="color:#f59e0b;font-size:9px;margin-left:2px">⚠️重複</span>':'';
+        var cbVal = isDup ? (factory+'::'+d.dept_code) : d.dept_code;
+        var brOv = _editingMetricId ? ((_metrics.find(function(x){return x.id===_editingMetricId;})||{filters:[]}).filters||[]).find(function(f){return f.type==='branch_override';}) : null;
+        var checked = isDup
+          ? (selectedCodes.includes(d.dept_code) && brOv && brOv.value===factory)
+          : selectedCodes.includes(d.dept_code);
+        var cbVal = isDup ? (factory+'::'+d.dept_code) : d.dept_code;
+        var brOv = _editingMetricId ? ((_metrics.find(function(x){return x.id===_editingMetricId;})||{filters:[]}).filters||[]).find(function(f){return f.type==='branch_override';}) : null;
+        var checked = isDup
+          ? (selectedCodes.includes(d.dept_code) && brOv && brOv.value===factory)
+          : selectedCodes.includes(d.dept_code);
         html+='<label class="dept-chip '+(checked?'checked':'')+'" style="'+(checked?'background:'+fc+'22;border-color:'+fc+';color:'+fc:'')+'" onclick="toggleDeptChip(this,\''+fc+'\')">';
-        html+='<input type="checkbox" value="'+d.dept_code+'" '+(checked?'checked':'')+'>'+d.dept_name+dupWarn+' <span style="color:#475569;font-size:10px">'+d.dept_code+'</span></label>';
+        html+='<input type="checkbox" value="'+cbVal+'" '+(checked?'checked':'')+'>'+d.dept_name+dupWarn+' <span style="color:#475569;font-size:10px">'+d.dept_code+'</span></label>';
       });
       html+='</div></div>';
     });
@@ -1106,7 +1116,18 @@ function clearAllDepts() {
   document.querySelectorAll('#mDeptCheckboxWrap input[type=checkbox]:checked').forEach(cb=>{ toggleDeptChip(cb.closest('label'),''); });
 }
 function getSelectedDeptCodes() {
-  return [...document.querySelectorAll('#mDeptCheckboxWrap input[type=checkbox]:checked')].map(cb=>cb.value);
+  return [...document.querySelectorAll('#mDeptCheckboxWrap input[type=checkbox]:checked')].map(function(cb){
+    var v = cb.value;
+    return v.includes('::') ? v.split('::')[1] : v;
+  });
+}
+function getSelectedDeptBranchOverride() {
+  // 若所有勾選的都來自同一廠的複合值，自動回傳該廠
+  var branches = [...document.querySelectorAll('#mDeptCheckboxWrap input[type=checkbox]:checked')]
+    .map(function(cb){ return cb.value.includes('::') ? cb.value.split('::')[0] : null; })
+    .filter(Boolean);
+  var unique = [...new Set(branches)];
+  return unique.length === 1 ? unique[0] : '';
 }
 
 // ══ 職稱角色 ══
@@ -1449,9 +1470,9 @@ if (src!=='manual'&&src!=='performance'&&src!=='revenue') {
     if (revBranch) filters.push({type:'branch',value:revBranch});
     filters.push({type:'revenue_type',value:revType});
   }
-  // 計算據點 override
+// 計算據點 override（優先手動選，否則從部門選擇自動推算）
   if (src!=='manual'&&src!=='revenue') {
-    const brOv=document.getElementById('mBranchOverride')?.value||'';
+    var brOv = document.getElementById('mBranchOverride')?.value || getSelectedDeptBranchOverride();
     if (brOv) filters.push({type:'branch_override',value:brOv});
   }
   const target_dept_codes=getSelectedDeptCodes();
