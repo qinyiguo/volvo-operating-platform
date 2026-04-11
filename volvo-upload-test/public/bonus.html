@@ -1045,7 +1045,15 @@ async function loadDeptCheckboxes(selectedCodes) {
     const codeCount={};
     depts.forEach(d=>{ codeCount[d.dept_code]=(codeCount[d.dept_code]||0)+1; });
     const byFactory={};
-    depts.forEach(d=>{ const f=d.factory||'售後服務處'; if(!byFactory[f])byFactory[f]=[]; byFactory[f].push(d); });
+    depts.forEach(d=>{
+      var f = d.factory||'售後服務處';
+      // 零件部等跨廠同代碼：改用 branch 欄位區分
+      if (d.branch && d.branch !== f) f = d.branch;
+      if(!byFactory[f]) byFactory[f]=[];
+      // 避免同廠同代碼重複
+      if (!byFactory[f].find(function(x){ return x.dept_code===d.dept_code && x.factory===d.factory; }))
+        byFactory[f].push(d);
+    });
     let html='';
     const ORDER=['售後服務處','AMA','AMD','AMC','聯合','鈑烤','零件'];
     Object.entries(byFactory).sort(([a],[b])=>(ORDER.indexOf(a)+99)-(ORDER.indexOf(b)+99)).forEach(([factory,deptList])=>{
