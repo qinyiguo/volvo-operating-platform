@@ -3440,17 +3440,6 @@ function renderEbList(filterFc, filterDkey) {
     +'</div>';
   }).join('');
 }
-  if (!el) return;
-  if (!_extraBonusList.length) { el.innerHTML='<div style="color:#475569;font-size:12px;padding:8px 0">尚無記錄</div>'; return; }
-  el.innerHTML = _extraBonusList.map(function(r){
-    return '<div style="background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:6px">'
-      +'<div style="flex:1"><div style="font-weight:700;font-size:13px;color:#e2e8f0">'+r.emp_name+'</div>'
-      +'<div style="font-size:11px;color:#64748b;margin-top:2px">'+(r.branch||'')+(r.reason?' ｜ '+r.reason:'')+'</div></div>'
-      +'<span style="font-size:15px;font-weight:900;color:#60a5fa">'+parseInt(r.amount).toLocaleString()+' 元</span>'
-      +'<button class="btn btn-danger btn-sm" onclick="deleteExtraBonus('+r.id+')">刪除</button>'
-    +'</div>';
-  }).join('');
-
 
   // ══ 匯出 Excel ══
 function exportBonusExcel() {
