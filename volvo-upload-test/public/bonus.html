@@ -1979,6 +1979,7 @@ memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonu
          +(fc==='聯合'&&(dept.dept_name||'').includes('美容')
   ? '<button onclick="event.stopPropagation();_openBeautyBranchModal(\''+fc+'\',\''+dkey+'\')" style="margin-left:4px;padding:2px 10px;border-radius:5px;border:1px solid #0ea5e9;background:rgba(14,165,233,.15);color:#38bdf8;font-size:11px;cursor:pointer;font-weight:700">🎨 美容據點分配</button>'
   : '')
+         +'<button onclick="event.stopPropagation();openExtraBonusModal(\''+fc+'\',\''+dkey+'\',\''+displayDeptName.replace(/'/g,"\\'")+'\') " style="margin-left:4px;padding:2px 10px;border-radius:5px;border:1px solid #1d4ed8;background:rgba(59,130,246,.15);color:#60a5fa;font-size:11px;cursor:pointer;font-weight:700">💵 額外獎金</button>'
           +'<button onclick="event.stopPropagation();_openMRModal(\''+fc+'-'+dkey+'\')" style="margin-left:4px;padding:2px 10px;border-radius:5px;border:1px solid #4a1d96;background:rgba(139,92,246,.15);color:#a78bfa;font-size:11px;cursor:pointer;font-weight:700">💼 主管考核</button>'
           +'<span style="font-size:11px;color:#475569;background:#0f172a;padding:1px 7px;border-radius:6px">'+dept.members.length+' 人</span>'
             +deptTagsHtml
@@ -3339,14 +3340,30 @@ setTimeout(() => { closeModal('bodyshopSettingsModal'); loadBodyshopList(); }, 8
 }
 
   // ── 額外獎金 ──
-async function openExtraBonusModal() {
+async function openExtraBonusModal(fc, dkey, deptName) {
   await loadExtraBonus();
-  renderEbList();
-  document.getElementById('ebBranch').value='';
-  document.getElementById('ebDept').innerHTML='<option value="">選擇部門...</option>';
-  document.getElementById('ebEmp').innerHTML='<option value="">選擇人員...</option>';
+  renderEbList(fc, dkey);
   document.getElementById('ebAmount').value='';
   document.getElementById('ebReason').value='';
+
+  if (fc && dkey) {
+    // 從部門按鈕進入：預先選好廠別和部門
+    document.getElementById('ebBranch').value = fc;
+    onEbBranchChange();
+    // 等 DOM 更新後選部門
+    setTimeout(function() {
+      document.getElementById('ebDept').value = dkey;
+      onEbDeptChange();
+    }, 50);
+    // 更新標題
+    document.getElementById('extraBonusModalTitle').textContent =
+      '💵 額外獎金設定 — ' + (deptName || dkey);
+  } else {
+    document.getElementById('ebBranch').value='';
+    document.getElementById('ebDept').innerHTML='<option value="">選擇部門...</option>';
+    document.getElementById('ebEmp').innerHTML='<option value="">選擇人員...</option>';
+    document.getElementById('extraBonusModalTitle').textContent = '💵 額外獎金設定';
+  }
   openModal('extraBonusModal');
 }
 function onEbBranchChange() {
@@ -3403,8 +3420,26 @@ async function deleteExtraBonus(id) {
   var inner=document.getElementById('progressInner');
   if(inner){inner.innerHTML='<div class="loading"><span class="spinner"></span>重新計算中</div>';renderProgressContent();}
 }
-function renderEbList() {
+function renderEbList(filterFc, filterDkey) {
   var el = document.getElementById('ebList');
+  // 若有部門篩選，只顯示該部門的人
+  var list = _extraBonusList;
+  if (filterFc && filterDkey) {
+    var deptEmps = _rosterData
+      .filter(function(p){ return (p.factory||'售後服務處')===filterFc && p.dept_code===filterDkey; })
+      .map(function(p){ return p.emp_id; });
+    list = list.filter(function(r){ return deptEmps.indexOf(r.emp_id) !== -1; });
+  }
+  if (!list.length) { el.innerHTML='<div style="color:#475569;font-size:12px;padding:8px 0">此部門尚無額外獎金記錄</div>'; return; }
+  el.innerHTML = list.map(function(r){
+    return '<div style="background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:6px">'
+      +'<div style="flex:1"><div style="font-weight:700;font-size:13px;color:#e2e8f0">'+r.emp_name+'</div>'
+      +'<div style="font-size:11px;color:#64748b;margin-top:2px">'+(r.branch||'')+(r.reason?' ｜ '+r.reason:'')+'</div></div>'
+      +'<span style="font-size:15px;font-weight:900;color:#60a5fa">'+parseInt(r.amount).toLocaleString()+' 元</span>'
+      +'<button class="btn btn-danger btn-sm" onclick="deleteExtraBonus('+r.id+')">刪除</button>'
+    +'</div>';
+  }).join('');
+}
   if (!el) return;
   if (!_extraBonusList.length) { el.innerHTML='<div style="color:#475569;font-size:12px;padding:8px 0">尚無記錄</div>'; return; }
   el.innerHTML = _extraBonusList.map(function(r){
@@ -3652,7 +3687,7 @@ async function _saveBeautyBranchModal() {
 <div class="modal-bd" id="extraBonusModal">
   <div class="modal-win" style="max-width:580px">
     <div class="modal-head">
-      <div class="modal-title">💵 額外獎金設定</div>
+     <div class="modal-title" id="extraBonusModalTitle">💵 額外獎金設定</div>
       <button class="modal-close" onclick="closeModal('extraBonusModal')">×</button>
     </div>
     <div class="modal-body">
