@@ -1047,12 +1047,25 @@ async function loadDeptCheckboxes(selectedCodes) {
     const byFactory={};
     depts.forEach(d=>{
       var f = d.factory||'售後服務處';
-      // 零件部等跨廠同代碼：改用 branch 欄位區分
-      if (d.branch && d.branch !== f) f = d.branch;
+      if (codeCount[d.dept_code]>1) {
+        // 重複 dept_code：依 _rosterData 拆出各廠實際有哪些人
+        var branches = [...new Set(
+          _rosterData
+            .filter(function(p){ return p.dept_code===d.dept_code; })
+            .map(function(p){ return p.factory||'售後服務處'; })
+            .filter(function(b){ return ['AMA','AMC','AMD'].includes(b); })
+        )];
+        if (branches.length) {
+          branches.forEach(function(branch){
+            if(!byFactory[branch]) byFactory[branch]=[];
+            if(!byFactory[branch].find(function(x){return x.dept_code===d.dept_code;}))
+              byFactory[branch].push(Object.assign({}, d, {_forceBranch: branch}));
+          });
+          return;
+        }
+      }
       if(!byFactory[f]) byFactory[f]=[];
-      // 避免同廠同代碼重複
-      if (!byFactory[f].find(function(x){ return x.dept_code===d.dept_code && x.factory===d.factory; }))
-        byFactory[f].push(d);
+      byFactory[f].push(d);
     });
     let html='';
     const ORDER=['售後服務處','AMA','AMD','AMC','聯合','鈑烤','零件'];
@@ -1062,7 +1075,7 @@ async function loadDeptCheckboxes(selectedCodes) {
       deptList.forEach(d=>{
         var isDup = codeCount[d.dept_code]>1;
         var dupWarn = isDup?'<span style="color:#f59e0b;font-size:9px;margin-left:2px">⚠️重複</span>':'';
-        var cbVal = isDup ? (factory+'::'+d.dept_code) : d.dept_code;
+        var cbVal = (isDup || d._forceBranch) ? ((d._forceBranch||factory)+'::'+d.dept_code) : d.dept_code;
         var brOv = _editingMetricId ? ((_metrics.find(function(x){return x.id===_editingMetricId;})||{filters:[]}).filters||[]).find(function(f){return f.type==='branch_override';}) : null;
         var checked = isDup
           ? (selectedCodes.includes(d.dept_code) && brOv && brOv.value===factory)
