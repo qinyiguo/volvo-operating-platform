@@ -1440,8 +1440,10 @@ async function openMetricModal(id) {
     const perfId=(m.filters||[]).find(f=>f.type==='perf_metric_id')?.value;
     if (perfId) document.getElementById('mPerfMetricId').value=perfId;
   }
-  if (m.metric_source==='revenue') {
-    const revBranch=(m.filters||[]).find(f=>f.type==='branch')?.value||'';
+   if (m.metric_source==='revenue') {
+    var revBranch=(m.filters||[]).find(f=>f.type==='branch')?.value||'';
+    // 若沒有設 rev_branch，用 branch_override 補上
+    if (!revBranch) revBranch=(m.filters||[]).find(f=>f.type==='branch_override')?.value||'';
     const revType=(m.filters||[]).find(f=>f.type==='revenue_type')?.value||'paid';
     document.getElementById('mRevBranch').value=revBranch;
     document.getElementById('mRevType').value=revType;
@@ -1479,9 +1481,11 @@ if (src!=='manual'&&src!=='performance'&&src!=='revenue') {
     const perfId=document.getElementById('mPerfMetricId').value;
     if (perfId) filters.push({type:'perf_metric_id',value:perfId});
   }
-  if (src==='revenue') {
-    const revBranch=document.getElementById('mRevBranch').value;
-    const revType=document.getElementById('mRevType').value||'paid';
+    if (src==='revenue') {
+    var revBranch = document.getElementById('mRevBranch').value;
+    // 若沒手動選據點，自動用 branch_override 或部門勾選推算的廠別
+    if (!revBranch) revBranch = document.getElementById('mBranchOverride')?.value || getSelectedDeptBranchOverride();
+    const revType = document.getElementById('mRevType').value||'paid';
     if (revBranch) filters.push({type:'branch',value:revBranch});
     filters.push({type:'revenue_type',value:revType});
   }
