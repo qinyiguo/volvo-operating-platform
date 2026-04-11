@@ -1052,14 +1052,8 @@ async function loadDeptCheckboxes(selectedCodes) {
       const fc=FC_COLORS[factory]||'#94a3b8';
       html+='<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:'+fc+';margin-bottom:5px">'+factory+'</div><div style="display:flex;flex-wrap:wrap;gap:4px">';
       deptList.forEach(d=>{
-        const checked=selectedCodes.includes(d.dept_code);
-        const isDup=codeCount[d.dept_code]>1;
-        const dupWarn=isDup?'<span style="color:#f59e0b;font-size:9px;margin-left:2px">⚠️重複</span>':'';
-        var cbVal = isDup ? (factory+'::'+d.dept_code) : d.dept_code;
-        var brOv = _editingMetricId ? ((_metrics.find(function(x){return x.id===_editingMetricId;})||{filters:[]}).filters||[]).find(function(f){return f.type==='branch_override';}) : null;
-        var checked = isDup
-          ? (selectedCodes.includes(d.dept_code) && brOv && brOv.value===factory)
-          : selectedCodes.includes(d.dept_code);
+        var isDup = codeCount[d.dept_code]>1;
+        var dupWarn = isDup?'<span style="color:#f59e0b;font-size:9px;margin-left:2px">⚠️重複</span>':'';
         var cbVal = isDup ? (factory+'::'+d.dept_code) : d.dept_code;
         var brOv = _editingMetricId ? ((_metrics.find(function(x){return x.id===_editingMetricId;})||{filters:[]}).filters||[]).find(function(f){return f.type==='branch_override';}) : null;
         var checked = isDup
