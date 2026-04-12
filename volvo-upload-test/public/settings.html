@@ -1985,97 +1985,8 @@ async function saveBayConfig() {
     msgEl.textContent = '❌ ' + e.message;
     msgEl.style.color = '#ef4444';
   }
-}
-<div id="tab-auditlog" style="display:none">
- 
-  <!-- ── 統計卡片區 ── -->
-  <div id="auditSummaryCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px"></div>
- 
-  <!-- ── 主查詢卡片 ── -->
-  <div class="card">
-    <div class="card-head" style="flex-wrap:wrap;gap:8px">
-      <div class="card-head-title">📋 操作紀錄</div>
-      <span id="auditTotalBadge" class="badge badge-blue">0 筆</span>
-      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto">
-        <input id="auditKeyword"   type="text"  placeholder="搜尋資源/路徑"  style="background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:6px 10px;border-radius:6px;font-size:12px;width:140px;outline:none" onkeydown="if(event.key==='Enter')loadAuditLogs(1)">
-        <input id="auditUsername"  type="text"  placeholder="帳號/姓名"       style="background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:6px 10px;border-radius:6px;font-size:12px;width:110px;outline:none" onkeydown="if(event.key==='Enter')loadAuditLogs(1)">
-        <select id="auditAction" style="background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:6px 10px;border-radius:6px;font-size:12px;outline:none">
-          <option value="">全部動作</option>
-          <option value="LOGIN">LOGIN 登入</option>
-          <option value="LOGOUT">LOGOUT 登出</option>
-          <option value="VIEW">VIEW 查看</option>
-          <option value="UPLOAD">UPLOAD 上傳</option>
-          <option value="DOWNLOAD">DOWNLOAD 下載</option>
-          <option value="CREATE">CREATE 新增</option>
-          <option value="UPDATE">UPDATE 更新</option>
-          <option value="DELETE">DELETE 刪除</option>
-          <option value="SUBMIT">SUBMIT 提交</option>
-          <option value="USER_MGMT">USER_MGMT 帳號管理</option>
-          <option value="PWD_CHANGE">PWD_CHANGE 改密碼</option>
-        </select>
-        <select id="auditBranch" style="background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:6px 10px;border-radius:6px;font-size:12px;outline:none">
-          <option value="">全部廠別</option>
-          <option value="AMA">AMA</option>
-          <option value="AMC">AMC</option>
-          <option value="AMD">AMD</option>
-        </select>
-        <input id="auditDateFrom" type="date" style="background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:6px 10px;border-radius:6px;font-size:12px;outline:none">
-        <input id="auditDateTo"   type="date" style="background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:6px 10px;border-radius:6px;font-size:12px;outline:none">
-        <button class="btn btn-primary" onclick="loadAuditLogs(1)" style="font-size:12px;padding:6px 12px">🔍 查詢</button>
-        <button class="btn btn-secondary" onclick="resetAuditFilters()" style="font-size:12px;padding:6px 10px">重置</button>
-        <button class="btn btn-green" onclick="exportAuditCSV()" style="font-size:12px;padding:6px 10px">⬇️ 匯出</button>
-      </div>
-    </div>
- 
-    <!-- 日誌表格 -->
-    <div style="overflow-x:auto;max-height:calc(100vh - 380px);overflow-y:auto" id="auditTableScroll">
-      <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:900px" id="auditTable">
-        <thead id="auditThead">
-          <tr>
-            <th style="padding:8px 10px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:2">時間</th>
-            <th style="padding:8px 10px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:left;position:sticky;top:0;z-index:2">使用者</th>
-            <th style="padding:8px 10px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:left;position:sticky;top:0;z-index:2">動作</th>
-            <th style="padding:8px 10px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:left;position:sticky;top:0;z-index:2">資源/功能</th>
-            <th style="padding:8px 10px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:left;position:sticky;top:0;z-index:2">資料廠別/期間</th>
-            <th style="padding:8px 10px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:left;position:sticky;top:0;z-index:2">IP 位址</th>
-            <th style="padding:8px 10px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:center;position:sticky;top:0;z-index:2">狀態</th>
-            <th style="padding:8px 10px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:right;position:sticky;top:0;z-index:2">耗時</th>
-          </tr>
-        </thead>
-        <tbody id="auditTbody">
-          <tr><td colspan="8" style="padding:40px;text-align:center;color:#64748b">請點選查詢載入紀錄</td></tr>
-        </tbody>
-      </table>
-    </div>
- 
-    <!-- 分頁 -->
-    <div id="auditPagination" style="display:none;padding:10px 14px;border-top:1px solid #2d3f56;display:flex;align-items:center;gap:6px;flex-wrap:wrap"></div>
-  </div>
- 
-  <!-- ── 熱門 IP / 活躍使用者 ── -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px" id="auditDetailPanels"></div>
-</div>
- 
-<style>
-/* Action badge colors */
-.audit-action { display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.3px;font-family:monospace }
-.aa-LOGIN    { background:rgba(16,185,129,.12); color:#10b981 }
-.aa-LOGOUT   { background:rgba(100,116,139,.12);color:#64748b }
-.aa-VIEW     { background:rgba(59,130,246,.1);  color:#3b82f6 }
-.aa-UPLOAD   { background:rgba(245,158,11,.12); color:#f59e0b }
-.aa-DOWNLOAD { background:rgba(139,92,246,.12); color:#a78bfa }
-.aa-CREATE   { background:rgba(16,185,129,.12); color:#34d399 }
-.aa-UPDATE   { background:rgba(245,158,11,.1);  color:#fbbf24 }
-.aa-DELETE   { background:rgba(239,68,68,.1);   color:#ef4444 }
-.aa-SUBMIT   { background:rgba(6,182,212,.12);  color:#22d3ee }
-.aa-USER_MGMT{ background:rgba(236,72,153,.1);  color:#f472b6 }
-.aa-PWD_CHANGE{background:rgba(239,68,68,.12);  color:#f87171 }
-</style>
- 
-<script>
-// ═══════════════════════════════════════════════════════
-// 操作紀錄 JS
-// ═══════════════════════════════════════════════════════
+} 
+// ══ 操作紀錄 JS ══
 let _auditPage = 1;
 let _auditTotal = 0;
 let _auditRows  = [];
@@ -2094,28 +2005,24 @@ async function loadAuditLogs(page = 1) {
   const params = new URLSearchParams({
     page,
     limit: 100,
-    keyword:   document.getElementById('auditKeyword')?.value   || '',
-    username:  document.getElementById('auditUsername')?.value  || '',
-    action:    document.getElementById('auditAction')?.value    || '',
-    data_branch: document.getElementById('auditBranch')?.value  || '',
-    date_from: document.getElementById('auditDateFrom')?.value  || '',
-    date_to:   document.getElementById('auditDateTo')?.value    || '',
+    keyword:     document.getElementById('auditKeyword')?.value   || '',
+    username:    document.getElementById('auditUsername')?.value  || '',
+    action:      document.getElementById('auditAction')?.value    || '',
+    data_branch: document.getElementById('auditBranch')?.value    || '',
+    date_from:   document.getElementById('auditDateFrom')?.value  || '',
+    date_to:     document.getElementById('auditDateTo')?.value    || '',
   });
-  // 清除空值
   [...params.entries()].forEach(([k,v]) => { if (!v) params.delete(k); });
  
   try {
     const res  = await DmsAuth.fetchWithAuth(`/api/audit-logs?${params}`);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
- 
     _auditTotal = data.total;
     _auditRows  = data.rows || [];
     renderAuditTable(_auditRows);
     renderAuditPagination(data.total, data.page, data.page_size);
     document.getElementById('auditTotalBadge').textContent = `${data.total.toLocaleString()} 筆`;
- 
-    // 載入統計卡片（只在第一頁時更新）
     if (page === 1) loadAuditSummary();
   } catch(e) {
     tbody.innerHTML = `<tr><td colspan="8" style="padding:24px;text-align:center;color:#ef4444">❌ ${e.message}</td></tr>`;
@@ -2134,12 +2041,11 @@ function renderAuditTable(rows) {
             <div style="font-size:11px;color:#475569;font-variant-numeric:tabular-nums">${d.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})}</div>`;
   };
   const roleColor = { super_admin:'#f59e0b', branch_admin:'#10b981', user:'#3b82f6' };
- 
   tbody.innerHTML = rows.map(r => {
     const actionCls = `audit-action aa-${r.action}`;
     const statusC   = r.status_code ? STATUS_COLOR(r.status_code) : '#334155';
     const duration  = r.duration_ms ? (r.duration_ms < 1000 ? `${r.duration_ms}ms` : `${(r.duration_ms/1000).toFixed(1)}s`) : '—';
-    const durationC = r.duration_ms > 2000 ? '#f59e0b' : r.duration_ms > 5000 ? '#ef4444' : '#475569';
+    const durationC = r.duration_ms > 5000 ? '#ef4444' : r.duration_ms > 2000 ? '#f59e0b' : '#475569';
     const rColor    = roleColor[r.user_role] || '#64748b';
     return `<tr style="transition:background .1s" onmouseover="this.style.background='rgba(37,51,71,.5)'" onmouseout="this.style.background=''">
       <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.3);white-space:nowrap">${fmtTime(r.created_at)}</td>
@@ -2161,17 +2067,11 @@ function renderAuditTable(rows) {
       </td>
       <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.3);white-space:nowrap">
         <div style="font-family:monospace;font-size:11px;color:#64748b;cursor:pointer"
-             onclick="document.getElementById('auditUsername').value='';document.getElementById('auditKeyword').value='';filterByIP('${r.ip_address}')"
-             title="點擊篩選此 IP">
-          ${r.ip_address}
-        </div>
+             onclick="filterByIP('${r.ip_address}')" title="點擊篩選此 IP">${r.ip_address}</div>
         <div style="font-size:10px;color:#334155">${r.browser||''}</div>
       </td>
       <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center;white-space:nowrap">
-        ${r.status_code
-          ? `<span style="font-size:11px;font-weight:700;color:${statusC};font-variant-numeric:tabular-nums">${r.status_code}</span>`
-          : '<span style="color:#334155">—</span>'
-        }
+        ${r.status_code ? `<span style="font-size:11px;font-weight:700;color:${statusC}">${r.status_code}</span>` : '<span style="color:#334155">—</span>'}
       </td>
       <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:right;white-space:nowrap">
         <span style="font-size:11px;color:${durationC};font-variant-numeric:tabular-nums">${duration}</span>
@@ -2181,38 +2081,28 @@ function renderAuditTable(rows) {
 }
  
 function renderAuditPagination(total, page, pageSize) {
-  const wrap       = document.getElementById('auditPagination');
+  const wrap = document.getElementById('auditPagination');
   const totalPages = Math.ceil(total / pageSize) || 1;
   if (total === 0) { wrap.style.display = 'none'; return; }
   wrap.style.display = 'flex';
   const pageBtn = (label, p, active, disabled) =>
-    `<button onclick="loadAuditLogs(${p})" ${disabled?'disabled':''} style="
-      width:30px;height:30px;border:1px solid ${active?'#3b82f6':'#2d3f56'};
-      border-radius:6px;background:${active?'#3b82f6':'#0f172a'};color:${active?'#fff':'#64748b'};
-      font-size:12px;font-weight:600;cursor:pointer;${disabled?'opacity:.4;cursor:not-allowed':''}
-    ">${label}</button>`;
+    `<button onclick="loadAuditLogs(${p})" ${disabled?'disabled':''} style="width:30px;height:30px;border:1px solid ${active?'#3b82f6':'#2d3f56'};border-radius:6px;background:${active?'#3b82f6':'#0f172a'};color:${active?'#fff':'#64748b'};font-size:12px;font-weight:600;cursor:pointer;${disabled?'opacity:.4;cursor:not-allowed':''}">${label}</button>`;
   let btns = '';
-  btns += pageBtn('«', 1,    false, page===1);
+  btns += pageBtn('«', 1, false, page===1);
   btns += pageBtn('‹', page-1, false, page===1);
-  const r = 2;
-  for (let p = Math.max(1,page-r); p <= Math.min(totalPages,page+r); p++) {
+  for (let p = Math.max(1,page-2); p <= Math.min(totalPages,page+2); p++) {
     btns += pageBtn(p, p, p===page, false);
   }
-  btns += pageBtn('›', page+1,      false, page===totalPages);
-  btns += pageBtn('»', totalPages,  false, page===totalPages);
+  btns += pageBtn('›', page+1, false, page===totalPages);
+  btns += pageBtn('»', totalPages, false, page===totalPages);
   const start = (page-1)*pageSize+1, end = Math.min(page*pageSize, total);
-  wrap.innerHTML = btns +
-    `<span style="font-size:12px;color:#64748b;margin-left:8px">第${page}/${totalPages}頁 · ${start.toLocaleString()}–${end.toLocaleString()} / 共${total.toLocaleString()}筆</span>`;
+  wrap.innerHTML = btns + `<span style="font-size:12px;color:#64748b;margin-left:8px">第${page}/${totalPages}頁 · ${start.toLocaleString()}–${end.toLocaleString()} / 共${total.toLocaleString()}筆</span>`;
 }
  
 async function loadAuditSummary() {
   try {
-    const [sum] = await Promise.all([
-      DmsAuth.fetchWithAuth('/api/audit-logs/summary').then(r => r.json()),
-    ]);
+    const sum = await DmsAuth.fetchWithAuth('/api/audit-logs/summary').then(r => r.json());
     if (sum.error) return;
- 
-    // 統計卡片
     const cards = document.getElementById('auditSummaryCards');
     const c = sum.counts || {};
     const kpi = (label, val, sub, color) => `
@@ -2227,7 +2117,6 @@ async function loadAuditSummary() {
       kpi('🗓️ 本月操作', c.this_month, '', '#f59e0b') +
       (sum.recent_errors?.length ? kpi('⚠️ 近期錯誤', sum.recent_errors.length, '近期 400/500 錯誤', '#ef4444') : '');
  
-    // 底部雙欄
     const panels = document.getElementById('auditDetailPanels');
     const topUsersHTML = `
       <div class="card">
@@ -2247,7 +2136,6 @@ async function loadAuditSummary() {
             </div>`).join('')}
         </div>
       </div>`;
- 
     const topIPsHTML = `
       <div class="card">
         <div class="card-head"><div class="card-head-title">🌐 7 天活躍 IP</div></div>
@@ -2265,7 +2153,6 @@ async function loadAuditSummary() {
             </div>`).join('')}
         </div>
       </div>`;
- 
     panels.innerHTML = topUsersHTML + topIPsHTML;
   } catch(e) {}
 }
@@ -2275,23 +2162,18 @@ function filterByUser(username) {
   loadAuditLogs(1);
 }
 function filterByIP(ip) {
-  // IP 篩選：直接帶入關鍵字
   document.getElementById('auditKeyword').value = ip;
   loadAuditLogs(1);
 }
- 
 function resetAuditFilters() {
   ['auditKeyword','auditUsername','auditDateFrom','auditDateTo'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
+    const el = document.getElementById(id); if (el) el.value = '';
   });
   ['auditAction','auditBranch'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
+    const el = document.getElementById(id); if (el) el.value = '';
   });
   loadAuditLogs(1);
 }
- 
 function exportAuditCSV() {
   if (!_auditRows.length) { alert('請先查詢後再匯出'); return; }
   const headers = ['時間','使用者','帳號','角色','廠別','動作','資源','資料廠別','資料期間','IP位址','瀏覽器','狀態碼','耗時(ms)'];
@@ -2300,24 +2182,15 @@ function exportAuditCSV() {
     r.display_name, r.username, r.user_role, r.user_branch||'',
     r.action, r.resource, r.data_branch||'', r.data_period||'',
     r.ip_address, r.browser||'', r.status_code||'', r.duration_ms||'',
-  ].map(v => {
-    const s = String(v||'');
-    return s.includes(',') || s.includes('"') ? `"${s.replace(/"/g,'""')}"` : s;
-  }).join(','));
+  ].map(v => { const s=String(v||''); return s.includes(',')||s.includes('"')?`"${s.replace(/"/g,'""')}"`:s; }).join(','));
   const csv  = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
   const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
-  a.href = url;
-  a.download = `audit_log_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
+  a.href = url; a.download = `audit_log_${new Date().toISOString().slice(0,10)}.csv`; a.click();
   URL.revokeObjectURL(url);
 }
- 
-// 進入此 tab 時自動載入
-function onAuditTabActivate() {
-  loadAuditLogs(1);
-}
+function onAuditTabActivate() { loadAuditLogs(1); }
  
 // ══ 初始化 ══
 checkAuth();
