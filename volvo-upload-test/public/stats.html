@@ -3538,7 +3538,8 @@ const weightHtml = `<div style="margin-bottom:18px">
   }).join('')}
 </div>`;
 
-// 新增 allocHtml
+const _RC = {paid:'#f97316',general:'#3b82f6',bodywork:'#8b5cf6',extended:'#10b981'};
+const _RL = {paid:'🔶 有費營收',general:'💙 一般營收',bodywork:'🔨 鈑烤營收',extended:'🛡️ 延保營收'};
 const allocHtml = `<div>
   <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">📊 各項目占比（%）</div>
   ${['paid','general','bodywork','extended']
@@ -3546,7 +3547,7 @@ const allocHtml = `<div>
     .map(rt => {
       const cur = _ppGetItemAlloc(d.branch, d.deptKey, 'rev_'+rt) ?? '';
       return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-        <span style="font-size:12px;font-weight:700;color:${REV_COLOR[rt]||'#94a3b8'};min-width:90px">${REV_LABEL[rt]||rt}</span>
+        <span style="font-size:12px;font-weight:700;color:${_RC[rt]};min-width:90px">${_RL[rt]}</span>
         <input type="number" min="0" max="100" step="1" placeholder="100"
           id="ppCfgAlloc-rev_${rt}" value="${cur}"
           style="width:60px;background:#0f172a;border:1px solid rgba(245,158,11,.4);color:#f59e0b;
