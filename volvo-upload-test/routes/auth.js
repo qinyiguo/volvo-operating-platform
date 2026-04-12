@@ -1,15 +1,3 @@
-/**
- * public/auth.js
- * 所有頁面共用的前端驗證工具
- * 在每個 HTML 頁面的 <script> 最前面加入:
- *   <script src="/auth.js"></script>
- */
-
-(function() {
-  const TOKEN_KEY = 'dms_token';
-  const USER_KEY  = 'dms_user';
-
-  // ── 儲存 / 讀取 ──
 const router = require('express').Router();
 const crypto = require('crypto');
 const pool   = require('../db/pool');
@@ -46,7 +34,3 @@ router.put('/auth/settings/password', async (req, res) => {
 });
 
 module.exports = router;
-
-  // ── 全域替換 fetch 讓所有 API 請求自動帶 token ──
-  // （可選：若頁面有直接用 fetch，建議改為 DmsAuth.fetchWithAuth）
-})();
