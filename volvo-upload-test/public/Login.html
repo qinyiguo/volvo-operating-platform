@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Volvo DMS — 登入</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Syne:wght@600;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #050d1a;
+    --surface:   #0c1828;
+    --card:      #111f33;
+    --border:    #1a2f4a;
+    --border-hi: #2a4a70;
+    --text:      #e2ecf8;
+    --muted:     #4a6080;
+    --accent:    #0066ff;
+    --accent-hi: #3385ff;
+    --success:   #00c896;
+    --error:     #ff4d6a;
+    --volvo:     #003057;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', 'SF Mono', monospace;
+    overflow: hidden;
+  }
+
+  /* ── Background grid ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: .35;
+    pointer-events: none;
+  }
+
+  /* ── Radial glow ── */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -30%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 900px;
+    height: 600px;
+    background: radial-gradient(ellipse at center, rgba(0,102,255,.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .layout {
+    position: relative;
+    z-index: 1;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  /* ── Card ── */
+  .card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--card);
+    border: 1px solid var(--border-hi);
+    border-radius: 16px;
+    padding: 40px 40px 36px;
+    position: relative;
+    overflow: hidden;
+    animation: slideUp .5s cubic-bezier(.25,.8,.25,1) both;
+  }
+
+  @keyframes slideUp {
+    from { opacity:0; transform:translateY(20px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  /* Top accent line */
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: .8;
+  }
+
+  /* Corner decoration */
+  .card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(ellipse at top right, rgba(0,102,255,.08), transparent 70%);
+    pointer-events: none;
+  }
+
+  /* ── Header ── */
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+
+  .logo-box {
+    width: 44px;
+    height: 44px;
+    background: var(--volvo);
+    border: 1px solid var(--border-hi);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .logo-text { line-height: 1.2; }
+  .logo-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--text);
+    letter-spacing: -.3px;
+  }
+  .logo-sub {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: .5px;
+    text-transform: uppercase;
+  }
+
+  /* ── Section label ── */
+  .section-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── Form ── */
+  .field {
+    margin-bottom: 16px;
+    position: relative;
+  }
+
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 7px;
+  }
+
+  .field-wrap {
+    position: relative;
+  }
+
+  .field-icon {
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 14px;
+    pointer-events: none;
+    transition: color .2s;
+  }
+
+  .field input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 14px 12px 40px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+    letter-spacing: .3px;
+  }
+
+  .field input::placeholder { color: #2a3f58; }
+
+  .field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,102,255,.12);
+  }
+
+  .field input:focus + .field-icon,
+  .field-wrap:focus-within .field-icon {
+    color: var(--accent-hi);
+  }
+
+  /* password toggle */
+  .pw-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px;
+    transition: color .2s;
+  }
+  .pw-toggle:hover { color: var(--text); }
+
+  /* ── Submit button ── */
+  .btn-login {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 13px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    letter-spacing: .3px;
+    transition: background .2s, transform .1s, box-shadow .2s;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-login::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,.08) 0%, transparent 100%);
+  }
+
+  .btn-login:hover:not(:disabled) {
+    background: var(--accent-hi);
+    box-shadow: 0 0 20px rgba(0,102,255,.35);
+    transform: translateY(-1px);
+  }
+  .btn-login:active { transform: translateY(0); }
+  .btn-login:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+  .btn-login .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin .6s linear infinite;
+    display: none;
+  }
+  .btn-login.loading .spinner { display: block; }
+  .btn-login.loading .btn-text { opacity: .7; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Error/Success messages ── */
+  .msg-box {
+    padding: 11px 14px;
+    border-radius: 7px;
+    font-size: 13px;
+    margin-bottom: 14px;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    animation: fadeIn .25s ease;
+  }
+  .msg-box.visible { display: flex; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+  .msg-box.error   { background: rgba(255,77,106,.1);  border: 1px solid rgba(255,77,106,.25); color: #ff7a8a; }
+  .msg-box.success { background: rgba(0,200,150,.1);   border: 1px solid rgba(0,200,150,.25);  color: #00c896; }
+
+  /* ── Footer ── */
+  .login-footer {
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* ── Side panels (desktop decoration) ── */
+  .side-info {
+    position: fixed;
+    left: 48px;
+    bottom: 48px;
+    font-size: 11px;
+    color: #1a3050;
+    letter-spacing: .5px;
+    line-height: 2;
+    pointer-events: none;
+  }
+  .side-info span { display: block; }
+
+  @media (max-width: 600px) {
+    .card { padding: 28px 24px 24px; }
+    .side-info { display: none; }
+  }
+
+  /* ── Shake animation for wrong password ── */
+  .card.shake {
+    animation: shake .4s cubic-bezier(.36,.07,.19,.97) both;
+  }
+  @keyframes shake {
+    10%, 90% { transform: translateX(-2px); }
+    20%, 80% { transform: translateX(4px); }
+    30%, 50%, 70% { transform: translateX(-5px); }
+    40%, 60% { transform: translateX(5px); }
+  }
+
+  /* ── Env badge ── */
+  .env-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(0,102,255,.08);
+    border: 1px solid rgba(0,102,255,.2);
+    color: #3385ff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<!-- Background decoration -->
+<div class="side-info">
+  <span>VOLVO CARS // AFTER SALES</span>
+  <span>SERVICE OPS DASHBOARD</span>
+  <span>VER 2.0 // AUTH REQUIRED</span>
+</div>
+
+<div class="layout">
+  <div class="card" id="loginCard">
+
+    <!-- Logo -->
+    <div class="logo-row">
+      <div class="logo-box">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <circle cx="14" cy="14" r="10" stroke="#4a8ac4" stroke-width="1.5" fill="none"/>
+          <path d="M9 14 L14 9 L19 14 L14 19 Z" stroke="#4a8ac4" stroke-width="1.2" fill="none"/>
+          <circle cx="14" cy="14" r="2" fill="#4a8ac4"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="logo-name">Volvo DMS</div>
+        <div class="logo-sub">Service Operations</div>
+      </div>
+      <div style="margin-left:auto">
+        <span class="env-badge">
+          <span style="width:5px;height:5px;border-radius:50%;background:#0066ff;display:inline-block"></span>
+          LIVE
+        </span>
+      </div>
+    </div>
+
+    <!-- Label -->
+    <div class="section-label">身份驗證</div>
+
+    <!-- Error box -->
+    <div class="msg-box error" id="errorMsg">
+      <span>⚠</span>
+      <span id="errorText"></span>
+    </div>
+
+    <!-- Form -->
+    <form id="loginForm" onsubmit="handleLogin(event)" autocomplete="off">
+
+      <div class="field">
+        <label>帳號 / Username</label>
+        <div class="field-wrap">
+          <input
+            type="text" id="username" name="username"
+            placeholder="輸入帳號" autocomplete="username"
+            required autofocus
+          >
+          <span class="field-icon">⊘</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>密碼 / Password</label>
+        <div class="field-wrap">
+          <input
+            type="password" id="password" name="password"
+            placeholder="輸入密碼" autocomplete="current-password"
+            required
+          >
+          <span class="field-icon">◈</span>
+          <button type="button" class="pw-toggle" onclick="togglePw()" id="pwToggle" tabindex="-1">👁</button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-login" id="loginBtn">
+        <div class="spinner"></div>
+        <span class="btn-text">登入系統</span>
+      </button>
+
+    </form>
+
+    <!-- Footer -->
+    <div class="login-footer">
+      <span>Powered by Anthropic Claude</span>
+      <span id="footerTime" style="font-variant-numeric:tabular-nums"></span>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── 時鐘 ──
+function tickTime() {
+  const el = document.getElementById('footerTime');
+  if (el) el.textContent = new Date().toLocaleTimeString('zh-TW', { hour12: false });
+}
+setInterval(tickTime, 1000); tickTime();
+
+// ── 若已登入則跳轉 ──
+(async function checkExistingSession() {
+  const token = localStorage.getItem('dms_token');
+  if (!token) return;
+  try {
+    const r = await fetch('/api/users/me', { headers: { 'Authorization': `Bearer ${token}` } });
+    if (r.ok) {
+      const user = await r.json();
+      redirectAfterLogin(user);
+    }
+  } catch(e) {}
+})();
+
+function redirectAfterLogin(user) {
+  // 依第一個有效頁面權限跳轉
+  const pageOrder = ['page:performance','page:stats','page:query','page:bonus','page:settings'];
+  const pageMap   = {
+    'page:performance': '/performance.html',
+    'page:stats':       '/stats.html',
+    'page:query':       '/query.html',
+    'page:bonus':       '/bonus.html',
+    'page:settings':    '/settings.html',
+  };
+  if (user.role === 'super_admin') { window.location.href = '/performance.html'; return; }
+  for (const p of pageOrder) {
+    if (user.permissions.includes(p)) { window.location.href = pageMap[p]; return; }
+  }
+  window.location.href = '/performance.html';
+}
+
+// ── 密碼顯示切換 ──
+function togglePw() {
+  const inp = document.getElementById('password');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+// ── 顯示錯誤 ──
+function showError(msg) {
+  const box = document.getElementById('errorMsg');
+  document.getElementById('errorText').textContent = msg;
+  box.classList.add('visible');
+  // Shake card
+  const card = document.getElementById('loginCard');
+  card.classList.remove('shake');
+  void card.offsetWidth; // reflow
+  card.classList.add('shake');
+  card.addEventListener('animationend', () => card.classList.remove('shake'), { once: true });
+}
+
+function hideError() {
+  document.getElementById('errorMsg').classList.remove('visible');
+}
+
+// ── Login handler ──
+async function handleLogin(e) {
+  e.preventDefault();
+  hideError();
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  if (!username || !password) { showError('請輸入帳號與密碼'); return; }
+
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true;
+  btn.classList.add('loading');
+  btn.querySelector('.btn-text').textContent = '驗證中...';
+
+  try {
+    const res = await fetch('/api/users/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      showError(data.error || '登入失敗，請重試');
+      return;
+    }
+
+    // 儲存 token 與使用者資訊
+    localStorage.setItem('dms_token', data.token);
+    localStorage.setItem('dms_user', JSON.stringify(data.user));
+
+    btn.querySelector('.btn-text').textContent = '✓ 登入成功';
+    btn.style.background = 'var(--success)';
+
+    // 短暫等待後跳轉
+    await new Promise(r => setTimeout(r, 400));
+    redirectAfterLogin(data.user);
+
+  } catch(err) {
+    showError('連線失敗，請確認網路狀態');
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    if (btn.querySelector('.btn-text').textContent !== '✓ 登入成功') {
+      btn.querySelector('.btn-text').textContent = '登入系統';
+      btn.style.background = '';
+    }
+  }
+}
+
+// ── 按 Enter 提交 ──
+document.getElementById('password').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('loginForm').requestSubmit();
+});
+</script>
+</body>
+</html>
