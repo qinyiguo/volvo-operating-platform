@@ -270,7 +270,16 @@ const resultsByConfig = {};
     } else if (matchTier.bonus_type === 'fixed') {
       bonus = Math.round(matchTier.bonus_value);
     }
-    if (bonus > 0) personResults[name] = (personResults[name]||0) + bonus;
+    if (bonus > 0) {
+      personResults[name] = (personResults[name]||0) + bonus;
+      // 記錄匹配到的 tier 資訊
+      if (!resultsByConfig[cfg.id].tierMatchByBranch) resultsByConfig[cfg.id].tierMatchByBranch = {};
+      if (!resultsByConfig[cfg.id].tierMatchByBranch[br]) resultsByConfig[cfg.id].tierMatchByBranch[br] = {};
+      resultsByConfig[cfg.id].tierMatchByBranch[br][name] = {
+        bonus_value: matchTier.bonus_value,
+        bonus_type:  matchTier.bonus_type,
+      };
+    }
   }
 }
 
