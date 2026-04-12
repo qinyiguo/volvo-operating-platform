@@ -4093,8 +4093,8 @@ if (showCarCount || showRevenue) {
   const carTotal = roster.reduce((s,p)=>s+((saCarCount&&saCarCount[p.emp_name])||0),0);
   tbody += `<tr style="background:rgba(59,130,246,.03)">
     <td style="padding:10px 12px;${TD}position:sticky;left:0;z-index:2;background:#0d1b2e;border-right:2px solid #374151;min-width:${LABEL_W}px;">
-    '<div style="font-weight:800;font-size:13px;color:#3b82f6">🚗 進廠台數</div>' +
-    _ppAllocInputHtml(dKey, 'car_count', '暫無') +
+    <div style="font-weight:800;font-size:13px;color:#3b82f6">🚗 進廠台數</div>
+    ${_ppAllocInputHtml(dKey, 'car_count', '暫無')}
     </td>`;
   roster.forEach(p => {
     const cnt = saCarCount ? Math.round(getRevActual(saCarCount, p.emp_name) || 0) : 0;
