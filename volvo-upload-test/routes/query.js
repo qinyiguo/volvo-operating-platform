@@ -92,10 +92,11 @@ router.get('/debug/columns', async (req, res) => {
 });
 
 // ── 明細查詢 ──
-const buildQueryConds = (period, branch) => {
+const buildQueryConds = (period, branch, prefix) => {
+  const p = prefix ? `${prefix}.` : '';
   const conds = []; const params = []; let idx = 1;
-  if (period) { conds.push(`period=$${idx++}`); params.push(period); }
-  if (branch) { conds.push(`branch=$${idx++}`); params.push(branch); }
+  if (period) { conds.push(`${p}period=$${idx++}`); params.push(period); }
+  if (branch) { conds.push(`${p}branch=$${idx++}`); params.push(branch); }
   return { conds, params, idx };
 };
 
@@ -116,33 +117,49 @@ router.get('/query/repair_income', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── 技師績效：JOIN repair_income 取得服務顧問 ──
 router.get('/query/tech_performance', async (req, res) => {
   try {
     const { period, branch } = req.query;
-    const { conds, params } = buildQueryConds(period, branch);
+    const { conds, params } = buildQueryConds(period, branch, 'tp');
     const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
     const r = await pool.query(
-      `SELECT branch, period, tech_name_clean, dispatch_date, work_order,
-              work_code, task_content, account_type, standard_hours, wage,
-              discount, wage_category
-       FROM tech_performance ${where}
-       ORDER BY branch, dispatch_date DESC, tech_name_clean`, params);
+      `SELECT tp.branch, tp.period, tp.tech_name_clean, tp.dispatch_date, tp.work_order,
+              tp.work_code, tp.task_content, tp.account_type, tp.standard_hours, tp.wage,
+              tp.discount, tp.wage_category,
+              ri.service_advisor
+       FROM tech_performance tp
+       LEFT JOIN LATERAL (
+         SELECT service_advisor FROM repair_income
+         WHERE work_order = tp.work_order AND branch = tp.branch
+         LIMIT 1
+       ) ri ON true
+       ${where}
+       ORDER BY tp.branch, tp.dispatch_date DESC, tp.tech_name_clean`, params);
     res.json({ rows: r.rows, count: r.rows.length });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── 零件銷售：JOIN repair_income 取得服務顧問 ──
 router.get('/query/parts_sales', async (req, res) => {
   try {
     const { period, branch } = req.query;
-    const { conds, params } = buildQueryConds(period, branch);
+    const { conds, params } = buildQueryConds(period, branch, 'ps');
     const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
     const r = await pool.query(
-      `SELECT branch, period, category, order_no, work_order, part_number,
-              part_name, part_type, category_code, function_code, sale_qty,
-              retail_price, sale_price_untaxed, cost_untaxed, discount_rate,
-              department, pickup_person, sales_person, plate_no
-       FROM parts_sales ${where}
-       ORDER BY branch, order_no DESC`, params);
+      `SELECT ps.branch, ps.period, ps.category, ps.order_no, ps.work_order, ps.part_number,
+              ps.part_name, ps.part_type, ps.category_code, ps.function_code, ps.sale_qty,
+              ps.retail_price, ps.sale_price_untaxed, ps.cost_untaxed, ps.discount_rate,
+              ps.department, ps.pickup_person, ps.sales_person, ps.plate_no,
+              ri.service_advisor
+       FROM parts_sales ps
+       LEFT JOIN LATERAL (
+         SELECT service_advisor FROM repair_income
+         WHERE work_order = ps.work_order AND branch = ps.branch
+         LIMIT 1
+       ) ri ON true
+       ${where}
+       ORDER BY ps.branch, ps.order_no DESC`, params);
     res.json({ rows: r.rows, count: r.rows.length });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
