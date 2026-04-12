@@ -22,23 +22,25 @@ router.post('/promo-bonus/configs', async (req, res) => {
           bonus_pct, role_amounts, target_factories, active, sort_order, person_type, tiers, stat_method } = req.body;
   if (!rule_name) return res.status(400).json({ error: '名稱為必填' });
   try {
-    const r = await pool.query(`
-      INSERT INTO promo_bonus_configs
-        (rule_name, rule_type, sa_config_id, per_qty, bonus_per_unit,
-         part_catalog_types, paycode_types, discount_min, discount_max,
-         bonus_pct, role_amounts, target_factories, active, sort_order, person_type)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *
-    `, [rule_name.trim(), rule_type||'sa_qty', sa_config_id||null,
-        per_qty||1, bonus_per_unit||0,
-        JSON.stringify(part_catalog_types||[]), JSON.stringify(paycode_types||[]),
-        discount_min!=null?parseFloat(discount_min):null,
-        discount_max!=null?parseFloat(discount_max):null,
-        bonus_pct||0, JSON.stringify(role_amounts||{}),
-        JSON.stringify(target_factories||[]), active!==false, sort_order||0,
-        person_type||'sales_person', JSON.stringify(tiers||[]), stat_method||'amount']);
-    res.json(r.rows[0]);
-  } catch(err) { res.status(500).json({ error: err.message }); }
-});
+// ✅ 修正後 — 加上 tiers, stat_method
+  const r = await pool.query(`
+    INSERT INTO promo_bonus_configs
+      (rule_name, rule_type, sa_config_id, per_qty, bonus_per_unit,
+       part_catalog_types, paycode_types, discount_min, discount_max,
+       bonus_pct, role_amounts, target_factories, active, sort_order,
+       person_type, tiers, stat_method)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING *
+  `, [rule_name.trim(), rule_type||'sa_qty', sa_config_id||null,
+      per_qty||1, bonus_per_unit||0,
+      JSON.stringify(part_catalog_types||[]), JSON.stringify(paycode_types||[]),
+      discount_min!=null?parseFloat(discount_min):null,
+      discount_max!=null?parseFloat(discount_max):null,
+      bonus_pct||0, JSON.stringify(role_amounts||{}),
+      JSON.stringify(target_factories||[]), active!==false, sort_order||0,
+      person_type||'sales_person', JSON.stringify(tiers||[]), stat_method||'amount']);
+      res.json(r.rows[0]);
+    } catch(err) { res.status(500).json({ error: err.message }); }
+  });
 
 router.put('/promo-bonus/configs/:id', async (req, res) => {
   const { rule_name, rule_type, sa_config_id, per_qty, bonus_per_unit,
