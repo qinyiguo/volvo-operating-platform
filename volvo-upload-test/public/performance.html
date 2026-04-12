@@ -2,6 +2,7 @@
 <html lang="zh-TW">
 <head>
 <link rel="stylesheet" href="/theme.css">
+<script src="/auth.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Volvo 業績指標與預估</title>
@@ -860,7 +861,11 @@ async function loadPerformance(period,branch){
   }catch(e){detailEl.innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;}
 }
 
-(async()=>{ await loadPeriods(); await doLoad(); })();
+(async()=>{
+  await DmsAuth.init({ requiredPermission: 'page:performance' });
+  await loadPeriods();
+  await doLoad();
+})();
  function initTheme(){const s=localStorage.getItem('volvo_theme')||'dark';applyTheme(s,false);}
 function applyTheme(t,re){if(t==='light')document.body.classList.add('light-theme');else document.body.classList.remove('light-theme');const b=document.getElementById('themeToggleBtn');if(b)b.textContent=t==='light'?'🌙':'☀️';localStorage.setItem('volvo_theme',t);}
 function toggleTheme(){applyTheme(document.body.classList.contains('light-theme')?'dark':'light',true);}
