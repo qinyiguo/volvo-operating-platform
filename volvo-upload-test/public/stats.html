@@ -3782,11 +3782,11 @@ function savePPDeptConfig() {
     });
   }
 
+  const savedKey = _ppConfigEditKey;  // ← 先存起來
   closePPDeptConfig();
   _ppSwitchDept(d.branch, d.deptKey);
   const viewEl = document.getElementById(`ppview-${d.branch}-${d.deptKey}`);
-  if (viewEl) viewEl.innerHTML = _ppBuildTable(_ppConfigEditKey);
-}
+  if (viewEl) viewEl.innerHTML = _ppBuildTable(savedKey);  // ← 用存好的
 
 function closePPDeptConfig() {
   document.getElementById('ppDeptConfigModal').style.display = 'none';
