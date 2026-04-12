@@ -257,7 +257,7 @@ const resultsByConfig = {};
     r.rows.forEach(row => { personActuals[row.person_name] = parseFloat(row.actual||0); });
   }
 
-  // 依門檻計算獎金
+// 依門檻計算獎金
   const sortedTiers = [...tiers].sort((a,b) => b.gte - a.gte);
   for (const [name, actual] of Object.entries(personActuals)) {
     const matchTier = sortedTiers.find(t => actual >= t.gte);
@@ -272,7 +272,6 @@ const resultsByConfig = {};
     }
     if (bonus > 0) {
       personResults[name] = (personResults[name]||0) + bonus;
-      // 記錄匹配到的 tier 資訊
       if (!resultsByConfig[cfg.id].tierMatchByBranch) resultsByConfig[cfg.id].tierMatchByBranch = {};
       if (!resultsByConfig[cfg.id].tierMatchByBranch[br]) resultsByConfig[cfg.id].tierMatchByBranch[br] = {};
       resultsByConfig[cfg.id].tierMatchByBranch[br][name] = {
@@ -281,9 +280,13 @@ const resultsByConfig = {};
       };
     }
   }
-}
+  // ★ 移進來：只在 sa_tier 才有 personActuals
+  if (!resultsByConfig[cfg.id].actualByBranch) resultsByConfig[cfg.id].actualByBranch = {};
+  resultsByConfig[cfg.id].actualByBranch[br] = personActuals;
 
-        resultsByConfig[cfg.id].byBranch[br] = personResults;
+}  // ← sa_tier else if 的結尾
+
+        resultsByConfig[cfg.id].byBranch[br] = personResults;  // ← 這行維持在外面
         resultsByConfig[cfg.id].actualByBranch = resultsByConfig[cfg.id].actualByBranch || {};
         resultsByConfig[cfg.id].actualByBranch[br] = personActuals;
       }));
