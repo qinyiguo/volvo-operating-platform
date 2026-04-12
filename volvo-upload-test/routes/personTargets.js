@@ -356,4 +356,27 @@ router.post('/person-targets/copy-from-last-month', async (req, res) => {
   }
 });
 
+// ══ 個人業績科別占比（per-item，存 DB）══
+router.get('/bonus/pp-alloc', async (req, res) => {
+  const { period, branch, dept_key } = req.query;
+  const key = `pp_alloc_${period}_${branch}_${dept_key}`;
+  try {
+    const r = await pool.query(`SELECT value FROM app_settings WHERE key=$1`, [key]);
+    res.json(r.rows[0] ? JSON.parse(r.rows[0].value) : {});
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.put('/bonus/pp-alloc', async (req, res) => {
+  const { period, branch, dept_key, allocations } = req.body;
+  if (!period || !branch || !dept_key) return res.status(400).json({ error: '參數不完整' });
+  const key = `pp_alloc_${period}_${branch}_${dept_key}`;
+  try {
+    await pool.query(`
+      INSERT INTO app_settings (key, value) VALUES ($1, $2)
+      ON CONFLICT (key) DO UPDATE SET value=$2
+    `, [key, JSON.stringify(allocations || {})]);
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = router;
