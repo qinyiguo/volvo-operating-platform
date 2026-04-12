@@ -220,19 +220,6 @@
 </head>
 <body>
 
-<!-- ══ 鎖定畫面 ══ -->
-<div id="lockScreen" style="position:fixed;inset:0;background:#0f172a;z-index:9999;display:flex;align-items:center;justify-content:center;">
-  <div style="background:#1e293b;border:1px solid #2d3f56;border-radius:16px;padding:44px 40px;width:100%;max-width:360px;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.6);">
-    <div style="font-size:44px;margin-bottom:12px">🔒</div>
-    <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:6px">設定管理</div>
-    <div style="font-size:13px;color:#64748b;margin-bottom:28px">請輸入管理員密碼以繼續</div>
-    <input type="password" id="lockInput" placeholder="輸入密碼..."
-      style="width:100%;box-sizing:border-box;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:12px 16px;border-radius:8px;font-size:16px;margin-bottom:8px;text-align:center;letter-spacing:4px;outline:none"
-      onkeydown="if(event.key==='Enter') doLogin()" autocomplete="current-password">
-    <div id="lockError" style="font-size:12px;color:#ef4444;height:20px;margin-bottom:10px;line-height:20px"></div>
-    <button id="lockBtn" onclick="doLogin()" style="width:100%;background:#3b82f6;color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">進入設定</button>
-  </div>
-</div>
 
 <nav class="nav">
   <span class="nav-brand">🚗 Volvo DMS</span>
@@ -1898,10 +1885,6 @@ async function deletePersonTargets() {
 }
 
 // ══ 密碼 ══
-const SETTINGS_TOKEN_KEY='volvo_settings_token';
-async function checkAuth(){const token=sessionStorage.getItem(SETTINGS_TOKEN_KEY);if(!token){showLock();return;}try{const data=await(await fetch(`/api/auth/settings/check?token=${token}`)).json();if(data.valid)hideLock();else{sessionStorage.removeItem(SETTINGS_TOKEN_KEY);showLock();}}catch(e){showLock();}}
-function showLock(){document.getElementById('lockScreen').style.display='flex';setTimeout(()=>document.getElementById('lockInput').focus(),60);}
-function hideLock(){document.getElementById('lockScreen').style.display='none';loadHistory();}
 async function doLogin(){const pwd=document.getElementById('lockInput').value,errEl=document.getElementById('lockError'),btn=document.getElementById('lockBtn');if(!pwd){errEl.textContent='請輸入密碼';return;}btn.disabled=true;btn.textContent='驗證中...';errEl.textContent='';try{const res=await fetch('/api/auth/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pwd})});const data=await res.json();if(res.ok&&data.token){sessionStorage.setItem(SETTINGS_TOKEN_KEY,data.token);document.getElementById('lockInput').value='';hideLock();}else{errEl.textContent=data.error||'密碼錯誤';document.getElementById('lockInput').value='';document.getElementById('lockInput').focus();}}catch(e){errEl.textContent='連線失敗，請重試';}finally{btn.disabled=false;btn.textContent='進入設定';}}
 async function changePassword(){const current=document.getElementById('pwdCurrent').value,newPwd=document.getElementById('pwdNew').value,confirm=document.getElementById('pwdConfirm').value,msgEl=document.getElementById('pwdMsg'),btn=document.getElementById('pwdBtn'),token=sessionStorage.getItem(SETTINGS_TOKEN_KEY);msgEl.textContent='';msgEl.style.color='#ef4444';if(!current){msgEl.textContent='請輸入目前密碼';return;}if(!newPwd){msgEl.textContent='請輸入新密碼';return;}if(newPwd.length<4){msgEl.textContent='新密碼至少需要 4 個字元';return;}if(newPwd!==confirm){msgEl.textContent='兩次輸入的新密碼不一致';return;}btn.disabled=true;btn.textContent='儲存中...';try{const res=await fetch('/api/auth/settings/password',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,currentPassword:current,newPassword:newPwd})});const data=await res.json();if(res.ok){msgEl.style.color='#10b981';msgEl.textContent='✅ 密碼已修改，請用新密碼重新登入';['pwdCurrent','pwdNew','pwdConfirm'].forEach(id=>document.getElementById(id).value='');sessionStorage.removeItem(SETTINGS_TOKEN_KEY);setTimeout(()=>{showLock();msgEl.textContent='';},1800);}else{msgEl.textContent=data.error||'修改失敗';}}catch(e){msgEl.textContent='連線失敗，請重試';}finally{btn.disabled=false;btn.textContent='儲存新密碼';}}
 
@@ -2193,7 +2176,7 @@ function exportAuditCSV() {
 function onAuditTabActivate() { loadAuditLogs(1); }
  
 // ══ 初始化 ══
-checkAuth();
+loadHistory();
 function initTheme(){const s=localStorage.getItem('volvo_theme')||'dark';applyTheme(s,false);}
 function applyTheme(t,re){if(t==='light')document.body.classList.add('light-theme');else document.body.classList.remove('light-theme');const b=document.getElementById('themeToggleBtn');if(b)b.textContent=t==='light'?'🌙':'☀️';localStorage.setItem('volvo_theme',t);}
 function toggleTheme(){applyTheme(document.body.classList.contains('light-theme')?'dark':'light',true);}
