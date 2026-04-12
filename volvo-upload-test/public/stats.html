@@ -3521,6 +3521,53 @@ function openPPDeptConfig(dKey) {
   </div>`;
 
   document.getElementById('ppDeptConfigBody').innerHTML = revHtml + metricHtml;
+ // 新增 weightHtml
+const weightHtml = `<div style="margin-bottom:18px">
+  <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">⚖️ 人員權重</div>
+  ${d.roster.map(p => {
+    const curW = d.ptMap[p.emp_name]?.[d.metrics[0]?.id]?.weight ?? '';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:#0f172a;border:1px solid #2d3f56;border-radius:7px;margin-bottom:4px">
+      <span style="font-size:13px;font-weight:700;color:#e2e8f0;min-width:72px">${p.emp_name}</span>
+      <span style="font-size:11px;color:#64748b;flex:1">${p.job_title||''}</span>
+      <input type="number" min="0" step="0.1" placeholder="—"
+        id="ppCfgW-${p.emp_name.replace(/\s/g,'_')}"
+        value="${curW}"
+        style="width:64px;background:#1e293b;border:1px solid #2d3f56;color:#3b82f6;
+               padding:5px 8px;border-radius:6px;font-size:13px;font-weight:800;text-align:right;outline:none">
+    </div>`;
+  }).join('')}
+</div>`;
+
+// 新增 allocHtml
+const allocHtml = `<div>
+  <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">📊 各項目占比（%）</div>
+  ${['paid','general','bodywork','extended']
+    .filter(rt => (cfg.rev_types_shown||['paid','general','bodywork','extended']).includes(rt))
+    .map(rt => {
+      const cur = _ppGetItemAlloc(d.branch, d.deptKey, 'rev_'+rt) ?? '';
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+        <span style="font-size:12px;font-weight:700;color:${REV_COLOR[rt]||'#94a3b8'};min-width:90px">${REV_LABEL[rt]||rt}</span>
+        <input type="number" min="0" max="100" step="1" placeholder="100"
+          id="ppCfgAlloc-rev_${rt}" value="${cur}"
+          style="width:60px;background:#0f172a;border:1px solid rgba(245,158,11,.4);color:#f59e0b;
+                 padding:4px 7px;border-radius:5px;font-size:12px;font-weight:800;text-align:right;outline:none">
+        <span style="font-size:11px;color:#475569">%</span>
+      </div>`;
+    }).join('')}
+  ${d.metrics.map(m => {
+    const cur = _ppGetItemAlloc(d.branch, d.deptKey, 'metric_'+m.id) ?? '';
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+      <span style="font-size:12px;font-weight:700;color:#8b5cf6;min-width:90px">${m.metric_name}</span>
+      <input type="number" min="0" max="100" step="1" placeholder="100"
+        id="ppCfgAlloc-metric_${m.id}" value="${cur}"
+        style="width:60px;background:#0f172a;border:1px solid rgba(245,158,11,.4);color:#f59e0b;
+               padding:4px 7px;border-radius:5px;font-size:12px;font-weight:800;text-align:right;outline:none">
+      <span style="font-size:11px;color:#475569">%</span>
+    </div>`;
+  }).join('')}
+</div>`;
+
+document.getElementById('ppDeptConfigBody').innerHTML = revHtml + metricHtml + weightHtml + allocHtml;
   document.getElementById('ppDeptConfigModal').style.display = 'flex';
   document.body.style.overflow = 'hidden';
 }
@@ -3553,6 +3600,47 @@ function savePPDeptConfig() {
   const show_car_count = document.getElementById('ppChkCarCount')?.checked !== false;
   const show_revenue   = document.getElementById('ppChkRevenue')?.checked !== false;
   _ppSaveDeptConfig(d.branch, d.deptKey, { rev_types_shown, metric_ids, show_car_count, show_revenue });
+ // 儲存人員權重
+const period = getPeriod();
+if (period) {
+  const weightEntries = d.roster.map(p => {
+    const el = document.getElementById(`ppCfgW-${p.emp_name.replace(/\s/g,'_')}`);
+    const w  = el ? parseFloat(el.value) : NaN;
+    return { person_name: p.emp_name, weight: isNaN(w)||w<=0 ? null : w, target_value: null, note: '' };
+  }).filter(e => e.weight !== null);
+
+  for (const m of d.metrics) {
+    fetch('/api/person-targets/batch', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ metric_id: parseInt(m.id), period, branch: d.branch, entries: weightEntries })
+    });
+    // 同步更新記憶體
+    weightEntries.forEach(e => {
+      if (!d.ptMap[e.person_name]) d.ptMap[e.person_name] = {};
+      if (!d.ptMap[e.person_name][m.id]) d.ptMap[e.person_name][m.id] = {};
+      d.ptMap[e.person_name][m.id].weight = e.weight;
+    });
+  }
+}
+
+// 儲存各項目占比
+const allocPayload = {};
+['paid','general','bodywork','extended'].forEach(rt => {
+  const el = document.getElementById(`ppCfgAlloc-rev_${rt}`);
+  if (el && el.value !== '') allocPayload['rev_'+rt] = parseFloat(el.value);
+});
+d.metrics.forEach(m => {
+  const el = document.getElementById(`ppCfgAlloc-metric_${m.id}`);
+  if (el && el.value !== '') allocPayload['metric_'+m.id] = parseFloat(el.value);
+});
+const cacheKey = d.branch + '-' + d.deptKey;
+_ppItemAllocCache[cacheKey] = Object.assign(_ppItemAllocCache[cacheKey]||{}, allocPayload);
+fetch('/api/bonus/pp-alloc', {
+  method: 'PUT',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ period: getPeriod(), branch: d.branch, dept_key: d.deptKey, allocations: _ppItemAllocCache[cacheKey] })
+});
   const savedKey = _ppConfigEditKey;
   closePPDeptConfig();
   _ppSwitchDept(d.branch, d.deptKey);
@@ -4050,29 +4138,24 @@ const TD = `border-bottom:1px solid rgba(45,63,86,.2);vertical-align:middle;`;
     });
   thead += `<th style="padding:9px 8px;${TH}text-align:right;min-width:70px;border-left:2px solid #374151;">合計</th></tr>`;
 
-  // 權重列
-  thead += `<tr>
-    <th style="padding:7px 12px;${TH}position:sticky;left:0;z-index:4;background:#0a1020;border-right:2px solid #374151;color:#3b82f6;">
-      相對權重
-      <div style="font-size:10px;font-weight:400;color:#475569;margin-top:1px">
-        合計 ${deptTotalW%1===0?deptTotalW:deptTotalW.toFixed(1)}
-        ${deptAlloc!=null?` ｜占比 <strong style="color:#f59e0b">${deptAlloc}%</strong>`:''}
-      </div>
-    </th>`;
-  roster.forEach((p,ni) => {
-    const savedW = getSavedW(p.emp_name);
-    const myW    = parseFloat(savedW)||0;
-    const pct    = myW>0&&deptTotalW>0?(myW/deptTotalW*100).toFixed(1)+'%':'—';
-    thead += `<th style="padding:6px 8px;${TH}text-align:center;background:#0a1020;border-right:1px solid #1e3050;">
-      <input type="number" value="${savedW}" min="0" step="0.1" placeholder="—"
-        id="ppW-${branch}-${deptKey}-${ni}"
-        style="background:#0f172a;border:1px solid #2d3f56;color:#3b82f6;padding:3px 6px;
-               border-radius:5px;font-size:12px;font-weight:800;width:54px;text-align:right;outline:none"
-        onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#2d3f56'">
-      <div style="font-size:10px;color:#475569;margin-top:2px">${pct}</div>
-    </th>`;
-  });
-  thead += `<th style="padding:6px 8px;${TH}background:#0a1020;border-left:2px solid #374151;"></th></tr></thead>`;
+// 權重列
+thead += `<tr>
+  <th style="padding:7px 12px;${TH}position:sticky;left:0;z-index:4;background:#0a1020;border-right:2px solid #374151;color:#3b82f6;">
+    相對權重
+    <div style="font-size:10px;font-weight:400;color:#475569;margin-top:1px">
+      合計 ${deptTotalW%1===0?deptTotalW:deptTotalW.toFixed(1)}
+      ${deptAlloc!=null?` ｜占比 <strong style="color:#f59e0b">${deptAlloc}%</strong>`:''}
+    </div>
+  </th>`;
+roster.forEach((p,ni) => {
+  const myW = parseFloat(getSavedW(p.emp_name)) || 0;
+  const pct = myW>0&&deptTotalW>0 ? (myW/deptTotalW*100).toFixed(1)+'%' : '—';
+  thead += `<th style="padding:6px 8px;${TH}text-align:center;background:#0a1020;border-right:1px solid #1e3050;">
+    <div style="font-size:15px;font-weight:900;color:#3b82f6">${myW||'—'}</div>
+    <div style="font-size:10px;color:#475569;margin-top:2px">${pct}</div>
+  </th>`;
+});
+thead += `<th style="padding:6px 8px;${TH}background:#0a1020;border-left:2px solid #374151;"></th></tr></thead>`;
 
   // ════ tbody ════
   let tbody = '<tbody>';
@@ -4136,7 +4219,7 @@ if (showRevenue) {
     tbody += `<tr>
       <td style="padding:8px 12px;${TD}position:sticky;left:0;z-index:2;background:#111827;border-right:2px solid #374151;min-width:${LABEL_W}px;">
         <div style="font-weight:800;font-size:13px;color:${col}">${label}</div>
-        ${_ppAllocInputHtml(dKey, itemKey, fmtRev(brTarget))}
+        <div style="font-size:10px;color:#475569;margin-top:2px">廠目標 ${fmtRev(brTarget)}</div>
       </td>${cells}
       <td style="padding:8px 8px;${TD}text-align:right;border-left:2px solid #374151;font-weight:800;color:${rowTotal>0?col:'#475569'};">${rowTotal>0?fmtRev(rowTotal):'—'}</td>
     </tr>`;
@@ -4180,7 +4263,7 @@ if (showRevenue) {
       tbody += `<tr>
         <td style="padding:8px 12px;${TD}position:sticky;left:0;z-index:2;background:#111827;border-right:2px solid #374151;min-width:${LABEL_W}px;">
           <div style="font-weight:700;font-size:12px;color:#8b5cf6">${m.metric_name}</div>
-          ${_ppAllocInputHtml(dKey, 'metric_' + m.id, fmtT(btVal,m))}
+          <div style="font-size:10px;color:#475569;margin-top:2px">廠目標 ${fmtT(btVal,m)}</div>
         </td>${cells}
         <td style="padding:8px 8px;${TD}text-align:right;border-left:2px solid #374151;
                    font-weight:800;color:${rowTotal>0?'#10b981':'#475569'};">${fmtV(rowTotal,m)}</td>
