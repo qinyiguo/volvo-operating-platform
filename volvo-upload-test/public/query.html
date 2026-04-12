@@ -116,6 +116,9 @@
   .col-toggle-item:hover { background: rgba(59,130,246,.08); color: #e2e8f0; }
   .col-toggle-item input[type=checkbox] { accent-color: #3b82f6; width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; }
 
+  /* ── Multi-keyword hint badge ── */
+  .kw-badge { display: inline-flex; align-items: center; gap: 4px; background: rgba(59,130,246,.12); border: 1px solid rgba(59,130,246,.3); color: #60a5fa; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: 700; }
+
   /* ════════════════════════════
      MOBILE RESPONSIVE
   ════════════════════════════ */
@@ -222,7 +225,8 @@
         <option value="AMD">AMD</option>
       </select>
       <label>關鍵字</label>
-      <input type="text" id="txtSearch" placeholder="工單號 / 車牌 / 姓名..." style="min-width:160px" onkeydown="if(event.key==='Enter')doQuery()">
+      <input type="text" id="txtSearch" placeholder="關鍵字1 關鍵字2…（空格或逗號＝AND）" style="min-width:220px" onkeydown="if(event.key==='Enter')doQuery()">
+      <span id="kwHintBadge" class="kw-badge" style="display:none">🔗 AND × <span id="kwCount">0</span></span>
       <button class="btn btn-primary" onclick="doQuery()">🔍 查詢</button>
       <button class="btn btn-secondary" onclick="resetFilters()">重置</button>
       <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
@@ -253,7 +257,7 @@
 
     <!-- ── Mobile filter row 2: 搜尋 + 動作按鈕 ── -->
     <div class="filter-row-2">
-      <input type="text" class="filter-input" id="txtSearchMobile" placeholder="工單號 / 車牌 / 姓名..." onkeydown="if(event.key==='Enter')doQueryMobile()">
+      <input type="text" class="filter-input" id="txtSearchMobile" placeholder="關鍵字1 關鍵字2…（空格＝AND）" onkeydown="if(event.key==='Enter')doQueryMobile()">
       <button class="btn btn-primary" onclick="doQueryMobile()">🔍</button>
       <button class="btn btn-secondary" onclick="resetFiltersMobile()">重置</button>
       <div style="margin-left:auto;display:flex;gap:5px">
@@ -368,8 +372,9 @@ const TABLE_DEFS = {
       { key:'wage', label:'工資', num:true, fmt:'K', highlight:true },
       { key:'discount', label:'折扣' },
       { key:'wage_category', label:'工資類別' },
+      { key:'service_advisor', label:'服務顧問' },
     ],
-    searchKeys: ['work_order','tech_name_clean','work_code','task_content','account_type','wage_category'],
+    searchKeys: ['work_order','tech_name_clean','work_code','task_content','account_type','wage_category','service_advisor'],
     defaultHidden: new Set(['discount']),
   },
   parts_sales: {
@@ -395,8 +400,9 @@ const TABLE_DEFS = {
       { key:'pickup_person', label:'領料人員' },
       { key:'sales_person', label:'銷售人員' },
       { key:'plate_no', label:'車牌' },
+      { key:'service_advisor', label:'服務顧問' },
     ],
-    searchKeys: ['order_no','work_order','part_number','part_name','sales_person','pickup_person','plate_no'],
+    searchKeys: ['order_no','work_order','part_number','part_name','sales_person','pickup_person','plate_no','service_advisor'],
     defaultHidden: new Set(['retail_price','discount_rate','category_code','function_code','department']),
   },
   business_query: {
@@ -511,15 +517,6 @@ function _applyTableChange(tbl){
   const def = TABLE_DEFS[tbl];
   document.getElementById('tableTitle').textContent = def.title;
   _hiddenCols = new Set(def.defaultHidden);
-  // On mobile, hide even more columns by default
-  if (_isMobile()) {
-    def.cols.forEach(c => {
-      if (!['branch','work_order','plate_no','total_untaxed','wage','sale_price_untaxed','service_advisor',
-            'tech_name_clean','part_name','sale_qty','open_time','repair_type','car_series','period'].includes(c.key)) {
-        // Already in defaultHidden or not a key column — keep as is
-      }
-    });
-  }
   buildColMenu();
   _allRows = [];
   _filteredRows = [];
@@ -575,6 +572,7 @@ function resetFilters(){
   document.getElementById('selBranchMobile').value = '';
   document.getElementById('txtSearch').value = '';
   document.getElementById('txtSearchMobile').value = '';
+  _updateKwHint('');
 }
 function resetFiltersMobile() { resetFilters(); }
 
@@ -614,19 +612,44 @@ async function _executeQuery(tbl, branch, period){
   }
 }
 
+// ═══ Multi-keyword hint ═══
+function _updateKwHint(raw) {
+  const keywords = raw.trim().split(/[\s,，]+/).filter(Boolean);
+  const badge = document.getElementById('kwHintBadge');
+  const cnt   = document.getElementById('kwCount');
+  if (badge) {
+    if (keywords.length >= 2) {
+      badge.style.display = 'inline-flex';
+      if (cnt) cnt.textContent = keywords.length;
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+}
+
+// ═══ Search with multi-keyword AND logic ═══
 function applySearch(){
   const tbl = _getTable();
   const def = TABLE_DEFS[tbl];
-  const q = _getSearch().trim().toLowerCase();
-  if(!q){
+  const raw = _getSearch().trim().toLowerCase();
+  // 多關鍵字：空格或逗號分隔，AND 邏輯（每個關鍵字都要符合至少一個欄位）
+  const keywords = raw.split(/[\s,，]+/).filter(Boolean);
+  if(!keywords.length){
     _filteredRows = [..._allRows];
+  } else if(keywords.length === 1){
+    _filteredRows = _allRows.filter(row =>
+      def.searchKeys.some(k => String(row[k]||'').toLowerCase().includes(keywords[0]))
+    );
   } else {
     _filteredRows = _allRows.filter(row =>
-      def.searchKeys.some(k => String(row[k]||'').toLowerCase().includes(q))
+      keywords.every(kw =>
+        def.searchKeys.some(k => String(row[k]||'').toLowerCase().includes(kw))
+      )
     );
   }
   _currentPage = 1;
   if(_sortCol) sortRows();
+  _updateKwHint(raw);
   renderTable();
 }
 
@@ -653,7 +676,8 @@ function renderTable(){
   const tbl = _getTable();
   const def = TABLE_DEFS[tbl];
   const visibleCols = def.cols.filter(c => !_hiddenCols.has(c.key));
-  const q = _getSearch().trim().toLowerCase();
+  const _rawQ = _getSearch().trim().toLowerCase();
+  const _kws = _rawQ.split(/[\s,，]+/).filter(Boolean);
   const pageSize = parseInt(document.getElementById('selPageSize').value)||100;
   const totalRows = _filteredRows.length;
   const totalPages = Math.max(1, Math.ceil(totalRows/pageSize));
@@ -669,12 +693,17 @@ function renderTable(){
     if(fmt==='K') return n===0?'—':Math.round(n).toLocaleString();
     return n===0?'—':n.toLocaleString(undefined,{maximumFractionDigits:2});
   };
-  const highlight = (str, q) => {
-    if(!q||!str) return str||'';
+  // 多關鍵字 highlight：對每個關鍵字依序嘗試，標記第一個找到的
+  const highlight = (str, kws) => {
+    if(!kws || !kws.length || !str) return str||'';
     const s = String(str);
-    const idx = s.toLowerCase().indexOf(q);
-    if(idx<0) return s;
-    return s.slice(0,idx)+`<mark class="search-highlight">${s.slice(idx,idx+q.length)}</mark>`+s.slice(idx+q.length);
+    const lower = s.toLowerCase();
+    for (const q of kws) {
+      if (!q) continue;
+      const idx = lower.indexOf(q);
+      if(idx >= 0) return s.slice(0,idx)+`<mark class="search-highlight">${s.slice(idx,idx+q.length)}</mark>`+s.slice(idx+q.length);
+    }
+    return s;
   };
 
   let thead = '<thead><tr>';
@@ -702,7 +731,7 @@ function renderTable(){
           cellContent = fmtNum(raw, c.fmt);
         } else {
           const str = raw===null||raw===undefined?'':String(raw);
-          cellContent = q ? highlight(str,q) : str;
+          cellContent = _kws.length ? highlight(str,_kws) : str;
         }
         const numClass = c.num?'num':'';
         const wrapClass = c.wrap?'wrap':'';
@@ -834,12 +863,16 @@ function doExport(){
 
 // ═══ Search debounce ═══
 let _searchTimer;
-function _onSearchInput(){ clearTimeout(_searchTimer); _searchTimer = setTimeout(()=>{ if(_allRows.length) applySearch(); }, 300); }
-document.getElementById('txtSearch').addEventListener('input', _onSearchInput);
-document.getElementById('txtSearchMobile').addEventListener('input', ()=>{
+function _onSearchInput(rawVal){
+  _updateKwHint(rawVal);
+  clearTimeout(_searchTimer);
+  _searchTimer = setTimeout(()=>{ if(_allRows.length) applySearch(); }, 300);
+}
+document.getElementById('txtSearch').addEventListener('input', function(){ _onSearchInput(this.value); });
+document.getElementById('txtSearchMobile').addEventListener('input', function(){
   // sync to desktop input
-  document.getElementById('txtSearch').value = document.getElementById('txtSearchMobile').value;
-  _onSearchInput();
+  document.getElementById('txtSearch').value = this.value;
+  _onSearchInput(this.value);
 });
 
 // ═══ Init ═══
