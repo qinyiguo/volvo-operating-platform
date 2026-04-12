@@ -461,6 +461,86 @@ await client.query(`CREATE INDEX IF NOT EXISTS idx_repair_income_period_branch O
 await client.query(`CREATE INDEX IF NOT EXISTS idx_tech_performance_period_branch ON tech_performance(period, branch)`);
 await client.query(`CREATE INDEX IF NOT EXISTS idx_parts_sales_period_branch ON parts_sales(period, branch)`);
 await client.query(`CREATE INDEX IF NOT EXISTS idx_business_query_period_branch ON business_query(period, branch)`);
+
+// ── 使用者帳號系統 ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id            SERIAL PRIMARY KEY,
+        username      VARCHAR(50)  NOT NULL UNIQUE,
+        password_hash VARCHAR(100) NOT NULL,
+        password_salt VARCHAR(50)  NOT NULL,
+        display_name  VARCHAR(100) NOT NULL DEFAULT '',
+        role          VARCHAR(20)  NOT NULL DEFAULT 'user',
+        branch        VARCHAR(10),
+        is_active     BOOLEAN      NOT NULL DEFAULT true,
+        last_login    TIMESTAMPTZ,
+        created_at    TIMESTAMPTZ  DEFAULT NOW(),
+        updated_at    TIMESTAMPTZ  DEFAULT NOW()
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS user_permissions (
+        id             SERIAL PRIMARY KEY,
+        user_id        INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        permission_key VARCHAR(60) NOT NULL,
+        UNIQUE(user_id, permission_key)
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS user_sessions (
+        token      VARCHAR(70)  PRIMARY KEY,
+        user_id    INTEGER      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        expires_at TIMESTAMPTZ  NOT NULL,
+        created_at TIMESTAMPTZ  DEFAULT NOW()
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_sessions_user    ON user_sessions(user_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_sessions_expires ON user_sessions(expires_at)`);
+
+    // ── 操作紀錄 ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS audit_logs (
+        id               BIGSERIAL     PRIMARY KEY,
+        user_id          INTEGER,
+        username         VARCHAR(50)   NOT NULL DEFAULT 'anonymous',
+        display_name     VARCHAR(100)  DEFAULT '',
+        user_role        VARCHAR(20)   DEFAULT '',
+        user_branch      VARCHAR(10),
+        ip_address       VARCHAR(60)   NOT NULL DEFAULT '0.0.0.0',
+        user_agent       VARCHAR(300)  DEFAULT '',
+        action           VARCHAR(30)   NOT NULL,
+        resource         VARCHAR(200)  DEFAULT '',
+        resource_path    VARCHAR(300)  DEFAULT '',
+        resource_detail  TEXT,
+        data_branch      VARCHAR(10),
+        data_period      VARCHAR(6),
+        status_code      SMALLINT,
+        duration_ms      INTEGER,
+        created_at       TIMESTAMPTZ   DEFAULT NOW()
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_al_created  ON audit_logs(created_at DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_al_user     ON audit_logs(username, created_at DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_al_action   ON audit_logs(action, created_at DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_al_ip       ON audit_logs(ip_address, created_at DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_al_branch   ON audit_logs(user_branch, created_at DESC)`);
+
+    // ── 建立預設超管帳號（若無任何使用者）預設: admin / admin1234 ──
+    const _uc = await client.query(`SELECT COUNT(*) FROM users`);
+    if (parseInt(_uc.rows[0].count) === 0) {
+      const _cr   = require('crypto');
+      const _salt = _cr.randomBytes(16).toString('hex');
+      const _hash = _cr.pbkdf2Sync('admin1234', _salt, 100000, 32, 'sha256').toString('hex');
+      await client.query(
+        `INSERT INTO users (username, password_hash, password_salt, display_name, role)
+         VALUES ('admin', $1, $2, '系統管理員', 'super_admin')
+         ON CONFLICT (username) DO NOTHING`,
+        [_hash, _salt]
+      );
+      console.log('[initDB] ✅ 預設管理員建立完成: admin / admin1234（請部署後立即修改密碼）');
+    }
     
     console.log('[initDB] ✅ 所有表格建立完成');
   } catch (err) {
