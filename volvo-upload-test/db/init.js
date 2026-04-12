@@ -270,9 +270,8 @@ const initDatabase = async () => {
       )`);
 
     // ── bonus_metrics 補欄位（舊版升級用）──
-    bonus_metrics ADD COLUMN IF NOT EXISTS target_dept_codes JSONB DEFAULT '[]'`);
+    await client.query(`ALTER TABLE bonus_metrics ADD COLUMN IF NOT EXISTS target_dept_codes JSONB DEFAULT '[]'`);
     await client.query(`ALTER TABLE bonus_metrics ADD COLUMN IF NOT EXISTS bonus_rule JSONB DEFAULT '{}'`);
-
     await client.query(`
       CREATE TABLE IF NOT EXISTS bonus_targets (
         id               SERIAL PRIMARY KEY,
