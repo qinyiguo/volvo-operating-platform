@@ -499,33 +499,41 @@ await client.query(`CREATE INDEX IF NOT EXISTS idx_business_query_period_branch 
     await client.query(`CREATE INDEX IF NOT EXISTS idx_sessions_user    ON user_sessions(user_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_sessions_expires ON user_sessions(expires_at)`);
 
-    // ── 操作紀錄 ──
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS audit_logs (
-        id               BIGSERIAL     PRIMARY KEY,
-        user_id          INTEGER,
-        username         VARCHAR(50)   NOT NULL DEFAULT 'anonymous',
-        display_name     VARCHAR(100)  DEFAULT '',
-        user_role        VARCHAR(20)   DEFAULT '',
-        user_branch      VARCHAR(10),
-        ip_address       VARCHAR(60)   NOT NULL DEFAULT '0.0.0.0',
-        user_agent       VARCHAR(300)  DEFAULT '',
-        action           VARCHAR(30)   NOT NULL,
-        resource         VARCHAR(200)  DEFAULT '',
-        resource_path    VARCHAR(300)  DEFAULT '',
-        resource_detail  TEXT,
-        data_branch      VARCHAR(10),
-        data_period      VARCHAR(6),
-        status_code      SMALLINT,
-        duration_ms      INTEGER,
-        created_at       TIMESTAMPTZ   DEFAULT NOW()
-      )
-    `);
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_al_created  ON audit_logs(created_at DESC)`);
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_al_user     ON audit_logs(username, created_at DESC)`);
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_al_action   ON audit_logs(action, created_at DESC)`);
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_al_ip       ON audit_logs(ip_address, created_at DESC)`);
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_al_branch   ON audit_logs(user_branch, created_at DESC)`);
+   // ── 操作紀錄 ──
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id               BIGSERIAL     PRIMARY KEY,
+      user_id          INTEGER,
+      username         VARCHAR(50)   NOT NULL DEFAULT 'anonymous',
+      display_name     VARCHAR(100)  DEFAULT '',
+      user_role        VARCHAR(20)   DEFAULT '',
+      user_branch      VARCHAR(10),
+      ip_address       VARCHAR(60)   NOT NULL DEFAULT '0.0.0.0',
+      user_agent       VARCHAR(300)  DEFAULT '',
+      action           VARCHAR(30)   NOT NULL,
+        -- VIEW / UPLOAD / DOWNLOAD / CREATE / UPDATE / DELETE
+        -- LOGIN / LOGOUT / SUBMIT / USER_MGMT / PWD_CHANGE
+      resource         VARCHAR(200)  DEFAULT '',
+      resource_path    VARCHAR(300)  DEFAULT '',
+      resource_detail  TEXT,
+      data_branch      VARCHAR(10),
+      data_period      VARCHAR(6),
+      status_code      SMALLINT,
+      duration_ms      INTEGER,
+      created_at       TIMESTAMPTZ   DEFAULT NOW()
+    )
+  `);
+  // 效能索引
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_al_created  ON audit_logs(created_at DESC)`);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_al_user     ON audit_logs(username, created_at DESC)`);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_al_action   ON audit_logs(action, created_at DESC)`);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_al_ip       ON audit_logs(ip_address, created_at DESC)`);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_al_branch   ON audit_logs(user_branch, created_at DESC)`);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_al_data_br  ON audit_logs(data_branch)`);
+ 
+  // 自動分區清理（可選）：保留 180 天
+  // 若資料量龐大，可考慮設定 pg_partman 或排程清理
+*/
 
     // ── 建立預設超管帳號（若無任何使用者）預設: admin / admin1234 ──
     const _uc = await client.query(`SELECT COUNT(*) FROM users`);
