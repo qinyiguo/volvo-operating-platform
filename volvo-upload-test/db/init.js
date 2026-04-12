@@ -533,7 +533,6 @@ await client.query(`CREATE INDEX IF NOT EXISTS idx_business_query_period_branch 
  
   // 自動分區清理（可選）：保留 180 天
   // 若資料量龐大，可考慮設定 pg_partman 或排程清理
-*/
 
     // ── 建立預設超管帳號（若無任何使用者）預設: admin / admin1234 ──
     const _uc = await client.query(`SELECT COUNT(*) FROM users`);
