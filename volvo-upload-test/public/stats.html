@@ -4108,11 +4108,41 @@ if (showCarCount || showRevenue) {
   // 營收列
 if (showRevenue) {
   revTypesShown.forEach(rt => {
-    const rMap      = (saRevAllMaps && saRevAllMaps[rt]) || {};
-    const brTarget  = (revTargetMap && revTargetMap[rt]) || 0;
-    const itemKey   = 'rev_' + rt;
+    const rMap           = (saRevAllMaps && saRevAllMaps[rt]) || {};
+    const brTarget       = (revTargetMap && revTargetMap[rt]) || 0;
+    const itemKey        = 'rev_' + rt;
     const itemAllocRaw   = _ppGetItemAlloc(branch, deptKey, itemKey);
     const itemAllocRatio = itemAllocRaw != null ? itemAllocRaw / 100 : 1;
+    const col   = REV_COLOR[rt] || '#94a3b8';
+    const label = REV_LABEL[rt] || rt;
+    let rowTotal = 0;
+    const cells = roster.map(p => {
+      const actual = getRevActual(rMap, p.emp_name);
+      rowTotal += actual;
+      const myW   = parseFloat(getSavedW(p.emp_name)) || 0;
+      const calcT = myW > 0 && deptTotalW > 0 && brTarget > 0
+        ? brTarget * itemAllocRatio * myW / deptTotalW : null;
+      const rate  = calcT && calcT > 0 ? actual / calcT * 100 : null;
+      const rCol  = rateColor(rate);
+      const barW  = rate !== null ? Math.min(100, rate).toFixed(0) : 0;
+      return `<td style="padding:8px 8px;${TD}text-align:center;border-right:1px solid #1a2535;">
+        <div style="font-size:13px;font-weight:800;color:${actual>0?col:'#475569'}">${actual>0?fmtRev(actual):'—'}</div>
+        <div style="font-size:10px;color:#64748b;margin-top:1px">目標 ${calcT?fmtRev(calcT):'—'}</div>
+        ${rate!==null
+          ?`<div style="display:flex;align-items:center;gap:4px;margin-top:3px"><div style="flex:1;background:#0f172a;border-radius:2px;height:3px"><div style="width:${barW}%;height:3px;border-radius:2px;background:${rCol}"></div></div><span style="font-size:10px;font-weight:800;color:${rCol};min-width:34px;text-align:right">${rate.toFixed(1)}%</span></div>`
+          :'<div style="font-size:10px;color:#334155;margin-top:3px">—</div>'}
+      </td>`;
+    }).join('');
+    tbody += `<tr>
+      <td style="padding:8px 12px;${TD}position:sticky;left:0;z-index:2;background:#111827;border-right:2px solid #374151;min-width:${LABEL_W}px;">
+        <div style="font-weight:800;font-size:13px;color:${col}">${label}</div>
+        ${_ppAllocInputHtml(dKey, itemKey, fmtRev(brTarget))}
+      </td>${cells}
+      <td style="padding:8px 8px;${TD}text-align:right;border-left:2px solid #374151;font-weight:800;color:${rowTotal>0?col:'#475569'};">${rowTotal>0?fmtRev(rowTotal):'—'}</td>
+    </tr>`;
+  });         
+}
+
   // ── 品項區 ──
   if (visMetrics.length > 0) {
     tbody += `<tr><td colspan="${roster.length+2}"
