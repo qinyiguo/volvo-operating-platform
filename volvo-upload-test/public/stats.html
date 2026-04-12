@@ -3595,6 +3595,75 @@ function _ppAllocKey(b,dk,per){return `pp-alloc-${b}-${dk}-${per}`;}
 function _ppSaveAlloc(b,dk,per,pct){try{localStorage.setItem(_ppAllocKey(b,dk,per),String(pct));}catch(e){}}
 function _ppGetAlloc(b,dk,per){try{const v=parseFloat(localStorage.getItem(_ppAllocKey(b,dk,per)));return(!isNaN(v)&&v>0)?v:null;}catch(e){return null;}}
 
+// ★ 以下是新增的 per-item DB 版科別占比 ★
+var _ppItemAllocCache = {};
+
+function _ppGetItemAlloc(branch, deptKey, itemKey) {
+  var cache = _ppItemAllocCache[branch + '-' + deptKey] || {};
+  return cache[itemKey] != null ? parseFloat(cache[itemKey]) : null;
+}
+
+async function _ppLoadItemAllocs(branch, deptKey, period) {
+  var cacheKey = branch + '-' + deptKey;
+  try {
+    var data = await fetch(
+      '/api/bonus/pp-alloc?period=' + period +
+      '&branch=' + encodeURIComponent(branch) +
+      '&dept_key=' + encodeURIComponent(deptKey)
+    ).then(function(r){ return r.json(); });
+    _ppItemAllocCache[cacheKey] = data || {};
+  } catch(e) {
+    _ppItemAllocCache[cacheKey] = {};
+  }
+}
+
+async function _ppSaveItemAlloc(dKey, itemKey, value) {
+  var d = _ppDeptData[dKey]; if (!d) return;
+  var cacheKey = d.branch + '-' + d.deptKey;
+  if (!_ppItemAllocCache[cacheKey]) _ppItemAllocCache[cacheKey] = {};
+  var val = parseFloat(value);
+  if (!isNaN(val) && val >= 0 && val <= 100) {
+    _ppItemAllocCache[cacheKey][itemKey] = val;
+  } else {
+    delete _ppItemAllocCache[cacheKey][itemKey];
+  }
+  var period = getPeriod();
+  try {
+    await fetch('/api/bonus/pp-alloc', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        period:      period,
+        branch:      d.branch,
+        dept_key:    d.deptKey,
+        allocations: _ppItemAllocCache[cacheKey]
+      })
+    });
+  } catch(e) { console.warn('[pp-alloc] 儲存失敗', e); }
+  var viewEl = document.getElementById('ppview-' + d.branch + '-' + d.deptKey);
+  if (viewEl) viewEl.innerHTML = _ppBuildTable(dKey);
+}
+
+function _ppAllocInputHtml(dKey, itemKey, targetLabel) {
+  var d = _ppDeptData[dKey];
+  if (!d) return '';
+  var raw = _ppGetItemAlloc(d.branch, d.deptKey, itemKey);
+  var displayed = raw != null ? raw : '';
+  var safeKey  = itemKey.replace(/'/g, "\\'");
+  var safeDKey = dKey.replace(/'/g, "\\'");
+  return '<div style="display:flex;align-items:center;gap:3px;margin-top:3px;flex-wrap:wrap">'
+    + '<span style="font-size:10px;color:#475569">廠目標 ' + targetLabel + '</span>'
+    + '<span style="font-size:10px;color:#475569;margin-left:3px">占</span>'
+    + '<input type="number" min="0" max="100" step="1"'
+    + ' value="' + displayed + '" placeholder="100"'
+    + ' style="width:42px;background:#0f172a;border:1px solid rgba(245,158,11,.4);color:#f59e0b;'
+    + 'padding:2px 5px;border-radius:4px;font-size:11px;font-weight:800;text-align:right;outline:none"'
+    + ' onfocus="this.style.borderColor=\'#f59e0b\'" onblur="this.style.borderColor=\'rgba(245,158,11,.4)\'"'
+    + ' onchange="_ppSaveItemAlloc(\'' + safeDKey + '\',\'' + safeKey + '\',this.value)">'
+    + '<span style="font-size:10px;color:#f59e0b">%</span>'
+    + '</div>';
+}
+
 async function loadPersonPerfDashboard() {
   const period = getPeriod();
   const branch = document.getElementById('selBranch').value;
@@ -3780,6 +3849,10 @@ async function loadPersonPerfDashboard() {
           _ppDeptData[keyR] = { branch:br, deptKey:'repair',  roster:[...roster維修], metrics:metrics維修, saActuals, ptMap, branchTargets, metricIds:metrics維修.map(m=>m.id), ..._sharedExtra };
           _ppDeptData[keyS] = { branch:br, deptKey:'service', roster:[...roster客服], metrics:metrics客服, saActuals, ptMap, branchTargets, metricIds:metrics客服.map(m=>m.id), ..._sharedExtra };
           _ppDeptData[keyC] = { branch:br, deptKey:'claims',  roster:[...roster承保], metrics:metrics承保, saActuals, ptMap, branchTargets, metricIds:metrics承保.map(m=>m.id), ..._sharedExtra };
+     // 載入此廠三個科別的 per-item 科別占比
+      await Promise.all(['repair','claims','service'].map(function(dk){
+        return _ppLoadItemAllocs(br, dk, period);
+      }));
 
       const tabStyle = (active) => active
         ? 'padding:7px 16px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:#3b82f6;color:#fff;white-space:nowrap'
@@ -4020,8 +4093,8 @@ if (showCarCount || showRevenue) {
   const carTotal = roster.reduce((s,p)=>s+((saCarCount&&saCarCount[p.emp_name])||0),0);
   tbody += `<tr style="background:rgba(59,130,246,.03)">
     <td style="padding:10px 12px;${TD}position:sticky;left:0;z-index:2;background:#0d1b2e;border-right:2px solid #374151;min-width:${LABEL_W}px;">
-      <div style="font-weight:800;font-size:13px;color:#3b82f6">🚗 進廠台數</div>
-      <div style="font-size:10px;color:#475569;margin-top:2px">目標：暫無</div>
+    '<div style="font-weight:800;font-size:13px;color:#3b82f6">🚗 進廠台數</div>' +
+    _ppAllocInputHtml(dKey, 'car_count', '暫無') +
     </td>`;
   roster.forEach(p => {
     const cnt = saCarCount ? Math.round(getRevActual(saCarCount, p.emp_name) || 0) : 0;
@@ -4033,11 +4106,43 @@ if (showCarCount || showRevenue) {
   
  
   // 營收列
- if (showRevenue) {
+if (showRevenue) {
   revTypesShown.forEach(rt => {
     const rMap      = (saRevAllMaps && saRevAllMaps[rt]) || {};
     const brTarget  = (revTargetMap && revTargetMap[rt]) || 0;
-    const effAlloc  = revEffAlloc[rt] || deptAllocRatio;
+    const itemKey   = 'rev_' + rt;
+    const itemAllocRaw   = _ppGetItemAlloc(branch, deptKey, itemKey);
+    const itemAllocRatio = itemAllocRaw != null ? itemAllocRaw / 100 : 1;
+    const rColor    = REV_COLOR[rt]   || '#f97316';
+    const rLabel    = REV_LABEL[rt]   || rt;
+    const revTotal  = roster.reduce((s, p) => s + getRevActual(rMap, p.emp_name), 0);
+    tbody += `<tr style="background:rgba(249,115,22,.04)">
+      <td style="padding:10px 12px;${TD}position:sticky;left:0;z-index:2;background:#1a1200;border-right:2px solid #374151;min-width:${LABEL_W}px;">
+        <div style="font-weight:800;font-size:13px;color:${rColor}">${rLabel}</div>
+        ${_ppAllocInputHtml(dKey, itemKey, fmtRev(brTarget))}
+      </td>`;
+    roster.forEach(p => {
+      const actual = getRevActual(rMap, p.emp_name);
+      const myW    = parseFloat(getSavedW(p.emp_name)) || 0;
+      const calcT  = myW > 0 && deptTotalW > 0 && brTarget > 0
+        ? brTarget * itemAllocRatio * myW / deptTotalW : null;
+      const rate   = calcT && calcT > 0 ? actual / calcT * 100 : null;
+      const rCol   = rateColor(rate);
+      const barW   = rate !== null ? Math.min(100, rate).toFixed(0) : 0;
+      tbody += `<td style="padding:10px 8px;${TD}text-align:center;border-right:1px solid #1a2535;background:rgba(249,115,22,.02);">
+        <div style="font-size:15px;font-weight:900;color:${actual>0?rColor:'#475569'}">${fmtRev(actual)}</div>
+        <div style="font-size:10px;color:#64748b;margin-top:1px">目標 ${calcT?fmtRev(calcT):'—'}</div>
+        ${rate!==null?`<div style="display:flex;align-items:center;gap:4px;margin-top:3px">
+          <div style="flex:1;background:#0f172a;border-radius:2px;height:3px">
+            <div style="width:${barW}%;height:3px;border-radius:2px;background:${rCol}"></div>
+          </div>
+          <span style="font-size:10px;font-weight:800;color:${rCol};min-width:36px;text-align:right">${rate.toFixed(1)}%</span>
+        </div>`:'<div style="font-size:10px;color:#334155;margin-top:3px">—</div>'}
+      </td>`;
+    });
+    tbody += `<td style="padding:10px 8px;${TD}text-align:right;border-left:2px solid #374151;font-weight:900;color:${rColor};">${fmtRev(revTotal)}</td></tr>`;
+  });
+}
     const rColor    = REV_COLOR[rt]   || '#f97316';
     const rLabel    = REV_LABEL[rt]   || rt;
     const revTotal  = roster.reduce((s, p) => s + getRevActual(rMap, p.emp_name), 0);
@@ -4083,7 +4188,9 @@ if (showCarCount || showRevenue) {
         const actual = getActual(name,m.id);
         rowTotal += actual;
         const myW  = parseFloat(getSavedW(name))||0;
-        const calcT= myW>0&&deptTotalW>0&&btVal>0 ? btVal*deptAllocRatio*myW/deptTotalW : null;
+        var _mItemAlloc = _ppGetItemAlloc(branch, deptKey, 'metric_' + m.id);
+        var _mAllocRatio = _mItemAlloc != null ? _mItemAlloc / 100 : 1;
+        const calcT= myW>0&&deptTotalW>0&&btVal>0 ? btVal*_mAllocRatio*myW/deptTotalW : null;
         const rate = calcT&&calcT>0 ? actual/calcT*100 : null;
         const rCol = rateColor(rate);
         const barW = rate!==null ? Math.min(100,rate).toFixed(0) : 0;
@@ -4103,7 +4210,7 @@ if (showCarCount || showRevenue) {
       tbody += `<tr>
         <td style="padding:8px 12px;${TD}position:sticky;left:0;z-index:2;background:#111827;border-right:2px solid #374151;min-width:${LABEL_W}px;">
           <div style="font-weight:700;font-size:12px;color:#8b5cf6">${m.metric_name}</div>
-          <div style="font-size:10px;color:#475569;margin-top:2px">廠目標 ${fmtT(btVal,m)}</div>
+          ${_ppAllocInputHtml(dKey, 'metric_' + m.id, fmtT(btVal,m))}
         </td>${cells}
         <td style="padding:8px 8px;${TD}text-align:right;border-left:2px solid #374151;
                    font-weight:800;color:${rowTotal>0?'#10b981':'#475569'};">${fmtV(rowTotal,m)}</td>
@@ -4128,16 +4235,6 @@ if (showCarCount || showRevenue) {
                  padding:5px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">
           📋 帶入上月權重
         </button>
-        <div style="margin-left:auto;display:flex;align-items:center;gap:5px">
-          <span style="font-size:11px;color:#64748b">科別占比</span>
-          <input type="number" min="1" max="100" step="1" id="ppAlloc-${dKey}"
-            value="${deptAlloc!=null?deptAlloc:''}" placeholder="—"
-            style="background:#0f172a;border:1px solid #2d3f56;color:#f59e0b;padding:3px 6px;
-                   border-radius:5px;font-size:12px;font-weight:800;width:52px;text-align:right;outline:none"
-            onchange="_ppOnAllocChange('${esc(dKey)}')"
-            onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='#2d3f56'">
-          <span style="font-size:11px;color:#64748b">%</span>
-        </div>
       </div>
     </td>
   </tr>`;
