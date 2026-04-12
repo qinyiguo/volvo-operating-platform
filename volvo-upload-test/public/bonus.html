@@ -467,6 +467,7 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
             <option value="sa_qty">📦 數量型（依指標銷售件數）</option>
             <option value="parts_discount">💎 折扣型（精品/配件折扣區間）</option>
             <option value="sa_pct">💰 比例型（指標銷售總額 × %）</option>
+            <option value="sa_tier">📊 階梯型（依門檻給不同獎金）</option>
           </select>
         </div>
       </div>
@@ -554,6 +555,42 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
       <label>獎金比例（%）</label>
       <input type="number" id="pmSaPctBonus" class="form-input" value="0" min="0" max="100" step="0.1" placeholder="例：5">
       <div style="font-size:11px;color:#64748b;margin-top:4px">銷售總額 × %</div>
+    </div>
+  </div>
+</div>
+     <!-- 階梯型 -->
+<div id="pmSaTierArea" style="display:none">
+  <div class="section-label">📊 階梯型設定</div>
+  <div style="background:#1e293b;border:1px solid #3b82f644;border-radius:8px;padding:12px 14px;margin-bottom:12px">
+    <div class="form-group">
+      <label>連結指標銷售品項</label>
+      <select id="pmTierConfigId" class="form-select"><option value="">選擇...</option></select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group">
+        <label>歸屬人員</label>
+        <select id="pmTierPersonType" class="form-select">
+          <option value="sales_person">🛒 銷售人員（SA）</option>
+          <option value="tech">🔧 施工技師</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>門檻統計依據</label>
+        <select id="pmTierStatMethod" class="form-select">
+          <option value="amount">💰 銷售金額（元）</option>
+          <option value="quantity">📦 銷售數量（件）</option>
+          <option value="count">🔢 銷售筆數</option>
+        </select>
+      </div>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:8px">獎金階梯（由高到低排列，達到門檻套用該層）</div>
+    <div id="pmTierRows" style="margin-bottom:8px"></div>
+    <button onclick="addPmTierRow()" style="padding:4px 12px;background:#253347;color:#cbd5e1;border:1px solid #2d3f56;border-radius:5px;font-size:12px;cursor:pointer">＋ 新增階梯</button>
+    <div style="background:#0f172a;border-radius:6px;padding:8px 12px;margin-top:10px;font-size:11px;color:#475569;line-height:1.8">
+      💡 <strong style="color:#94a3b8">獎金類型說明：</strong><br>
+      • 百分比（%）：實績 × %，例如金額達10萬給10%<br>
+      • 每單位（元）：實績數量 × 金額，例如每件給200元<br>
+      • 固定金額：達標直接給固定金額
     </div>
   </div>
 </div>
@@ -2278,9 +2315,16 @@ function renderPromoConfigList() {
     return;
   }
   el.innerHTML = _promoCfgs.map(function(c) {
-    var isQty = c.rule_type === 'sa_qty';
-    var col = isQty ? '#f59e0b' : '#8b5cf6';
-    var typeLabel = isQty ? '📦 數量型' : '💎 折扣型';
+  var isTier = c.rule_type === 'sa_tier';
+  var isQty  = c.rule_type === 'sa_qty';
+  var col    = isTier ? '#3b82f6' : isQty ? '#f59e0b' : '#8b5cf6';
+  var typeLabel = isTier ? '📊 階梯型' : isQty ? '📦 數量型' : c.rule_type === 'sa_pct' ? '💰 比例型' : '💎 折扣型';
+  var desc = isTier
+    ? (c.sa_config_name||'（未選）') + '　' + (c.tiers||[]).sort((a,b)=>b.gte-a.gte).slice(0,2).map(function(t){
+        var unit = t.bonus_type==='pct'?'%':t.bonus_type==='per_unit'?'元/件':'元固定';
+        return '≥'+t.gte.toLocaleString()+' → '+t.bonus_value+unit;
+      }).join('；')
+    : isQty ? ...原本的 desc...
     var desc = isQty
       ? (c.sa_config_name || '（未選指標）') + '　每' + c.per_qty + '件 → ' + parseFloat(c.bonus_per_unit).toLocaleString() + '元'
       : (c.part_catalog_types || []).join('/') + '　折扣' + (c.discount_min != null ? (c.discount_min*100).toFixed(0)+'%' : '') + '~' + (c.discount_max != null ? (c.discount_max*100).toFixed(0)+'%' : '') + '　獎金' + c.bonus_pct + '%';
@@ -2295,6 +2339,38 @@ function renderPromoConfigList() {
       + '<button class="btn btn-danger btn-sm" onclick="deletePromoCfg(' + c.id + ',\'' + c.rule_name.replace(/'/g,"\\'") + '\')">刪除</button>'
       + '</div>';
   }).join('');
+}
+ var _pmTiers = [];
+
+function renderPmTierRows() {
+  var el = document.getElementById('pmTierRows');
+  if (!el) return;
+  if (!_pmTiers.length) { el.innerHTML = '<div style="color:#475569;font-size:12px;padding:4px 0">尚未設定階梯</div>'; return; }
+  el.innerHTML = _pmTiers.map(function(t, i) {
+    return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;background:#0f172a;border-radius:6px;padding:7px 10px">'
+      +'<span style="font-size:11px;color:#64748b;white-space:nowrap">實績 ≥</span>'
+      +'<input type="number" value="'+t.gte+'" min="0" step="1" placeholder="門檻值"'
+      +' style="width:90px;background:#1e293b;border:1px solid #2d3f56;color:#3b82f6;padding:4px 7px;border-radius:5px;font-size:12px;font-weight:700;outline:none"'
+      +' oninput="_pmTiers['+i+'].gte=parseFloat(this.value)||0">'
+      +'<span style="font-size:11px;color:#64748b;white-space:nowrap">給</span>'
+      +'<input type="number" value="'+t.bonus_value+'" min="0" step="0.1" placeholder="獎金值"'
+      +' style="width:80px;background:#1e293b;border:1px solid #2d3f56;color:#10b981;padding:4px 7px;border-radius:5px;font-size:12px;font-weight:700;outline:none"'
+      +' oninput="_pmTiers['+i+'].bonus_value=parseFloat(this.value)||0">'
+      +'<select oninput="_pmTiers['+i+'].bonus_type=this.value"'
+      +' style="background:#1e293b;border:1px solid #2d3f56;color:#f59e0b;padding:4px 6px;border-radius:5px;font-size:11px;outline:none">'
+      +'<option value="pct" '+(t.bonus_type==='pct'?'selected':'')+'>% 百分比</option>'
+      +'<option value="per_unit" '+(t.bonus_type==='per_unit'?'selected':'')+'>元/件</option>'
+      +'<option value="fixed" '+(t.bonus_type==='fixed'?'selected':'')+'>元 固定</option>'
+      +'</select>'
+      +'<button onclick="_pmTiers.splice('+i+',1);renderPmTierRows()"'
+      +' style="background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.25);padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer">×</button>'
+    +'</div>';
+  }).join('');
+}
+
+function addPmTierRow() {
+  _pmTiers.push({ gte: 0, bonus_value: 0, bonus_type: 'pct' });
+  renderPmTierRows();
 }
 
 async function openPromoModal(id) {
@@ -2351,6 +2427,17 @@ async function openPromoModal(id) {
     return '<label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;padding:5px 12px;border-radius:6px;margin:2px;border:1.5px solid ' + (on?'#f97316':'#2d3f56') + ';background:' + (on?'rgba(249,115,22,.15)':'transparent') + ';font-size:12px;font-weight:700;color:' + (on?'#f97316':'#64748b') + '" onclick="toggleChipLabel(this,\'#f97316\')">'
       + '<input type="checkbox" value="' + t + '" ' + (on?'checked':'') + ' style="display:none">' + t + '</label>';
   }).join('');
+   // 初始化 sa_tier
+  _pmTiers = (cfg.tiers || []).map(function(t){ return Object.assign({},t); });
+  var tierSel = document.getElementById('pmTierConfigId');
+  if (tierSel) tierSel.innerHTML = '<option value="">選擇...</option>' + saList.map(function(s){
+    return '<option value="'+s.id+'" '+(s.id==cfg.sa_config_id?'selected':'')+'>'+s.config_name+'</option>';
+  }).join('');
+  var tierPT = document.getElementById('pmTierPersonType');
+  if (tierPT) tierPT.value = cfg.person_type || 'sales_person';
+  var tierSM = document.getElementById('pmTierStatMethod');
+  if (tierSM) tierSM.value = cfg.stat_method || 'amount';
+  renderPmTierRows();
   onPmRuleTypeChange();
   openModal('promoModal');
   setTimeout(function(){ document.getElementById('pmRuleName').focus(); }, 80);
@@ -2370,8 +2457,8 @@ function onPmRuleTypeChange() {
   var discArea  = document.getElementById('pmDiscArea');
   if (saArea)   saArea.style.display   = type === 'sa_qty' ? '' : 'none';
   if (discArea) discArea.style.display = type === 'parts_discount' ? '' : 'none';
-  var saPctArea = document.getElementById('pmSaPctArea');
-  if (saPctArea) saPctArea.style.display = type === 'sa_pct' ? '' : 'none';
+  var saTierArea = document.getElementById('pmSaTierArea');
+  if (saTierArea) saTierArea.style.display = type === 'sa_tier' ? '' : 'none';
 }
 
 async function savePromoCfg() {
@@ -2393,14 +2480,15 @@ async function savePromoCfg() {
     payload.per_qty        = parseFloat(document.getElementById('pmPerQty').value) || 1;
     payload.bonus_per_unit = parseFloat(document.getElementById('pmBonusUnit').value) || 0;
     payload.person_type = document.getElementById('pmPersonType').value;
-    } else if (ruleType === 'sa_pct') {
-  var saId = document.getElementById('pmSaPctConfigId').value;
-  if (!saId) { alert('請選擇指標銷售品項'); return; }
-  payload.sa_config_id = parseInt(saId);
-  payload.bonus_pct    = parseFloat(document.getElementById('pmSaPctBonus').value) || 0;
-  payload.person_type  = document.getElementById('pmSaPctPersonType').value;
-  payload.paycode_types = [...document.querySelectorAll('#pmSaPctPaycodes input:checked')].map(function(cb){ return cb.value; });
-  } else {
+    } else if (ruleType === 'sa_tier') {
+  var tierId = document.getElementById('pmTierConfigId').value;
+  if (!tierId) { alert('請選擇指標銷售品項'); btn.disabled=false; return; }
+  if (!_pmTiers.length) { alert('請至少設定一個階梯'); btn.disabled=false; return; }
+  payload.sa_config_id  = parseInt(tierId);
+  payload.person_type   = document.getElementById('pmTierPersonType').value;
+  payload.stat_method   = document.getElementById('pmTierStatMethod').value;
+  payload.tiers         = _pmTiers.map(function(t){ return { gte: t.gte, bonus_value: t.bonus_value, bonus_type: t.bonus_type }; });
+} else {
     var catTypes = [...document.querySelectorAll('#pmCatalogTypes input:checked')].map(function(cb){ return cb.value; });
     if (!catTypes.length) { alert('請選擇品項類型（精品/配件）'); return; }
     var payCodes = [...document.querySelectorAll('#pmPaycodes input:checked')].map(function(cb){ return cb.value; });
