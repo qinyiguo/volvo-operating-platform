@@ -3573,21 +3573,16 @@ function openPPDeptConfig(dKey) {
       <tr>
         <td style="${TD}position:sticky;left:0;background:#111827;font-weight:700;color:${item.color}">${item.label}</td>
         <td style="${TD}text-align:right;">
-          <input type="number" min="0" step="1"
-            id="ppCfgTarget-${item.key}"
-            value="${item.target||''}"
-            placeholder="—"
-            oninput="_ppCfgWeightUpdate()"
-            style="width:80px;background:#0f172a;border:1px solid ${item.color}55;color:${item.color};
-                   padding:3px 6px;border-radius:5px;font-size:12px;font-weight:800;
-                   text-align:right;outline:none">
-        </td>
-        ${d.roster.map((p,ni) => `
-        <td id="ppCfgCell-${item.key}-${ni}" style="${TD}text-align:center;color:#94a3b8">—</td>`).join('')}
-      </tr>`).join('')}
-    </tbody>
-    </table>
-  </div>`;
+        <div style="font-size:13px;font-weight:800;color:${item.color};text-align:right">
+          ${item.target >= 1000 ? Math.round(item.target/1000).toLocaleString()+'K' : (item.target||'—')}
+        </div>
+                </td>
+                ${d.roster.map((p,ni) => `
+                <td id="ppCfgCell-${item.key}-${ni}" style="${TD}text-align:center;color:#94a3b8">—</td>`).join('')}
+              </tr>`).join('')}
+            </tbody>
+            </table>
+          </div>`;
 
   const tab2Html = `<div id="ppCfgPanel-weight" style="display:none">
     <div style="font-size:11px;color:#64748b;margin-bottom:10px;line-height:1.7">
@@ -3663,8 +3658,9 @@ window._ppCfgWeightUpdate = function() {
   ];
 
   allItems.forEach(item => {
-    const targetEl = document.getElementById(`ppCfgTarget-${item.key}`);
-    const target   = targetEl ? (parseFloat(targetEl.value) || 0) : 0;
+    const target = item.key.startsWith('rev_')
+      ? ((d.revTargetMap && d.revTargetMap[item.key.replace('rev_','')]) || 0)
+      : ((d.branchTargets?.[d.branch]?.[item.key.replace('metric_','')] ) || 0);
     const allocRaw = _ppGetItemAlloc(d.branch, d.deptKey, item.key);
     const allocR   = allocRaw != null ? allocRaw / 100 : 1;
 
@@ -4909,7 +4905,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
          align-items:center;justify-content:center;padding:16px"
   onclick="if(event.target===this)closePPDeptConfig()">
   <div style="background:#1a2740;border:1px solid #2d4060;border-radius:14px;
-              width:100%;max-width:500px;box-shadow:0 24px 64px rgba(0,0,0,.85)">
+              width:100%;max-width:900px;box-shadow:0 24px 64px rgba(0,0,0,.85)">
     <div style="display:flex;align-items:center;gap:10px;padding:16px 20px 12px;border-bottom:1px solid #2d3f56">
       <div id="ppDeptConfigTitle" style="font-size:15px;font-weight:800;color:#fff;flex:1">科別設定</div>
       <button onclick="closePPDeptConfig()"
