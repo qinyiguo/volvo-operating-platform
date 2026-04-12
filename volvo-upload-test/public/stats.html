@@ -3787,7 +3787,7 @@ function savePPDeptConfig() {
   _ppSwitchDept(d.branch, d.deptKey);
   const viewEl = document.getElementById(`ppview-${d.branch}-${d.deptKey}`);
   if (viewEl) viewEl.innerHTML = _ppBuildTable(savedKey);  // ← 用存好的
-
+}
 function closePPDeptConfig() {
   document.getElementById('ppDeptConfigModal').style.display = 'none';
   document.body.style.overflow = '';
