@@ -2143,19 +2143,27 @@ var promoDetailData = encodeURIComponent(JSON.stringify(
     if (!qty && ruleType==='sa_qty' && bonusUnit>0) qty = Math.round(parseFloat(amt||0) * perQty / bonusUnit);
     var salesAmt = (ruleType==='sa_pct'||ruleType==='parts_discount') && bonusPct>0
       ? Math.round(parseFloat(amt||0) / (bonusPct/100)) : 0;
-    var actualAmt = 0;
-    if (ruleType === 'sa_tier') {
-      var _actualMap = ((_promoApiResults.resultsByConfig[cid]||{}).actualByBranch||{})[fc]||{};
-      actualAmt = parseFloat(_actualMap[p4.emp_name] || 0);
-      if (!actualAmt) {
-        for (var _k in _actualMap) {
-          if (_k.length>=2&&(_k.indexOf(p4.emp_name)>=0||p4.emp_name.indexOf(_k)>=0)){actualAmt=parseFloat(_actualMap[_k]||0);break;}
-        }
-      }
-    }
-    return { name: cfg2.rule_name||'（未知）', amount: parseFloat(amt||0),
-      rule_type: ruleType, per_qty: perQty, bonus_per_unit: bonusUnit,
-      bonus_pct: bonusPct, qty: qty, sales_amt: salesAmt, actual_amt: actualAmt };
+   var actualAmt = 0;
+   var tierMatch = null;  // ← 新增
+   if (ruleType === 'sa_tier') {
+     var _actualMap = ((_promoApiResults.resultsByConfig[cid]||{}).actualByBranch||{})[fc]||{};
+     var _tierMatchMap = ((_promoApiResults.resultsByConfig[cid]||{}).tierMatchByBranch||{})[fc]||{};  // ← 新增
+     actualAmt = parseFloat(_actualMap[p4.emp_name] || 0);
+     tierMatch = _tierMatchMap[p4.emp_name] || null;  // ← 新增
+     if (!actualAmt) {
+       for (var _k in _actualMap) {
+         if (_k.length>=2&&(_k.indexOf(p4.emp_name)>=0||p4.emp_name.indexOf(_k)>=0)){
+           actualAmt=parseFloat(_actualMap[_k]||0);
+           tierMatch=_tierMatchMap[_k]||null;  // ← 新增
+           break;
+         }
+       }
+     }
+   }
+   return { name: cfg2.rule_name||'（未知）', amount: parseFloat(amt||0),
+     rule_type: ruleType, per_qty: perQty, bonus_per_unit: bonusUnit,
+     bonus_pct: bonusPct, qty: qty, sales_amt: salesAmt,
+     actual_amt: actualAmt, tier_match: tierMatch };  // ← 加 tier_match
   }).filter(function(x){return x.amount>0;})
 ));
 var extraAmt = mRow.extraBonus||0;
@@ -3088,11 +3096,23 @@ async function clearActualOverride(metricId, period, branch) {
       breakdown = '<div style="font-size:11px;color:#64748b;margin-top:3px">'
         +item.sales_amt.toLocaleString()+'元 × '+item.bonus_pct+'%'
         +' = <span style="color:#10b981">'+item.amount.toLocaleString()+'元</span></div>';
-    } else if (item.rule_type==='sa_tier' && item.actual_amt>0) {
-      breakdown = '<div style="font-size:11px;color:#64748b;margin-top:3px">'
-        +'實績 '+item.actual_amt.toLocaleString()+'元'
-        +' → <span style="color:#10b981">'+item.amount.toLocaleString()+'元</span></div>';
-    }
+   } else if (item.rule_type==='sa_tier' && item.actual_amt>0) {
+     var tierDesc = '';
+     if (item.tier_match) {
+       var tv = item.tier_match.bonus_value, tt = item.tier_match.bonus_type;
+       if (tt === 'pct') {
+         tierDesc = ' × ' + tv + '%';
+       } else if (tt === 'per_unit') {
+         tierDesc = ' × ' + parseFloat(tv).toLocaleString() + '元/件';
+       } else if (tt === 'fixed') {
+         tierDesc = '（固定金額）';
+       }
+     }
+     breakdown = '<div style="font-size:11px;color:#64748b;margin-top:3px">'
+       +'實績 '+item.actual_amt.toLocaleString()+'元'
+       +tierDesc
+       +' = <span style="color:#10b981">'+item.amount.toLocaleString()+'元</span></div>';
+   }
     return '<tr><td style="padding:8px 12px;color:#e2e8f0;font-size:13px">'
       +item.name+breakdown+'</td>'
       +'<td style="padding:8px 12px;text-align:right;color:#10b981;font-size:13px;font-weight:700;vertical-align:top">'+item.amount.toLocaleString()+' 元</td></tr>';
