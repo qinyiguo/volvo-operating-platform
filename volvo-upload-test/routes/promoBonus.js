@@ -287,8 +287,6 @@ const resultsByConfig = {};
 }  // ← sa_tier else if 的結尾
 
         resultsByConfig[cfg.id].byBranch[br] = personResults;  // ← 這行維持在外面
-        resultsByConfig[cfg.id].actualByBranch = resultsByConfig[cfg.id].actualByBranch || {};
-        resultsByConfig[cfg.id].actualByBranch[br] = personActuals;
       }));
     }));
 
