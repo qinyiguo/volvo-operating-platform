@@ -270,7 +270,7 @@ const initDatabase = async () => {
       )`);
 
     // ── bonus_metrics 補欄位（舊版升級用）──
-    await client.query(`ALTER TABLE bonus_metrics ADD COLUMN IF NOT EXISTS target_dept_codes JSONB DEFAULT '[]'`);
+    bonus_metrics ADD COLUMN IF NOT EXISTS target_dept_codes JSONB DEFAULT '[]'`);
     await client.query(`ALTER TABLE bonus_metrics ADD COLUMN IF NOT EXISTS bonus_rule JSONB DEFAULT '{}'`);
 
     await client.query(`
@@ -426,7 +426,8 @@ await client.query(`
     await client.query(`CREATE INDEX IF NOT EXISTS idx_bba_period ON bodyshop_bonus_applications(app_period)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_bba_plate  ON bodyshop_bonus_applications(plate_no_norm)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_bba_status ON bodyshop_bonus_applications(status)`);
-
+    await client.query(`ALTER TABLE promo_bonus_configs ADD COLUMN IF NOT EXISTS tiers JSONB DEFAULT '[]'`);
+    await client.query(`ALTER TABLE promo_bonus_configs ADD COLUMN IF NOT EXISTS stat_method VARCHAR(20) DEFAULT 'amount'`);
     await client.query(`ALTER TABLE bodyshop_bonus_applications ADD COLUMN IF NOT EXISTS source_app_id INTEGER`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_bba_source ON bodyshop_bonus_applications(source_app_id)`);
     try {
