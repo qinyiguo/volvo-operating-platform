@@ -476,8 +476,7 @@
         <button id="saSubBtn-tech"  class="sa-subtab"        onclick="switchSaSubTab('tech')">&#x1F527; 技師施工</button>
       </div>
       <div id="saMatrixMeta" style="font-size:12px;color:#64748b"></div>
-      <button onclick="openPPTargetModal()"
-  style="font-size:12px;color:#60a5fa;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);padding:5px 10px;border-radius:5px;cursor:pointer;white-space:nowrap;font-weight:700">⚙️ 設定業績目標</button>
+      <a href="/settings.html" style="font-size:12px;color:#64748b;text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border:1px solid #2d3f56;border-radius:6px;background:#1e293b;margin-left:auto">&#x2699;&#xFE0F; 設定</a>
     </div>
     <div id="saView-sales">
       <div class="card" style="padding:0">
@@ -601,7 +600,8 @@
            style="background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.35);white-space:nowrap">
   ⬇️ 匯出 Excel
 </button>
-          <a href="/settings.html" style="font-size:12px;color:#64748b;text-decoration:none;padding:5px 10px;border:1px solid #2d3f56;border-radius:5px;background:#1e293b;white-space:nowrap">&#x2699;&#xFE0F; 設定目標</a>
+          <button onclick="openPPTargetModal()"
+  style="font-size:12px;color:#60a5fa;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);padding:5px 10px;border-radius:5px;cursor:pointer;white-space:nowrap;font-weight:700">⚙️ 設定業績目標</button>
         </span>
       </div>
       <div id="ppContent" style="padding:8px 0;color:#475569;font-size:13px">請選擇指標後按查詢</div>
