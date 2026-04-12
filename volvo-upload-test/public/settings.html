@@ -554,6 +554,8 @@
   <button class="mob-sec-btn" id="mob-menu-person-targets" onclick="showSection('person-targets')">👤 個人目標</button>
   <button class="mob-sec-btn" id="mob-menu-bay-config" onclick="showSection('bay-config')">🔧 工位</button>
   <button class="mob-sec-btn" id="mob-menu-password" onclick="showSection('password')">🔑 密碼</button>
+  <button class="mob-sec-btn" id="mob-menu-users" onclick="showSection('users')">👥 使用者</button>
+  <button class="mob-sec-btn" id="mob-menu-auditlog" onclick="showSection('auditlog')">📋 操作紀錄</button>
 </div>
 <div class="layout">
   <div class="sidebar">
@@ -597,6 +599,12 @@
       <div class="sidebar-label">系統</div>
       <div class="sidebar-item" onclick="showSection('password')" id="menu-password">
         <span class="icon">🔑</span> 管理員密碼
+      </div>
+     <div class="sidebar-item" onclick="showSection('users')" id="menu-users">
+        <span class="icon">👥</span> 使用者管理
+      </div>
+      <div class="sidebar-item" onclick="showSection('auditlog')" id="menu-auditlog">
+        <span class="icon">📋</span> 操作紀錄
       </div>
     </div>
   </div>
@@ -1074,6 +1082,86 @@
         </div>
       </div>
     </div>
+   <!-- ── 使用者管理 ── -->
+    <div class="section-page" id="section-users">
+      <div class="page-title">👥 使用者管理</div>
+      <p class="page-sub">新增帳號、設定角色與功能權限</p>
+      <!-- 貼入 settings_users_tab.html 的 tab-users div 內容（去掉最外層的 <div id="tab-users">） -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-head" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div class="card-head-title">👥 使用者管理</div>
+          <div id="userRoleNote" style="font-size:12px;color:#64748b;margin-left:4px"></div>
+          <button class="btn btn-primary" onclick="openAddUserModal()" style="margin-left:auto">＋ 新增使用者</button>
+        </div>
+        <div id="usersTableWrap" style="overflow-x:auto">
+          <div style="padding:40px;text-align:center;color:#64748b">載入中...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 操作紀錄 ── -->
+    <div class="section-page" id="section-auditlog">
+      <div class="page-title">📋 操作紀錄</div>
+      <p class="page-sub">查看所有使用者的操作、下載、登入紀錄（含 IP）</p>
+      <!-- 貼入 settings_auditlog_tab.html 的全部內容（去掉最外層 <div id="tab-auditlog">） -->
+      <div id="auditSummaryCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px"></div>
+      <div class="card">
+        <div class="card-head" style="flex-wrap:wrap;gap:8px">
+          <div class="card-head-title">📋 操作紀錄</div>
+          <span id="auditTotalBadge" class="badge badge-blue">0 筆</span>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto">
+            <input id="auditKeyword" type="text" placeholder="搜尋資源/路徑" style="background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:6px 10px;border-radius:6px;font-size:12px;width:140px;outline:none" onkeydown="if(event.key==='Enter')loadAuditLogs(1)">
+            <input id="auditUsername" type="text" placeholder="帳號/姓名" style="background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:6px 10px;border-radius:6px;font-size:12px;width:110px;outline:none" onkeydown="if(event.key==='Enter')loadAuditLogs(1)">
+            <select id="auditAction" style="background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:6px 10px;border-radius:6px;font-size:12px;outline:none">
+              <option value="">全部動作</option>
+              <option value="LOGIN">LOGIN 登入</option>
+              <option value="LOGOUT">LOGOUT 登出</option>
+              <option value="VIEW">VIEW 查看</option>
+              <option value="UPLOAD">UPLOAD 上傳</option>
+              <option value="DOWNLOAD">DOWNLOAD 下載</option>
+              <option value="CREATE">CREATE 新增</option>
+              <option value="UPDATE">UPDATE 更新</option>
+              <option value="DELETE">DELETE 刪除</option>
+              <option value="SUBMIT">SUBMIT 提交</option>
+              <option value="USER_MGMT">USER_MGMT 帳號管理</option>
+              <option value="PWD_CHANGE">PWD_CHANGE 改密碼</option>
+            </select>
+            <select id="auditBranch" style="background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:6px 10px;border-radius:6px;font-size:12px;outline:none">
+              <option value="">全部廠別</option>
+              <option value="AMA">AMA</option>
+              <option value="AMC">AMC</option>
+              <option value="AMD">AMD</option>
+            </select>
+            <input id="auditDateFrom" type="date" style="background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:6px 10px;border-radius:6px;font-size:12px;outline:none">
+            <input id="auditDateTo" type="date" style="background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:6px 10px;border-radius:6px;font-size:12px;outline:none">
+            <button class="btn btn-primary" onclick="loadAuditLogs(1)" style="font-size:12px;padding:6px 12px">🔍 查詢</button>
+            <button class="btn btn-secondary" onclick="resetAuditFilters()" style="font-size:12px;padding:6px 10px">重置</button>
+            <button class="btn btn-green" onclick="exportAuditCSV()" style="font-size:12px;padding:6px 10px">⬇️ 匯出</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;max-height:calc(100vh - 380px);overflow-y:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:900px">
+            <thead>
+              <tr>
+                <th style="padding:8px 10px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:2">時間</th>
+                <th style="padding:8px 10px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:left;position:sticky;top:0;z-index:2">使用者</th>
+                <th style="padding:8px 10px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:left;position:sticky;top:0;z-index:2">動作</th>
+                <th style="padding:8px 10px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:left;position:sticky;top:0;z-index:2">資源/功能</th>
+                <th style="padding:8px 10px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:left;position:sticky;top:0;z-index:2">資料廠別/期間</th>
+                <th style="padding:8px 10px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:left;position:sticky;top:0;z-index:2">IP 位址</th>
+                <th style="padding:8px 10px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:center;position:sticky;top:0;z-index:2">狀態</th>
+                <th style="padding:8px 10px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:right;position:sticky;top:0;z-index:2">耗時</th>
+              </tr>
+            </thead>
+            <tbody id="auditTbody">
+              <tr><td colspan="8" style="padding:40px;text-align:center;color:#64748b">請點選查詢載入紀錄</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="auditPagination" style="display:none;padding:10px 14px;border-top:1px solid #2d3f56;display:flex;align-items:center;gap:6px;flex-wrap:wrap"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px" id="auditDetailPanels"></div>
+    </div>
 
   </div><!-- /.main -->
 </div><!-- /.layout -->
@@ -1095,7 +1183,7 @@ document.addEventListener('keydown',e=>{
 });
 
 // ══ Sidebar ══
-const sections=['upload','dbstatus','sa-config','working-days','beauty-op-hours','tech-wage-config','revenue-targets','performance','person-targets','bay-config','password'];
+const sections=['upload','dbstatus','sa-config','working-days','beauty-op-hours','tech-wage-config','revenue-targets','performance','person-targets','bay-config','password','users','auditlog'];
 function showSection(id){
   sections.forEach(s=>{
     document.getElementById(`section-${s}`).classList.toggle('active',s===id);
@@ -1116,6 +1204,8 @@ function showSection(id){
   if(id==='performance'){loadPerfMetrics();loadPerfTgtPeriods();initPerfUpYear();}
   if(id==='person-targets'){initPtSelectors();}
   if(id==='bay-config') loadBayConfig();
+  if(id==='users') loadUsers();
+  if(id==='auditlog') { loadAuditLogs(1); loadAuditSummary(); }
 }
 
 // ══ Upload ══
@@ -1895,7 +1985,290 @@ async function saveBayConfig() {
     msgEl.style.color = '#ef4444';
   }
 }
-
+ <!-- 使用者 Modal -->
+<div id="userModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:800;
+     align-items:center;justify-content:center;padding:16px;overflow-y:auto"
+     onclick="if(event.target===this)closeUserModal()">
+  <div style="background:#1a2740;border:1px solid #2d4060;border-radius:14px;
+              width:100%;max-width:560px;margin:auto">
+    <div style="padding:16px 20px 0;display:flex;align-items:center;gap:10px">
+      <div style="flex:1;font-size:15px;font-weight:800;color:#fff" id="userModalTitle">新增使用者</div>
+      <button onclick="closeUserModal()" style="width:30px;height:30px;border-radius:7px;border:1px solid #2d3f56;
+              background:#0f172a;color:#64748b;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
+    </div>
+    <div style="padding:18px 20px 20px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div>
+          <label style="font-size:12px;color:#64748b;font-weight:600;display:block;margin-bottom:6px">帳號 *</label>
+          <input id="umUsername" type="text" placeholder="英文+數字" style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:9px 12px;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box">
+        </div>
+        <div>
+          <label style="font-size:12px;color:#64748b;font-weight:600;display:block;margin-bottom:6px">顯示名稱</label>
+          <input id="umDisplayName" type="text" placeholder="中文姓名" style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:9px 12px;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box">
+        </div>
+        <div>
+          <label style="font-size:12px;color:#64748b;font-weight:600;display:block;margin-bottom:6px">密碼 <span id="umPwNote" style="color:#475569;font-weight:400">（必填）</span></label>
+          <input id="umPassword" type="password" placeholder="至少 6 字元" style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:9px 12px;border-radius:7px;font-size:14px;outline:none;box-sizing:border-box">
+        </div>
+        <div>
+          <label style="font-size:12px;color:#64748b;font-weight:600;display:block;margin-bottom:6px">角色</label>
+          <select id="umRole" onchange="onRoleChange()" style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:9px 12px;border-radius:7px;font-size:14px;outline:none">
+            <option value="user">一般使用者</option>
+            <option value="branch_admin">據點管理員</option>
+            <option value="super_admin">超級管理員</option>
+          </select>
+        </div>
+      </div>
+ 
+      <div id="umBranchRow" style="margin-bottom:14px">
+        <label style="font-size:12px;color:#64748b;font-weight:600;display:block;margin-bottom:6px">所屬據點（留空=不限）</label>
+        <select id="umBranch" style="background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:9px 12px;border-radius:7px;font-size:14px;outline:none;min-width:180px">
+          <option value="">不限（全廠）</option>
+          <option value="AMA">AMA 內湖廠</option>
+          <option value="AMC">AMC 仁愛廠</option>
+          <option value="AMD">AMD 士林廠</option>
+        </select>
+      </div>
+ 
+      <!-- 權限設定 -->
+      <div id="umPermSection">
+        <div style="font-size:12px;color:#64748b;font-weight:700;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">功能權限設定</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+          <div>
+            <div style="font-size:11px;color:#475569;margin-bottom:6px">📄 頁面存取</div>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="page:performance"> 業績指標</label>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="page:stats"> 各廠明細</label>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="page:query"> 資料查詢</label>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="page:bonus"> 獎金表</label>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="page:settings"> 系統設定</label>
+          </div>
+          <div>
+            <div style="font-size:11px;color:#475569;margin-bottom:6px">🏭 廠別存取</div>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="branch:AMA"> AMA 內湖廠</label>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="branch:AMC"> AMC 仁愛廠</label>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="branch:AMD"> AMD 士林廠</label>
+            <div style="font-size:11px;color:#475569;margin-bottom:6px;margin-top:10px">⚙️ 功能操作</div>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:upload"> Excel 上傳</label>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:targets"> 目標設定</label>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:bonus_edit"> 獎金指標設定</label>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:user_manage"> 使用者管理</label>
+          </div>
+        </div>
+      </div>
+ 
+      <div id="umMsg" style="font-size:13px;min-height:20px;margin-bottom:8px"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button onclick="closeUserModal()" style="padding:8px 16px;background:#253347;color:#cbd5e1;border:1px solid #2d3f56;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">取消</button>
+        <button id="umSaveBtn" onclick="saveUser()" style="padding:8px 18px;background:#3b82f6;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">儲存</button>
+      </div>
+    </div>
+  </div>
+</div>
+ 
+<style>
+.um-perm-row {
+  display:flex;align-items:center;gap:7px;padding:4px 0;
+  font-size:13px;color:#94a3b8;cursor:pointer;
+}
+.um-perm-row:hover { color:#e2e8f0; }
+.um-perm-row input { accent-color:#3b82f6;cursor:pointer; }
+</style>
+ 
+<script>
+// ═══ 使用者管理 JS ═══
+let _editingUserId = null;
+ 
+async function loadUsers() {
+  const wrap = document.getElementById('usersTableWrap');
+  if (!wrap) return;
+  try {
+    const res = await DmsAuth.fetchWithAuth('/api/users');
+    const users = await res.json();
+    if (!res.ok) throw new Error(users.error);
+    renderUsersTable(users);
+  } catch(e) {
+    wrap.innerHTML = `<div style="padding:24px;color:#ef4444">❌ ${e.message}</div>`;
+  }
+}
+ 
+function renderUsersTable(users) {
+  const wrap = document.getElementById('usersTableWrap');
+  const me = window._currentUser;
+  const roleLabel = { super_admin:'🔑 超管', branch_admin:'🛡️ 據點管理員', user:'👤 一般使用者' };
+  const roleColor = { super_admin:'#f59e0b', branch_admin:'#10b981', user:'#3b82f6' };
+ 
+  if (!users.length) {
+    wrap.innerHTML = '<div style="padding:32px;text-align:center;color:#64748b">尚無使用者</div>';
+    return;
+  }
+ 
+  let html = `<table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr>
+      <th style="padding:9px 14px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:left">帳號</th>
+      <th style="padding:9px 14px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:left">顯示名稱</th>
+      <th style="padding:9px 14px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:left">角色</th>
+      <th style="padding:9px 14px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:left">據點</th>
+      <th style="padding:9px 14px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:left">狀態</th>
+      <th style="padding:9px 14px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:left">最後登入</th>
+      <th style="padding:9px 14px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:center">操作</th>
+    </tr></thead><tbody>`;
+ 
+  users.forEach(u => {
+    const isMe = u.id === me?.id;
+    const perms = (u.permissions || []).filter(p => p.startsWith('page:')).map(p => p.replace('page:','')).join(' · ');
+    const lastLogin = u.last_login ? new Date(u.last_login).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+    html += `<tr style="${!u.is_active?'opacity:.4':''}">
+      <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3)">
+        <span style="font-weight:700;color:#e2e8f0">${u.username}</span>
+        ${isMe ? '<span style="background:rgba(59,130,246,.15);color:#60a5fa;font-size:10px;padding:1px 6px;border-radius:4px;margin-left:6px">我</span>' : ''}
+      </td>
+      <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3);color:#94a3b8">${u.display_name}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3)">
+        <span style="background:${roleColor[u.role]}22;color:${roleColor[u.role]};padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700">
+          ${roleLabel[u.role] || u.role}
+        </span>
+      </td>
+      <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3);color:#64748b">${u.branch || '全廠'}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3)">
+        <span style="background:${u.is_active?'rgba(16,185,129,.12)':'rgba(100,116,139,.12)'};
+                     color:${u.is_active?'#10b981':'#64748b'};padding:2px 8px;border-radius:5px;font-size:11px">
+          ${u.is_active ? '✅ 啟用' : '⛔ 停用'}
+        </span>
+      </td>
+      <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3);color:#475569;font-size:12px">${lastLogin}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center">
+        ${!isMe ? `
+          <button onclick="openEditUserModal(${JSON.stringify(u).replace(/"/g,'&quot;')})"
+            style="background:rgba(59,130,246,.1);color:#3b82f6;border:1px solid rgba(59,130,246,.2);
+                   padding:4px 10px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;margin-right:4px">
+            編輯
+          </button>
+          <button onclick="deleteUser(${u.id},'${u.username}')"
+            style="background:rgba(239,68,68,.08);color:#ef4444;border:1px solid rgba(239,68,68,.2);
+                   padding:4px 10px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer">
+            刪除
+          </button>
+        ` : '<span style="color:#334155;font-size:12px">—</span>'}
+      </td>
+    </tr>`;
+  });
+ 
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+ 
+function openAddUserModal() {
+  _editingUserId = null;
+  document.getElementById('userModalTitle').textContent = '新增使用者';
+  document.getElementById('umUsername').value = '';
+  document.getElementById('umUsername').disabled = false;
+  document.getElementById('umDisplayName').value = '';
+  document.getElementById('umPassword').value = '';
+  document.getElementById('umPwNote').textContent = '（必填）';
+  document.getElementById('umRole').value = 'user';
+  document.getElementById('umBranch').value = '';
+  document.querySelectorAll('[name=perm]').forEach(c => c.checked = false);
+  document.getElementById('umMsg').textContent = '';
+  onRoleChange();
+ 
+  // branch_admin 只能建自己廠的
+  const me = window._currentUser;
+  if (me?.role === 'branch_admin') {
+    document.getElementById('umRole').disabled = true;
+    document.getElementById('umBranch').value = me.branch;
+    document.getElementById('umBranch').disabled = true;
+  } else {
+    document.getElementById('umRole').disabled = false;
+    document.getElementById('umBranch').disabled = false;
+  }
+  document.getElementById('userModal').style.display = 'flex';
+}
+ 
+function openEditUserModal(user) {
+  _editingUserId = user.id;
+  document.getElementById('userModalTitle').textContent = `編輯使用者 — ${user.username}`;
+  document.getElementById('umUsername').value = user.username;
+  document.getElementById('umUsername').disabled = true;
+  document.getElementById('umDisplayName').value = user.display_name;
+  document.getElementById('umPassword').value = '';
+  document.getElementById('umPwNote').textContent = '（留空不修改）';
+  document.getElementById('umRole').value = user.role;
+  document.getElementById('umBranch').value = user.branch || '';
+  document.getElementById('umMsg').textContent = '';
+  // 設定 permissions
+  const perms = user.permissions || [];
+  document.querySelectorAll('[name=perm]').forEach(c => { c.checked = perms.includes(c.value); });
+  onRoleChange();
+  document.getElementById('userModal').style.display = 'flex';
+}
+ 
+function closeUserModal() { document.getElementById('userModal').style.display = 'none'; }
+ 
+function onRoleChange() {
+  const role = document.getElementById('umRole').value;
+  const permSection = document.getElementById('umPermSection');
+  if (permSection) permSection.style.display = role === 'super_admin' ? 'none' : '';
+}
+ 
+async function saveUser() {
+  const msg  = document.getElementById('umMsg');
+  const btn  = document.getElementById('umSaveBtn');
+  const username = document.getElementById('umUsername').value.trim();
+  const display  = document.getElementById('umDisplayName').value.trim() || username;
+  const password = document.getElementById('umPassword').value;
+  const role     = document.getElementById('umRole').value;
+  const branch   = document.getElementById('umBranch').value;
+  const permissions = [...document.querySelectorAll('[name=perm]:checked')].map(c => c.value);
+ 
+  if (!_editingUserId && !username) { msg.style.color='#ef4444'; msg.textContent='請填入帳號'; return; }
+  if (!_editingUserId && !password) { msg.style.color='#ef4444'; msg.textContent='請填入密碼'; return; }
+ 
+  btn.disabled = true; btn.textContent = '儲存中...';
+  try {
+    let res, data;
+    if (_editingUserId) {
+      // 更新
+      const body = { display_name: display, role, branch: branch||null, is_active: true, permissions };
+      if (password) body.password = password;
+      res  = await DmsAuth.fetchWithAuth(`/api/users/${_editingUserId}`, {
+        method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+      });
+      data = await res.json();
+      if (data.error) throw new Error(data.error);
+      // 若有密碼，再另外更新
+      if (password) {
+        const pr = await DmsAuth.fetchWithAuth(`/api/users/${_editingUserId}/password`, {
+          method:'PUT', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ password })
+        }).then(r => r.json());
+        if (pr.error) throw new Error('密碼更新：' + pr.error);
+      }
+    } else {
+      res  = await DmsAuth.fetchWithAuth('/api/users', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ username, password, display_name:display, role, branch:branch||null, permissions })
+      });
+      data = await res.json();
+      if (data.error) throw new Error(data.error);
+    }
+    msg.style.color = '#10b981'; msg.textContent = '✅ 已儲存';
+    setTimeout(() => { closeUserModal(); loadUsers(); }, 600);
+  } catch(e) {
+    msg.style.color = '#ef4444'; msg.textContent = '❌ ' + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = '儲存';
+  }
+}
+ 
+async function deleteUser(id, username) {
+  if (!confirm(`確定要刪除使用者「${username}」？此操作不可復原。`)) return;
+  try {
+    const res  = await DmsAuth.fetchWithAuth(`/api/users/${id}`, { method:'DELETE' });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    loadUsers();
+  } catch(e) { alert('刪除失敗：' + e.message); }
+}
  
 // ══ 初始化 ══
 checkAuth();
