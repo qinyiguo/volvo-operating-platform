@@ -388,7 +388,8 @@ const TABLE_DEFS = {
       { key:'work_order', label:'工單號' },
       { key:'part_number', label:'零件編號' },
       { key:'part_name', label:'零件名稱', wrap:true },
-      { key:'part_type', label:'種類' },
+      { key:'catalog_type', label:'型錄類別', catalogBadge:true },
+      { key:'part_type', label:'種類(Paycode)' },
       { key:'category_code', label:'零件類別碼' },
       { key:'function_code', label:'功能碼' },
       { key:'sale_qty', label:'數量', num:true },
@@ -402,7 +403,7 @@ const TABLE_DEFS = {
       { key:'plate_no', label:'車牌' },
       { key:'service_advisor', label:'服務顧問' },
     ],
-    searchKeys: ['order_no','work_order','part_number','part_name','sales_person','pickup_person','plate_no','service_advisor'],
+    searchKeys: ['order_no','work_order','part_number','part_name','catalog_type','sales_person','pickup_person','plate_no','service_advisor'],
     defaultHidden: new Set(['retail_price','discount_rate','category_code','function_code','department']),
   },
   business_query: {
@@ -727,6 +728,14 @@ function renderTable(){
         if(c.badge && raw){
           const col=branchColor[raw]||'#94a3b8';
           cellContent=`<span style="display:inline-block;padding:1px 6px;border-radius:5px;font-size:10px;font-weight:700;background:${col}22;color:${col}">${raw}</span>`;
+        } else if(c.catalogBadge){
+          // 型錄類別 badge：精品=紫、配件=藍、零件=灰、null=虛線
+          const CATALOG_COLOR={'精品':'#a855f7','配件':'#3b82f6','零件':'#64748b'};
+          if(!raw){ cellContent='<span style="color:#334155">—</span>'; }
+          else {
+            const cc=CATALOG_COLOR[raw]||'#64748b';
+            cellContent=`<span style="display:inline-block;padding:2px 7px;border-radius:5px;font-size:11px;font-weight:700;background:${cc}22;color:${cc};border:1px solid ${cc}44">${raw}</span>`;
+          }
         } else if(c.num){
           cellContent = fmtNum(raw, c.fmt);
         } else {
