@@ -3461,117 +3461,231 @@ let _ppConfigEditKey = null;
 function openPPDeptConfig(dKey) {
   _ppConfigEditKey = dKey;
   const d = _ppDeptData[dKey]; if (!d) return;
-  const cfg = _ppGetDeptConfig(d.branch, d.deptKey) || { rev_type:'paid', metric_ids:null };
+  const cfg = _ppGetDeptConfig(d.branch, d.deptKey) || { rev_types_shown: null, metric_ids: null };
   const DEPT_LABEL = { repair:'維修服務科', claims:'承保理賠科', service:'客戶服務科' };
   document.getElementById('ppDeptConfigTitle').textContent = `⚙️ ${d.branch} ${DEPT_LABEL[d.deptKey]||d.deptKey}`;
 
-  const REV_OPTS = [
-      { v:'paid',     l:'🔶 有費營收',  col:'#f97316' },
-      { v:'general',  l:'💙 一般營收',  col:'#3b82f6' },
-      { v:'bodywork', l:'🔨 鈑烤營收', col:'#8b5cf6' },
-      { v:'extended', l:'🛡️ 延保營收', col:'#10b981' },
-  ];
+  const _RC = {paid:'#f97316',general:'#3b82f6',bodywork:'#8b5cf6',extended:'#10b981'};
+  const _RL = {paid:'🔶 有費營收',general:'💙 一般營收',bodywork:'🔨 鈑烤營收',extended:'🛡️ 延保營收'};
+  const REV_OPTS = ['paid','general','bodywork','extended'];
+  const revTypesShown = cfg.rev_types_shown || REV_OPTS;
+  const showCarCount  = cfg.show_car_count !== false;
+  const showRevenue   = cfg.show_revenue   !== false;
 
-    const showCarCount = cfg.show_car_count !== false;
-    const showRevenue  = cfg.show_revenue  !== false;
-    const revTypesShown = cfg.rev_types_shown || ['paid','general','bodywork','extended'];
-    const revHtml = `<div style="margin-bottom:18px">
-        <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">📊 營業區：顯示項目</div>
-        <div style="display:flex;gap:8px;margin-bottom:10px">
-          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;padding:7px 12px;
-                        border-radius:7px;background:#0f172a;border:1px solid #2d3f56">
-            <input type="checkbox" id="ppChkCarCount" ${showCarCount?'checked':''} style="accent-color:#3b82f6;width:14px;height:14px">
-            <span style="font-size:13px;font-weight:600;color:#e2e8f0">🚗 進廠台數</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;padding:7px 12px;
-                        border-radius:7px;background:#0f172a;border:1px solid #2d3f56">
-            <input type="checkbox" id="ppChkRevenue" ${showRevenue?'checked':''} style="accent-color:#f97316;width:14px;height:14px">
-            <span style="font-size:13px;font-weight:600;color:#e2e8f0">💰 營收</span>
-          </label>
-        </div>
-        <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:8px">營收類型</div>
-     ${REV_OPTS.map(o => {
-         const on = revTypesShown.includes(o.v);
-         return `<label style="display:flex;align-items:center;gap:7px;cursor:pointer;padding:8px 14px;border-radius:8px;margin-bottom:4px;
-                  background:${on?'rgba(59,130,246,.08)':'#1e293b'};border:1.5px solid ${on?o.col:'#2d3f56'}">
-           <input type="checkbox" name="ppRevTypeCheck" value="${o.v}" ${on?'checked':''}
-                  style="accent-color:${o.col};width:14px;height:14px">
-           <span style="font-size:13px;font-weight:700;color:${on?o.col:'#94a3b8'}">${o.l}</span>
-         </label>`;
-     }).join('')}
+  // ── Tab 切換 HTML ──
+  const tabBarHtml = `
+    <div style="display:flex;gap:2px;background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:3px;margin-bottom:16px">
+      <button id="ppCfgTab-display" onclick="_ppCfgSwitch('display')"
+        style="flex:1;padding:7px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:#3b82f6;color:#fff">
+        ☑️ 顯示項目
+      </button>
+      <button id="ppCfgTab-weight" onclick="_ppCfgSwitch('weight')"
+        style="flex:1;padding:7px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:#64748b">
+        ⚖️ 人員權重
+      </button>
+      <button id="ppCfgTab-alloc" onclick="_ppCfgSwitch('alloc')"
+        style="flex:1;padding:7px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:#64748b">
+        📊 占比設定
+      </button>
+    </div>`;
+
+  // ── Tab 1：顯示項目 ──
+  const tab1Html = `<div id="ppCfgPanel-display">
+    <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">📊 營業區：顯示項目</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <label style="display:flex;align-items:center;gap:7px;cursor:pointer;padding:7px 12px;border-radius:7px;background:#0f172a;border:1px solid #2d3f56">
+        <input type="checkbox" id="ppChkCarCount" ${showCarCount?'checked':''} style="accent-color:#3b82f6;width:14px;height:14px">
+        <span style="font-size:13px;font-weight:600;color:#e2e8f0">🚗 進廠台數</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:7px;cursor:pointer;padding:7px 12px;border-radius:7px;background:#0f172a;border:1px solid #2d3f56">
+        <input type="checkbox" id="ppChkRevenue" ${showRevenue?'checked':''} style="accent-color:#f97316;width:14px;height:14px">
+        <span style="font-size:13px;font-weight:600;color:#e2e8f0">💰 營收</span>
+      </label>
     </div>
-  </div>`;
-
-  const metricHtml = `<div>
-    <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">📋 品項區：顯示項目</div>
+    <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:8px">營收類型</div>
+    ${REV_OPTS.map(rt => {
+      const on = revTypesShown.includes(rt);
+      return `<label style="display:flex;align-items:center;gap:7px;cursor:pointer;padding:8px 14px;border-radius:8px;margin-bottom:4px;
+               background:${on?'rgba(59,130,246,.08)':'#1e293b'};border:1.5px solid ${on?_RC[rt]:'#2d3f56'}">
+        <input type="checkbox" name="ppRevTypeCheck" value="${rt}" ${on?'checked':''}
+               style="accent-color:${_RC[rt]};width:14px;height:14px">
+        <span style="font-size:13px;font-weight:700;color:${on?_RC[rt]:'#94a3b8'}">${_RL[rt]}</span>
+      </label>`;
+    }).join('')}
+    <div style="font-size:12px;font-weight:700;color:#64748b;margin:14px 0 8px">📋 品項區：顯示項目</div>
     <div style="display:flex;gap:6px;margin-bottom:8px">
       <button onclick="ppSelectAllMetrics(true)" style="padding:3px 10px;background:#253347;color:#cbd5e1;border:1px solid #2d3f56;border-radius:5px;font-size:11px;cursor:pointer">全選</button>
       <button onclick="ppSelectAllMetrics(false)" style="padding:3px 10px;background:#253347;color:#cbd5e1;border:1px solid #2d3f56;border-radius:5px;font-size:11px;cursor:pointer">全清</button>
     </div>
-    ${d.metrics && d.metrics.length ? d.metrics.map(c => {
-    const checked = cfg.metric_ids === null || cfg.metric_ids.includes(Number(c.id));
-    return `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 10px;
-                          border-radius:6px;background:#0f172a;border:1px solid #2d3f56">
-      <input type="checkbox" id="ppMChk-${c.id}" value="${c.id}" ${checked?'checked':''}
-        style="accent-color:#3b82f6;width:14px;height:14px">
-      <span style="font-size:13px;font-weight:600;color:#e2e8f0">${c.metric_name}</span>
-    </label>`;
-}).join('') : '<div style="color:#475569;font-size:12px">尚無指標</div>'}
-    </div>
+    ${d.metrics && d.metrics.length ? d.metrics.map(m => {
+      const checked = cfg.metric_ids === null || (cfg.metric_ids||[]).includes(Number(m.id));
+      return `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 10px;
+                            border-radius:6px;background:#0f172a;border:1px solid #2d3f56;margin-bottom:3px">
+        <input type="checkbox" id="ppMChk-${m.id}" value="${m.id}" ${checked?'checked':''}
+          style="accent-color:#3b82f6;width:14px;height:14px">
+        <span style="font-size:13px;font-weight:600;color:#e2e8f0">${m.metric_name}</span>
+      </label>`;
+    }).join('') : '<div style="color:#475569;font-size:12px">尚無指標</div>'}
   </div>`;
 
-  document.getElementById('ppDeptConfigBody').innerHTML = revHtml + metricHtml;
- // 新增 weightHtml
-const weightHtml = `<div style="margin-bottom:18px">
-  <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">⚖️ 人員權重</div>
-  ${d.roster.map(p => {
-    const curW = d.ptMap[p.emp_name]?.[d.metrics[0]?.id]?.weight ?? '';
-    return `<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:#0f172a;border:1px solid #2d3f56;border-radius:7px;margin-bottom:4px">
-      <span style="font-size:13px;font-weight:700;color:#e2e8f0;min-width:72px">${p.emp_name}</span>
-      <span style="font-size:11px;color:#64748b;flex:1">${p.job_title||''}</span>
-      <input type="number" min="0" step="0.1" placeholder="—"
-        id="ppCfgW-${p.emp_name.replace(/\s/g,'_')}"
-        value="${curW}"
-        style="width:64px;background:#1e293b;border:1px solid #2d3f56;color:#3b82f6;
-               padding:5px 8px;border-radius:6px;font-size:13px;font-weight:800;text-align:right;outline:none">
-    </div>`;
-  }).join('')}
-</div>`;
+  // ── Tab 2：人員權重 ──
+  // 組合所有列（項目）
+  const allItems = [
+    ...REV_OPTS.filter(rt => revTypesShown.includes(rt)).map(rt => ({
+      key: 'rev_'+rt, label: _RL[rt], color: _RC[rt],
+      target: (d.revTargetMap && d.revTargetMap[rt]) || 0,
+      isRev: true, rt
+    })),
+    ...(d.metrics||[]).map(m => ({
+      key: 'metric_'+m.id, label: m.metric_name, color: '#8b5cf6',
+      target: (d.branchTargets && d.branchTargets[d.branch] && d.branchTargets[d.branch][m.id]) || 0,
+      isRev: false, m
+    }))
+  ];
 
-const _RC = {paid:'#f97316',general:'#3b82f6',bodywork:'#8b5cf6',extended:'#10b981'};
-const _RL = {paid:'🔶 有費營收',general:'💙 一般營收',bodywork:'🔨 鈑烤營收',extended:'🛡️ 延保營收'};
-const allocHtml = `<div>
-  <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">📊 各項目占比（%）</div>
-  ${['paid','general','bodywork','extended']
-    .filter(rt => (cfg.rev_types_shown||['paid','general','bodywork','extended']).includes(rt))
-    .map(rt => {
-      const cur = _ppGetItemAlloc(d.branch, d.deptKey, 'rev_'+rt) ?? '';
-      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-        <span style="font-size:12px;font-weight:700;color:${_RC[rt]};min-width:90px">${_RL[rt]}</span>
+  const TH = `padding:8px 10px;background:#090f1a;color:#64748b;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;white-space:nowrap;`;
+  const TD = `padding:7px 10px;border-bottom:1px solid rgba(45,63,86,.3);font-size:12px;`;
+
+  let weightTableHtml = `<div style="overflow-x:auto">
+    <table id="ppCfgWeightTable" style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead>
+      <tr>
+        <th style="${TH}text-align:left;position:sticky;left:0;background:#090f1a;min-width:110px">項目</th>
+        <th style="${TH}text-align:right;min-width:90px;color:#f97316">廠目標</th>
+        ${d.roster.map((p,ni) => `
+        <th style="${TH}text-align:center;min-width:90px">
+          <div style="font-weight:800;color:#e2e8f0">${p.emp_name}</div>
+          <div style="font-size:10px;color:#64748b">${p.job_title||''}</div>
+          <input type="number" min="0" step="0.1"
+            id="ppCfgW-${ni}"
+            value="${d.ptMap[p.emp_name]?.[d.metrics[0]?.id]?.weight ?? ''}"
+            placeholder="—"
+            oninput="_ppCfgWeightUpdate()"
+            style="width:56px;background:#0f172a;border:1px solid #3b82f6;color:#3b82f6;
+                   padding:3px 6px;border-radius:5px;font-size:12px;font-weight:800;
+                   text-align:right;outline:none;margin-top:4px">
+          <div id="ppCfgPct-${ni}" style="font-size:10px;color:#475569;margin-top:2px">—</div>
+        </th>`).join('')}
+      </tr>
+    </thead>
+    <tbody>
+      ${allItems.map(item => `
+      <tr>
+        <td style="${TD}position:sticky;left:0;background:#111827;font-weight:700;color:${item.color}">${item.label}</td>
+        <td style="${TD}text-align:right;">
+          <input type="number" min="0" step="1"
+            id="ppCfgTarget-${item.key}"
+            value="${item.target||''}"
+            placeholder="—"
+            oninput="_ppCfgWeightUpdate()"
+            style="width:80px;background:#0f172a;border:1px solid ${item.color}55;color:${item.color};
+                   padding:3px 6px;border-radius:5px;font-size:12px;font-weight:800;
+                   text-align:right;outline:none">
+        </td>
+        ${d.roster.map((p,ni) => `
+        <td id="ppCfgCell-${item.key}-${ni}" style="${TD}text-align:center;color:#94a3b8">—</td>`).join('')}
+      </tr>`).join('')}
+    </tbody>
+    </table>
+  </div>`;
+
+  const tab2Html = `<div id="ppCfgPanel-weight" style="display:none">
+    <div style="font-size:11px;color:#64748b;margin-bottom:10px;line-height:1.7">
+      修改<strong style="color:#3b82f6">權重</strong>或<strong style="color:#f97316">廠目標</strong>後，分配目標即時更新。
+    </div>
+    ${weightTableHtml}
+  </div>`;
+
+  // ── Tab 3：占比設定 ──
+  const tab3Html = `<div id="ppCfgPanel-alloc" style="display:none">
+    <div style="font-size:11px;color:#64748b;margin-bottom:12px;line-height:1.7">
+      設定此科別分攤廠目標的比例。例如鈑烤營收集中在某科，其他科設 0%。
+    </div>
+    ${allItems.map(item => {
+      const cur = _ppGetItemAlloc(d.branch, d.deptKey, item.key) ?? '';
+      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;
+                          background:#0f172a;border:1px solid #2d3f56;border-radius:7px;margin-bottom:4px">
+        <span style="font-size:13px;font-weight:700;color:${item.color};flex:1">${item.label}</span>
         <input type="number" min="0" max="100" step="1" placeholder="100"
-          id="ppCfgAlloc-rev_${rt}" value="${cur}"
-          style="width:60px;background:#0f172a;border:1px solid rgba(245,158,11,.4);color:#f59e0b;
-                 padding:4px 7px;border-radius:5px;font-size:12px;font-weight:800;text-align:right;outline:none">
-        <span style="font-size:11px;color:#475569">%</span>
+          id="ppCfgAlloc-${item.key}" value="${cur}"
+          style="width:64px;background:#1e293b;border:1px solid rgba(245,158,11,.4);color:#f59e0b;
+                 padding:5px 8px;border-radius:6px;font-size:13px;font-weight:800;text-align:right;outline:none">
+        <span style="font-size:12px;color:#475569">%</span>
       </div>`;
     }).join('')}
-  ${d.metrics.map(m => {
-    const cur = _ppGetItemAlloc(d.branch, d.deptKey, 'metric_'+m.id) ?? '';
-    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-      <span style="font-size:12px;font-weight:700;color:#8b5cf6;min-width:90px">${m.metric_name}</span>
-      <input type="number" min="0" max="100" step="1" placeholder="100"
-        id="ppCfgAlloc-metric_${m.id}" value="${cur}"
-        style="width:60px;background:#0f172a;border:1px solid rgba(245,158,11,.4);color:#f59e0b;
-               padding:4px 7px;border-radius:5px;font-size:12px;font-weight:800;text-align:right;outline:none">
-      <span style="font-size:11px;color:#475569">%</span>
-    </div>`;
-  }).join('')}
-</div>`;
+  </div>`;
 
-document.getElementById('ppDeptConfigBody').innerHTML = revHtml + metricHtml + weightHtml + allocHtml;
+  document.getElementById('ppDeptConfigBody').innerHTML = tabBarHtml + tab1Html + tab2Html + tab3Html;
   document.getElementById('ppDeptConfigModal').style.display = 'flex';
   document.body.style.overflow = 'hidden';
+
+  // 初始化即時計算
+  _ppCfgWeightUpdate();
 }
+
+// ── Tab 切換 ──
+window._ppCfgSwitch = function(tab) {
+  ['display','weight','alloc'].forEach(t => {
+    const btn   = document.getElementById(`ppCfgTab-${t}`);
+    const panel = document.getElementById(`ppCfgPanel-${t}`);
+    const active = t === tab;
+    if (btn)   { btn.style.background = active ? '#3b82f6' : 'transparent'; btn.style.color = active ? '#fff' : '#64748b'; }
+    if (panel) panel.style.display = active ? '' : 'none';
+  });
+};
+
+// ── 即時計算分配目標 ──
+window._ppCfgWeightUpdate = function() {
+  const dKey = _ppConfigEditKey;
+  const d = _ppDeptData[dKey]; if (!d) return;
+  const _RC = {paid:'#f97316',general:'#3b82f6',bodywork:'#8b5cf6',extended:'#10b981'};
+  const REV_OPTS = ['paid','general','bodywork','extended'];
+  const cfg = _ppGetDeptConfig(d.branch, d.deptKey) || {};
+  const revTypesShown = cfg.rev_types_shown || REV_OPTS;
+
+  // 讀取各人權重
+  const weights = d.roster.map((p,ni) => {
+    const el = document.getElementById(`ppCfgW-${ni}`);
+    return el ? (parseFloat(el.value) || 0) : 0;
+  });
+  const totalW = weights.reduce((s,w) => s+w, 0);
+
+  // 更新占比顯示
+  d.roster.forEach((p,ni) => {
+    const el = document.getElementById(`ppCfgPct-${ni}`);
+    if (el) el.textContent = totalW > 0 ? (weights[ni]/totalW*100).toFixed(1)+'%' : '—';
+  });
+
+  // 更新各格目標
+  const allItems = [
+    ...REV_OPTS.filter(rt => revTypesShown.includes(rt)).map(rt => ({ key:'rev_'+rt, color:_RC[rt] })),
+    ...(d.metrics||[]).map(m => ({ key:'metric_'+m.id, color:'#8b5cf6' }))
+  ];
+
+  allItems.forEach(item => {
+    const targetEl = document.getElementById(`ppCfgTarget-${item.key}`);
+    const target   = targetEl ? (parseFloat(targetEl.value) || 0) : 0;
+    const allocRaw = _ppGetItemAlloc(d.branch, d.deptKey, item.key);
+    const allocR   = allocRaw != null ? allocRaw / 100 : 1;
+
+    d.roster.forEach((p,ni) => {
+      const cell = document.getElementById(`ppCfgCell-${item.key}-${ni}`);
+      if (!cell) return;
+      const pct = totalW > 0 ? weights[ni] / totalW : 0;
+      const val = target * allocR * pct;
+      if (val > 0) {
+        const fmt = val >= 1000 ? Math.round(val/1000).toLocaleString()+'K' : Math.round(val).toLocaleString();
+        cell.textContent = fmt;
+        cell.style.color = item.color;
+        cell.style.fontWeight = '700';
+      } else {
+        cell.textContent = '—';
+        cell.style.color = '#334155';
+        cell.style.fontWeight = '400';
+      }
+    });
+  });
+};
 
 function selectPPRevType(val) {
   ['paid','general','bodywork','extended'].forEach(v => {
@@ -3594,59 +3708,88 @@ function ppSelectAllMetrics(checked) {
 function savePPDeptConfig() {
   if (!_ppConfigEditKey) return;
   const d = _ppDeptData[_ppConfigEditKey]; if (!d) return;
-  const revTypesRaw    = [...document.querySelectorAll('input[name="ppRevTypeCheck"]:checked')].map(cb => cb.value);
-  const rev_types_shown = revTypesRaw.length === 0 ? null : revTypesRaw;
-  const metric_ids_raw = [...document.querySelectorAll('[id^="ppMChk-"]:checked')].map(cb => parseInt(cb.value));
-  const metric_ids     = metric_ids_raw.length === 0 ? null : metric_ids_raw;
-  const show_car_count = document.getElementById('ppChkCarCount')?.checked !== false;
-  const show_revenue   = document.getElementById('ppChkRevenue')?.checked !== false;
-  _ppSaveDeptConfig(d.branch, d.deptKey, { rev_types_shown, metric_ids, show_car_count, show_revenue });
- // 儲存人員權重
-const period = getPeriod();
-if (period) {
-  const weightEntries = d.roster.map(p => {
-    const el = document.getElementById(`ppCfgW-${p.emp_name.replace(/\s/g,'_')}`);
-    const w  = el ? parseFloat(el.value) : NaN;
-    return { person_name: p.emp_name, weight: isNaN(w)||w<=0 ? null : w, target_value: null, note: '' };
-  }).filter(e => e.weight !== null);
+  const _RC = {paid:'#f97316',general:'#3b82f6',bodywork:'#8b5cf6',extended:'#10b981'};
+  const REV_OPTS = ['paid','general','bodywork','extended'];
 
-  for (const m of d.metrics) {
-    fetch('/api/person-targets/batch', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ metric_id: parseInt(m.id), period, branch: d.branch, entries: weightEntries })
+  // ── Tab 1：顯示設定 ──
+  const revTypesRaw   = [...document.querySelectorAll('input[name="ppRevTypeCheck"]:checked')].map(cb => cb.value);
+  const rev_types_shown = revTypesRaw.length === 0 ? null : revTypesRaw;
+  const metric_ids_raw  = [...document.querySelectorAll('[id^="ppMChk-"]:checked')].map(cb => parseInt(cb.value));
+  const metric_ids      = metric_ids_raw.length === 0 ? null : metric_ids_raw;
+  const show_car_count  = document.getElementById('ppChkCarCount')?.checked !== false;
+  const show_revenue    = document.getElementById('ppChkRevenue')?.checked !== false;
+  _ppSaveDeptConfig(d.branch, d.deptKey, { rev_types_shown, metric_ids, show_car_count, show_revenue });
+
+  // ── Tab 2：人員權重 ──
+  const period = getPeriod();
+  if (period) {
+    const weightEntries = d.roster.map((p, ni) => {
+      const el = document.getElementById(`ppCfgW-${ni}`);
+      const w  = el ? parseFloat(el.value) : NaN;
+      return { person_name: p.emp_name, weight: (!isNaN(w) && w > 0) ? w : null, target_value: null, note: '' };
     });
-    // 同步更新記憶體
-    weightEntries.forEach(e => {
-      if (!d.ptMap[e.person_name]) d.ptMap[e.person_name] = {};
-      if (!d.ptMap[e.person_name][m.id]) d.ptMap[e.person_name][m.id] = {};
-      d.ptMap[e.person_name][m.id].weight = e.weight;
+    for (const m of d.metrics) {
+      fetch('/api/person-targets/batch', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ metric_id: parseInt(m.id), period, branch: d.branch, entries: weightEntries })
+      });
+      weightEntries.forEach(e => {
+        if (!d.ptMap[e.person_name]) d.ptMap[e.person_name] = {};
+        if (!d.ptMap[e.person_name][m.id]) d.ptMap[e.person_name][m.id] = {};
+        d.ptMap[e.person_name][m.id].weight = e.weight;
+      });
+    }
+
+    // ── Tab 2：廠目標 ──
+    const allItemKeys = [
+      ...REV_OPTS.filter(rt => (rev_types_shown||REV_OPTS).includes(rt)).map(rt => ({ key:'rev_'+rt, rt, isRev:true })),
+      ...(d.metrics||[]).map(m => ({ key:'metric_'+m.id, id:m.id, isRev:false }))
+    ];
+    allItemKeys.forEach(item => {
+      const el  = document.getElementById(`ppCfgTarget-${item.key}`);
+      const val = el ? parseFloat(el.value) : NaN;
+      if (isNaN(val)) return;
+      if (item.isRev) {
+        if (!d.revTargetMap) d.revTargetMap = {};
+        d.revTargetMap[item.rt] = val;
+        fetch('/api/revenue-targets', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ period, branch: d.branch, [`${item.rt}_target`]: val })
+        });
+      } else {
+        if (!d.branchTargets[d.branch]) d.branchTargets[d.branch] = {};
+        d.branchTargets[d.branch][item.id] = val;
+        fetch('/api/performance-targets', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ metric_id: parseInt(item.id), period, branch: d.branch, target_value: val })
+        });
+      }
     });
   }
-}
 
-// 儲存各項目占比
-const allocPayload = {};
-['paid','general','bodywork','extended'].forEach(rt => {
-  const el = document.getElementById(`ppCfgAlloc-rev_${rt}`);
-  if (el && el.value !== '') allocPayload['rev_'+rt] = parseFloat(el.value);
-});
-d.metrics.forEach(m => {
-  const el = document.getElementById(`ppCfgAlloc-metric_${m.id}`);
-  if (el && el.value !== '') allocPayload['metric_'+m.id] = parseFloat(el.value);
-});
-const cacheKey = d.branch + '-' + d.deptKey;
-_ppItemAllocCache[cacheKey] = Object.assign(_ppItemAllocCache[cacheKey]||{}, allocPayload);
-fetch('/api/bonus/pp-alloc', {
-  method: 'PUT',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ period: getPeriod(), branch: d.branch, dept_key: d.deptKey, allocations: _ppItemAllocCache[cacheKey] })
-});
-  const savedKey = _ppConfigEditKey;
+  // ── Tab 3：占比設定 ──
+  const allocPayload = {};
+  document.querySelectorAll('[id^="ppCfgAlloc-"]').forEach(el => {
+    const key = el.id.replace('ppCfgAlloc-', '');
+    if (el.value !== '') allocPayload[key] = parseFloat(el.value);
+  });
+  const cacheKey = d.branch + '-' + d.deptKey;
+  _ppItemAllocCache[cacheKey] = Object.assign(_ppItemAllocCache[cacheKey] || {}, allocPayload);
+  if (period) {
+    fetch('/api/bonus/pp-alloc', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ period, branch: d.branch, dept_key: d.deptKey, allocations: _ppItemAllocCache[cacheKey] })
+    });
+  }
+
   closePPDeptConfig();
   _ppSwitchDept(d.branch, d.deptKey);
   const viewEl = document.getElementById(`ppview-${d.branch}-${d.deptKey}`);
-  if (viewEl) viewEl.innerHTML = _ppBuildTable(savedKey);
+  if (viewEl) viewEl.innerHTML = _ppBuildTable(_ppConfigEditKey);
 }
 
 function closePPDeptConfig() {
