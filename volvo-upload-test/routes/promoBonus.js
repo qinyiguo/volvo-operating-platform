@@ -275,6 +275,8 @@ const resultsByConfig = {};
 }
 
         resultsByConfig[cfg.id].byBranch[br] = personResults;
+        resultsByConfig[cfg.id].actualByBranch = resultsByConfig[cfg.id].actualByBranch || {};
+        resultsByConfig[cfg.id].actualByBranch[br] = personActuals;
       }));
     }));
 
