@@ -20,7 +20,9 @@ app.use('/api', require('./routes/techWage'));
 app.use('/api', require('./routes/revenue'));
 app.use('/api', require('./routes/performance'));
 app.use('/api', require('./routes/stats'));
-app.use('/api', require('./routes/auth'));
+app.use('/api', require('./routes/auth'));       // 原本的後端密碼驗證
+app.use('/api', require('./routes/users'));      // 新增的使用者管理
+app.use('/api', require('./routes/auditLogs')); // 新增的操作紀錄
 app.use('/api', require('./routes/bonus'));
 app.use('/api', require('./routes/techHours'));
 app.use('/api', require('./routes/personTargets'));
