@@ -140,7 +140,7 @@ router.get('/query/tech_performance', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── 零件銷售：JOIN repair_income 取得服務顧問 ──
+// ── 零件銷售：JOIN repair_income 取得服務顧問、JOIN parts_catalog 取得型錄類別 ──
 router.get('/query/parts_sales', async (req, res) => {
   try {
     const { period, branch } = req.query;
@@ -148,11 +148,15 @@ router.get('/query/parts_sales', async (req, res) => {
     const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
     const r = await pool.query(
       `SELECT ps.branch, ps.period, ps.category, ps.order_no, ps.work_order, ps.part_number,
-              ps.part_name, ps.part_type, ps.category_code, ps.function_code, ps.sale_qty,
+              ps.part_name,
+              pc.part_type   AS catalog_type,
+              ps.part_type,
+              ps.category_code, ps.function_code, ps.sale_qty,
               ps.retail_price, ps.sale_price_untaxed, ps.cost_untaxed, ps.discount_rate,
               ps.department, ps.pickup_person, ps.sales_person, ps.plate_no,
               ri.service_advisor
        FROM parts_sales ps
+       LEFT JOIN parts_catalog pc ON pc.part_number = ps.part_number
        LEFT JOIN LATERAL (
          SELECT service_advisor FROM repair_income
          WHERE work_order = ps.work_order AND branch = ps.branch
