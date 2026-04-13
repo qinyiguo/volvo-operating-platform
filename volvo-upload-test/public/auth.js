@@ -170,7 +170,6 @@
             padding:9px 14px;font-size:13px;color:#ef4444;cursor:pointer;display:flex;align-items:center;gap:8px;
           " onmouseover="this.style.background='rgba(239,68,68,.08)'" onmouseout="this.style.background=''">
             🚪 登出
-          </div>
         </div>
       `;
       badge.addEventListener('click', (e) => {
