@@ -706,6 +706,21 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
 async function hideLock() {
   await DmsAuth.init({ requiredPermission: 'page:bonus' });
 
+  // ★ 根據使用者廠別權限鎖定廠別選單
+  const me = window._currentUser;
+  if (me && me.branch) {
+    const selFactory = document.getElementById('selFactory');
+    if (selFactory) {
+      selFactory.value = me.branch;
+      [...selFactory.options].forEach(opt => {
+        if (opt.value && opt.value !== me.branch) {
+          opt.disabled = true;
+          opt.style.display = 'none';
+        }
+      });
+    }
+  }
+
   // 攔截所有 /api/ 請求，自動帶入 auth token
   const _origFetch = window.fetch;
   window.fetch = function(url, opts) {
