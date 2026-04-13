@@ -3913,7 +3913,8 @@ async function loadPersonPerfDashboard() {
       branchTargets[t.branch][t.metric_id] = parseFloat(t.target_value || 0);
     });
 
-    const rosterPeriods = await fetch('/api/bonus/roster-periods').then(r => r.json()).catch(() => []);
+    const rosterPeriods = await DmsAuth.fetchWithAuth('/api/bonus/roster-periods')
+     .then(r => r.json()).catch(() => []);
     if (!rosterPeriods.length) {
       el.innerHTML = '<div class="empty">尚無人員名冊，請先至獎金表上傳人員資料</div>';
       return;
