@@ -579,7 +579,9 @@ router.get('/bonus/progress', async (req, res) => {
                 const brParam   = effectiveBranch ? `&branch=${encodeURIComponent(effectiveBranch)}` : '';
                 const url       = `http://localhost:${port}/api/stats/tech-hours?period=${actualPeriod}${brParam}`;
 
-                const thData = await fetch(url).then(r => r.json()).catch(() => null);
+                const thData = await fetch(url, {
+                    headers: { 'X-Internal-Service': 'true' }
+                  }).then(r => r.json()).catch(() => null);
 
                 if (thData && !thData.error) {
                   let sumActual = 0, sumTarget = 0;
