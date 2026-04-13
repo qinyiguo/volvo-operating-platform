@@ -703,7 +703,21 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
   
 <script>
 // ══ Auth ══
-  async function hideLock() {
+async function hideLock() {
+  await DmsAuth.init({ requiredPermission: 'page:bonus' });
+
+  // 攔截所有 /api/ 請求，自動帶入 auth token
+  const _origFetch = window.fetch;
+  window.fetch = function(url, opts) {
+    opts = opts || {};
+    if (typeof url === 'string' && url.startsWith('/api/')) {
+      opts.headers = opts.headers || {};
+      const token = sessionStorage.getItem('dms_token');
+      if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+    }
+    return _origFetch.call(this, url, opts);
+  };
+
   await loadPeriods();
   await loadPerfMetricsList();
   await Promise.all([loadRoster(), loadMetrics(), loadPromoConfigs()]);
