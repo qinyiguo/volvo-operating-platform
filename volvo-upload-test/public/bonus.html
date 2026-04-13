@@ -2,6 +2,7 @@
 <html lang="zh-TW">
 <head>
 <link rel="stylesheet" href="/theme.css">
+ <script src="/auth.js"></script>
  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -116,20 +117,6 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
 </style>
 </head>
 <body>
-
-<!-- Lock -->
-<div id="lockScreen" style="position:fixed;inset:0;background:#0f172a;z-index:9999;display:flex;align-items:center;justify-content:center;">
-  <div style="background:#1e293b;border:1px solid #2d3f56;border-radius:16px;padding:44px 40px;width:100%;max-width:360px;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.6);">
-    <div style="font-size:44px;margin-bottom:12px">💰</div>
-    <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:6px">獎金表</div>
-    <div style="font-size:13px;color:#64748b;margin-bottom:28px">請輸入管理員密碼以繼續</div>
-    <input type="password" id="lockInput" placeholder="輸入密碼..."
-      style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:12px 16px;border-radius:8px;font-size:16px;margin-bottom:8px;text-align:center;letter-spacing:4px;outline:none"
-      onkeydown="if(event.key==='Enter') doLogin()" autocomplete="current-password">
-    <div id="lockError" style="font-size:12px;color:#ef4444;height:20px;margin-bottom:10px;line-height:20px"></div>
-    <button id="lockBtn" onclick="doLogin()" style="width:100%;background:#3b82f6;color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">進入</button>
-  </div>
-</div>
 
 <div class="sticky-header">
   <nav class="nav">
@@ -716,35 +703,12 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
   
 <script>
 // ══ Auth ══
-const BONUS_TOKEN_KEY = 'volvo_settings_token';
-async function checkAuth() {
-  const token = sessionStorage.getItem(BONUS_TOKEN_KEY);
-  if (!token) { showLock(); return; }
-  try {
-    const data = await fetch('/api/auth/settings/check?token=' + token).then(r => r.json());
-    if (data.valid) hideLock();
-    else { sessionStorage.removeItem(BONUS_TOKEN_KEY); showLock(); }
-  } catch(e) { showLock(); }
-}
-function showLock() { document.getElementById('lockScreen').style.display='flex'; setTimeout(()=>document.getElementById('lockInput').focus(),80); }
-async function hideLock() {
-  document.getElementById('lockScreen').style.display='none';
+  async function hideLock() {
   await loadPeriods();
   await loadPerfMetricsList();
   await Promise.all([loadRoster(), loadMetrics(), loadPromoConfigs()]);
 }
-async function doLogin() {
-  const pwd=document.getElementById('lockInput').value, errEl=document.getElementById('lockError'), btn=document.getElementById('lockBtn');
-  if (!pwd){ errEl.textContent='請輸入密碼'; return; }
-  btn.disabled=true; btn.textContent='驗證中...'; errEl.textContent='';
-  try {
-    const res=await fetch('/api/auth/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pwd})});
-    const data=await res.json();
-    if (res.ok&&data.token){ sessionStorage.setItem(BONUS_TOKEN_KEY,data.token); document.getElementById('lockInput').value=''; hideLock(); }
-    else { errEl.textContent=data.error||'密碼錯誤'; document.getElementById('lockInput').value=''; document.getElementById('lockInput').focus(); }
-  } catch(e){ errEl.textContent='連線失敗'; }
-  finally { btn.disabled=false; btn.textContent='進入'; }
-}
+
 
 // ══ State ══
 let _period='', _actualPeriod='', _rosterPeriods=[], _metrics=[], _editingMetricId=null, _rosterData=[];
@@ -2278,7 +2242,7 @@ const period = document.getElementById('uploadPeriodSel').value;
   } finally { btn.disabled=false; }
 }
 
-checkAuth();
+hideLock();
 
   // ════════════════════════════════════════════
 // 促銷獎金獨立設定
