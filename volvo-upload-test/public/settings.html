@@ -2361,7 +2361,10 @@ async function deleteUser(id, username) {
 }
 
 // ══ 初始化 ══
-loadHistory();
+(async () => {
+  await DmsAuth.init({ requiredPermission: 'page:settings' });
+  loadHistory();
+})();
 function initTheme(){const s=localStorage.getItem('volvo_theme')||'dark';applyTheme(s,false);}
 function applyTheme(t,re){if(t==='light')document.body.classList.add('light-theme');else document.body.classList.remove('light-theme');const b=document.getElementById('themeToggleBtn');if(b)b.textContent=t==='light'?'🌙':'☀️';localStorage.setItem('volvo_theme',t);}
 function toggleTheme(){applyTheme(document.body.classList.contains('light-theme')?'dark':'light',true);}
