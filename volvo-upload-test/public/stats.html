@@ -3835,11 +3835,11 @@ function _ppGetItemAlloc(branch, deptKey, itemKey) {
 async function _ppLoadItemAllocs(branch, deptKey, period) {
   var cacheKey = branch + '-' + deptKey;
   try {
-    var data = await fetch(
-      '/api/bonus/pp-alloc?period=' + period +
-      '&branch=' + encodeURIComponent(branch) +
-      '&dept_key=' + encodeURIComponent(deptKey)
-    ).then(function(r){ return r.json(); });
+   var data = await DmsAuth.fetchWithAuth(
+     '/api/bonus/pp-alloc?period=' + period +
+     '&branch=' + encodeURIComponent(branch) +
+     '&dept_key=' + encodeURIComponent(deptKey)
+   ).then(function(r){ return r.json(); });
     _ppItemAllocCache[cacheKey] = data || {};
   } catch(e) {
     _ppItemAllocCache[cacheKey] = {};
@@ -3858,8 +3858,8 @@ async function _ppSaveItemAlloc(dKey, itemKey, value) {
   }
   var period = getPeriod();
   try {
-    await fetch('/api/bonus/pp-alloc', {
-      method: 'PUT',
+  await DmsAuth.fetchWithAuth('/api/bonus/pp-alloc', {
+    method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         period:      period,
