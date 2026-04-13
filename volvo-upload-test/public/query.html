@@ -2,6 +2,7 @@
 <html lang="zh-TW">
 <head>
 <link rel="stylesheet" href="/theme.css">
+<script src="/auth.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Volvo 資料查詢</title>
@@ -886,6 +887,7 @@ document.getElementById('txtSearchMobile').addEventListener('input', function(){
 
 // ═══ Init ═══
 (async()=>{
+  await DmsAuth.init({ requiredPermission: 'page:query' });
   await loadPeriods();
   const tbl = document.getElementById('selTable').value;
   _hiddenCols = new Set(TABLE_DEFS[tbl].defaultHidden);
