@@ -3913,12 +3913,10 @@ async function loadPersonPerfDashboard() {
       branchTargets[t.branch][t.metric_id] = parseFloat(t.target_value || 0);
     });
 
-const allRoster = await DmsAuth.fetchWithAuth(`/api/bonus/roster?period=${rosterPeriod}`)
-  .then(r => r.ok ? r.json() : null).catch(() => null);
-
-const r = await DmsAuth.fetchWithAuth(`/api/bonus/roster?period=${rosterPeriod}&factory=${encodeURIComponent(fc)}`)
-  .then(r => r.ok ? r.json() : []).catch(() => []);
-    if (!rosterPeriods.length) {
+ 
+   const rosterPeriods = await DmsAuth.fetchWithAuth('/api/bonus/roster-periods')
+     .then(r => r.json()).catch(() => []);
+   if (!rosterPeriods.length) {
       el.innerHTML = '<div class="empty">尚無人員名冊，請先至獎金表上傳人員資料</div>';
       return;
     }
@@ -3943,7 +3941,7 @@ const r = await DmsAuth.fetchWithAuth(`/api/bonus/roster?period=${rosterPeriod}&
     await Promise.all(BRANCHES.map(async br => {
     const roster = await DmsAuth.fetchWithAuth(`/api/bonus/roster?period=${rosterPeriod}&factory=${br}`)
       .then(r => r.json()).catch(() => []);
-      if (!Array.isArray(roster)) continue;
+       if (!Array.isArray(roster)) return;
 
       // 三個科別
       const raw維修 = roster.filter(p => p.dept_name?.includes('維修服務') && p.status !== '離職');
@@ -3955,8 +3953,8 @@ const r = await DmsAuth.fetchWithAuth(`/api/bonus/roster?period=${rosterPeriod}&
         try {
           // 策略1：不帶 factory 取全部（若後端支援）
           let extraClaims = [];
-          const allRoster = await fetch(`/api/bonus/roster?period=${rosterPeriod}`)
-            .then(r => r.ok ? r.json() : null).catch(() => null);
+         const allRoster = await DmsAuth.fetchWithAuth(`/api/bonus/roster?period=${rosterPeriod}`)
+           .then(r => r.ok ? r.json() : null).catch(() => null);
 
           if (Array.isArray(allRoster) && allRoster.length) {
             // API 回傳全部：找非主要廠別的承保理賠員工
@@ -3969,8 +3967,8 @@ const r = await DmsAuth.fetchWithAuth(`/api/bonus/roster?period=${rosterPeriod}&
             // 策略2：逐一嘗試常見的鈑烤廠代碼
             const candidates = ['鈑烤廠','鈑烤','AMB','AMA-B','AMAB','AMA鈑烤'];
             for (const fc of candidates) {
-              const r = await fetch(`/api/bonus/roster?period=${rosterPeriod}&factory=${encodeURIComponent(fc)}`)
-                .then(r => r.ok ? r.json() : []).catch(() => []);
+            const r = await DmsAuth.fetchWithAuth(`/api/bonus/roster?period=${rosterPeriod}&factory=${encodeURIComponent(fc)}`)
+              .then(r => r.ok ? r.json() : []).catch(() => []);
               const found = r.filter(p => p.dept_name?.includes('承保理賠') && p.status !== '離職');
               if (found.length) { extraClaims = found; break; }
             }
