@@ -3906,9 +3906,10 @@ async function loadPersonPerfDashboard() {
     if (!_ppSaConfigs.length)
       _ppSaConfigs = await fetch('/api/sa-config').then(r => r.json()).catch(() => []);
 
-    const tRes = await fetch(`/api/performance-targets?period=${period}`).then(r => r.json());
-    const branchTargets = {};
-    tRes.forEach(t => {
+    const tRes = await DmsAuth.fetchWithAuth(`/api/performance-targets?period=${period}`)
+      .then(r => r.json()).catch(() => []);
+     const branchTargets = {};
+     (Array.isArray(tRes) ? tRes : []).forEach(t => {
       if (!branchTargets[t.branch]) branchTargets[t.branch] = {};
       branchTargets[t.branch][t.metric_id] = parseFloat(t.target_value || 0);
     });
@@ -3995,9 +3996,9 @@ async function loadPersonPerfDashboard() {
       const allNames = [...raw維修, ...raw客服, ...raw承保].map(p => p.emp_name);
 
       // ── sa-sales-matrix（維修科 + 承保科用相同指標）──
-      const saMatrix = await fetch(
-        `/api/stats/sa-sales-matrix?period=${period}&branch=${br}&view=sales_person`
-      ).then(r => r.json()).catch(() => ({ configs: [], rows: [] }));
+       const saMatrix = await DmsAuth.fetchWithAuth(
+         `/api/stats/sa-sales-matrix?period=${period}&branch=${br}&view=sales_person`
+       ).then(r => r.json()).catch(() => ({ configs: [], rows: [] }));
 
       const saActuals = {};
       saMatrix.rows.forEach(row => {
@@ -4021,9 +4022,9 @@ async function loadPersonPerfDashboard() {
       await Promise.all(_ppMetrics.filter(m => isBoutique(m)).map(async m => {
         saActuals[m.id] = {};
         try {
-          const res = await fetch(
-            `/api/stats/person-performance?metric_id=${m.id}&period=${period}&branch=${br}`
-          ).then(r => r.json());
+            const res = await DmsAuth.fetchWithAuth(
+              `/api/stats/person-performance?metric_id=${m.id}&period=${period}&branch=${br}`
+            ).then(r => r.json());
           (res.persons || []).forEach(p => {
             const rn = _ppMatchName(p.person_name, allNames) || p.person_name;
             saActuals[m.id][rn] = (saActuals[m.id][rn] || 0) + parseFloat(p.actual || 0);
@@ -4034,9 +4035,9 @@ async function loadPersonPerfDashboard() {
       // ── 個人權重 ──
       const ptMap = {};
       await Promise.all(_ppMetrics.map(async m => {
-        const rows = await fetch(
-          `/api/person-targets?metric_id=${m.id}&period=${period}&branch=${br}`
-        ).then(r => r.json()).catch(() => []);
+      const rows = await DmsAuth.fetchWithAuth(
+        `/api/person-targets?metric_id=${m.id}&period=${period}&branch=${br}`
+      ).then(r => r.json()).catch(() => []);
         rows.forEach(pt => {
           if (!ptMap[pt.person_name]) ptMap[pt.person_name] = {};
           ptMap[pt.person_name][m.id] = {
@@ -4047,13 +4048,13 @@ async function loadPersonPerfDashboard() {
       }));
 
       // ── 新增：進廠台數 + 各類型營收 + 營收目標 ──
-    const [saCarCount, revMaps, revTargetRows] = await Promise.all([
-      fetch(`/api/stats/sa-car-count?period=${period}&branch=${br}`).then(r=>r.json()).catch(()=>({})),
-      Promise.all(['paid','bodywork','general','extended'].map(rt =>
-        fetch(`/api/stats/sa-paid-revenue?period=${period}&branch=${br}&rev_type=${rt}`).then(r=>r.json()).catch(()=>({}))
-      )),
-      fetch(`/api/revenue-targets?period=${period}&branch=${br}`).then(r=>r.json()).catch(()=>[]),
-    ]);
+      const [saCarCount, revMaps, revTargetRows] = await Promise.all([
+        DmsAuth.fetchWithAuth(`/api/stats/sa-car-count?period=${period}&branch=${br}`).then(r=>r.json()).catch(()=>({})),
+        Promise.all(['paid','bodywork','general','extended'].map(rt =>
+          DmsAuth.fetchWithAuth(`/api/stats/sa-paid-revenue?period=${period}&branch=${br}&rev_type=${rt}`).then(r=>r.json()).catch(()=>({}))
+        )),
+        DmsAuth.fetchWithAuth(`/api/revenue-targets?period=${period}&branch=${br}`).then(r=>r.json()).catch(()=>[]),
+      ]);
     const saRevAllMaps = { paid:revMaps[0], bodywork:revMaps[1], general:revMaps[2], extended:revMaps[3] };
     const revTargetMap = {};
     (Array.isArray(revTargetRows)?revTargetRows:[]).forEach(t => {
