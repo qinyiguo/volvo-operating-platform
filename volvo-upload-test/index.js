@@ -11,6 +11,8 @@ app.use(cors());
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+const { auditMiddleware } = require('./lib/auditLogger');
+app.use(auditMiddleware);
 
 // ── 路由掛載 ──
 app.use('/api', require('./routes/upload'));
