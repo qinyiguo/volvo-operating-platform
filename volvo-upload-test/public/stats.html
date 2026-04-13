@@ -3913,8 +3913,11 @@ async function loadPersonPerfDashboard() {
       branchTargets[t.branch][t.metric_id] = parseFloat(t.target_value || 0);
     });
 
-    const rosterPeriods = await DmsAuth.fetchWithAuth('/api/bonus/roster-periods')
-     .then(r => r.json()).catch(() => []);
+const allRoster = await DmsAuth.fetchWithAuth(`/api/bonus/roster?period=${rosterPeriod}`)
+  .then(r => r.ok ? r.json() : null).catch(() => null);
+
+const r = await DmsAuth.fetchWithAuth(`/api/bonus/roster?period=${rosterPeriod}&factory=${encodeURIComponent(fc)}`)
+  .then(r => r.ok ? r.json() : []).catch(() => []);
     if (!rosterPeriods.length) {
       el.innerHTML = '<div class="empty">尚無人員名冊，請先至獎金表上傳人員資料</div>';
       return;
@@ -3938,8 +3941,9 @@ async function loadPersonPerfDashboard() {
     const branchData = {};
 
     await Promise.all(BRANCHES.map(async br => {
-      const roster = await fetch(`/api/bonus/roster?period=${rosterPeriod}&factory=${br}`)
-        .then(r => r.json()).catch(() => []);
+    const roster = await DmsAuth.fetchWithAuth(`/api/bonus/roster?period=${rosterPeriod}&factory=${br}`)
+      .then(r => r.json()).catch(() => []);
+      if (!Array.isArray(roster)) continue;
 
       // 三個科別
       const raw維修 = roster.filter(p => p.dept_name?.includes('維修服務') && p.status !== '離職');
