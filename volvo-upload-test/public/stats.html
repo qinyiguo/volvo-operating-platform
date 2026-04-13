@@ -2588,7 +2588,7 @@ async function loadTechHours(period,branch){
  if(!period){contentEl.innerHTML='<div class="empty">請選擇期間</div>';return;}
   try{
     const params=new URLSearchParams();params.set('period',period);if(branch)params.set('branch',branch);
-    const data=await fetch(`/api/stats/tech-hours?${params}`).then(r=>r.json());
+    const data = await DmsAuth.fetchWithAuth(`/api/stats/tech-hours?${params}`).then(r => r.json());
     if(data.error)throw new Error(data.error);
 
 const {branches:branchData,rosterPeriod,hourly_rate:HOURLY=2150,hourly_rates:HOURLY_RATES={engine:2150,bodywork:1450,paint:1450,beauty:2150},emp_working_days}=data;
@@ -4966,7 +4966,7 @@ let _techGroupsCache = {};
 
 async function _techLoadAllGroups() {
   try {
-    const data = await fetch('/api/tech-group-config-v2').then(r => r.json());
+    const data = await DmsAuth.fetchWithAuth('/api/tech-group-config-v2').then(r => r.json());
     _techGroupsCache = data || {};
   } catch(e) { console.warn('[techGroups] load failed', e); }
 }
