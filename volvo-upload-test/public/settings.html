@@ -2360,6 +2360,13 @@ async function deleteUser(id, username) {
   } catch(e) { alert('刪除失敗：' + e.message); }
 }
 
+// ══ 初始化 ══
+loadHistory();
+function initTheme(){const s=localStorage.getItem('volvo_theme')||'dark';applyTheme(s,false);}
+function applyTheme(t,re){if(t==='light')document.body.classList.add('light-theme');else document.body.classList.remove('light-theme');const b=document.getElementById('themeToggleBtn');if(b)b.textContent=t==='light'?'🌙':'☀️';localStorage.setItem('volvo_theme',t);}
+function toggleTheme(){applyTheme(document.body.classList.contains('light-theme')?'dark':'light',true);}
+initTheme();
+</script>
  <!-- ══ 使用者 Modal ══ -->
 <div id="userModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:800;
      align-items:center;justify-content:center;padding:16px;overflow-y:auto"
@@ -2439,13 +2446,5 @@ async function deleteUser(id, username) {
 .um-perm-row:hover { color:#e2e8f0; }
 .um-perm-row input { accent-color:#3b82f6;cursor:pointer; }
 </style>
- 
-// ══ 初始化 ══
-loadHistory();
-function initTheme(){const s=localStorage.getItem('volvo_theme')||'dark';applyTheme(s,false);}
-function applyTheme(t,re){if(t==='light')document.body.classList.add('light-theme');else document.body.classList.remove('light-theme');const b=document.getElementById('themeToggleBtn');if(b)b.textContent=t==='light'?'🌙':'☀️';localStorage.setItem('volvo_theme',t);}
-function toggleTheme(){applyTheme(document.body.classList.contains('light-theme')?'dark':'light',true);}
-initTheme();
-</script>
 </body>
 </html>
