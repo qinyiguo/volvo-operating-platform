@@ -152,7 +152,7 @@
           <path d="M3 4.5L6 7.5L9 4.5" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/>
         </svg>
         <div id="_userMenu" style="
-          display:none;position:absolute;top:calc(100% + 6px);right:0;
+          display:none;position:fixed;top:48px;right:12px;
           background:#1a2740;border:1px solid #2d4060;border-radius:10px;
           box-shadow:0 12px 40px rgba(0,0,0,.8);z-index:9999;min-width:160px;
           padding:6px 0;
