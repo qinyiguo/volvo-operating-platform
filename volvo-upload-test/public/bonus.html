@@ -712,7 +712,7 @@ async function hideLock() {
     opts = opts || {};
     if (typeof url === 'string' && url.startsWith('/api/')) {
       opts.headers = opts.headers || {};
-      const token = sessionStorage.getItem('dms_token');
+      const token = localStorage.getItem('dms_token');
       if (token) opts.headers['Authorization'] = 'Bearer ' + token;
     }
     return _origFetch.call(this, url, opts);
