@@ -61,6 +61,11 @@ async function getUserPermissions(userId, role) {
 
 // ═══ Middleware: 必須登入 ═══
 async function requireAuth(req, res, next) {
+  // ── 內部服務呼叫例外（server-to-server，僅限 localhost）──
+  const isInternal = req.headers['x-internal-service'] === 'true';
+  const isLocalhost = ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.ip);
+  if (isInternal && isLocalhost) return next();
+
   const auth  = req.headers['authorization'] || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : (req.query._token || '');
   const user  = await resolveToken(token);
