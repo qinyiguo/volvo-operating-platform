@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-TW" data-theme="dark">
 <head>
+<script src="/auth.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>月報分析 — 營收趨勢 & WIP</title>
@@ -1581,7 +1582,10 @@ async function saveAll(){
   }
 }
 
-init();
+(async () => {
+  await DmsAuth.init({ requiredPermission: 'page:performance' });
+  init();
+})();
 </script>
 </body>
 </html>
