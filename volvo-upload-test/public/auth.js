@@ -171,6 +171,7 @@
           " onmouseover="this.style.background='rgba(239,68,68,.08)'" onmouseout="this.style.background=''">
             🚪 登出
         </div>
+      </div>
       `;
       badge.addEventListener('click', (e) => {
         e.stopPropagation();
