@@ -1722,9 +1722,9 @@ async function loadWip(period,branch){
 
     // 同時取 WIP 工單與狀態備註
     const [data, statusRes] = await Promise.all([
-      fetch(`/api/stats/wip?${params}`).then(r=>r.json()),
-      fetch(`/api/wip/status?period=${period}${branch?'&branch='+branch:''}`).then(r=>r.json()).catch(()=>({statusMap:{}})),
-    ]);
+     DmsAuth.fetchWithAuth(`/api/stats/wip?${params}`).then(r=>r.json()),
+     DmsAuth.fetchWithAuth(`/api/wip/status?period=${period}${branch?'&branch='+branch:''}`).then(r=>r.json()).catch(()=>({statusMap:{}})),
+   ]);
     if(data.error)throw new Error(data.error);
 
    _wipData=data;
@@ -2549,7 +2549,7 @@ window._saveWipStatus=async function(workOrder,branch){
   try{
     const encWO=encodeURIComponent(workOrder);
     const encBR=encodeURIComponent(branch);
-    const res=await fetch(`/api/wip/status/${encWO}/${encBR}`,{
+    const res=await DmsAuth.fetchWithAuth(`/api/wip/status/${encWO}/${encBR}`,{
       method:'PUT',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({wip_status:status,eta_date:eta||null,reason,updated_by:by})
     }).then(r=>r.json());
