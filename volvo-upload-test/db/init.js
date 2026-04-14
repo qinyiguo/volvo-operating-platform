@@ -336,7 +336,7 @@ const initDatabase = async () => {
       )`);
     
 // ──新建促銷獎金 
-        await client.query(`
+      await client.query(`
       CREATE TABLE IF NOT EXISTS promo_bonus_configs (
         id SERIAL PRIMARY KEY,
         rule_name VARCHAR(100) NOT NULL,
@@ -357,7 +357,7 @@ const initDatabase = async () => {
         updated_at TIMESTAMPTZ DEFAULT NOW()
       )`);
 
-    await pool.query(`
+    await client.query(`
     CREATE TABLE IF NOT EXISTS manager_review (
       id         SERIAL PRIMARY KEY,
       period     VARCHAR(6)  NOT NULL,
