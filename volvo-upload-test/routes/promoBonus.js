@@ -95,6 +95,13 @@ router.get('/promo-bonus/results', async (req, res) => {
       ? [branch] : ['AMA','AMC','AMD'];
 
 const resultsByConfig = {};
+    // 快取 computeSaMatrix 結果，避免重複查詢
+const matrixCache = {};
+async function getCachedMatrix(period, br, viewParam) {
+  const key = `${period}-${br}-${viewParam}`;
+  if (!matrixCache[key]) matrixCache[key] = await computeSaMatrix(period, br, viewParam);
+  return matrixCache[key];
+}
 
     await Promise.all(configs.map(async (cfg) => {
       resultsByConfig[cfg.id] = { config: cfg, byBranch: {} };
@@ -119,7 +126,7 @@ const resultsByConfig = {};
 
 try {
             const viewParam = personType === 'tech' ? 'pickup_person' : 'sales_person';
-            const matrixData = await computeSaMatrix(period, br, viewParam);
+            const matrixData = await getCachedMatrix(period, br, viewParam);
             for (const row of matrixData.rows) {
               if (row.branch !== br) continue;
               const cfgData = row.configs[cfg.sa_config_id];
@@ -179,7 +186,7 @@ try {
 let personActuals = {};
   try {
     const viewParam = personType === 'tech' ? 'pickup_person' : 'sales_person';
-    const matrixData = await computeSaMatrix(period, br, viewParam);
+    const matrixData = await getCachedMatrix(period, br, viewParam);
     for (const row of matrixData.rows) {
       if (row.branch !== br) continue;
       const cfgData = row.configs[cfg.sa_config_id];
@@ -238,7 +245,7 @@ let personActuals = {};
 
 try {
             const viewParam = personType === 'tech' ? 'pickup_person' : 'sales_person';
-            const matrixData = await computeSaMatrix(period, br, viewParam);
+            const matrixData = await getCachedMatrix(period, br, viewParam);
             for (const row of matrixData.rows) {
               if (row.branch !== br) continue;
               const cfgData = row.configs[cfg.sa_config_id];
