@@ -837,16 +837,27 @@ async function loadRoster() {
   document.getElementById('rosterTree').innerHTML='<div class="loading"><span class="spinner"></span>載入中</div>';
   try {
     const factory=document.getElementById('selFactory').value;
+    const params=new URLSearchParams({period:rosterPeriod});
+    if (factory) params.set('factory',factory);
+    let [rows,summary]=await Promise.all([
+      fetch('/api/bonus/roster?'+params).then(r=>r.json()),
+      fetch('/api/bonus/roster-summary?period='+rosterPeriod).then(r=>r.json()),
+    ]);
+    // ★ AME 過濾放在 rows 宣告之後
     const _ameUser2 = window._currentUser;
     if (_ameUser2 && _ameUser2.branch === 'AME') {
       rows = rows.filter(r => r.factory === '聯合' || r.factory === '鈑烤');
     }
-    const params=new URLSearchParams({period:rosterPeriod});
-    if (factory) params.set('factory',factory);
-    let [rows,summary]=await Promise.all([
-  fetch('/api/bonus/roster?'+params).then(r=>r.json()),
-  fetch('/api/bonus/roster-summary?period='+rosterPeriod).then(r=>r.json()),
-]);
+    _rosterData = rows;
+    _rosterLoadedPeriod = rosterPeriod;
+    renderSummaryCards(summary);
+    renderAlerts(summary);
+    renderRosterTree(rows);
+  } catch(e) {
+    document.getElementById('rosterTree').innerHTML='<div class="empty" style="color:#ef4444">'+e.message+'</div>';
+  }
+}
+
 function renderSummaryCards(s) {
   const active=s.summary.filter(r=>r.status==='在職').reduce((t,r)=>t+parseInt(r.cnt),0);
   const resigned=s.summary.filter(r=>r.status==='離職').reduce((t,r)=>t+parseInt(r.cnt),0);
