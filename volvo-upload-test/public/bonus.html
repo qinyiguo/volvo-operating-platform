@@ -2522,6 +2522,14 @@ async function savePromoCfg() {
     payload.per_qty        = parseFloat(document.getElementById('pmPerQty').value) || 1;
     payload.bonus_per_unit = parseFloat(document.getElementById('pmBonusUnit').value) || 0;
     payload.person_type = document.getElementById('pmPersonType').value;
+   } else if (ruleType === 'sa_pct') {
+    var saId = document.getElementById('pmSaPctConfigId').value;
+    if (!saId) { alert('請選擇指標銷售品項'); btn.disabled=false; return; }
+    payload.sa_config_id  = parseInt(saId);
+    payload.person_type   = document.getElementById('pmSaPctPersonType').value;
+    payload.bonus_pct     = parseFloat(document.getElementById('pmSaPctBonus').value) || 0;
+    payload.paycode_types = [...document.querySelectorAll('#pmSaPctPaycodes input:checked')]
+                              .map(function(cb){ return cb.value; });
     } else if (ruleType === 'sa_tier') {
   var tierId = document.getElementById('pmTierConfigId').value;
   if (!tierId) { alert('請選擇指標銷售品項'); btn.disabled=false; return; }
