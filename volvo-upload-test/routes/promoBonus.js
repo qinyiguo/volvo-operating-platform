@@ -95,12 +95,22 @@ router.get('/promo-bonus/results', async (req, res) => {
       ? [branch] : ['AMA','AMC','AMD'];
 
 const resultsByConfig = {};
-    // 快取 computeSaMatrix 結果，避免重複查詢
+
+// ★ 預先計算所有需要的矩陣（串行，避免並行重複查詢）
 const matrixCache = {};
-async function getCachedMatrix(period, br, viewParam) {
-  const key = `${period}-${br}-${viewParam}`;
-  if (!matrixCache[key]) matrixCache[key] = await computeSaMatrix(period, br, viewParam);
-  return matrixCache[key];
+for (const br of BRANCHES) {
+  for (const viewParam of ['sales_person', 'pickup_person']) {
+    const key = `${br}-${viewParam}`;
+    try {
+      matrixCache[key] = await computeSaMatrix(period, br, viewParam);
+    } catch(e) {
+      matrixCache[key] = { rows: [], configs: [], colTotals: {} };
+      console.warn('[matrixCache]', key, e.message);
+    }
+  }
+}
+function getCachedMatrix(period, br, viewParam) {
+  return matrixCache[`${br}-${viewParam}`] || { rows: [], configs: [], colTotals: {} };
 }
 
     await Promise.all(configs.map(async (cfg) => {
@@ -126,7 +136,7 @@ async function getCachedMatrix(period, br, viewParam) {
 
 try {
             const viewParam = personType === 'tech' ? 'pickup_person' : 'sales_person';
-            const matrixData = await getCachedMatrix(period, br, viewParam);
+            const matrixData = getCachedMatrix(period, br, viewParam);
             for (const row of matrixData.rows) {
               if (row.branch !== br) continue;
               const cfgData = row.configs[cfg.sa_config_id];
@@ -186,7 +196,7 @@ try {
 let personActuals = {};
   try {
     const viewParam = personType === 'tech' ? 'pickup_person' : 'sales_person';
-    const matrixData = await getCachedMatrix(period, br, viewParam);
+    const matrixData = getCachedMatrix(period, br, viewParam);
     for (const row of matrixData.rows) {
       if (row.branch !== br) continue;
       const cfgData = row.configs[cfg.sa_config_id];
@@ -245,7 +255,7 @@ let personActuals = {};
 
 try {
             const viewParam = personType === 'tech' ? 'pickup_person' : 'sales_person';
-            const matrixData = await getCachedMatrix(period, br, viewParam);
+            const matrixData = getCachedMatrix(period, br, viewParam);
             for (const row of matrixData.rows) {
               if (row.branch !== br) continue;
               const cfgData = row.configs[cfg.sa_config_id];
