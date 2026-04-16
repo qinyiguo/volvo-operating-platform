@@ -232,11 +232,7 @@ const resultsByConfig = {};
     }
     if (wcConds.length) conds.push(`(${wcConds.join(' OR ')})`);
 if (personType === 'sales_person') {
-      // sales_person：從 parts_sales 撈銷售金額，用 work_order IN (tech_performance 篩出的工單)
-      const psConds = ['ps.period=$1', 'ps.branch=$2'];
-      const psP = [period, br]; let psIdx = 3;
-      if (acTypes.length) { psConds.push(`ps.part_type=ANY($${psIdx++})`); psP.push(acTypes); }
-      // work_code 條件轉為 IN subquery
+      // Step1: 用 work_code 從 tech_performance 撈符合的 work_order（不加 account_type 過濾）
       const tpConds = ['period=$1', 'branch=$2'];
       const tpP = [period, br]; let tpIdx = 3;
       const tpWcConds = [];
@@ -247,25 +243,28 @@ if (personType === 'sales_person') {
         } else { tpWcConds.push(`work_code=$${tpIdx++}`); tpP.push(wc); }
       }
       if (tpWcConds.length) tpConds.push(`(${tpWcConds.join(' OR ')})`);
-      // 先查符合 work_code 的 work_order 清單
       const woRes = await pool.query(
         `SELECT DISTINCT work_order FROM tech_performance WHERE ${tpConds.join(' AND ')}`, tpP
       );
-      const woList = woRes.rows.map(r => r.work_order);
-      if (!woList.length) { r = { rows: [] }; }
-      else {
+      const woList = woRes.rows.map(row => row.work_order);
+      if (woList.length) {
+        // Step2: 用 work_order 清單去 parts_sales，part_type filter 套在這裡才對
+        const psConds = ['ps.period=$1', 'ps.branch=$2'];
+        const psP = [period, br]; let psIdx = 3;
         psConds.push(`ps.work_order=ANY($${psIdx++})`); psP.push(woList);
+        // part_type 是 parts_sales 的欄位
+        if (partTypes.length) { psConds.push(`ps.part_type=ANY($${psIdx++})`); psP.push(partTypes); }
         const expr2 = statMethod==='quantity'?'SUM(ps.sale_qty)':statMethod==='count'?'COUNT(*)':'SUM(ps.sale_price_untaxed)';
-        var r = await pool.query(`
+        const rPs = await pool.query(`
           SELECT COALESCE(NULLIF(ps.sales_person,''),'（未知）') AS person_name,
                  COALESCE(${expr2},0) AS actual
           FROM parts_sales ps
           WHERE ${psConds.join(' AND ')}
           GROUP BY ps.sales_person`, psP);
+        rPs.rows.forEach(row => { personActuals[row.person_name] = parseFloat(row.actual||0); });
       }
-      (r.rows||[]).forEach(row => { personActuals[row.person_name] = parseFloat(row.actual||0); });
     } else {
-      // tech 本人：用原本的 tech_performance 邏輯
+      // tech 本人：work_code 過濾用 account_type（tech_performance 的正確欄位）
       const expr = statMethod==='count'?'COUNT(DISTINCT tp.work_order)':statMethod==='quantity'?'SUM(tp.standard_hours)':'SUM(tp.wage)';
       const r2 = await pool.query(
         `SELECT COALESCE(NULLIF(tp.tech_name_clean,''),'（未知）') AS person_name,
