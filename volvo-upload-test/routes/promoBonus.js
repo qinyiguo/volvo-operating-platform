@@ -110,7 +110,7 @@ const resultsByConfig = {};
           const partNums   = saFilters.filter(f=>f.type==='part_number').map(f=>f.value);
           const partTypes  = saFilters.filter(f=>f.type==='part_type').map(f=>f.value);
           const workCodes  = saFilters.filter(f=>f.type==='work_code').map(f=>f.value);
-          const acTypes    = saFilters.filter(f=>f.type==='account_type').map(f=>f.value);
+          const acTypes    = saFilters.filter(f=>f.type==='account_type'||f.type==='part_type').map(f=>f.value);
           const statMethod = cfg.sa_stat_method || 'amount';
           const perQty     = parseFloat(cfg.per_qty || 1);
           const bonusUnit  = parseFloat(cfg.bonus_per_unit || 0);
@@ -211,7 +211,7 @@ const resultsByConfig = {};
   const funcCodes  = saFilters.filter(f=>f.type==='function_code').map(f=>f.value);
   const partNums   = saFilters.filter(f=>f.type==='part_number').map(f=>f.value);
   const partTypes  = saFilters.filter(f=>f.type==='part_type').map(f=>f.value);
-  const acTypes    = saFilters.filter(f=>f.type==='account_type').map(f=>f.value);
+  const acTypes    = saFilters.filter(f=>f.type==='account_type'||f.type==='part_type').map(f=>f.value);
   const personType = cfg.person_type || 'sales_person';
   const tiers      = cfg.tiers || [];
   const statMethod = cfg.stat_method || 'amount';
@@ -231,12 +231,15 @@ const resultsByConfig = {};
       } else { wcConds.push(`tp.work_code=$${idx++}`); p.push(wc); }
     }
     if (wcConds.length) conds.push(`(${wcConds.join(' OR ')})`);
-    const expr = statMethod==='count'?'COUNT(DISTINCT tp.work_order)':statMethod==='quantity'?'SUM(tp.standard_hours)':'SUM(tp.wage)';
+    const expr = statMethod==='count' ? 'COUNT(DISTINCT tp.work_order)'
+               : statMethod==='quantity' ? 'SUM(tp.standard_hours)'
+               : personType==='sales_person' ? 'SUM(ps_uniq.sale_price_untaxed)'
+               : 'SUM(tp.wage)';
     const personCol = personType==='sales_person'
       ? 'COALESCE(NULLIF(ps_uniq.person_name,\'\'),\'（未知）\')'
       : 'COALESCE(NULLIF(tp.tech_name_clean,\'\'),\'（未知）\')';
     const joinClause = personType==='sales_person'
-      ? `LEFT JOIN (SELECT DISTINCT ON (branch,work_order) branch,work_order,sales_person AS person_name FROM parts_sales ORDER BY branch,work_order,id) ps_uniq ON ps_uniq.work_order=tp.work_order AND ps_uniq.branch=tp.branch`
+      ? `LEFT JOIN (SELECT branch, work_order, sales_person AS person_name, SUM(sale_price_untaxed) AS sale_price_untaxed FROM parts_sales GROUP BY branch, work_order, sales_person) ps_uniq ON ps_uniq.work_order=tp.work_order AND ps_uniq.branch=tp.branch`
       : '';
     const r = await pool.query(
       `SELECT ${personCol} AS person_name, COALESCE(${expr},0) AS actual FROM tech_performance tp ${joinClause} WHERE ${conds.join(' AND ')} GROUP BY person_name`, p
@@ -293,7 +296,7 @@ const resultsByConfig = {};
           const partNums   = saFilters.filter(f=>f.type==='part_number').map(f=>f.value);
           const partTypes  = saFilters.filter(f=>f.type==='part_type').map(f=>f.value);
           const workCodes  = saFilters.filter(f=>f.type==='work_code').map(f=>f.value);
-          const acTypes    = saFilters.filter(f=>f.type==='account_type').map(f=>f.value);
+          const acTypes    = saFilters.filter(f=>f.type==='account_type'||f.type==='part_type').map(f=>f.value);
           const payCodes   = Array.isArray(cfg.paycode_types) ? cfg.paycode_types
                              : (cfg.paycode_types ? JSON.parse(cfg.paycode_types) : []);
           const bonusPct   = parseFloat(cfg.bonus_pct || 0);
@@ -313,7 +316,10 @@ const resultsByConfig = {};
               } else { wcConds.push(`tp.work_code=$${idx++}`); p.push(wc); }
             }
             if (wcConds.length) conds.push(`(${wcConds.join(' OR ')})`);
-            const expr = statMethod==='count'?'COUNT(DISTINCT tp.work_order)':statMethod==='quantity'?'SUM(tp.standard_hours)':'SUM(tp.wage)';
+            const expr = statMethod==='count' ? 'COUNT(DISTINCT tp.work_order)'
+               : statMethod==='quantity' ? 'SUM(tp.standard_hours)'
+               : personType==='sales_person' ? 'SUM(ps_uniq.sale_price_untaxed)'
+               : 'SUM(tp.wage)';
             let r;
             if (personType === 'sales_person') {
               r = await pool.query(`
