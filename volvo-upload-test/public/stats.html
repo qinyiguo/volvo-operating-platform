@@ -2910,7 +2910,7 @@ async function loadTechTurnover(period, branch) {
   try {
     const params = new URLSearchParams({ period });
     if (branch) params.set('branch', branch);
-    const data = await fetch(`/api/stats/tech-turnover?${params}`).then(r => r.json());
+    const data = await DmsAuth.fetchWithAuth(`/api/stats/tech-turnover?${params}`).then(r => r.json());
     if (data.error) throw new Error(data.error);
 
     const { branches: bd, bodywork: bw, rosterPeriod } = data;
