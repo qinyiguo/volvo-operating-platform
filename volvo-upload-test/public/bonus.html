@@ -708,16 +708,28 @@ async function hideLock() {
 
   // ★ 根據使用者廠別權限鎖定廠別選單
   const me = window._currentUser;
-  if (me && me.branch) {
+if (me && me.branch) {
     const selFactory = document.getElementById('selFactory');
     if (selFactory) {
-      selFactory.value = me.branch;
-      [...selFactory.options].forEach(opt => {
-        if (opt.value && opt.value !== me.branch) {
-          opt.disabled = true;
-          opt.style.display = 'none';
-        }
-      });
+      if (me.branch === 'AME') {
+        // AME：只開放「聯合服務中心」與「鈑烤廠」
+        const allowed = new Set(['', '聯合', '鈑烤']);
+        [...selFactory.options].forEach(opt => {
+          if (!allowed.has(opt.value)) {
+            opt.disabled = true;
+            opt.style.display = 'none';
+          }
+        });
+        selFactory.value = ''; // 預設顯示全部（但只剩這兩個選項）
+      } else {
+        selFactory.value = me.branch;
+        [...selFactory.options].forEach(opt => {
+          if (opt.value && opt.value !== me.branch) {
+            opt.disabled = true;
+            opt.style.display = 'none';
+          }
+        });
+      }
     }
   }
 
