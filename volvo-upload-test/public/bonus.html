@@ -2694,20 +2694,8 @@ async function _saveWeightModal(fc, dkey) {
   var inner = document.getElementById('progressInner');
   if (inner) { inner.innerHTML = '<div class="loading"><span class="spinner"></span>重新計算中</div>'; renderProgressContent(); }
 }
-async function _saveWeightModal(fc, dkey) {
-  var inputs = document.querySelectorAll('#weightModalBg input[data-empid]');
-  var obj = {};
-  inputs.forEach(function(inp){
-    var val = parseFloat(inp.value);
-    obj[inp.getAttribute('data-empid')] = isNaN(val)||val<0 ? 0 : val;
-  });
-  await _ppSetWeights(fc, dkey, obj);
-  document.getElementById('weightModalBg').remove();
-  var inner = document.getElementById('progressInner');
-  if (inner) { inner.innerHTML = '<div class="loading"><span class="spinner"></span>重新計算中</div>'; renderProgressContent(); }
-}
 
-  var _mrModalDepts  = {};
+var _mrModalDepts  = {};
 var _mrModalCurrent = null;
 
 function _openMRModal(deptKey) {
