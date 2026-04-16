@@ -231,20 +231,50 @@ const resultsByConfig = {};
       } else { wcConds.push(`tp.work_code=$${idx++}`); p.push(wc); }
     }
     if (wcConds.length) conds.push(`(${wcConds.join(' OR ')})`);
-    const expr = statMethod==='count' ? 'COUNT(DISTINCT tp.work_order)'
-               : statMethod==='quantity' ? 'SUM(tp.standard_hours)'
-               : personType==='sales_person' ? 'SUM(ps_uniq.sale_price_untaxed)'
-               : 'SUM(tp.wage)';
-    const personCol = personType==='sales_person'
-      ? 'COALESCE(NULLIF(ps_uniq.person_name,\'\'),\'（未知）\')'
-      : 'COALESCE(NULLIF(tp.tech_name_clean,\'\'),\'（未知）\')';
-    const joinClause = personType==='sales_person'
-      ? `LEFT JOIN (SELECT branch, work_order, sales_person AS person_name, SUM(sale_price_untaxed) AS sale_price_untaxed FROM parts_sales GROUP BY branch, work_order, sales_person) ps_uniq ON ps_uniq.work_order=tp.work_order AND ps_uniq.branch=tp.branch`
-      : '';
-    const r = await pool.query(
-      `SELECT ${personCol} AS person_name, COALESCE(${expr},0) AS actual FROM tech_performance tp ${joinClause} WHERE ${conds.join(' AND ')} GROUP BY person_name`, p
-    );
-    r.rows.forEach(row => { personActuals[row.person_name] = parseFloat(row.actual||0); });
+if (personType === 'sales_person') {
+      // sales_person：從 parts_sales 撈銷售金額，用 work_order IN (tech_performance 篩出的工單)
+      const psConds = ['ps.period=$1', 'ps.branch=$2'];
+      const psP = [period, br]; let psIdx = 3;
+      if (acTypes.length) { psConds.push(`ps.part_type=ANY($${psIdx++})`); psP.push(acTypes); }
+      // work_code 條件轉為 IN subquery
+      const tpConds = ['period=$1', 'branch=$2'];
+      const tpP = [period, br]; let tpIdx = 3;
+      const tpWcConds = [];
+      for (const wc of workCodes) {
+        if (wc.includes('-')) {
+          const [fr,to] = wc.split('-').map(s=>s.trim());
+          tpWcConds.push(`(work_code BETWEEN $${tpIdx} AND $${tpIdx+1})`); tpIdx+=2; tpP.push(fr,to);
+        } else { tpWcConds.push(`work_code=$${tpIdx++}`); tpP.push(wc); }
+      }
+      if (tpWcConds.length) tpConds.push(`(${tpWcConds.join(' OR ')})`);
+      // 先查符合 work_code 的 work_order 清單
+      const woRes = await pool.query(
+        `SELECT DISTINCT work_order FROM tech_performance WHERE ${tpConds.join(' AND ')}`, tpP
+      );
+      const woList = woRes.rows.map(r => r.work_order);
+      if (!woList.length) { r = { rows: [] }; }
+      else {
+        psConds.push(`ps.work_order=ANY($${psIdx++})`); psP.push(woList);
+        const expr2 = statMethod==='quantity'?'SUM(ps.sale_qty)':statMethod==='count'?'COUNT(*)':'SUM(ps.sale_price_untaxed)';
+        var r = await pool.query(`
+          SELECT COALESCE(NULLIF(ps.sales_person,''),'（未知）') AS person_name,
+                 COALESCE(${expr2},0) AS actual
+          FROM parts_sales ps
+          WHERE ${psConds.join(' AND ')}
+          GROUP BY ps.sales_person`, psP);
+      }
+      (r.rows||[]).forEach(row => { personActuals[row.person_name] = parseFloat(row.actual||0); });
+    } else {
+      // tech 本人：用原本的 tech_performance 邏輯
+      const expr = statMethod==='count'?'COUNT(DISTINCT tp.work_order)':statMethod==='quantity'?'SUM(tp.standard_hours)':'SUM(tp.wage)';
+      const r2 = await pool.query(
+        `SELECT COALESCE(NULLIF(tp.tech_name_clean,''),'（未知）') AS person_name,
+                COALESCE(${expr},0) AS actual
+         FROM tech_performance tp
+         WHERE ${conds.join(' AND ')} GROUP BY tp.tech_name_clean`, p
+      );
+      r2.rows.forEach(row => { personActuals[row.person_name] = parseFloat(row.actual||0); });
+    }
   } else {
     const conds = ['period=$1','branch=$2'];
     const p = [period, br]; let idx = 3;
