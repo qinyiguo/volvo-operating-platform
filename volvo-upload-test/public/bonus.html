@@ -843,11 +843,10 @@ async function loadRoster() {
     }
     const params=new URLSearchParams({period:rosterPeriod});
     if (factory) params.set('factory',factory);
-    const [rows,summary]=await Promise.all([
-        _rosterData=rows; _rosterLoadedPeriod=rosterPeriod;
-        renderSummaryCards(summary); renderAlerts(summary); renderRosterTree(rows);
-      } catch(e){ document.getElementById('rosterTree').innerHTML='<div class="empty" style="color:#ef4444">'+e.message+'</div>'; }
-    }
+    let [rows,summary]=await Promise.all([
+  fetch('/api/bonus/roster?'+params).then(r=>r.json()),
+  fetch('/api/bonus/roster-summary?period='+rosterPeriod).then(r=>r.json()),
+]);
 function renderSummaryCards(s) {
   const active=s.summary.filter(r=>r.status==='在職').reduce((t,r)=>t+parseInt(r.cnt),0);
   const resigned=s.summary.filter(r=>r.status==='離職').reduce((t,r)=>t+parseInt(r.cnt),0);
