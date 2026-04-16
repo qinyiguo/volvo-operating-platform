@@ -720,7 +720,7 @@ if (me && me.branch) {
             opt.style.display = 'none';
           }
         });
-        selFactory.value = ''; // 預設顯示全部（但只剩這兩個選項）
+        selFactory.value = '聯合'; // 預設顯示全部（但只剩這兩個選項）
       } else {
         selFactory.value = me.branch;
         [...selFactory.options].forEach(opt => {
@@ -837,6 +837,10 @@ async function loadRoster() {
   document.getElementById('rosterTree').innerHTML='<div class="loading"><span class="spinner"></span>載入中</div>';
   try {
     const factory=document.getElementById('selFactory').value;
+    const _ameUser2 = window._currentUser;
+    if (_ameUser2 && _ameUser2.branch === 'AME') {
+      rows = rows.filter(r => r.factory === '聯合' || r.factory === '鈑烤');
+    }
     const params=new URLSearchParams({period:rosterPeriod});
     if (factory) params.set('factory',factory);
     const [rows,summary]=await Promise.all([
@@ -1648,6 +1652,9 @@ async function renderProgressContent() {
 
   try {
     var factory=document.getElementById('selFactory').value;
+    const _ameUser = window._currentUser;
+    const _ameAllowed = (_ameUser && _ameUser.branch === 'AME')
+    ? new Set(['聯合', '鈑烤']) : null;
 
     if (!_rosterData.length) await loadRoster();
     // ── 從後端載入所有部門的團體/個人模式 ──
@@ -1817,7 +1824,9 @@ function calcPromoBonus(unused1, unused2, branch, personName, jobTitle) {
     for (var pi=0;pi<_rosterData.length;pi++) {
       var person=_rosterData[pi], dn=person.dept_name||'';
       var fc=person.factory||(/售後/.test(dn)?'售後服務處':/內湖|AMA/.test(dn)?'AMA':/仁愛|AMC/.test(dn)?'AMC':/士林|AMD/.test(dn)?'AMD':/聯合/.test(dn)?'聯合':/鈑烤/.test(dn)?'鈑烤':/零件/.test(dn)?'零件':'售後服務處');
-      if (factory&&fc!==factory) continue;
+      if (_ameAllowed) {
+      if (!_ameAllowed.has(fc)) continue;
+    } else if (factory && fc !== factory) continue;
       var dk=person.dept_code||'—';
       if (!byFactory[fc]) byFactory[fc]={};
       if (!byFactory[fc][dk]) byFactory[fc][dk]={dept_name:person.dept_name||dk,members:[]};
