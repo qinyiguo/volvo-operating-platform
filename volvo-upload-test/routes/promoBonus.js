@@ -117,64 +117,21 @@ const resultsByConfig = {};
           const bonusUnit  = parseFloat(cfg.bonus_per_unit || 0);
           const personType = cfg.person_type || 'sales_person';
 
-          if (workCodes.length > 0) {
-            const conds = ['tp.period=$1','tp.branch=$2'];
-            const p = [period, br]; let idx = 3;
-            if (acTypes.length) { conds.push(`tp.account_type=ANY($${idx++})`); p.push(acTypes); }
-            const wcConds = [];
-            for (const wc of workCodes) {
-              if (wc.includes('-')) {
-                const [fr,to] = wc.split('-').map(s=>s.trim());
-                wcConds.push(`(tp.work_code BETWEEN $${idx} AND $${idx+1})`); idx+=2;
-                p.push(fr, to);
-              } else {
-                wcConds.push(`tp.work_code=$${idx++}`);
-                p.push(wc);
-              }
+try {
+            const viewParam = personType === 'tech' ? 'pickup_person' : 'sales_person';
+            const matrixData = await computeSaMatrix(period, br, viewParam);
+            for (const row of matrixData.rows) {
+              if (row.branch !== br) continue;
+              const cfgData = row.configs[cfg.sa_config_id];
+              if (!cfgData) continue;
+              const val = statMethod === 'quantity' ? cfgData.qty
+                        : statMethod === 'count'    ? cfgData.cnt
+                        : cfgData.sales;
+              const units = Math.floor(val / perQty);
+              if (units > 0) personResults[row.sa_name] = Math.round(units * bonusUnit);
             }
-            if (wcConds.length) conds.push(`(${wcConds.join(' OR ')})`);
-            const expr = statMethod==='count'  ? 'COUNT(DISTINCT tp.work_order)'
-                       : statMethod==='quantity'? 'SUM(tp.standard_hours)'
-                       : 'SUM(tp.wage)';
-            let r;
-            if (personType === 'sales_person') {
-              r = await pool.query(`
-                SELECT COALESCE(NULLIF(ps_uniq.person_name,''),'（未知）') AS person_name,
-                       COALESCE(${expr},0) AS actual
-                FROM tech_performance tp
-                LEFT JOIN (
-                  SELECT DISTINCT ON (branch, work_order) branch, work_order, sales_person AS person_name
-                  FROM parts_sales ORDER BY branch, work_order, id
-                ) ps_uniq ON ps_uniq.work_order=tp.work_order AND ps_uniq.branch=tp.branch
-                WHERE ${conds.join(' AND ')} GROUP BY ps_uniq.person_name`, p);
-            } else {
-              r = await pool.query(`
-                SELECT COALESCE(NULLIF(tp.tech_name_clean,''),'（未知）') AS person_name,
-                       COALESCE(${expr},0) AS actual
-                FROM tech_performance tp
-                WHERE ${conds.join(' AND ')} GROUP BY tp.tech_name_clean`, p);
-            }
-            for (const row of r.rows) {
-              const units = Math.floor(parseFloat(row.actual||0) / perQty);
-              if (units > 0) personResults[row.person_name] = Math.round(units * bonusUnit);
-            }
-          } else {
-            const conds = ['period=$1','branch=$2'];
-            const p = [period, br]; let idx = 3;
-            if (catCodes.length)  { conds.push(`category_code=ANY($${idx++})`); p.push(catCodes); }
-            if (funcCodes.length) { conds.push(`function_code=ANY($${idx++})`); p.push(funcCodes); }
-            if (partNums.length)  { conds.push(`part_number=ANY($${idx++})`);   p.push(partNums); }
-            if (partTypes.length) { conds.push(`part_type=ANY($${idx++})`);     p.push(partTypes); }
-            const personCol = personType === 'tech' ? 'pickup_person' : 'sales_person';
-            const expr = statMethod==='quantity'?'SUM(sale_qty)':statMethod==='count'?'COUNT(*)':'SUM(sale_price_untaxed)';
-            const r = await pool.query(`
-              SELECT COALESCE(NULLIF(${personCol},''),'（未知）') AS person_name,
-                     COALESCE(${expr},0) AS actual
-              FROM parts_sales WHERE ${conds.join(' AND ')} GROUP BY ${personCol}`, p);
-            for (const row of r.rows) {
-              const units = Math.floor(parseFloat(row.actual||0) / perQty);
-              if (units > 0) personResults[row.person_name] = Math.round(units * bonusUnit);
-            }
+          } catch(e) {
+            console.warn('[sa_qty] computeSaMatrix 失敗:', e.message);
           }
 
         // ── parts_discount ──
@@ -279,10 +236,7 @@ let personActuals = {};
           const personType = cfg.person_type || 'sales_person';
           const statMethod = cfg.sa_stat_method || 'amount';
 
-          if (workCodes.length > 0) {
-            // ── tech_performance 路徑 ──
-let personSales = {};
-          try {
+try {
             const viewParam = personType === 'tech' ? 'pickup_person' : 'sales_person';
             const matrixData = await computeSaMatrix(period, br, viewParam);
             for (const row of matrixData.rows) {
@@ -292,34 +246,10 @@ let personSales = {};
               const val = statMethod === 'quantity' ? cfgData.qty
                         : statMethod === 'count'    ? cfgData.cnt
                         : cfgData.sales;
-              if (val > 0) personSales[row.sa_name] = val;
+              if (val > 0) personResults[row.sa_name] = Math.round(val * bonusPct / 100);
             }
           } catch(e) {
             console.warn('[sa_pct] computeSaMatrix 失敗:', e.message);
-          }
-          for (const [name, salesAmt] of Object.entries(personSales)) {
-            if (salesAmt > 0) personResults[name] = Math.round(salesAmt * bonusPct / 100);
-          }
-
-          } else {
-            // ── parts_sales 路徑（主要路徑）──
-            const conds = ['period=$1','branch=$2'];
-            const p = [period, br]; let idx = 3;
-            if (catCodes.length)  { conds.push(`category_code=ANY($${idx++})`); p.push(catCodes); }
-            if (funcCodes.length) { conds.push(`function_code=ANY($${idx++})`); p.push(funcCodes); }
-            if (partNums.length)  { conds.push(`part_number=ANY($${idx++})`);   p.push(partNums); }
-            if (partTypes.length) { conds.push(`part_type=ANY($${idx++})`);     p.push(partTypes); }
-            if (payCodes.length)  { conds.push(`part_type=ANY($${idx++})`);     p.push(payCodes); }
-            const personCol = personType==='tech' ? 'pickup_person' : 'sales_person';
-            const expr = statMethod==='quantity'?'SUM(sale_qty)':statMethod==='count'?'COUNT(*)':'SUM(sale_price_untaxed)';
-            const r = await pool.query(`
-              SELECT COALESCE(NULLIF(${personCol},''),'（未知）') AS person_name,
-                     COALESCE(${expr},0) AS actual
-              FROM parts_sales WHERE ${conds.join(' AND ')} GROUP BY ${personCol}`, p);
-            for (const row of r.rows) {
-              const salesAmt = parseFloat(row.actual||0);
-              if (salesAmt > 0) personResults[row.person_name] = Math.round(salesAmt * bonusPct / 100);
-            }
           }
 }
         resultsByConfig[cfg.id].byBranch[br] = personResults;  // ← 這行維持在外面
