@@ -284,7 +284,79 @@ const resultsByConfig = {};
   if (!resultsByConfig[cfg.id].actualByBranch) resultsByConfig[cfg.id].actualByBranch = {};
   resultsByConfig[cfg.id].actualByBranch[br] = personActuals;
 
-}  // ← sa_tier else if 的結尾
+// ── sa_pct：比例型（指標銷售總額 × %）──
+        } else if (cfg.rule_type === 'sa_pct') {
+          if (!cfg.sa_config_id) return;
+          const saFilters  = cfg.sa_filters || [];
+          const catCodes   = saFilters.filter(f=>f.type==='category_code').map(f=>f.value);
+          const funcCodes  = saFilters.filter(f=>f.type==='function_code').map(f=>f.value);
+          const partNums   = saFilters.filter(f=>f.type==='part_number').map(f=>f.value);
+          const partTypes  = saFilters.filter(f=>f.type==='part_type').map(f=>f.value);
+          const workCodes  = saFilters.filter(f=>f.type==='work_code').map(f=>f.value);
+          const acTypes    = saFilters.filter(f=>f.type==='account_type').map(f=>f.value);
+          const payCodes   = Array.isArray(cfg.paycode_types) ? cfg.paycode_types
+                             : (cfg.paycode_types ? JSON.parse(cfg.paycode_types) : []);
+          const bonusPct   = parseFloat(cfg.bonus_pct || 0);
+          const personType = cfg.person_type || 'sales_person';
+          const statMethod = cfg.sa_stat_method || 'amount';
+
+          if (workCodes.length > 0) {
+            // ── tech_performance 路徑 ──
+            const conds = ['tp.period=$1','tp.branch=$2'];
+            const p = [period, br]; let idx = 3;
+            if (acTypes.length) { conds.push(`tp.account_type=ANY($${idx++})`); p.push(acTypes); }
+            const wcConds = [];
+            for (const wc of workCodes) {
+              if (wc.includes('-')) {
+                const [fr,to] = wc.split('-').map(s=>s.trim());
+                wcConds.push(`(tp.work_code BETWEEN $${idx} AND $${idx+1})`); idx+=2; p.push(fr,to);
+              } else { wcConds.push(`tp.work_code=$${idx++}`); p.push(wc); }
+            }
+            if (wcConds.length) conds.push(`(${wcConds.join(' OR ')})`);
+            const expr = statMethod==='count'?'COUNT(DISTINCT tp.work_order)':statMethod==='quantity'?'SUM(tp.standard_hours)':'SUM(tp.wage)';
+            let r;
+            if (personType === 'sales_person') {
+              r = await pool.query(`
+                SELECT COALESCE(NULLIF(ps_uniq.person_name,''),'（未知）') AS person_name,
+                       COALESCE(${expr},0) AS actual
+                FROM tech_performance tp
+                LEFT JOIN (
+                  SELECT DISTINCT ON (branch,work_order) branch,work_order,sales_person AS person_name
+                  FROM parts_sales ORDER BY branch,work_order,id
+                ) ps_uniq ON ps_uniq.work_order=tp.work_order AND ps_uniq.branch=tp.branch
+                WHERE ${conds.join(' AND ')} GROUP BY ps_uniq.person_name`, p);
+            } else {
+              r = await pool.query(`
+                SELECT COALESCE(NULLIF(tp.tech_name_clean,''),'（未知）') AS person_name,
+                       COALESCE(${expr},0) AS actual
+                FROM tech_performance tp
+                WHERE ${conds.join(' AND ')} GROUP BY tp.tech_name_clean`, p);
+            }
+            for (const row of r.rows) {
+              const salesAmt = parseFloat(row.actual||0);
+              if (salesAmt > 0) personResults[row.person_name] = Math.round(salesAmt * bonusPct / 100);
+            }
+
+          } else {
+            // ── parts_sales 路徑（主要路徑）──
+            const conds = ['period=$1','branch=$2'];
+            const p = [period, br]; let idx = 3;
+            if (catCodes.length)  { conds.push(`category_code=ANY($${idx++})`); p.push(catCodes); }
+            if (funcCodes.length) { conds.push(`function_code=ANY($${idx++})`); p.push(funcCodes); }
+            if (partNums.length)  { conds.push(`part_number=ANY($${idx++})`);   p.push(partNums); }
+            if (partTypes.length) { conds.push(`part_type=ANY($${idx++})`);     p.push(partTypes); }
+            if (payCodes.length)  { conds.push(`part_type=ANY($${idx++})`);     p.push(payCodes); }
+            const personCol = personType==='tech' ? 'pickup_person' : 'sales_person';
+            const expr = statMethod==='quantity'?'SUM(sale_qty)':statMethod==='count'?'COUNT(*)':'SUM(sale_price_untaxed)';
+            const r = await pool.query(`
+              SELECT COALESCE(NULLIF(${personCol},''),'（未知）') AS person_name,
+                     COALESCE(${expr},0) AS actual
+              FROM parts_sales WHERE ${conds.join(' AND ')} GROUP BY ${personCol}`, p);
+            for (const row of r.rows) {
+              const salesAmt = parseFloat(row.actual||0);
+              if (salesAmt > 0) personResults[row.person_name] = Math.round(salesAmt * bonusPct / 100);
+            }
+          }
 
         resultsByConfig[cfg.id].byBranch[br] = personResults;  // ← 這行維持在外面
       }));
