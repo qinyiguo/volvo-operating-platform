@@ -357,7 +357,7 @@ const resultsByConfig = {};
               if (salesAmt > 0) personResults[row.person_name] = Math.round(salesAmt * bonusPct / 100);
             }
           }
-
+}
         resultsByConfig[cfg.id].byBranch[br] = personResults;  // ← 這行維持在外面
       }));
     }));
