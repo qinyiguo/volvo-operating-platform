@@ -1875,7 +1875,30 @@ function calcPromoBonus(unused1, unused2, branch, personName, jobTitle) {
     }));
 
    // ★ 偵測哪些 dept_code 跨廠衝突（用全部名冊，不受廠別篩選影響）
-    var conflictedDeptCodes={};
+// ★ 偵測哪些 dept_code 跨廠衝突（用全部部門清單，不受廠別篩選影響）
+    var conflictedDeptCodes = {};
+    try {
+      var allDeptsForConflict = _allDepts.length
+        ? _allDepts
+        : await fetch('/api/bonus/departments?period=' + (_rosterPeriods[0]||_actualPeriod)).then(function(r){return r.json();});
+      var _seenDeptFactory = {};
+      allDeptsForConflict.forEach(function(d){
+        var dk = d.dept_code || '—';
+        var f  = d.factory || '售後服務處';
+        var key = f + '::' + dk;
+        if (!_seenDeptFactory[key]) {
+          _seenDeptFactory[key] = true;
+          conflictedDeptCodes[dk] = (conflictedDeptCodes[dk]||0) + 1;
+        }
+      });
+    } catch(e) {
+      // fallback：用 sortedFc
+      sortedFc.forEach(function(f){
+        Object.keys(byFactory[f]).forEach(function(dk){
+          conflictedDeptCodes[dk]=(conflictedDeptCodes[dk]||0)+1;
+        });
+      });
+    }
     _rosterData.forEach(function(person){
       var f = person.factory || '售後服務處';
       var dk = person.dept_code || '—';
