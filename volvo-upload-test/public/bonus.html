@@ -1874,13 +1874,20 @@ function calcPromoBonus(unused1, unused2, branch, personName, jobTitle) {
       }));
     }));
 
-    // ★ 偵測哪些 dept_code 跨廠衝突（同代碼出現在 2+ 個廠，如零件部 05700）
+   // ★ 偵測哪些 dept_code 跨廠衝突（用全部名冊，不受廠別篩選影響）
     var conflictedDeptCodes={};
-    sortedFc.forEach(function(f){
-      Object.keys(byFactory[f]).forEach(function(dk){
-        conflictedDeptCodes[dk]=(conflictedDeptCodes[dk]||0)+1;
-      });
+    _rosterData.forEach(function(person){
+      var f = person.factory || '售後服務處';
+      var dk = person.dept_code || '—';
+      var key = f + ':::' + dk;
+      if (!conflictedDeptCodes['__seen__']) conflictedDeptCodes['__seen__'] = {};
+      if (!conflictedDeptCodes['__seen__'][key]) {
+        conflictedDeptCodes['__seen__'][key] = true;
+        conflictedDeptCodes[dk] = (conflictedDeptCodes[dk]||0) + 1;
+      }
     });
+    // 不同廠才算衝突，同廠多人不重複計
+    // 上面已用 f+dk 去重，conflictedDeptCodes[dk] 代表此 dept_code 出現在幾個廠
 
     // ★ 偵測跨廠重複的部門名稱
     var progDeptNameCount={};
