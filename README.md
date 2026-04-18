@@ -153,7 +153,6 @@ fetch(url, { headers: internalAuthHeaders() });  // 自動帶 X-Internal-Service
 ```
 volvo-upload-test/
 ├── index.js                  # Express 入口、CORS、中介層、路由掛載
-├── patch.js                  # 一次性 HTML 修補腳本（已套用，可移除）
 ├── Dockerfile
 ├── package.json
 │
@@ -209,10 +208,9 @@ volvo-upload-test/
 ### 入口與設定
 
 #### `index.js`
-應用程式主入口。初始化 Express、設定 CORS、multer 檔案上傳中介層、靜態資源服務，並將所有 `routes/` 掛載到對應路徑。服務啟動時自動呼叫 `initDatabase()` 建立資料表。
+應用程式主入口。初始化 Express、設定 CORS、multer 檔案上傳中介層、靜態資源服務,並將所有 `routes/` 掛載到對應路徑。服務啟動時自動呼叫 `initDatabase()` 建立資料表。
 
-#### `patch.js`
-一次性資料修補腳本（不在正常請求流程中執行）。用於修正歷史資料、補齊欄位，或處理 Excel 上傳格式異動後的資料遷移作業。
+> 注意:含未驗證端點的 router(`users.js` 的 `/users/login`、`auth.js` 的 `/auth/settings`)必須最早掛上,否則會被其他 router 的 `router.use(requireAuth)` 攔下回 401。
 
 #### `Dockerfile`
 Docker 映像定義。基於 `node:20-alpine`，安裝 production 依賴後啟動 `node index.js`，對外埠口為 8080，供 Zeabur 雲端自動部署使用。
