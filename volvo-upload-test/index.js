@@ -53,7 +53,25 @@ app.use('/api', require('./routes/notes'));
 // ── Health check（防 Zeabur 冷啟動）──
 app.get('/health', (req, res) => res.json({ ok: true }));
 
+// ── 背景清理（每 24h）──
+// 避免 user_sessions / audit_logs / upload_history 無限成長。
+const pool = require('./db/pool');
+async function cleanupStaleRows() {
+  try {
+    const s = await pool.query(`DELETE FROM user_sessions WHERE expires_at < NOW()`);
+    const a = await pool.query(`DELETE FROM audit_logs      WHERE created_at < NOW() - INTERVAL '180 days'`);
+    const u = await pool.query(`DELETE FROM upload_history  WHERE created_at < NOW() - INTERVAL '365 days'`);
+    console.log(`[cleanup] sessions=${s.rowCount} audit_logs=${a.rowCount} uploads=${u.rowCount}`);
+  } catch (e) {
+    console.warn('[cleanup] failed:', e.message);
+  }
+}
+
 // ── 啟動 ──
 initDatabase()
   .then(() => app.listen(PORT, () => console.log(`Server running on port ${PORT}`)))
+  .then(() => {
+    cleanupStaleRows();                                   // 啟動後跑一次
+    setInterval(cleanupStaleRows, 24 * 60 * 60 * 1000);   // 之後每 24h
+  })
   .catch(err => { console.error('DB初始化失敗:', err.message); process.exit(1); });
