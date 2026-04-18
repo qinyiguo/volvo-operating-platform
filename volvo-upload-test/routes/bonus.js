@@ -2,7 +2,7 @@ const router = require('express').Router();
 const multer = require('multer');
 const XLSX   = require('xlsx');
 const pool   = require('../db/pool');
-const { requireAuth, requirePermission } = require('../lib/authMiddleware');
+const { requireAuth, requirePermission, internalAuthHeaders } = require('../lib/authMiddleware');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
@@ -582,7 +582,7 @@ router.get('/bonus/progress', async (req, res) => {
                 const brParam   = effectiveBranch ? `&branch=${encodeURIComponent(effectiveBranch)}` : '';
                 const url = `http://localhost:${port}/api/stats/tech-hours?period=${actualPeriod}${brParam}`;
                 const thData = await fetch(url, {
-                  headers: { 'X-Internal-Service': 'true' }
+                  headers: internalAuthHeaders()
                 }).then(r => r.json()).catch(() => null);
 
                 if (thData && !thData.error) {
