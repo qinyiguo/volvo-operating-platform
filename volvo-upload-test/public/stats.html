@@ -1986,44 +1986,6 @@ loadWipLastMonthComparison();
         </div>`;
       }).join('');
 
-    // 待修/待確認工單快速清單（需要跟進）
-    const urgentRows=rows.filter(r=>r.wip_status==='已可結帳');
-    const watchRows =rows.filter(r=>r.wip_status==='待修'||r.wip_status==='待客確認');
-
-    let urgentHtml='';
-    if(urgentRows.length){
-      urgentHtml=`<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:14px 18px;margin-bottom:14px">
-        <div style="font-size:13px;font-weight:800;color:#ef4444;margin-bottom:10px">
-          💳 應結帳清單（${urgentRows.length} 件）
-          <button onclick="openWipModal('status','已可結帳')" style="margin-left:10px;padding:3px 10px;background:rgba(239,68,68,.2);color:#ef4444;border:1px solid rgba(239,68,68,.4);border-radius:5px;font-size:11px;cursor:pointer">查看全部</button>
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px">
-          ${urgentRows.slice(0,12).map(r=>`
-            <div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:7px;padding:6px 12px;cursor:pointer;font-size:12px"
-                 onclick="openWipModal('single_wo','${r.work_order}')">
-              <span style="font-weight:700;color:#ef4444">${r.work_order}</span>
-              <span style="color:#64748b;margin-left:6px">${r.branch}</span>
-              <span style="color:#94a3b8;margin-left:4px">${r.plate_no||'—'}</span>
-              ${r.wip_reason?`<span style="color:#ef4444;font-size:10px;margin-left:4px">${r.wip_reason.slice(0,12)}…</span>`:''}
-            </div>`).join('')}
-          ${urgentRows.length>12?`<span style="font-size:11px;color:#ef4444;align-self:center">+${urgentRows.length-12}筆…</span>`:''}
-        </div>
-      </div>`;
-    }
-
-    let watchHtml='';
-    if(watchRows.length){
-      watchHtml=`<div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:12px 16px;margin-bottom:14px">
-        <div style="font-size:12px;font-weight:800;color:#f59e0b;margin-bottom:8px">⚠️ 需追蹤清單（${watchRows.length} 件 — 待修/待客確認）
-          <button onclick="openWipModal('status_group','watch')" style="margin-left:8px;padding:2px 8px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3);border-radius:4px;font-size:10px;cursor:pointer">全部查看</button>
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px">
-          ${watchRows.slice(0,8).map(r=>{const m=getWipStatusMeta(r.wip_status);return`<span style="background:${m.bg};border:1px solid ${m.color}44;border-radius:5px;padding:3px 8px;font-size:11px;color:${m.color}">${r.work_order} ${r.branch} ${m.icon}</span>`}).join('')}
-          ${watchRows.length>8?`<span style="font-size:10px;color:#f59e0b;align-self:center">+${watchRows.length-8}…</span>`:''}
-        </div>
-      </div>`;
-    }
-
     // 據點小卡
     let brHtml='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:16px">';
     byBranch.forEach(br=>{
@@ -2053,8 +2015,6 @@ loadWipLastMonthComparison();
 
     // 三欄表格
     let html=`
-      ${urgentHtml}
-      ${watchHtml}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
         <div class="card"><div class="card-title">📆 依進廠月份</div><div class="table-wrap"><table>
           <thead><tr><th>進廠月份</th><th class="num">件數</th><th class="num" style="color:#3b82f6">工資K</th><th class="num" style="color:#10b981">金額K</th><th class="num">30天內</th><th class="num" style="color:#ef4444">逾30</th><th>佔比</th></tr></thead>
@@ -2520,33 +2480,6 @@ function _refreshWipKPI(){
       <div class="kpi-value kpi-purple">${fmtK(T.sales)}</div>
       <div class="kpi-sub">扣PDI: ${fmtK(E.sales)}K</div>
     </div>`;
-
-  // 更新應結帳清單區塊
-  const summaryEl=document.getElementById('wipSummaryWrap');
-  if(!summaryEl)return;
-  const urgentRows=rows.filter(r=>r.wip_status==='已可結帳');
-  const watchRows=rows.filter(r=>r.wip_status==='待修'||r.wip_status==='待客確認');
-
-  // 只更新應結帳和需追蹤這兩塊（找到舊的替換）
-  const urgentEl=summaryEl.querySelector('[data-wip-urgent]');
-  const watchEl=summaryEl.querySelector('[data-wip-watch]');
-
-  const newUrgentHtml=urgentRows.length?`<div data-wip-urgent style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:14px 18px;margin-bottom:14px">
-    <div style="font-size:13px;font-weight:800;color:#ef4444;margin-bottom:10px">💳 應結帳清單（${urgentRows.length} 件）
-      <button onclick="openWipModal('status','已可結帳')" style="margin-left:10px;padding:3px 10px;background:rgba(239,68,68,.2);color:#ef4444;border:1px solid rgba(239,68,68,.4);border-radius:5px;font-size:11px;cursor:pointer">查看全部</button>
-    </div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px">
-      ${urgentRows.slice(0,12).map(r=>`<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:7px;padding:6px 12px;cursor:pointer;font-size:12px" onclick="openWipModal('single_wo','${r.work_order}')">
-        <span style="font-weight:700;color:#ef4444">${r.work_order}</span>
-        <span style="color:#64748b;margin-left:6px">${r.branch}</span>
-        <span style="color:#94a3b8;margin-left:4px">${r.plate_no||'—'}</span>
-      </div>`).join('')}
-      ${urgentRows.length>12?`<span style="font-size:11px;color:#ef4444;align-self:center">+${urgentRows.length-12}筆…</span>`:''}
-    </div>
-  </div>`:'';
-
-  if(urgentEl){urgentEl.outerHTML=newUrgentHtml||'<div data-wip-urgent></div>';}
-  if(watchEl&&!watchRows.length){watchEl.outerHTML='<div data-wip-watch></div>';}
 }
  
 // 儲存狀態
