@@ -378,3 +378,149 @@ body.light-theme [style*="background: #0c1524"] { background: #f8fafc !important
 body.light-theme [style*="background:#1e3050"] { background: #f1f5f9 !important; }
 body.light-theme [style*="border-color:#1e3050"] { border-color: #e2e8f0 !important; }
 body.light-theme [style*="color:#2d4060"] { color: #94a3b8 !important; }
+
+/* ═══════════════════════════════════════════════
+   行動版優化（共用元件 baseline）
+   作用於 ≤ 768px，不覆蓋各頁面自訂 layout。
+   重點：tap target ≥ 44px、避免 iOS 表單 zoom、表格可橫捲。
+   ═══════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+
+  /* 1. 避免 iOS Safari 在表單 focus 自動放大（字級 < 16px 才會觸發） */
+  input, select, textarea,
+  .form-input, .form-select, .sel, .lookup-input, .tier-input {
+    font-size: 16px !important;
+  }
+
+  /* 2. Touch target — 按鈕類最小 44×44 */
+  .btn,
+  .btn-primary, .btn-secondary, .btn-danger, .btn-green {
+    min-height: 44px;
+    padding: 10px 16px;
+  }
+
+  /* 3. 分頁按鈕（query/settings 頁）*/
+  .page-btn {
+    min-width: 40px !important;
+    min-height: 40px !important;
+    padding: 8px 10px !important;
+    font-size: 14px !important;
+  }
+
+  /* 4. Tabs / Sub-tabs */
+  .tab, .tab-btn, .sa-subtab, .mob-sec-btn {
+    min-height: 44px;
+    padding: 10px 14px !important;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* 5. Nav link 加大點擊區 */
+  .nav-link {
+    min-height: 44px;
+    padding: 10px 14px !important;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* 6. Modal 關閉鈕 / 主題切換 */
+  .modal-close, .theme-toggle-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* 7. Modal 在窄螢幕改為幾乎全寬 */
+  .modal-window, .modal-win {
+    max-width: calc(100vw - 16px) !important;
+    max-height: calc(100vh - 32px) !important;
+    margin: 8px !important;
+  }
+
+  /* 8. 表格橫向捲動提示（避免內容被截斷）*/
+  .table-wrap, .card > div[style*="overflow"] {
+    -webkit-overflow-scrolling: touch;
+  }
+  table {
+    min-width: 100%;
+  }
+
+  /* 9. Sticky nav 在 iOS 需 safe-area */
+  .nav {
+    padding-top: env(safe-area-inset-top, 0) !important;
+    padding-left: max(12px, env(safe-area-inset-left)) !important;
+    padding-right: max(12px, env(safe-area-inset-right)) !important;
+  }
+
+  /* 10. 減少卡片內距，讓手機畫面不擠 */
+  .card {
+    padding: 12px !important;
+  }
+
+  /* 11. Filter bar 換行、增加元素間距 */
+  .filter-bar {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+  .filter-bar select, .filter-bar input {
+    flex: 1 1 140px;
+    min-height: 40px;
+  }
+
+  /* 12. 工作天日曆格加大（原本小格不好點）*/
+  .wd-day-cell {
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  /* 13. KPI 卡片堆疊 */
+  .kpi-card {
+    padding: 12px !important;
+  }
+
+  /* 14. Sidebar（settings 頁）改為頂部水平捲動 */
+  .sidebar {
+    width: 100% !important;
+    position: static !important;
+    height: auto !important;
+    overflow-x: auto;
+    white-space: nowrap;
+    padding: 8px !important;
+  }
+  .sidebar-item {
+    display: inline-block !important;
+    min-height: 40px;
+    padding: 8px 14px !important;
+  }
+
+  /* 15. 部門 chip / role tag 增加點擊距離 */
+  .dept-chip, .role-tag, .part-type-chip, .stat-radio-item {
+    min-height: 36px;
+    padding: 6px 12px !important;
+  }
+}
+
+/* 更窄螢幕（手機直式）*/
+@media (max-width: 480px) {
+  .nav-link {
+    padding: 10px 10px !important;
+    font-size: 13px;
+  }
+  .page-title { font-size: 18px !important; }
+  .kpi-value  { font-size: 20px !important; }
+  /* 卡片之間垂直間距收斂 */
+  .card + .card { margin-top: 12px; }
+}
+
+/* 無滑鼠時拿掉 hover 效果（避免手機上點完殘留 hover 色）*/
+@media (hover: none) {
+  .btn:hover,
+  .tab:hover,
+  .nav-link:hover,
+  .page-btn:hover,
+  .sidebar-item:hover,
+  .period-dd-mo:hover,
+  .lookup-item:hover {
+    background: initial;
+  }
+}
