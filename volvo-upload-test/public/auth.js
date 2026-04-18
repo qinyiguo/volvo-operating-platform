@@ -277,6 +277,29 @@
     },
   };
 
+  // ── 全域主題（亮/暗）切換：任何載入 /auth.js 的頁面都自動生效 ──
+  const THEME_KEY = 'volvo_theme';
+  function applyTheme(t) {
+    if (!document.body) return;
+    if (t === 'light') document.body.classList.add('light-theme');
+    else document.body.classList.remove('light-theme');
+    const btn = document.getElementById('themeToggleBtn');
+    if (btn) btn.textContent = t === 'light' ? '🌙' : '☀️';
+  }
+  const savedTheme = (function(){ try { return localStorage.getItem(THEME_KEY); } catch(e) { return null; } })();
+  document.addEventListener('DOMContentLoaded', () => {
+    applyTheme(savedTheme === 'light' ? 'light' : 'dark');
+  });
+  // 只在頁面沒自訂 toggleTheme 時才用全域版（monthly_report.html 有自己的實作）
+  if (typeof window.toggleTheme !== 'function') {
+    window.toggleTheme = function() {
+      const isLight = document.body.classList.contains('light-theme');
+      const next = isLight ? 'dark' : 'light';
+      applyTheme(next);
+      try { localStorage.setItem(THEME_KEY, next); } catch(e) {}
+    };
+  }
+
   // ── 全域替換 fetch 讓所有 API 請求自動帶 token ──
   // 對 /api/* 的請求，若尚未帶 Authorization header，就自動補上 Bearer。
   const _origFetch = window.fetch.bind(window);
