@@ -1,5 +1,8 @@
 const router = require('express').Router();
 const pool   = require('../db/pool');
+const { requireAuth } = require('../lib/authMiddleware');
+
+router.use(requireAuth);
 
 // ── 維修收入 ──
 router.get('/stats/repair', async (req, res) => {

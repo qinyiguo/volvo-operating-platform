@@ -2,6 +2,9 @@ const router = require('express').Router();
 const multer = require('multer');
 const XLSX   = require('xlsx');
 const pool   = require('../db/pool');
+const { requireAuth, requirePermission } = require('../lib/authMiddleware');
+
+router.use(requireAuth);
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
@@ -99,7 +102,7 @@ router.get('/bodyshop-bonus/settings', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-router.put('/bodyshop-bonus/settings', async (req, res) => {
+router.put('/bodyshop-bonus/settings', requirePermission('feature:bonus_edit'), async (req, res) => {
   const { lookback_days, rate_a, rate_b } = req.body;
   const val = JSON.stringify({
     // ★ 0 是合法值，不能用 || 30
@@ -173,7 +176,7 @@ function parseFormExcel(buffer) {
 }
 
 // ══ 上傳 Google Form Excel ══
-router.post('/bodyshop-bonus/upload', upload.single('file'), async (req, res) => {
+router.post('/bodyshop-bonus/upload', requirePermission('feature:upload'), upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '請選擇檔案' });
   const batchId = `batch_${Date.now()}`;
   try {
@@ -214,7 +217,7 @@ router.post('/bodyshop-bonus/upload', upload.single('file'), async (req, res) =>
 });
 
 // ══ 執行匹配（一張申請 → 多張工單，每張工單獨立一列）══
-router.post('/bodyshop-bonus/match', async (req, res) => {
+router.post('/bodyshop-bonus/match', requirePermission('feature:bonus_edit'), async (req, res) => {
   const { period } = req.body;
   if (!period) return res.status(400).json({ error: 'period 為必填' });
 
@@ -410,7 +413,7 @@ router.post('/bodyshop-bonus/match', async (req, res) => {
 });
 
 // ══ 重置比對結果（清子列，原始列回 pending）══
-router.post('/bodyshop-bonus/reset-match', async (req, res) => {
+router.post('/bodyshop-bonus/reset-match', requirePermission('feature:bonus_edit'), async (req, res) => {
   const { app_period, branch } = req.body;
   try {
     const conds  = [`source_app_id IS NULL`];
@@ -542,7 +545,7 @@ router.get('/bodyshop-bonus/pending', async (req, res) => {
 });
 
 // ══ 修改獎金比率（支援子列）══
-router.patch('/bodyshop-bonus/applications/:id/rate', async (req, res) => {
+router.patch('/bodyshop-bonus/applications/:id/rate', requirePermission('feature:bonus_edit'), async (req, res) => {
   const { bonus_rate } = req.body;
   try {
     const app = (await pool.query(
@@ -568,7 +571,7 @@ router.patch('/bodyshop-bonus/applications/:id/rate', async (req, res) => {
 });
 
 // ══ 修改備註 ══
-router.patch('/bodyshop-bonus/applications/:id/note', async (req, res) => {
+router.patch('/bodyshop-bonus/applications/:id/note', requirePermission('feature:bonus_edit'), async (req, res) => {
   const { note } = req.body;
   try {
     await pool.query(
@@ -580,7 +583,7 @@ router.patch('/bodyshop-bonus/applications/:id/note', async (req, res) => {
 });
 
 // ══ 刪除記錄（若為原始列，子列 CASCADE 自動刪除）══
-router.delete('/bodyshop-bonus/applications/:id', async (req, res) => {
+router.delete('/bodyshop-bonus/applications/:id', requirePermission('feature:bonus_edit'), async (req, res) => {
   try {
     await pool.query(`DELETE FROM bodyshop_bonus_applications WHERE id=$1`, [req.params.id]);
     res.json({ ok: true });

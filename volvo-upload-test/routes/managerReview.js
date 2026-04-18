@@ -1,6 +1,9 @@
 const express = require('express');
 const router  = express.Router();
 const pool = require('../db/pool');
+const { requireAuth, requirePermission } = require('../lib/authMiddleware');
+
+router.use(requireAuth);
 
 // GET /api/manager-review?period=202603
 router.get('/', async (req, res) => {
@@ -16,7 +19,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/manager-review  { period, emp_id, amount, note }
-router.post('/', async (req, res) => {
+router.post('/', requirePermission('feature:bonus_edit'), async (req, res) => {
   const { period, emp_id, amount, note } = req.body;
   if (!period || !emp_id) return res.status(400).json({ error: '缺少必要欄位' });
   try {

@@ -1,5 +1,8 @@
 const router = require('express').Router();
 const pool   = require('../db/pool');
+const { requireAuth, requirePermission } = require('../lib/authMiddleware');
+
+router.use(requireAuth);
 
 // ── parts-lookup 必須在 /:id 之前 ──
 router.get('/sa-config/parts-lookup', async (req, res) => {
@@ -29,7 +32,7 @@ router.get('/sa-config', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/sa-config', async (req, res) => {
+router.post('/sa-config', requirePermission('feature:bonus_edit'), async (req, res) => {
   const { config_name, description, filters, stat_method, person_type } = req.body;
   if (!config_name) return res.status(400).json({ error:'名稱為必填' });
   if (!Array.isArray(filters)||!filters.length) return res.status(400).json({ error:'至少需要一個篩選條件' });
@@ -44,7 +47,7 @@ router.post('/sa-config', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/sa-config/:id', async (req, res) => {
+router.put('/sa-config/:id', requirePermission('feature:bonus_edit'), async (req, res) => {
   const { config_name, description, filters, stat_method, person_type } = req.body;
   if (!config_name) return res.status(400).json({ error:'名稱為必填' });
   if (!Array.isArray(filters)||!filters.length) return res.status(400).json({ error:'至少需要一個篩選條件' });
@@ -62,7 +65,7 @@ router.put('/sa-config/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/sa-config/:id', async (req, res) => {
+router.delete('/sa-config/:id', requirePermission('feature:bonus_edit'), async (req, res) => {
   try { await pool.query(`DELETE FROM sa_sales_config WHERE id=$1`,[req.params.id]); res.json({ ok:true }); }
   catch (err) { res.status(500).json({ error: err.message }); }
 });

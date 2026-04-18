@@ -1,5 +1,8 @@
 const router = require('express').Router();
 const pool   = require('../db/pool');
+const { requireAuth, requirePermission } = require('../lib/authMiddleware');
+
+router.use(requireAuth);
 
 // ── 取得人員清單（由 DMS 資料推算，依指標類型）──
 router.get('/person-targets/persons', async (req, res) => {
@@ -66,7 +69,7 @@ router.get('/person-targets', async (req, res) => {
 });
 
 // ── 批次儲存個人目標 ──
-router.put('/person-targets/batch', async (req, res) => {
+router.put('/person-targets/batch', requirePermission('feature:targets'), async (req, res) => {
   const { metric_id, period, branch, entries } = req.body;
   if (!metric_id || !period || !branch || !Array.isArray(entries))
     return res.status(400).json({ error: '參數不完整' });
@@ -94,7 +97,7 @@ router.put('/person-targets/batch', async (req, res) => {
 });
 
 // ── 刪除整組（metric+period+branch）──
-router.delete('/person-targets', async (req, res) => {
+router.delete('/person-targets', requirePermission('feature:targets'), async (req, res) => {
   const { metric_id, period, branch } = req.query;
   if (!metric_id || !period || !branch) return res.status(400).json({ error: '參數不完整' });
   try {
@@ -299,7 +302,7 @@ router.get('/stats/person-performance-all', async (req, res) => {
 });
 
 // ── 複製上月權重設定到當月 ──
-router.post('/person-targets/copy-from-last-month', async (req, res) => {
+router.post('/person-targets/copy-from-last-month', requirePermission('feature:targets'), async (req, res) => {
   const { metric_id, period, branch } = req.body;
   if (!metric_id || !period || !branch)
     return res.status(400).json({ error: '參數不完整' });
@@ -366,7 +369,7 @@ router.get('/bonus/pp-alloc', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-router.put('/bonus/pp-alloc', async (req, res) => {
+router.put('/bonus/pp-alloc', requirePermission('feature:bonus_edit'), async (req, res) => {
   const { period, branch, dept_key, allocations } = req.body;
   if (!period || !branch || !dept_key) return res.status(400).json({ error: '參數不完整' });
   const key = `pp_alloc_${period}_${branch}_${dept_key}`;
