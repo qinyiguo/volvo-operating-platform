@@ -393,6 +393,32 @@ body.light-theme [style*="background:#1e3050"] { background: #f1f5f9 !important;
 body.light-theme [style*="border-color:#1e3050"] { border-color: #e2e8f0 !important; }
 body.light-theme [style*="color:#2d4060"] { color: #94a3b8 !important; }
 
+/* 補齊：stats.html / bonus.html 等仍出現但原本沒對應 light 覆蓋的深色 inline 值 */
+body.light-theme [style*="background:#253347"],
+body.light-theme [style*="background: #253347"] { background: #f1f5f9 !important; color: #475569 !important; }
+body.light-theme [style*="background:#334155"],
+body.light-theme [style*="background: #334155"] { background: #e2e8f0 !important; }
+body.light-theme [style*="background:#2d3f56"],
+body.light-theme [style*="background: #2d3f56"] { background: #e2e8f0 !important; }
+body.light-theme [style*="background:#141f33"],
+body.light-theme [style*="background: #141f33"] { background: #f8fafc !important; }
+body.light-theme [style*="background:#0f1e33"],
+body.light-theme [style*="background: #0f1e33"] { background: #f8fafc !important; }
+body.light-theme [style*="background:#0a1628"],
+body.light-theme [style*="background: #0a1628"] { background: #f8fafc !important; }
+
+/* Inline 白色文字（modal 標題、tab active 文字等）在亮版時會看不見；只在「非按鈕藍底」情境調整 */
+/* 按鈕藍底本來就要白字；排除方式：針對非 3b82f6 / 2563eb 背景的元素翻成深色 */
+body.light-theme [style*="color:#fff"]:not([style*="background:#3b82f6"]):not([style*="background: #3b82f6"]):not([style*="background:#2563eb"]):not([style*="background: #2563eb"]):not([style*="background:#10b981"]):not([style*="background:#059669"]):not([style*="background:#ef4444"]):not([style*="background:#dc2626"]):not([style*="background:#f59e0b"]):not([style*="background:#f97316"]):not([style*="background:#8b5cf6"]) {
+  color: #1e293b !important;
+}
+
+/* 常見 border 深色於 light 下轉淡灰 */
+body.light-theme [style*="border:1px solid #253347"],
+body.light-theme [style*="border: 1px solid #253347"] { border-color: #e2e8f0 !important; }
+body.light-theme [style*="border:1px solid #334155"],
+body.light-theme [style*="border: 1px solid #334155"] { border-color: #e2e8f0 !important; }
+
 /* ═══════════════════════════════════════════════
    行動版優化（共用元件 baseline）
    作用於 ≤ 768px，不覆蓋各頁面自訂 layout。
