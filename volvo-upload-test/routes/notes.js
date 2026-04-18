@@ -13,6 +13,9 @@
 
 const router = require('express').Router();
 const pool   = require('../db/pool');
+const { requireAuth } = require('../lib/authMiddleware');
+
+router.use(requireAuth);
 
 const KEY_PREFIX = 'note_';
 const MAX_KEY_LEN = 200;

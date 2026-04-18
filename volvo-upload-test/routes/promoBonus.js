@@ -1,8 +1,11 @@
 const { computeSaMatrix } = require('./stats');
 const router = require('express').Router();
 const pool   = require('../db/pool');
+const { requireAuth, requirePermission } = require('../lib/authMiddleware');
 
 pool.query(`ALTER TABLE promo_bonus_configs ADD COLUMN IF NOT EXISTS person_type VARCHAR(20) DEFAULT 'sales_person'`).catch(()=>{});
+
+router.use(requireAuth);
 
 // ── CRUD ──
 router.get('/promo-bonus/configs', async (req, res) => {
@@ -17,7 +20,7 @@ router.get('/promo-bonus/configs', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/promo-bonus/configs', async (req, res) => {
+router.post('/promo-bonus/configs', requirePermission('feature:bonus_edit'), async (req, res) => {
   const { rule_name, rule_type, sa_config_id, per_qty, bonus_per_unit,
           part_catalog_types, paycode_types, discount_min, discount_max,
           bonus_pct, role_amounts, target_factories, active, sort_order, person_type, tiers, stat_method } = req.body;
@@ -43,7 +46,7 @@ router.post('/promo-bonus/configs', async (req, res) => {
     } catch(err) { res.status(500).json({ error: err.message }); }
   });
 
-router.put('/promo-bonus/configs/:id', async (req, res) => {
+router.put('/promo-bonus/configs/:id', requirePermission('feature:bonus_edit'), async (req, res) => {
   const { rule_name, rule_type, sa_config_id, per_qty, bonus_per_unit,
           part_catalog_types, paycode_types, discount_min, discount_max,
           bonus_pct, role_amounts, target_factories, active, sort_order, person_type, tiers, stat_method } = req.body;
@@ -70,7 +73,7 @@ router.put('/promo-bonus/configs/:id', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/promo-bonus/configs/:id', async (req, res) => {
+router.delete('/promo-bonus/configs/:id', requirePermission('feature:bonus_edit'), async (req, res) => {
   try {
     await pool.query('DELETE FROM promo_bonus_configs WHERE id=$1', [req.params.id]);
     res.json({ ok: true });
