@@ -47,7 +47,6 @@ const RESOURCE_LABELS = {
   '/api/stats/tech-turnover':       '施工周轉率',
   '/api/stats/tech-wage-matrix':    '工資代碼矩陣',
   '/api/stats/performance':         '業績指標達成率',
-  '/api/stats/trend':               '月份趨勢',
   '/api/stats/daily':               '每日進廠',
   '/api/stats/wip':                 'WIP 未結工單',
   '/api/stats/vctl':                'VCTL 商務政策',

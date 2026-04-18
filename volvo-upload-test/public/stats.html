@@ -345,7 +345,6 @@
     <button class="tab"        onclick="switchTab('boutique')">💎 精品配件</button>
     <button class="tab"        onclick="switchTab('sa-sales')">📋 指標銷售</button>
     <div class="tab-group-divider"></div>
-    <button class="tab"        onclick="switchTab('trend')">📈 趨勢</button>
     <button class="tab"        onclick="switchTab('daily')">📅 每日進廠</button>
     <button class="tab"        onclick="switchTab('wip')">🔧 WIP</button>
     <button class="tab"        onclick="switchTab('tech-hours')">⏱️ 技師工時</button>
@@ -491,19 +490,6 @@
         <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;overflow-y:auto;max-height:70vh">
           <div id="saMatrix-tech"><div style="padding:48px;text-align:center;color:#64748b"><span class="spinner"></span>載入中...</div></div>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ 月份趨勢 ══ -->
-  <div id="tab-trend" style="display:none">
-    <div class="card">
-      <div class="card-title">&#x1F4C8; 各月份維修收入趨勢</div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>期間</th><th>據點</th><th class="num">出廠台數</th><th class="num">總營收</th><th class="num">引擎工資</th><th class="num">零件收入</th><th class="num">環比</th></tr></thead>
-          <tbody id="tbTrend"><tr><td colspan="7" class="loading"><span class="spinner"></span>載入中</td></tr></tbody>
-        </table>
       </div>
     </div>
   </div>
@@ -1083,7 +1069,7 @@ const GROUP_META={
 
 function switchTab(tab){
   currentTab=tab;
-  const tabs=['repair','tech','person-perf','parts','boutique','sa-sales','trend','daily','wip','tech-hours','tech-turnover'];
+  const tabs=['repair','tech','person-perf','parts','boutique','sa-sales','daily','wip','tech-hours','tech-turnover'];
   document.querySelectorAll('.tab').forEach(t=>{
     const onclick = t.getAttribute('onclick') || '';
     const match = onclick.match(/'([^']+)'/);
@@ -1128,7 +1114,6 @@ async function loadAll(){
     case 'parts':      await loadParts(period, branch); break;
     case 'boutique':   await loadBoutiqueAccessories(period, branch); break;
     case 'sa-sales':   await loadSASales(); break;
-    case 'trend':      await loadTrend(branch); break;
     case 'daily':      await loadDaily(period, branch); break;
     case 'wip':        await loadWip(period, branch); break;
     case 'tech-hours': await loadTechHours(period, branch); break;
@@ -1446,15 +1431,6 @@ async function loadSASalesView(view,matrixElId,tabKey){
     configs.forEach((cfg,ci)=>{const t=colTotals[cfg.id]||{qty:0,sales:0,cnt:0};const border=ci<configs.length-1?'2px solid #2d3f56':'';const has=t.qty>0||t.sales>0||t.cnt>0;let tv;if(cfg.stat_method==='quantity')tv=has?t.qty.toLocaleString(undefined,{maximumFractionDigits:1}):'—';else if(cfg.stat_method==='count')tv=has?t.cnt.toLocaleString():'—';else tv=has?fmt(t.sales):'—';html+=`<td style="${tdNum}color:#10b981;font-weight:800;font-size:12px;border-right:${border}">${tv}</td>`;});
     html+=`</tr></tbody></table>`;matrixEl.innerHTML=html;saLoaded[tabKey]=true;
   }catch(e){matrixEl.innerHTML=`<div style="padding:24px;color:#ef4444">${e.message}</div>`;}
-}
-
-async function loadTrend(branch){
-  try{
-    const params=new URLSearchParams();if(branch)params.set('branch',branch);
-    const data=await(await fetch(`/api/stats/trend?${params}`)).json();if(data.error)throw new Error(data.error);
-    const rows=data.trend,prevMap={};
-    document.getElementById('tbTrend').innerHTML=rows.length?rows.map(r=>{const key=r.branch,cur=n(r.total_untaxed),prev=prevMap[key];const pct=prev?((cur-prev)/prev*100):null;prevMap[key]=cur;return`<tr><td style="white-space:nowrap">${r.period.slice(0,4)}年${r.period.slice(4)}月</td><td><span class="badge badge-blue">${r.branch}</span></td><td class="num">${parseInt(r.car_count||0)}</td><td class="num" style="font-weight:700">${fmt(r.total_untaxed)}</td><td class="num">${fmt(r.engine_wage)}</td><td class="num">${fmt(r.parts_income)}</td><td class="num ${pct===null?'':pct>=0?'up':'down'}">${pct===null?'-':(pct>=0?'▲':'▼')+Math.abs(pct).toFixed(1)+'%'}</td></tr>`;}).join(''):'<tr><td colspan="7" class="empty">無資料</td></tr>';
-  }catch(e){document.getElementById('tbTrend').innerHTML=`<tr><td colspan="7" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;}
 }
 
 async function loadDaily(period,branch){
