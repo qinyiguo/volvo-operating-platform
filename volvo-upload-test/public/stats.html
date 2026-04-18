@@ -2000,11 +2000,14 @@ loadWipLastMonthComparison();
       const over30pct=br.count>0?(br.cOver30/br.count*100).toFixed(0):0;
       const brRows=rows.filter(r=>r.branch===br.label);
       const brUrgent=brRows.filter(r=>r.wip_status==='已可結帳').length;
+      const hasUrgent=brUrgent>0;
       brHtml+=`
-        <div style="background:#1a2332;border:1px solid ${col}44;border-radius:10px;padding:14px 16px">
+        <div style="background:#1a2332;border:${hasUrgent?'2px':'1px'} solid ${hasUrgent?'#ef4444':col+'44'};border-radius:10px;padding:14px 16px;opacity:${hasUrgent||br.count>0?1:.6}">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
             <span style="font-size:13px;font-weight:800;color:${col}">${br.label}</span>
-            ${brUrgent>0?`<span style="background:rgba(239,68,68,.15);color:#ef4444;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700">💳 應結帳 ${brUrgent}</span>`:''}
+            ${hasUrgent
+              ? `<button onclick="openWipModal('branch_status','${br.label}|已可結帳')" style="background:#ef4444;color:#fff;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">💳 處理 ${brUrgent} 件 →</button>`
+              : `<span style="font-size:10px;color:#10b981">✓ 無待結帳</span>`}
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px">
             <div><div style="color:#64748b;font-size:10px;margin-bottom:2px">總件數</div><div style="font-weight:800">${br.count}</div></div>
@@ -2022,57 +2025,66 @@ loadWipLastMonthComparison();
 
     // 三欄表格
     let html=`
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-        <div class="card"><div class="card-title">📆 依進廠月份</div><div class="table-wrap"><table>
-          <thead><tr><th>進廠月份</th><th class="num">件數</th><th class="num" style="color:#3b82f6">工資K</th><th class="num" style="color:#10b981">金額K</th><th class="num">30天內</th><th class="num" style="color:#ef4444">逾30</th><th>佔比</th></tr></thead>
-          <tbody>
-      ${byAccountType.map(r=>{
-        const pct=T.count>0?(r.count/T.count*100).toFixed(0):0;
-        const over30col=r.cOver30>0?'#ef4444':'#10b981';
-        return`<tr onclick="openWipModal('period','${r.label}')" style="cursor:pointer">
-          <td>${r.label}</td>
-          <td class="num">${r.count}</td>
-          <td class="num" style="color:#3b82f6">${fmtK(r.wage)}</td>
-          <td class="num" style="color:#10b981;font-weight:700">${fmtK(r.sales)}</td>
-          <td class="num" style="color:#64748b">${r.c30}</td>
-          <td class="num" style="color:${over30col};font-weight:${r.cOver30>0?700:400}">${r.cOver30}</td>
-          <td style="min-width:80px">
-            <div style="background:#0f172a;border-radius:3px;height:5px">
-              <div style="width:${pct}%;height:5px;border-radius:3px;background:#3b82f6"></div>
-            </div>
-          </td>
-        </tr>`;}).join('')}
-          </tbody></table></div></div>
-
-        <div class="card"><div class="card-title">🔧 依維修類型</div><div class="table-wrap"><table>
-          <thead><tr><th>維修類型</th><th class="num">件數</th><th class="num" style="color:#3b82f6">工資K</th><th class="num" style="color:#10b981">金額K</th><th class="num">30天內</th><th class="num" style="color:#ef4444">逾30</th></tr></thead>
-          <tbody>
-          ${byRepairType.map(r=>{const isPdi=/PDI/i.test(r.label);return`<tr onclick="openWipModal('type','${r.label}')" style="cursor:pointer">
-            <td>${isPdi?`<span class="badge badge-yellow">${r.label}</span>`:r.label}</td>
-            <td class="num">${r.count}</td>
-            <td class="num" style="color:#3b82f6">${fmtK(r.wage)}</td>
-            <td class="num" style="color:#10b981;font-weight:700">${fmtK(r.sales)}</td>
-            <td class="num" style="color:#64748b">${r.c30}</td>
-            <td class="num" style="color:${r.cOver30>0?'#ef4444':'#64748b'};font-weight:${r.cOver30>0?700:400}">${r.cOver30}</td>
-          </tr>`}).join('')}
-          </tbody></table></div></div>
-      </div>
-
       <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:10px;padding:14px 18px;margin-bottom:14px">
-        <div style="font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:10px">📊 WIP 狀態分布</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+          <div style="font-size:12px;font-weight:700;color:#94a3b8">📊 WIP 狀態分布</div>
+          <button onclick="openWipModal('all','')" style="padding:5px 14px;background:rgba(59,130,246,.15);color:#3b82f6;border:1px solid rgba(59,130,246,.3);border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">🔍 查看全部工單 (${rows.length})</button>
+        </div>
         ${statusBarHtml}
-        <div style="font-size:11px;color:#475569;margin-top:8px">💡 點擊各類別查看工單明細 | 在明細表中可直接填寫狀態原因</div>
+        <div style="font-size:11px;color:#475569;margin-top:8px">💡 點擊各類別或下方卡片查看工單明細；在明細表中可直接標記狀態。</div>
       </div>
 
       ${brHtml}
 
-      <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-          <div style="font-size:13px;font-weight:700">📋 全部工單 (${rows.length})</div>
-          <button onclick="openWipModal('all','')" style="padding:5px 12px;background:rgba(59,130,246,.15);color:#3b82f6;border:1px solid rgba(59,130,246,.3);border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">🔍 查看明細 / 填寫狀態</button>
+      <details style="margin-bottom:14px">
+        <summary style="cursor:pointer;font-size:13px;font-weight:700;color:#94a3b8;padding:10px 14px;background:#1a2332;border:1px solid #2d3f56;border-radius:10px;list-style:none;user-select:none">
+          📂 依進廠月份 / 維修類型 詳細分析
+          <span style="font-size:11px;color:#475569;font-weight:400;margin-left:8px">(點擊展開)</span>
+        </summary>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+          <div class="card"><div class="card-title">📆 依進廠月份<span class="card-title-note">紅底 = 老積壓月份</span></div><div class="table-wrap"><table>
+            <thead><tr><th>進廠月份</th><th class="num">件數</th><th class="num" style="color:#3b82f6">工資K</th><th class="num" style="color:#10b981">金額K</th><th class="num">30天內</th><th class="num" style="color:#ef4444">逾30</th><th>佔比</th></tr></thead>
+            <tbody>
+        ${byAccountType.map(r=>{
+          const pct=T.count>0?(r.count/T.count*100).toFixed(0):0;
+          const over30col=r.cOver30>0?'#ef4444':'#10b981';
+          // 老積壓:逾30 比例 > 50% 且件數 ≥ 10
+          const oldWip = r.count>=10 && r.cOver30/r.count > 0.5;
+          const rowStyle = oldWip
+            ? 'cursor:pointer;background:rgba(239,68,68,.08)'
+            : 'cursor:pointer';
+          return`<tr onclick="openWipModal('period','${r.label}')" style="${rowStyle}">
+            <td>${oldWip?'🔴 ':''}${r.label}</td>
+            <td class="num">${r.count}</td>
+            <td class="num" style="color:#3b82f6">${fmtK(r.wage)}</td>
+            <td class="num" style="color:#10b981;font-weight:700">${fmtK(r.sales)}</td>
+            <td class="num" style="color:#64748b">${r.c30}</td>
+            <td class="num" style="color:${over30col};font-weight:${r.cOver30>0?700:400}">${r.cOver30}</td>
+            <td style="min-width:80px">
+              <div style="background:#0f172a;border-radius:3px;height:5px">
+                <div style="width:${pct}%;height:5px;border-radius:3px;background:#3b82f6"></div>
+              </div>
+            </td>
+          </tr>`;}).join('')}
+            </tbody></table></div></div>
+
+          <div class="card"><div class="card-title">🔧 依維修類型<span class="card-title-note">PDI 為預期 backlog</span></div><div class="table-wrap"><table>
+            <thead><tr><th>維修類型</th><th class="num">件數</th><th class="num" style="color:#3b82f6">工資K</th><th class="num" style="color:#10b981">金額K</th><th class="num">30天內</th><th class="num" style="color:#ef4444">逾30</th></tr></thead>
+            <tbody>
+            ${byRepairType.map(r=>{
+              const isPdi=/PDI/i.test(r.label);
+              const rowStyle = isPdi ? 'cursor:pointer;opacity:.55' : 'cursor:pointer';
+              return`<tr onclick="openWipModal('type','${r.label}')" style="${rowStyle}">
+                <td>${isPdi?`<span class="badge badge-yellow">${r.label}</span>`:r.label}</td>
+                <td class="num">${r.count}</td>
+                <td class="num" style="color:#3b82f6">${fmtK(r.wage)}</td>
+                <td class="num" style="color:#10b981;font-weight:700">${fmtK(r.sales)}</td>
+                <td class="num" style="color:#64748b">${r.c30}</td>
+                <td class="num" style="color:${r.cOver30>0?'#ef4444':'#64748b'};font-weight:${r.cOver30>0?700:400}">${r.cOver30}</td>
+              </tr>`}).join('')}
+            </tbody></table></div></div>
         </div>
-        <div style="font-size:12px;color:#64748b">點擊上方分類列可依月份或維修類型篩選。在工單明細中可直接標記工單狀態（等料/施工中/已可結帳…）。</div>
-      </div>`;
+      </details>`;
 
     summaryEl.innerHTML=html;
   }catch(e){summaryEl.innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;}
@@ -2129,6 +2141,11 @@ function renderWipModal(){
     else if(filterVal==='unknown')  filtered=filtered.filter(r=>!r.wip_status||r.wip_status==='未填寫');
   }
   else if(filterType==='single_wo') filtered=filtered.filter(r=>r.work_order===filterVal);
+  else if(filterType==='branch_status'){
+    // filterVal 格式: "AMA|已可結帳"
+    const [br, st]=String(filterVal).split('|');
+    filtered=filtered.filter(r=>r.branch===br && (r.wip_status||'未填寫')===st);
+  }
 
   if(_wipModalStatusFilter!=='all') filtered=filtered.filter(r=>(r.wip_status||'未填寫')===_wipModalStatusFilter);
 
@@ -2151,6 +2168,7 @@ function renderWipModal(){
     filterType==='status'?`狀態：${filterVal}`:
     filterType==='status_group'?`分組篩選：${filterVal}`:
     filterType==='single_wo'?`工單：${filterVal}`:
+    filterType==='branch_status'?`${String(filterVal).split('|')[0]} · ${String(filterVal).split('|')[1]}`:
     `維修類型：${filterVal}`;
   document.getElementById('wipModalTitle').textContent=title;
   document.getElementById('wipModalCount').textContent=`共 ${filtered.length} 筆`;
