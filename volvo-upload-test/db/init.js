@@ -120,12 +120,15 @@ const initDatabase = async () => {
     {
       const _exists = await client.query(`SELECT 1 FROM app_settings WHERE key='settings_password'`);
       if (!_exists.rows.length) {
-        const _cr  = require('crypto');
-        const _env = process.env.INITIAL_SETTINGS_PASSWORD;
-        const _pwd = _env || _cr.randomBytes(9).toString('base64url');
-        await client.query(`INSERT INTO app_settings (key, value) VALUES ('settings_password', $1)`, [_pwd]);
+        const _cr   = require('crypto');
+        const _env  = process.env.INITIAL_SETTINGS_PASSWORD;
+        const _pwd  = _env || _cr.randomBytes(9).toString('base64url');
+        const _salt = _cr.randomBytes(16).toString('hex');
+        const _hash = _cr.pbkdf2Sync(_pwd, _salt, 100000, 32, 'sha256').toString('hex');
+        const _stored = `pbkdf2$${_salt}$${_hash}`;
+        await client.query(`INSERT INTO app_settings (key, value) VALUES ('settings_password', $1)`, [_stored]);
         if (_env) {
-          console.log('[initDB] settings_password 已依 INITIAL_SETTINGS_PASSWORD 初始化');
+          console.log('[initDB] settings_password 已依 INITIAL_SETTINGS_PASSWORD 初始化（已 hash）');
         } else {
           console.log(`[initDB] ⚠️  已產生初始 settings_password: ${_pwd}（請立即變更，此訊息僅顯示一次）`);
         }
