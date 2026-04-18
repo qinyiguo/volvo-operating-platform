@@ -79,7 +79,7 @@ async function requireAuth(req, res, next) {
   if (hdr && timingEq(String(hdr), INTERNAL_TOKEN)) return next();
 
   const auth  = req.headers['authorization'] || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : (req.query._token || '');
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
   const user  = await resolveToken(token);
   if (!user) return res.status(401).json({ error: '未登入或登入已過期', code: 'UNAUTHORIZED' });
   req.user = user;
@@ -102,7 +102,7 @@ function requirePermission(permissionKey) {
 // ═══ Middleware: 軟性驗證（不阻擋，只附加 user info）═══
 async function softAuth(req, res, next) {
   const auth  = req.headers['authorization'] || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : (req.query._token || '');
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
   req.user = await resolveToken(token);
   next();
 }
