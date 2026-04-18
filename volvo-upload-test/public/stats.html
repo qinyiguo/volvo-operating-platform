@@ -68,12 +68,28 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    /* 右側漸層遮罩：提示還有未顯示的 tab 可捲動 */
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 36px), transparent 100%);
+            mask-image: linear-gradient(to right, black calc(100% - 36px), transparent 100%);
   }
   .tabs-wrap::-webkit-scrollbar { display: none; }
-  /* 捲到底時取消漸層 */
+  /* 捲到最左：去掉左邊遮罩（當 scrolled-start 時啟用左邊 fade）*/
+  .tabs-wrap.scrolled-start {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, black 36px, black calc(100% - 36px), transparent 100%);
+            mask-image: linear-gradient(to right, transparent 0, black 36px, black calc(100% - 36px), transparent 100%);
+  }
+  /* 捲到最右：去掉右邊遮罩 */
   .tabs-wrap.scrolled-end {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, black 36px, black 100%);
+            mask-image: linear-gradient(to right, transparent 0, black 36px, black 100%);
+  }
+  /* 同時在最左 + 最右：整條不用遮罩（全看得到）*/
+  .tabs-wrap:not(.scrolled-start):not(.scrolled-end) {
+    /* 預設狀態（只有右邊 fade，表示能往右捲）*/
+  }
+  .tabs-wrap.scrolled-start.scrolled-end {
     -webkit-mask-image: none;
-    mask-image: none;
+            mask-image: none;
   }
   .tabs {
     display: flex;
@@ -1073,8 +1089,13 @@ function switchTab(tab){
   document.querySelectorAll('.tab').forEach(t=>{
     const onclick = t.getAttribute('onclick') || '';
     const match = onclick.match(/'([^']+)'/);
-    if (match) t.classList.toggle('active', match[1] === tab);
-   }); 
+    const isActive = match && match[1] === tab;
+    t.classList.toggle('active', isActive);
+    // 讓被選中的 tab 捲到可視範圍，避免被漸層遮擋看不到
+    if (isActive && typeof t.scrollIntoView === 'function') {
+      t.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+   });
  const period = getPeriod();
 const branch = document.getElementById('selBranch').value;
 if (period) loadTabData(tab, period, branch);
@@ -4849,11 +4870,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     const wrap = document.getElementById('tabsWrap');
     if (!wrap) return;
     function checkScroll() {
-      const atEnd = wrap.scrollLeft + wrap.clientWidth >= wrap.scrollWidth - 8;
-      wrap.classList.toggle('scrolled-end', atEnd);
+      const atStart = wrap.scrollLeft <= 4;
+      const atEnd   = wrap.scrollLeft + wrap.clientWidth >= wrap.scrollWidth - 4;
+      wrap.classList.toggle('scrolled-start', atStart);
+      wrap.classList.toggle('scrolled-end',   atEnd);
     }
     wrap.addEventListener('scroll', checkScroll, { passive: true });
     window.addEventListener('resize', checkScroll);
+    // 觀察內容寬度變化（例如 tab 載入後才渲染）
+    if (window.ResizeObserver) {
+      new ResizeObserver(checkScroll).observe(wrap.firstElementChild || wrap);
+    }
     checkScroll();
   })();
  
