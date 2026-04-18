@@ -2504,62 +2504,130 @@ window._selectWipStatus=function(workOrder,branch,status){
 function _refreshWipKPI(){
   if(!_wipData)return;
   const rows=_wipData.rows;
-  const branchColors={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
+  const T=_wipData.summary.total, E=_wipData.summary.exclPdi;
+
+  // 同步 loadWip 內 hero+sections KPI 的計算邏輯
   const statusCounts={等料:0,施工中:0,待修:0,待客確認:0,已可結帳:0,暫緩:0,未填寫:0};
   rows.forEach(r=>{
     const s=r.wip_status||'未填寫';
     if(statusCounts[s]!==undefined)statusCounts[s]++;else statusCounts['未填寫']++;
   });
-  const hold=statusCounts['等料']+statusCounts['施工中']+statusCounts['暫緩'];
-  const watch=statusCounts['待修']+statusCounts['待客確認'];
-  const urgent=statusCounts['已可結帳'];
+  const hold   =statusCounts['等料']+statusCounts['施工中']+statusCounts['暫緩'];
+  const watch  =statusCounts['待修']+statusCounts['待客確認'];
   const unknown=statusCounts['未填寫'];
-  const filled=rows.length-unknown;
+  const filled =rows.length-unknown;
   const fillPct=rows.length>0?Math.round(filled/rows.length*100):0;
-  const T=_wipData.summary.total,E=_wipData.summary.exclPdi;
 
-  // 更新 KPI 卡片
+  const canSettleRows  = rows.filter(r=>(r.wip_status||'未填寫')==='已可結帳');
+  const cantSettleRows = rows.filter(r=>(r.wip_status||'未填寫')==='暫緩');
+  const within30Rows   = rows.filter(r=>r.days_open===null||r.days_open===undefined||(parseFloat(r.days_open)||0)<=30);
+  const over30Rows     = rows.filter(r=>r.days_open!==null&&r.days_open!==undefined&&(parseFloat(r.days_open)||0)>30);
+  const canSettleAmt   = canSettleRows.reduce((s,r)=>s+(parseFloat(r.sales_amt)||0),0);
+  const cantSettleAmt  = cantSettleRows.reduce((s,r)=>s+(parseFloat(r.sales_amt)||0),0);
+  const within30Amt    = within30Rows.reduce((s,r)=>s+(parseFloat(r.sales_amt)||0),0);
+  const over30Amt      = over30Rows.reduce((s,r)=>s+(parseFloat(r.sales_amt)||0),0);
+  const canSettleCnt   = canSettleRows.length;
+  const cantSettleCnt  = cantSettleRows.length;
+
+  const _wa = v => { const nv=parseFloat(v||0); return nv>0 ? fmtK(nv) : '—'; };
+  const fillColor = fillPct>80?'#10b981':fillPct>50?'#f59e0b':'#ef4444';
+  const _secTitle = (icon, text, color) => `<div style="font-size:11px;font-weight:800;color:${color||'#94a3b8'};letter-spacing:.08em;margin:0 0 8px 2px">${icon} ${text}</div>`;
+
   const kpiEl=document.getElementById('wipKPI');
-  if(kpiEl)kpiEl.innerHTML=`
-    <div class="kpi-card" style="border-color:#f97316">
-      <div class="kpi-label" style="color:#f97316">WIP 總件數</div>
-      <div class="kpi-value kpi-orange">${T.count.toLocaleString()}</div>
-      <div class="kpi-sub">扣PDI: ${E.count} 件</div>
+  if(!kpiEl)return;
+  kpiEl.innerHTML = `
+  <div style="width:100%;box-sizing:border-box;grid-column:1/-1">
+
+    ${_secTitle('🔥', '今日待辦', '#ef4444')}
+    <div onclick="openWipModal('status','已可結帳')"
+         style="background:linear-gradient(135deg,rgba(239,68,68,.22),rgba(239,68,68,.06));border:2px solid #ef4444;border-radius:14px;padding:18px 22px;margin-bottom:18px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;cursor:pointer;transition:transform .12s">
+      <div style="display:flex;align-items:baseline;gap:8px;min-width:140px">
+        <span style="font-size:56px;font-weight:900;color:#ef4444;line-height:.95">${canSettleCnt}</span>
+        <span style="font-size:14px;color:#94a3b8">件 應結帳</span>
+      </div>
+      <div style="flex:1;min-width:120px">
+        <div style="font-size:11px;color:#f87171;margin-bottom:4px">預估金額</div>
+        <div style="font-size:26px;font-weight:900;color:#f87171">${_wa(canSettleAmt)}</div>
+      </div>
+      <button onclick="event.stopPropagation();openWipModal('status','已可結帳')"
+              style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:12px 22px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap">
+        立即處理 →
+      </button>
     </div>
-    <div class="kpi-card" style="border-color:#ef4444;cursor:pointer" onclick="openWipModal('status','已可結帳')">
-      <div class="kpi-label" style="color:#ef4444">💳 應結帳（已可結帳）</div>
-      <div class="kpi-value kpi-red">${urgent}</div>
-      <div class="kpi-sub">點擊查看清單 →</div>
-    </div>
-    <div class="kpi-card" style="border-color:#3b82f6">
-      <div class="kpi-label" style="color:#3b82f6">⏸️ 暫緩有因</div>
-      <div class="kpi-value kpi-blue">${hold}</div>
-      <div class="kpi-sub">等料/施工中/暫緩</div>
-    </div>
-    <div class="kpi-card" style="border-color:#f59e0b">
-      <div class="kpi-label" style="color:#f59e0b">⚠️ 需追蹤</div>
-      <div class="kpi-value kpi-yellow">${watch}</div>
-      <div class="kpi-sub">待修/待客確認</div>
-    </div>
-    <div class="kpi-card" style="border-color:#475569">
-      <div class="kpi-label">❓ 未標記狀態</div>
-      <div class="kpi-value">${unknown}</div>
-      <div class="kpi-sub">填寫率 ${fillPct}%
-        <div style="background:#2d3f56;border-radius:3px;height:3px;margin-top:3px">
-          <div style="width:${fillPct}%;height:3px;border-radius:3px;background:${fillPct>80?'#10b981':fillPct>50?'#f59e0b':'#ef4444'}"></div>
+
+    ${_secTitle('📊', '狀況追蹤')}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:18px">
+      <div style="background:#1a2332;border:1px solid rgba(59,130,246,.4);border-radius:12px;padding:14px;cursor:pointer" onclick="openWipModal('status','暫緩')">
+        <div style="font-size:10px;font-weight:700;color:#3b82f6;margin-bottom:6px">⏸️ 暫緩（無法結帳）</div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px">
+          <span style="font-size:32px;font-weight:900;color:#3b82f6;line-height:1">${cantSettleCnt}</span>
+          <span style="font-size:12px;color:#94a3b8">件</span>
+        </div>
+        <div style="font-size:11px;color:#60a5fa">${_wa(cantSettleAmt)} <span style="color:#64748b">・佔 ${T.sales>0?Math.round(cantSettleAmt/T.sales*100):0}%</span></div>
+      </div>
+      <div style="background:#1a2332;border:1px solid rgba(16,185,129,.35);border-radius:12px;padding:14px">
+        <div style="font-size:10px;font-weight:700;color:#10b981;margin-bottom:6px">✅ ≤30天</div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px">
+          <span style="font-size:32px;font-weight:900;color:#10b981;line-height:1">${within30Rows.length}</span>
+          <span style="font-size:12px;color:#94a3b8">件</span>
+        </div>
+        <div style="font-size:11px;color:#34d399">${_wa(within30Amt)} <span style="color:#64748b">・佔 ${T.count>0?Math.round(within30Rows.length/T.count*100):0}%</span></div>
+      </div>
+      <div style="background:#1a2332;border:1px solid rgba(239,68,68,.4);border-radius:12px;padding:14px">
+        <div style="font-size:10px;font-weight:700;color:#ef4444;margin-bottom:6px">🔴 逾30天</div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px">
+          <span style="font-size:32px;font-weight:900;color:#ef4444;line-height:1">${T.cOver30}</span>
+          <span style="font-size:12px;color:#94a3b8">件</span>
+        </div>
+        <div style="font-size:11px;color:#f87171">${_wa(over30Amt)} <span style="color:#64748b">・佔 ${T.count>0?Math.round(T.cOver30/T.count*100):0}%</span></div>
+      </div>
+      <div onclick="${unknown>0?`openWipModal('status','未填寫')`:''}"
+           style="background:#1a2332;border:1px solid ${unknown>0?fillColor:'#2d3f56'};border-radius:12px;padding:14px;${unknown>0?'cursor:pointer':''}">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:10px;color:#64748b;font-weight:700">📝 填寫率</span>
+          <span style="font-size:22px;font-weight:900;color:${fillColor}">${fillPct}%</span>
+        </div>
+        <div style="background:#0f172a;border-radius:4px;height:6px;margin-bottom:6px">
+          <div style="width:${fillPct}%;height:6px;border-radius:4px;background:${fillColor}"></div>
+        </div>
+        <div style="font-size:10px;color:${unknown>0?fillColor:'#64748b'};font-weight:${unknown>0?'700':'400'}">
+          ${unknown>0?`還有 ${unknown} 件未標記 →`:`${filled} / ${rows.length} 件已標記`}
         </div>
       </div>
     </div>
-    <div class="kpi-card" style="border-color:#ef4444">
-      <div class="kpi-label" style="color:#ef4444">逾30天</div>
-      <div class="kpi-value kpi-red">${T.cOver30.toLocaleString()}</div>
-      <div class="kpi-sub">30天內: ${T.c30} | 扣PDI逾30: ${E.cOver30}</div>
+
+    ${_secTitle('🔢', '總覽')}
+    <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:10px;margin-bottom:18px">
+      <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:12px;padding:14px">
+        <div style="font-size:10px;font-weight:700;color:#94a3b8;margin-bottom:6px">📋 WIP 總件數</div>
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px">
+          <span style="font-size:30px;font-weight:900;color:#f97316">${T.count.toLocaleString()}</span>
+          <span style="font-size:11px;color:#64748b">扣PDI: ${E.count} 件</span>
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          <span style="font-size:11px;background:rgba(59,130,246,.15);color:#3b82f6;padding:3px 10px;border-radius:10px;cursor:pointer" onclick="openWipModal('status_group','hold')">⏸️ 暫緩 ${hold}</span>
+          <span style="font-size:11px;background:rgba(245,158,11,.15);color:#f59e0b;padding:3px 10px;border-radius:10px;cursor:pointer" onclick="openWipModal('status_group','watch')">⚠️ 追蹤 ${watch}</span>
+          <span style="font-size:11px;background:rgba(100,116,139,.15);color:#94a3b8;padding:3px 10px;border-radius:10px">❓ 未標記 ${unknown}</span>
+        </div>
+      </div>
+      <div style="background:#1a2332;border:1px solid rgba(139,92,246,.4);border-radius:12px;padding:14px;display:flex;flex-direction:column;justify-content:center">
+        <div style="font-size:10px;color:#8b5cf6;font-weight:700;margin-bottom:8px">💰 WIP 合計金額</div>
+        <div style="font-size:26px;font-weight:900;color:#8b5cf6">${_wa(T.sales)}</div>
+        <div style="font-size:11px;color:#64748b;margin-top:4px">扣PDI: <span style="color:#a78bfa;font-weight:700">${_wa(E.sales)}</span></div>
+      </div>
     </div>
-    <div class="kpi-card" style="border-color:#8b5cf6">
-      <div class="kpi-label" style="color:#8b5cf6">預估總額(repair_amount)</div>
-      <div class="kpi-value kpi-purple">${fmtK(T.sales)}</div>
-      <div class="kpi-sub">扣PDI: ${fmtK(E.sales)}K</div>
-    </div>`;
+
+    ${_secTitle('📆', '上月結清狀況')}
+    <div id="wip-last-month-card" style="background:#1a2332;border:1px solid #2d3f56;border-radius:12px;padding:14px;margin-bottom:18px">
+      <span style="color:#64748b;font-size:12px">載入上月資料中...</span>
+    </div>
+
+  </div>`;
+
+  // 保持上月比較區塊也同步重載（不然會停在"載入上月資料中…"）
+  if (typeof loadWipLastMonthComparison === 'function') {
+    try { loadWipLastMonthComparison(); } catch(e) {}
+  }
 }
  
 // 儲存狀態
