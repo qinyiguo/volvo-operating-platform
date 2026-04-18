@@ -102,17 +102,6 @@ router.get('/stats/parts', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── 月份趨勢 ──
-router.get('/stats/trend', async (req, res) => {
-  try {
-    const { branch } = req.query;
-    const params = branch ? [branch] : [];
-    const bc = branch ? 'AND branch=$1' : '';
-    const r = await pool.query(`SELECT period,branch,COUNT(DISTINCT work_order) AS car_count,SUM(total_untaxed) AS total_untaxed,SUM(engine_wage) AS engine_wage,SUM(parts_income) AS parts_income FROM repair_income WHERE 1=1 ${bc} GROUP BY period,branch ORDER BY period,branch`,params);
-    res.json({ trend: r.rows });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
 // ── 每日進廠台數 ──
 router.get('/stats/daily', async (req, res) => {
   try {
