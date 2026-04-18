@@ -11,9 +11,11 @@ const corsAllowed = (process.env.CORS_ALLOWED_ORIGINS || '')
   .split(',').map(s => s.trim()).filter(Boolean);
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin) return cb(null, true);                    // same-origin / curl
-    if (corsAllowed.includes(origin)) return cb(null, true);
-    cb(new Error(`CORS: origin ${origin} not allowed`));
+    if (!origin) return cb(null, true);                    // 無 Origin header：curl、server-side
+    if (corsAllowed.includes(origin)) return cb(null, true); // 白名單跨域放行
+    // 其餘：不下 CORS header。同源請求瀏覽器本來就不檢查 CORS，會通過；
+    // 真正的跨域請求會被瀏覽器擋掉——我們不丟 Error，避免 Express 回 HTML 500。
+    return cb(null, false);
   },
   credentials: true,
 }));
