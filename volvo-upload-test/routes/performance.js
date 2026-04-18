@@ -2,8 +2,11 @@ const router = require('express').Router();
 const multer = require('multer');
 const XLSX   = require('xlsx');
 const pool   = require('../db/pool');
+const { requireAuth, requirePermission } = require('../lib/authMiddleware');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+
+router.use(requireAuth);
 
 // ── 業績指標 CRUD ──
 router.get('/performance-metrics', async (req, res) => {
@@ -11,7 +14,7 @@ router.get('/performance-metrics', async (req, res) => {
   catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/performance-metrics', async (req, res) => {
+router.post('/performance-metrics', requirePermission('feature:targets'), async (req, res) => {
   const { metric_name, description, metric_type, filters, stat_field, unit, sort_order } = req.body;
   if (!metric_name) return res.status(400).json({ error: '名稱為必填' });
   try {
@@ -25,7 +28,7 @@ router.post('/performance-metrics', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/performance-metrics/:id', async (req, res) => {
+router.put('/performance-metrics/:id', requirePermission('feature:targets'), async (req, res) => {
   const { metric_name, description, metric_type, filters, stat_field, unit, sort_order } = req.body;
   if (!metric_name) return res.status(400).json({ error: '名稱為必填' });
   try {
@@ -40,7 +43,7 @@ router.put('/performance-metrics/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/performance-metrics/:id', async (req, res) => {
+router.delete('/performance-metrics/:id', requirePermission('feature:targets'), async (req, res) => {
   try {
     await pool.query(`DELETE FROM performance_targets WHERE metric_id=$1`, [req.params.id]);
     await pool.query(`DELETE FROM performance_metrics WHERE id=$1`, [req.params.id]);
@@ -60,7 +63,7 @@ router.get('/performance-targets', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/performance-targets/batch', async (req, res) => {
+router.put('/performance-targets/batch', requirePermission('feature:targets'), async (req, res) => {
   const { metric_id, period, entries } = req.body;
   if (!metric_id || !period || !Array.isArray(entries)) return res.status(400).json({ error: '參數不完整' });
   const client = await pool.connect();
@@ -84,7 +87,7 @@ router.put('/performance-targets/batch', async (req, res) => {
 });
 
 // ── 業績目標 Excel 匯入 ──
-router.post('/upload-performance-targets-native', upload.single('file'), async (req, res) => {
+router.post('/upload-performance-targets-native', requirePermission('feature:upload'), upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '請選擇檔案' });
   const year     = String(req.body.year || '').trim();
   const dataType = String(req.body.dataType || 'target').trim();

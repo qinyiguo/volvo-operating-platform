@@ -1,5 +1,8 @@
 const router = require('express').Router();
 const pool   = require('../db/pool');
+const { requireAuth } = require('../lib/authMiddleware');
+
+router.use(requireAuth);
 
 // ── WIP 狀態常數 ──
 const WIP_STATUSES = ['等料', '施工中', '待修', '待客確認', '已可結帳', '暫緩', '已結清', '未填寫'];

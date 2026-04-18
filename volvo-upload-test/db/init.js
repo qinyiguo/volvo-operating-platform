@@ -117,9 +117,23 @@ const initDatabase = async () => {
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS app_settings (key VARCHAR(100) PRIMARY KEY, value TEXT NOT NULL)`);
-    await client.query(`
-      INSERT INTO app_settings (key, value) VALUES ('settings_password','admin1234')
-      ON CONFLICT (key) DO NOTHING`);
+    {
+      const _exists = await client.query(`SELECT 1 FROM app_settings WHERE key='settings_password'`);
+      if (!_exists.rows.length) {
+        const _cr   = require('crypto');
+        const _env  = process.env.INITIAL_SETTINGS_PASSWORD;
+        const _pwd  = _env || _cr.randomBytes(9).toString('base64url');
+        const _salt = _cr.randomBytes(16).toString('hex');
+        const _hash = _cr.pbkdf2Sync(_pwd, _salt, 100000, 32, 'sha256').toString('hex');
+        const _stored = `pbkdf2$${_salt}$${_hash}`;
+        await client.query(`INSERT INTO app_settings (key, value) VALUES ('settings_password', $1)`, [_stored]);
+        if (_env) {
+          console.log('[initDB] settings_password 已依 INITIAL_SETTINGS_PASSWORD 初始化（已 hash）');
+        } else {
+          console.log(`[initDB] ⚠️  已產生初始 settings_password: ${_pwd}（請立即變更，此訊息僅顯示一次）`);
+        }
+      }
+    }
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS income_config (
@@ -534,19 +548,25 @@ await client.query(`CREATE INDEX IF NOT EXISTS idx_business_query_period_branch 
   // 自動分區清理（可選）：保留 180 天
   // 若資料量龐大，可考慮設定 pg_partman 或排程清理
 
-    // ── 建立預設超管帳號（若無任何使用者）預設: admin / admin1234 ──
+    // ── 建立預設超管帳號（若無任何使用者）──
     const _uc = await client.query(`SELECT COUNT(*) FROM users`);
     if (parseInt(_uc.rows[0].count) === 0) {
       const _cr   = require('crypto');
+      const _env  = process.env.INITIAL_ADMIN_PASSWORD;
+      const _pwd  = _env || _cr.randomBytes(9).toString('base64url');
       const _salt = _cr.randomBytes(16).toString('hex');
-      const _hash = _cr.pbkdf2Sync('admin1234', _salt, 100000, 32, 'sha256').toString('hex');
+      const _hash = _cr.pbkdf2Sync(_pwd, _salt, 100000, 32, 'sha256').toString('hex');
       await client.query(
         `INSERT INTO users (username, password_hash, password_salt, display_name, role)
          VALUES ('admin', $1, $2, '系統管理員', 'super_admin')
          ON CONFLICT (username) DO NOTHING`,
         [_hash, _salt]
       );
-      console.log('[initDB] ✅ 預設管理員建立完成: admin / admin1234（請部署後立即修改密碼）');
+      if (_env) {
+        console.log('[initDB] ✅ 預設管理員已建立: admin（使用 INITIAL_ADMIN_PASSWORD 指定的密碼）');
+      } else {
+        console.log(`[initDB] ✅ 預設管理員已建立: admin / ${_pwd}（請立即變更，此訊息僅顯示一次）`);
+      }
     }
     
     console.log('[initDB] ✅ 所有表格建立完成');

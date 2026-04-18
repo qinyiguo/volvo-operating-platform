@@ -2,8 +2,11 @@ const router = require('express').Router();
 const multer = require('multer');
 const XLSX   = require('xlsx');
 const pool   = require('../db/pool');
+const { requireAuth, requirePermission } = require('../lib/authMiddleware');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+
+router.use(requireAuth);
 
 // ── Week helpers ──
 function getCurrentWeekMonday() {
@@ -35,7 +38,7 @@ router.get('/revenue-targets', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/revenue-targets/batch', async (req, res) => {
+router.put('/revenue-targets/batch', requirePermission('feature:targets'), async (req, res) => {
   const { entries } = req.body;
   if (!Array.isArray(entries) || !entries.length) return res.status(400).json({ error: '無資料' });
   const client = await pool.connect();
@@ -61,7 +64,7 @@ router.put('/revenue-targets/batch', async (req, res) => {
   finally { client.release(); }
 });
 
-router.delete('/revenue-targets', async (req, res) => {
+router.delete('/revenue-targets', requirePermission('feature:targets'), async (req, res) => {
   const { branch, period } = req.query;
   if (!branch || !period) return res.status(400).json({ error: 'branch 和 period 為必填' });
   try {
@@ -71,7 +74,7 @@ router.delete('/revenue-targets', async (req, res) => {
 });
 
 // ── 營收目標 Excel 匯入（範本格式）──
-router.post('/upload-revenue-targets', upload.single('file'), async (req, res) => {
+router.post('/upload-revenue-targets', requirePermission('feature:upload'), upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '請選擇檔案' });
   try {
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer', cellDates: true });
@@ -122,7 +125,7 @@ router.post('/upload-revenue-targets', upload.single('file'), async (req, res) =
 });
 
 // ── 營收目標 Excel 匯入（原生格式）──
-router.post('/upload-revenue-targets-native', upload.single('file'), async (req, res) => {
+router.post('/upload-revenue-targets-native', requirePermission('feature:upload'), upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '請選擇檔案' });
   const year     = String(req.body.year || '').trim();
   const dataType = String(req.body.dataType || 'target').trim();
@@ -247,7 +250,7 @@ router.get('/revenue-estimates', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/revenue-estimates/batch', async (req, res) => {
+router.put('/revenue-estimates/batch', requirePermission('feature:targets'), async (req, res) => {
   const { entries } = req.body;
   if (!Array.isArray(entries) || !entries.length) return res.status(400).json({ error: '無資料' });
   const client = await pool.connect();
@@ -313,7 +316,7 @@ router.get('/revenue-estimates/history', async (req, res) => {
 
 // POST /api/revenue-estimates/weekly-submit
 // 提交本週預估（每週每據點只能提交一次）
-router.post('/revenue-estimates/weekly-submit', async (req, res) => {
+router.post('/revenue-estimates/weekly-submit', requirePermission('feature:targets'), async (req, res) => {
   const { period, entries, note } = req.body;
   if (!period || !Array.isArray(entries) || !entries.length)
     return res.status(400).json({ error: '參數不完整' });

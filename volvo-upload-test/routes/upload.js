@@ -3,6 +3,9 @@ const multer  = require('multer');
 const XLSX    = require('xlsx');
 const pool    = require('../db/pool');
 const { detectFileType, detectBranch, detectPeriod } = require('../lib/utils');
+const { requireAuth, requirePermission } = require('../lib/authMiddleware');
+
+router.use(requireAuth);
 const {
   parseRepairIncome, parseTechPerformance,
   parsePartsSales, parseBusinessQuery, parsePartsCatalog,
@@ -75,7 +78,7 @@ function parseSheetToObjects(sheet) {
   return objects;
 }
 
-router.post('/upload', uploader.array('files', 8), async (req, res) => {
+router.post('/upload', requirePermission('feature:upload'), uploader.array('files', 8), async (req, res) => {
   const results = [];
 
   for (const file of req.files) {

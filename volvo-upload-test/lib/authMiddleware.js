@@ -1,5 +1,18 @@
 
+const crypto = require('crypto');
 const pool = require('../db/pool');
+
+// 同行程內部呼叫用的 shared secret。可由 INTERNAL_API_TOKEN 覆寫（供多 process 部署）。
+const INTERNAL_TOKEN = process.env.INTERNAL_API_TOKEN || crypto.randomBytes(24).toString('hex');
+
+function internalAuthHeaders() {
+  return { 'x-internal-service': INTERNAL_TOKEN };
+}
+
+function timingEq(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+}
 
 // ═══ 所有可設定的權限鍵 ═══
 const PAGE_PERMISSIONS = {
@@ -61,13 +74,12 @@ async function getUserPermissions(userId, role) {
 
 // ═══ Middleware: 必須登入 ═══
 async function requireAuth(req, res, next) {
-  // ── 內部服務呼叫例外（server-to-server，僅限 localhost）──
-  const isInternal = req.headers['x-internal-service'] === 'true';
-  const isLocalhost = ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.ip);
-  if (isInternal && isLocalhost) return next();
+  // ── 同行程內部服務呼叫例外：用 shared secret 比對，不再信任 IP 判斷 ──
+  const hdr = req.headers['x-internal-service'];
+  if (hdr && timingEq(String(hdr), INTERNAL_TOKEN)) return next();
 
   const auth  = req.headers['authorization'] || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : (req.query._token || '');
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
   const user  = await resolveToken(token);
   if (!user) return res.status(401).json({ error: '未登入或登入已過期', code: 'UNAUTHORIZED' });
   req.user = user;
@@ -90,7 +102,7 @@ function requirePermission(permissionKey) {
 // ═══ Middleware: 軟性驗證（不阻擋，只附加 user info）═══
 async function softAuth(req, res, next) {
   const auth  = req.headers['authorization'] || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : (req.query._token || '');
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
   req.user = await resolveToken(token);
   next();
 }
@@ -100,6 +112,7 @@ module.exports = {
   requirePermission,
   softAuth,
   getUserPermissions,
+  internalAuthHeaders,
   ALL_PERMISSIONS,
   PAGE_PERMISSIONS,
   BRANCH_PERMISSIONS,
