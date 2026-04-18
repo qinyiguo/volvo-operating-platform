@@ -44,6 +44,19 @@ router.get('/wip/status', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// 寫入歷史紀錄 helper（給單筆 / 批次共用）
+async function insertWipHistory(client, row, user) {
+  await client.query(`
+    INSERT INTO wip_status_history
+      (work_order, branch, wip_status, eta_date, reason, updated_by, user_id, username, created_at)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8, NOW())
+  `, [
+    row.work_order, row.branch, row.wip_status || null,
+    row.eta_date || null, row.reason || '', row.updated_by || '',
+    user?.user_id || null, user?.username || null,
+  ]);
+}
+
 // PUT /api/wip/status/:work_order/:branch — 單筆更新
 router.put('/wip/status/:work_order/:branch', async (req, res) => {
   const { work_order, branch } = req.params;
@@ -51,8 +64,10 @@ router.put('/wip/status/:work_order/:branch', async (req, res) => {
   if (!WIP_STATUSES.includes(wip_status)) {
     return res.status(400).json({ error: `無效的狀態：${wip_status}` });
   }
+  const client = await pool.connect();
   try {
-    await pool.query(`
+    await client.query('BEGIN');
+    await client.query(`
       INSERT INTO wip_status_notes
         (work_order, branch, wip_status, eta_date, reason, updated_by, updated_at)
       VALUES ($1, $2, $3, $4, $5, $6, NOW())
@@ -63,7 +78,31 @@ router.put('/wip/status/:work_order/:branch', async (req, res) => {
         updated_by = $6,
         updated_at = NOW()
     `, [work_order, branch, wip_status, eta_date || null, reason || '', updated_by || '']);
+    await insertWipHistory(client, {
+      work_order, branch, wip_status,
+      eta_date: eta_date || null, reason: reason || '',
+      updated_by: updated_by || '',
+    }, req.user);
+    await client.query('COMMIT');
     res.json({ ok: true, work_order, branch, wip_status });
+  } catch(err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: err.message });
+  } finally { client.release(); }
+});
+
+// GET /api/wip/status/:work_order/:branch/history — 取得單一工單的歷史紀錄
+router.get('/wip/status/:work_order/:branch/history', async (req, res) => {
+  const { work_order, branch } = req.params;
+  try {
+    const r = await pool.query(`
+      SELECT id, wip_status, eta_date, reason, updated_by, username, created_at
+      FROM wip_status_history
+      WHERE work_order=$1 AND branch=$2
+      ORDER BY created_at DESC
+      LIMIT 200
+    `, [work_order, branch]);
+    res.json({ history: r.rows });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -77,6 +116,14 @@ router.put('/wip/status/batch', async (req, res) => {
     await client.query('BEGIN');
     for (const e of entries) {
       if (!e.work_order || !e.branch) continue;
+      const row = {
+        work_order: e.work_order,
+        branch:     e.branch,
+        wip_status: e.wip_status || '未填寫',
+        eta_date:   e.eta_date || null,
+        reason:     e.reason || '',
+        updated_by: e.updated_by || '',
+      };
       await client.query(`
         INSERT INTO wip_status_notes
           (work_order, branch, wip_status, eta_date, reason, updated_by, updated_at)
@@ -87,8 +134,9 @@ router.put('/wip/status/batch', async (req, res) => {
           reason     = $5,
           updated_by = $6,
           updated_at = NOW()
-      `, [e.work_order, e.branch, e.wip_status || '未填寫',
-          e.eta_date || null, e.reason || '', e.updated_by || '']);
+      `, [row.work_order, row.branch, row.wip_status,
+          row.eta_date, row.reason, row.updated_by]);
+      await insertWipHistory(client, row, req.user);
     }
     await client.query('COMMIT');
     res.json({ ok: true, count: entries.length });

@@ -333,6 +333,22 @@ const initDatabase = async () => {
         UNIQUE(work_order, branch)
       )`);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS wip_status_history (
+        id          BIGSERIAL PRIMARY KEY,
+        work_order  VARCHAR(50) NOT NULL,
+        branch      VARCHAR(10) NOT NULL,
+        wip_status  VARCHAR(20),
+        eta_date    DATE,
+        reason      TEXT,
+        updated_by  VARCHAR(50),
+        user_id     INTEGER,
+        username    VARCHAR(50),
+        created_at  TIMESTAMPTZ DEFAULT NOW()
+      )`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_wip_hist_wo ON wip_status_history(work_order, branch, created_at DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_wip_hist_created ON wip_status_history(created_at DESC)`);
+
 // ── VCTL 商務政策指標 ──
     await client.query(`
       CREATE TABLE IF NOT EXISTS vctl_metrics (
