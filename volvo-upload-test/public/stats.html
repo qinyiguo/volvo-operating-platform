@@ -2427,8 +2427,58 @@ window._openWipStatusEdit=function(workOrder,branch){
                  border:1px solid ${CE.border};border-radius:6px;font-size:12px;cursor:pointer;flex-shrink:0">取消</button>
         <div id="wipSaveMsg-${workOrder}" style="font-size:11px;min-height:16px;flex-shrink:0"></div>
       </div>
+      <div id="wipHistoryWrap-${workOrder}-${brKey}" style="margin-top:4px;border-top:1px dashed ${CE.border};padding-top:8px">
+        <div style="font-size:11px;color:${CE.label}">📜 歷史紀錄 載入中...</div>
+      </div>
     </div>`;
   row.style.display='';
+  _loadWipHistory(workOrder, branch);
+};
+
+// 載入單一工單的歷史紀錄並渲染
+window._loadWipHistory=async function(workOrder, branch){
+  const brKey=branch.replace(/\s/g,'_');
+  const wrap=document.getElementById(`wipHistoryWrap-${workOrder}-${brKey}`);
+  if(!wrap)return;
+  const isLight=document.body.classList.contains('light-theme');
+  const labelCol=isLight?'#475569':'#94a3b8';
+  const subCol =isLight?'#64748b':'#64748b';
+  const dimCol =isLight?'#94a3b8':'#475569';
+  const h2 = s => String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  try{
+    const encWO=encodeURIComponent(workOrder);
+    const encBR=encodeURIComponent(branch);
+    const res=await DmsAuth.fetchWithAuth(`/api/wip/status/${encWO}/${encBR}/history`).then(r=>r.json());
+    if(res.error)throw new Error(res.error);
+    const rows=res.history||[];
+    if(!rows.length){
+      wrap.innerHTML=`<div style="font-size:11px;color:${dimCol}">📜 尚無歷史紀錄</div>`;
+      return;
+    }
+    const fmtDt=(s)=>{try{const d=new Date(s);const pad=n=>String(n).padStart(2,'0');return `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;}catch(e){return String(s||'');}};
+    const items=rows.map(h=>{
+      const m=getWipStatusMeta(h.wip_status||'未填寫');
+      const who=h.username||h.updated_by||'—';
+      const eta=h.eta_date?` · 預計 ${String(h.eta_date).slice(0,10)}`:'';
+      return `<div style="display:flex;gap:8px;align-items:flex-start;padding:4px 0;border-bottom:1px dashed ${isLight?'#f1f5f9':'rgba(45,63,86,.4)'};font-size:11px">
+        <span style="color:${dimCol};min-width:115px;flex-shrink:0">${h2(fmtDt(h.created_at))}</span>
+        <span style="min-width:70px;flex-shrink:0;color:${m.color};font-weight:600">${m.icon} ${h2(h.wip_status||'—')}</span>
+        <span style="color:${labelCol};min-width:70px;flex-shrink:0">${h2(who)}</span>
+        <span style="color:${subCol};word-break:break-all">${h2(h.reason||'—')}${h2(eta)}</span>
+      </div>`;
+    }).join('');
+    wrap.innerHTML=`
+      <details open>
+        <summary style="cursor:pointer;font-size:11px;color:${labelCol};font-weight:700;user-select:none;list-style:none;padding:2px 0">
+          📜 歷史紀錄 <span style="color:${dimCol};font-weight:400">(${rows.length})</span>
+        </summary>
+        <div style="margin-top:6px;max-height:180px;overflow-y:auto">${items}</div>
+      </details>`;
+  }catch(e){
+    wrap.innerHTML=`<div style="font-size:11px;color:#ef4444">📜 歷史載入失敗: ${h2(e.message)}</div>`;
+  }
 };
 
 // 點擊狀態按鈕（視覺更新，還沒儲存）
@@ -2536,7 +2586,10 @@ window._saveWipStatus=async function(workOrder,branch){
     if(wipRow){wipRow.wip_status=status;wipRow.wip_reason=reason;wipRow.eta_date=eta||null;wipRow.wip_updated_by=by;}
     const key=`${workOrder}|||${branch}`;
     _wipStatusMap[key]={work_order:workOrder,branch,wip_status:status,reason,eta_date:eta||null,updated_by:by};
-    if(msgEl){msgEl.textContent='✅ 已儲存';msgEl.style.color='#10b981';setTimeout(()=>{row.style.display='none';_refreshWipKPI();renderWipModal();},800);}
+    if(msgEl){msgEl.textContent='✅ 已儲存';msgEl.style.color='#10b981';}
+    // 儲存後即時刷新歷史區塊
+    _loadWipHistory(workOrder, branch);
+    setTimeout(()=>{row.style.display='none';_refreshWipKPI();renderWipModal();},900);
   }catch(e){if(msgEl){msgEl.textContent='❌ '+e.message;msgEl.style.color='#ef4444';}}
 };
 
