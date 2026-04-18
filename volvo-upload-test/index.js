@@ -7,7 +7,16 @@ const initDatabase = require('./db/init');
 const app  = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+const corsAllowed = (process.env.CORS_ALLOWED_ORIGINS || '')
+  .split(',').map(s => s.trim()).filter(Boolean);
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true);                    // same-origin / curl
+    if (corsAllowed.includes(origin)) return cb(null, true);
+    cb(new Error(`CORS: origin ${origin} not allowed`));
+  },
+  credentials: true,
+}));
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
