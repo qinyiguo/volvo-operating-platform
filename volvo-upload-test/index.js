@@ -26,6 +26,12 @@ const { auditMiddleware } = require('./lib/auditLogger');
 app.use(auditMiddleware);
 
 // ── 路由掛載 ──
+// 注意：含未驗證端點的 router（users 的 /login、auth 的 /auth/settings）必須最先掛上。
+// 因為其他 router 的 router.use(requireAuth) 會對任何進入該 router 的請求都先跑驗證，
+// 即使該 router 內部沒匹配到路由，未驗證請求也已經被攔下回 401。
+app.use('/api', require('./routes/users'));      // 含 /users/login（未驗證）
+app.use('/api', require('./routes/auth'));       // 含 /auth/settings（未驗證）
+
 app.use('/api', require('./routes/upload'));
 app.use('/api', require('./routes/saConfig'));
 app.use('/api', require('./routes/query'));       // income-config + working-days + counts + query/*
@@ -33,9 +39,7 @@ app.use('/api', require('./routes/techWage'));
 app.use('/api', require('./routes/revenue'));
 app.use('/api', require('./routes/performance'));
 app.use('/api', require('./routes/stats'));
-app.use('/api', require('./routes/auth'));       // 原本的後端密碼驗證
-app.use('/api', require('./routes/users'));      // 新增的使用者管理
-app.use('/api', require('./routes/auditLogs')); // 新增的操作紀錄
+app.use('/api', require('./routes/auditLogs'));
 app.use('/api', require('./routes/bonus'));
 app.use('/api', require('./routes/techHours'));
 app.use('/api', require('./routes/personTargets'));
