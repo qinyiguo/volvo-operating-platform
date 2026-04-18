@@ -1806,63 +1806,76 @@ async function loadWip(period,branch){
    
     // KPI 大卡 + 狀態分類卡
 const _wa = v => { const nv=parseFloat(v||0); return nv>0 ? fmtK(nv) : '—'; };
+  const fillColor = fillPct>80?'#10b981':fillPct>50?'#f59e0b':'#ef4444';
+  const _secTitle = (icon, text, color) => `<div style="font-size:11px;font-weight:800;color:${color||'#94a3b8'};letter-spacing:.08em;margin:0 0 8px 2px">${icon} ${text}</div>`;
+
   kpiEl.innerHTML = `
   <div style="width:100%;box-sizing:border-box;grid-column:1/-1">
-    <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:10px">
-      <div style="background:linear-gradient(135deg,rgba(239,68,68,.18),rgba(239,68,68,.06));border:2px solid #ef4444;border-radius:12px;padding:16px;cursor:pointer" onclick="openWipModal('status','已可結帳')">
-        <div style="font-size:10px;font-weight:700;color:#ef4444;margin-bottom:8px">💳 應結帳（立即處理）</div>
-        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px">
-          <span style="font-size:44px;font-weight:900;color:#ef4444;line-height:1">${canSettleCnt}</span>
-          <span style="font-size:13px;color:#94a3b8">件</span>
-        </div>
-        <div style="background:rgba(239,68,68,.15);border-radius:6px;padding:6px 10px;margin-bottom:4px">
-          <div style="font-size:10px;color:#f87171;margin-bottom:2px">預估金額</div>
-          <div style="font-size:20px;font-weight:900;color:#f87171">${_wa(canSettleAmt)}</div>
-        </div>
-        <div style="font-size:10px;color:#94a3b8">點擊查看工單 →</div>
+
+    ${_secTitle('🔥', '今日待辦', '#ef4444')}
+    <div onclick="openWipModal('status','已可結帳')"
+         style="background:linear-gradient(135deg,rgba(239,68,68,.22),rgba(239,68,68,.06));border:2px solid #ef4444;border-radius:14px;padding:18px 22px;margin-bottom:18px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;cursor:pointer;transition:transform .12s">
+      <div style="display:flex;align-items:baseline;gap:8px;min-width:140px">
+        <span style="font-size:56px;font-weight:900;color:#ef4444;line-height:.95">${canSettleCnt}</span>
+        <span style="font-size:14px;color:#94a3b8">件 應結帳</span>
       </div>
-      <div style="background:#1a2332;border:1px solid rgba(59,130,246,.4);border-radius:12px;padding:16px;cursor:pointer" onclick="openWipModal('status','暫緩')">
-        <div style="font-size:10px;font-weight:700;color:#3b82f6;margin-bottom:8px">⏸️ 暫緩（無法結帳）</div>
-        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px">
-          <span style="font-size:44px;font-weight:900;color:#3b82f6;line-height:1">${cantSettleCnt}</span>
-          <span style="font-size:13px;color:#94a3b8">件</span>
-        </div>
-        <div style="background:rgba(59,130,246,.1);border-radius:6px;padding:6px 10px;margin-bottom:4px">
-          <div style="font-size:10px;color:#60a5fa;margin-bottom:2px">預估金額</div>
-          <div style="font-size:20px;font-weight:900;color:#60a5fa">${_wa(cantSettleAmt)}</div>
-        </div>
-        <div style="font-size:10px;color:#64748b">佔總額 ${T.sales>0?Math.round(cantSettleAmt/T.sales*100):0}%</div>
+      <div style="flex:1;min-width:120px">
+        <div style="font-size:11px;color:#f87171;margin-bottom:4px">預估金額</div>
+        <div style="font-size:26px;font-weight:900;color:#f87171">${_wa(canSettleAmt)}</div>
       </div>
-      <div style="background:#1a2332;border:1px solid rgba(16,185,129,.35);border-radius:12px;padding:16px">
-        <div style="font-size:10px;font-weight:700;color:#10b981;margin-bottom:8px">✅ ≤30天</div>
-        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px">
-          <span style="font-size:44px;font-weight:900;color:#10b981;line-height:1">${within30Rows.length}</span>
-          <span style="font-size:13px;color:#94a3b8">件</span>
+      <button onclick="event.stopPropagation();openWipModal('status','已可結帳')"
+              style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:12px 22px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap">
+        立即處理 →
+      </button>
+    </div>
+
+    ${_secTitle('📊', '狀況追蹤')}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:18px">
+      <div style="background:#1a2332;border:1px solid rgba(59,130,246,.4);border-radius:12px;padding:14px;cursor:pointer" onclick="openWipModal('status','暫緩')">
+        <div style="font-size:10px;font-weight:700;color:#3b82f6;margin-bottom:6px">⏸️ 暫緩（無法結帳）</div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px">
+          <span style="font-size:32px;font-weight:900;color:#3b82f6;line-height:1">${cantSettleCnt}</span>
+          <span style="font-size:12px;color:#94a3b8">件</span>
         </div>
-        <div style="background:rgba(16,185,129,.1);border-radius:6px;padding:6px 10px;margin-bottom:4px">
-          <div style="font-size:10px;color:#34d399;margin-bottom:2px">預估金額</div>
-          <div style="font-size:20px;font-weight:900;color:#34d399">${_wa(within30Amt)}</div>
-        </div>
-        <div style="font-size:10px;color:#64748b">佔總件 ${T.count>0?Math.round(within30Rows.length/T.count*100):0}%</div>
+        <div style="font-size:11px;color:#60a5fa">${_wa(cantSettleAmt)} <span style="color:#64748b">・佔 ${T.sales>0?Math.round(cantSettleAmt/T.sales*100):0}%</span></div>
       </div>
-      <div style="background:#1a2332;border:1px solid rgba(239,68,68,.4);border-radius:12px;padding:16px">
-        <div style="font-size:10px;font-weight:700;color:#ef4444;margin-bottom:8px">🔴 逾30天</div>
-        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px">
-          <span style="font-size:44px;font-weight:900;color:#ef4444;line-height:1">${T.cOver30}</span>
-          <span style="font-size:13px;color:#94a3b8">件</span>
+      <div style="background:#1a2332;border:1px solid rgba(16,185,129,.35);border-radius:12px;padding:14px">
+        <div style="font-size:10px;font-weight:700;color:#10b981;margin-bottom:6px">✅ ≤30天</div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px">
+          <span style="font-size:32px;font-weight:900;color:#10b981;line-height:1">${within30Rows.length}</span>
+          <span style="font-size:12px;color:#94a3b8">件</span>
         </div>
-        <div style="background:rgba(239,68,68,.1);border-radius:6px;padding:6px 10px;margin-bottom:4px">
-          <div style="font-size:10px;color:#f87171;margin-bottom:2px">預估金額</div>
-          <div style="font-size:20px;font-weight:900;color:#f87171">${_wa(over30Amt)}</div>
+        <div style="font-size:11px;color:#34d399">${_wa(within30Amt)} <span style="color:#64748b">・佔 ${T.count>0?Math.round(within30Rows.length/T.count*100):0}%</span></div>
+      </div>
+      <div style="background:#1a2332;border:1px solid rgba(239,68,68,.4);border-radius:12px;padding:14px">
+        <div style="font-size:10px;font-weight:700;color:#ef4444;margin-bottom:6px">🔴 逾30天</div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px">
+          <span style="font-size:32px;font-weight:900;color:#ef4444;line-height:1">${T.cOver30}</span>
+          <span style="font-size:12px;color:#94a3b8">件</span>
         </div>
-        <div style="font-size:10px;color:#64748b">佔總件 ${T.count>0?Math.round(T.cOver30/T.count*100):0}%</div>
+        <div style="font-size:11px;color:#f87171">${_wa(over30Amt)} <span style="color:#64748b">・佔 ${T.count>0?Math.round(T.cOver30/T.count*100):0}%</span></div>
+      </div>
+      <div onclick="${unknown>0?`openWipModal('status','未填寫')`:''}"
+           style="background:#1a2332;border:1px solid ${unknown>0?fillColor:'#2d3f56'};border-radius:12px;padding:14px;${unknown>0?'cursor:pointer':''}">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:10px;color:#64748b;font-weight:700">📝 填寫率</span>
+          <span style="font-size:22px;font-weight:900;color:${fillColor}">${fillPct}%</span>
+        </div>
+        <div style="background:#0f172a;border-radius:4px;height:6px;margin-bottom:6px">
+          <div style="width:${fillPct}%;height:6px;border-radius:4px;background:${fillColor}"></div>
+        </div>
+        <div style="font-size:10px;color:${unknown>0?fillColor:'#64748b'};font-weight:${unknown>0?'700':'400'}">
+          ${unknown>0?`還有 ${unknown} 件未標記 →`:`${filled} / ${rows.length} 件已標記`}
+        </div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr);gap:10px;margin-bottom:10px">
-      <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:12px;padding:16px">
+
+    ${_secTitle('🔢', '總覽')}
+    <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:10px;margin-bottom:18px">
+      <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:12px;padding:14px">
         <div style="font-size:10px;font-weight:700;color:#94a3b8;margin-bottom:6px">📋 WIP 總件數</div>
         <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px">
-          <span style="font-size:34px;font-weight:900;color:#f97316">${T.count.toLocaleString()}</span>
+          <span style="font-size:30px;font-weight:900;color:#f97316">${T.count.toLocaleString()}</span>
           <span style="font-size:11px;color:#64748b">扣PDI: ${E.count} 件</span>
         </div>
         <div style="display:flex;gap:5px;flex-wrap:wrap">
@@ -1871,25 +1884,19 @@ const _wa = v => { const nv=parseFloat(v||0); return nv>0 ? fmtK(nv) : '—'; };
           <span style="font-size:11px;background:rgba(100,116,139,.15);color:#94a3b8;padding:3px 10px;border-radius:10px">❓ 未標記 ${unknown}</span>
         </div>
       </div>
-      <div style="background:#1a2332;border:1px solid rgba(139,92,246,.4);border-radius:12px;padding:16px;display:flex;flex-direction:column;justify-content:center">
+      <div style="background:#1a2332;border:1px solid rgba(139,92,246,.4);border-radius:12px;padding:14px;display:flex;flex-direction:column;justify-content:center">
         <div style="font-size:10px;color:#8b5cf6;font-weight:700;margin-bottom:8px">💰 WIP 合計金額</div>
-        <div style="font-size:28px;font-weight:900;color:#8b5cf6">${_wa(T.sales)}</div>
-        <div style="font-size:11px;color:#64748b;margin-top:6px">扣PDI: <span style="color:#a78bfa;font-weight:700">${_wa(E.sales)}</span></div>
-      </div>
-      <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:12px;padding:16px;display:flex;flex-direction:column;justify-content:center">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-          <span style="font-size:10px;color:#64748b;font-weight:700">📝 填寫率</span>
-          <span style="font-size:22px;font-weight:900;color:${fillPct>80?'#10b981':fillPct>50?'#f59e0b':'#ef4444'}">${fillPct}%</span>
-        </div>
-        <div style="background:#0f172a;border-radius:4px;height:8px;margin-bottom:6px">
-          <div style="width:${fillPct}%;height:8px;border-radius:4px;background:${fillPct>80?'#10b981':fillPct>50?'#f59e0b':'#ef4444'}"></div>
-        </div>
-        <div style="font-size:10px;color:#64748b">${filled} / ${rows.length} 件已標記</div>
+        <div style="font-size:26px;font-weight:900;color:#8b5cf6">${_wa(T.sales)}</div>
+        <div style="font-size:11px;color:#64748b;margin-top:4px">扣PDI: <span style="color:#a78bfa;font-weight:700">${_wa(E.sales)}</span></div>
       </div>
     </div>
-    <div id="wip-last-month-card" style="background:#1a2332;border:1px solid #2d3f56;border-radius:12px;padding:16px;margin-bottom:16px">
+
+    ${_secTitle('📆', '上月結清狀況')}
+    <div id="wip-last-month-card" style="background:#1a2332;border:1px solid #2d3f56;border-radius:12px;padding:14px;margin-bottom:18px">
       <span style="color:#64748b;font-size:12px">載入上月資料中...</span>
-    </div>`;
+    </div>
+
+  </div>`;
 
 // 載入上月比較
 loadWipLastMonthComparison();
@@ -1986,44 +1993,6 @@ loadWipLastMonthComparison();
         </div>`;
       }).join('');
 
-    // 待修/待確認工單快速清單（需要跟進）
-    const urgentRows=rows.filter(r=>r.wip_status==='已可結帳');
-    const watchRows =rows.filter(r=>r.wip_status==='待修'||r.wip_status==='待客確認');
-
-    let urgentHtml='';
-    if(urgentRows.length){
-      urgentHtml=`<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:14px 18px;margin-bottom:14px">
-        <div style="font-size:13px;font-weight:800;color:#ef4444;margin-bottom:10px">
-          💳 應結帳清單（${urgentRows.length} 件）
-          <button onclick="openWipModal('status','已可結帳')" style="margin-left:10px;padding:3px 10px;background:rgba(239,68,68,.2);color:#ef4444;border:1px solid rgba(239,68,68,.4);border-radius:5px;font-size:11px;cursor:pointer">查看全部</button>
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px">
-          ${urgentRows.slice(0,12).map(r=>`
-            <div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:7px;padding:6px 12px;cursor:pointer;font-size:12px"
-                 onclick="openWipModal('single_wo','${r.work_order}')">
-              <span style="font-weight:700;color:#ef4444">${r.work_order}</span>
-              <span style="color:#64748b;margin-left:6px">${r.branch}</span>
-              <span style="color:#94a3b8;margin-left:4px">${r.plate_no||'—'}</span>
-              ${r.wip_reason?`<span style="color:#ef4444;font-size:10px;margin-left:4px">${r.wip_reason.slice(0,12)}…</span>`:''}
-            </div>`).join('')}
-          ${urgentRows.length>12?`<span style="font-size:11px;color:#ef4444;align-self:center">+${urgentRows.length-12}筆…</span>`:''}
-        </div>
-      </div>`;
-    }
-
-    let watchHtml='';
-    if(watchRows.length){
-      watchHtml=`<div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:12px 16px;margin-bottom:14px">
-        <div style="font-size:12px;font-weight:800;color:#f59e0b;margin-bottom:8px">⚠️ 需追蹤清單（${watchRows.length} 件 — 待修/待客確認）
-          <button onclick="openWipModal('status_group','watch')" style="margin-left:8px;padding:2px 8px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3);border-radius:4px;font-size:10px;cursor:pointer">全部查看</button>
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px">
-          ${watchRows.slice(0,8).map(r=>{const m=getWipStatusMeta(r.wip_status);return`<span style="background:${m.bg};border:1px solid ${m.color}44;border-radius:5px;padding:3px 8px;font-size:11px;color:${m.color}">${r.work_order} ${r.branch} ${m.icon}</span>`}).join('')}
-          ${watchRows.length>8?`<span style="font-size:10px;color:#f59e0b;align-self:center">+${watchRows.length-8}…</span>`:''}
-        </div>
-      </div>`;
-    }
-
     // 據點小卡
     let brHtml='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:16px">';
     byBranch.forEach(br=>{
@@ -2053,8 +2022,6 @@ loadWipLastMonthComparison();
 
     // 三欄表格
     let html=`
-      ${urgentHtml}
-      ${watchHtml}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
         <div class="card"><div class="card-title">📆 依進廠月份</div><div class="table-wrap"><table>
           <thead><tr><th>進廠月份</th><th class="num">件數</th><th class="num" style="color:#3b82f6">工資K</th><th class="num" style="color:#10b981">金額K</th><th class="num">30天內</th><th class="num" style="color:#ef4444">逾30</th><th>佔比</th></tr></thead>
@@ -2520,33 +2487,6 @@ function _refreshWipKPI(){
       <div class="kpi-value kpi-purple">${fmtK(T.sales)}</div>
       <div class="kpi-sub">扣PDI: ${fmtK(E.sales)}K</div>
     </div>`;
-
-  // 更新應結帳清單區塊
-  const summaryEl=document.getElementById('wipSummaryWrap');
-  if(!summaryEl)return;
-  const urgentRows=rows.filter(r=>r.wip_status==='已可結帳');
-  const watchRows=rows.filter(r=>r.wip_status==='待修'||r.wip_status==='待客確認');
-
-  // 只更新應結帳和需追蹤這兩塊（找到舊的替換）
-  const urgentEl=summaryEl.querySelector('[data-wip-urgent]');
-  const watchEl=summaryEl.querySelector('[data-wip-watch]');
-
-  const newUrgentHtml=urgentRows.length?`<div data-wip-urgent style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:14px 18px;margin-bottom:14px">
-    <div style="font-size:13px;font-weight:800;color:#ef4444;margin-bottom:10px">💳 應結帳清單（${urgentRows.length} 件）
-      <button onclick="openWipModal('status','已可結帳')" style="margin-left:10px;padding:3px 10px;background:rgba(239,68,68,.2);color:#ef4444;border:1px solid rgba(239,68,68,.4);border-radius:5px;font-size:11px;cursor:pointer">查看全部</button>
-    </div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px">
-      ${urgentRows.slice(0,12).map(r=>`<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:7px;padding:6px 12px;cursor:pointer;font-size:12px" onclick="openWipModal('single_wo','${r.work_order}')">
-        <span style="font-weight:700;color:#ef4444">${r.work_order}</span>
-        <span style="color:#64748b;margin-left:6px">${r.branch}</span>
-        <span style="color:#94a3b8;margin-left:4px">${r.plate_no||'—'}</span>
-      </div>`).join('')}
-      ${urgentRows.length>12?`<span style="font-size:11px;color:#ef4444;align-self:center">+${urgentRows.length-12}筆…</span>`:''}
-    </div>
-  </div>`:'';
-
-  if(urgentEl){urgentEl.outerHTML=newUrgentHtml||'<div data-wip-urgent></div>';}
-  if(watchEl&&!watchRows.length){watchEl.outerHTML='<div data-wip-watch></div>';}
 }
  
 // 儲存狀態
