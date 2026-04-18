@@ -244,6 +244,24 @@
   .sa-subtab { padding: 7px 20px; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; background: transparent; color: #64748b; transition: all .15s; white-space: nowrap; }
   .sa-subtab.active { background: #3b82f6; color: #fff; }
   .sa-subtab:hover:not(.active) { color: #e2e8f0; background: #253347; }
+
+  /* 寬度不夠就讓 tabs 換行，不再靠橫捲；使用者不會漏看後面的分頁 */
+  @media (max-width: 1024px) {
+    .tabs-wrap {
+      overflow-x: visible;
+      -webkit-mask-image: none !important;
+              mask-image: none !important;
+      padding-bottom: 2px;
+    }
+    .tabs {
+      flex-wrap: wrap;
+      width: 100%;
+      min-width: 0;
+      row-gap: 4px;
+    }
+    .tab-group-divider { display: none; }
+  }
+
   @media (max-width: 768px) {
     .nav { padding: 0 16px; }
     .nav-brand { font-size: 13px; padding: 12px 0; margin-right: 16px; }
