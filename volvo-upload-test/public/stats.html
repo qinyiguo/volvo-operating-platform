@@ -2147,8 +2147,7 @@ function renderWipModal(){
     filtered=filtered.filter(r=>r.branch===br && (r.wip_status||'未填寫')===st);
   }
 
-  if(_wipModalStatusFilter!=='all') filtered=filtered.filter(r=>(r.wip_status||'未填寫')===_wipModalStatusFilter);
-
+  // ── SA / 搜尋 先套用 ──（狀態 sub-filter 最後才套，用於 tab 計數基底）
   const saFilterEl=document.getElementById('wipModalSAFilter');
   const saFilter=saFilterEl?saFilterEl.value:'';
   if(saFilter) filtered=filtered.filter(r=>(r.service_advisor||'').includes(saFilter));
@@ -2162,6 +2161,12 @@ function renderWipModal(){
     (r.repair_type||'').toLowerCase().includes(searchQ)||
     (r.wip_reason||'').toLowerCase().includes(searchQ)
   );
+
+  // 捕捉「套完主篩選 + SA + 搜尋」的 rows，給狀態 tab 計數用（不含 status 本身）
+  const scopedRows=filtered;
+
+  // 狀態 sub-filter 最後套用
+  if(_wipModalStatusFilter!=='all') filtered=filtered.filter(r=>(r.wip_status||'未填寫')===_wipModalStatusFilter);
 
   const title=filterType==='all'?'全部未結工單':
     filterType==='period'?`進廠月份：${filterVal}`:
@@ -2193,9 +2198,9 @@ function renderWipModal(){
     {v:'已結清',   l:'✅ 已結清', c:'#10b981'},
     {v:'未填寫',   l:'❓ 未標記', c:'#94a3b8'},
   ];
-  const allRows=_wipData.rows;
+  // Tab 計數改用 scopedRows（已套主篩選 + SA + 搜尋），讓計數與實際呈現一致
   const tabsHtml=STATUS_TABS.map(t=>{
-    const cnt=t.v==='all'?allRows.length:allRows.filter(r=>(r.wip_status||'未填寫')===t.v).length;
+    const cnt=t.v==='all'?scopedRows.length:scopedRows.filter(r=>(r.wip_status||'未填寫')===t.v).length;
     const active=_wipModalStatusFilter===t.v;
     return`<button onclick="_wipSetFilter('${t.v}')"
       style="padding:5px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:${active?700:500};
@@ -2214,7 +2219,7 @@ function renderWipModal(){
   }
 
   // ── 工具列（首次建立）──
-  const allSAs=[...new Set(allRows.map(r=>r.service_advisor||'').filter(Boolean))].sort();
+  const allSAs=[...new Set(_wipData.rows.map(r=>r.service_advisor||'').filter(Boolean))].sort();
   const saOptsHtml='<option value="">所有 SA</option>'+allSAs.map(s=>`<option value="${s}" ${s===saFilter?'selected':''}>${s}</option>`).join('');
 
   const toolbarEl=document.getElementById('wipModalToolbar');
