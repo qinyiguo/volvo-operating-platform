@@ -278,5 +278,28 @@
   };
 
   // ── 全域替換 fetch 讓所有 API 請求自動帶 token ──
-  // （可選：若頁面有直接用 fetch，建議改為 DmsAuth.fetchWithAuth）
+  // 對 /api/* 的請求，若尚未帶 Authorization header，就自動補上 Bearer。
+  const _origFetch = window.fetch.bind(window);
+  window.fetch = function(input, init) {
+    try {
+      const url = typeof input === 'string' ? input
+                : (input instanceof URL ? input.href : '');
+      const isApi = url && (
+        url.startsWith('/api/') ||
+        url.startsWith(location.origin + '/api/')
+      );
+      if (isApi) {
+        const token = localStorage.getItem(TOKEN_KEY);
+        if (token) {
+          init = init || {};
+          const headers = new Headers(init.headers || {});
+          if (!headers.has('Authorization')) {
+            headers.set('Authorization', 'Bearer ' + token);
+            init.headers = headers;
+          }
+        }
+      }
+    } catch (e) { /* fall through — 不阻斷原始請求 */ }
+    return _origFetch(input, init);
+  };
 })();
