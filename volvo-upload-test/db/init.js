@@ -441,6 +441,7 @@ await client.query(`
     await client.query(`CREATE INDEX IF NOT EXISTS idx_bba_status ON bodyshop_bonus_applications(status)`);
     await client.query(`ALTER TABLE promo_bonus_configs ADD COLUMN IF NOT EXISTS tiers JSONB DEFAULT '[]'`);
     await client.query(`ALTER TABLE promo_bonus_configs ADD COLUMN IF NOT EXISTS stat_method VARCHAR(20) DEFAULT 'amount'`);
+    await client.query(`ALTER TABLE promo_bonus_configs ADD COLUMN IF NOT EXISTS person_type VARCHAR(20) DEFAULT 'sales_person'`);
     await client.query(`ALTER TABLE bodyshop_bonus_applications ADD COLUMN IF NOT EXISTS source_app_id INTEGER`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_bba_source ON bodyshop_bonus_applications(source_app_id)`);
     try {

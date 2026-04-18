@@ -3,8 +3,6 @@ const router = require('express').Router();
 const pool   = require('../db/pool');
 const { requireAuth, requirePermission } = require('../lib/authMiddleware');
 
-pool.query(`ALTER TABLE promo_bonus_configs ADD COLUMN IF NOT EXISTS person_type VARCHAR(20) DEFAULT 'sales_person'`).catch(()=>{});
-
 router.use(requireAuth);
 
 // ── CRUD ──
@@ -125,13 +123,6 @@ function getCachedMatrix(period, br, viewParam) {
         // ── sa_qty ──
         if (cfg.rule_type === 'sa_qty') {
           if (!cfg.sa_config_id) return;
-          const saFilters  = cfg.sa_filters || [];
-          const catCodes   = saFilters.filter(f=>f.type==='category_code').map(f=>f.value);
-          const funcCodes  = saFilters.filter(f=>f.type==='function_code').map(f=>f.value);
-          const partNums   = saFilters.filter(f=>f.type==='part_number').map(f=>f.value);
-          const partTypes  = saFilters.filter(f=>f.type==='part_type').map(f=>f.value);
-          const workCodes  = saFilters.filter(f=>f.type==='work_code').map(f=>f.value);
-          const acTypes    = saFilters.filter(f=>f.type==='account_type'||f.type==='part_type').map(f=>f.value);
           const statMethod = cfg.sa_stat_method || 'amount';
           const perQty     = parseFloat(cfg.per_qty || 1);
           const bonusUnit  = parseFloat(cfg.bonus_per_unit || 0);
@@ -183,13 +174,6 @@ try {
 // ── sa_tier：門檻階梯型 ──
 } else if (cfg.rule_type === 'sa_tier') {
   if (!cfg.sa_config_id) return;
-  const saFilters  = cfg.sa_filters || [];
-  const workCodes  = saFilters.filter(f=>f.type==='work_code').map(f=>f.value);
-  const catCodes   = saFilters.filter(f=>f.type==='category_code').map(f=>f.value);
-  const funcCodes  = saFilters.filter(f=>f.type==='function_code').map(f=>f.value);
-  const partNums   = saFilters.filter(f=>f.type==='part_number').map(f=>f.value);
-  const partTypes  = saFilters.filter(f=>f.type==='part_type').map(f=>f.value);
-  const acTypes    = saFilters.filter(f=>f.type==='account_type'||f.type==='part_type').map(f=>f.value);
   const personType = cfg.person_type || 'sales_person';
   const tiers      = cfg.tiers || [];
   const statMethod = cfg.stat_method || 'amount';
@@ -243,15 +227,6 @@ let personActuals = {};
 // ── sa_pct：比例型（指標銷售總額 × %）──
         } else if (cfg.rule_type === 'sa_pct') {
           if (!cfg.sa_config_id) return;
-          const saFilters  = cfg.sa_filters || [];
-          const catCodes   = saFilters.filter(f=>f.type==='category_code').map(f=>f.value);
-          const funcCodes  = saFilters.filter(f=>f.type==='function_code').map(f=>f.value);
-          const partNums   = saFilters.filter(f=>f.type==='part_number').map(f=>f.value);
-          const partTypes  = saFilters.filter(f=>f.type==='part_type').map(f=>f.value);
-          const workCodes  = saFilters.filter(f=>f.type==='work_code').map(f=>f.value);
-          const acTypes    = saFilters.filter(f=>f.type==='account_type'||f.type==='part_type').map(f=>f.value);
-          const payCodes   = Array.isArray(cfg.paycode_types) ? cfg.paycode_types
-                             : (cfg.paycode_types ? JSON.parse(cfg.paycode_types) : []);
           const bonusPct   = parseFloat(cfg.bonus_pct || 0);
           const personType = cfg.person_type || 'sales_person';
           const statMethod = cfg.sa_stat_method || 'amount';
