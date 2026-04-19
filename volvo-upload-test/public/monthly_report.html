@@ -20,6 +20,7 @@
 <style>
 /* ═══ Theme Variables ═══ */
 :root{
+  color-scheme: dark;
   --bg:#0f172a; --bg2:#1a2332; --bg3:#0c1524;
   --bar:#1e293b; --bdr:#2d3f56; --bdr2:#334155;
   --txt:#e2e8f0; --txt2:#94a3b8; --txt3:#64748b;
@@ -29,6 +30,7 @@
   --shadow:0 16px 48px rgba(0,0,0,.8);
 }
 [data-theme="light"]{
+  color-scheme: light;
   --bg:#f0f4f8; --bg2:#ffffff; --bg3:#f8fafc;
   --bar:#ffffff; --bdr:#e2e8f0; --bdr2:#cbd5e1;
   --txt:#1e293b; --txt2:#475569; --txt3:#94a3b8;
@@ -36,6 +38,18 @@
   --chart-tick:#475569;
   --shadow:0 8px 32px rgba(0,0,0,.15);
 }
+/* 亮版下的按鈕/標籤顏色覆蓋（rgba 藍底 + 淺藍字在白底對比不足）*/
+[data-theme="light"] .addNoteBtn   { color:#1d4ed8; background:rgba(59,130,246,.08); border-color:rgba(59,130,246,.3); }
+[data-theme="light"] .dlBtn,
+[data-theme="light"] .dlBtnI       { color:#1d4ed8; background:rgba(59,130,246,.08); border-color:rgba(59,130,246,.25); }
+[data-theme="light"] .dlBtn:hover,
+[data-theme="light"] .dlBtnI:hover { background:rgba(59,130,246,.16); }
+[data-theme="light"] .extraNoteTitle       { color:#1d4ed8; }
+[data-theme="light"] .extraNoteTitle input { color:#1d4ed8; }
+[data-theme="light"] .noteDot              { background:#1d4ed8; }
+/* textarea / input 在某些 OS 深色模式下會沿用 UA 深色樣式，強制白底 */
+[data-theme="light"] .noteBox,
+[data-theme="light"] .mInput       { background:#ffffff !important; color:#1e293b !important; }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--bg);color:var(--txt);transition:background .25s,color .25s;font-size:14px;}
 .root{display:flex;flex-direction:column;min-height:100vh;}
