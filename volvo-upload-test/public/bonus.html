@@ -3640,11 +3640,18 @@ function onEbBranchChange() {
 function onEbDeptChange() {
   var branch = document.getElementById('ebBranch').value;
   var dept = document.getElementById('ebDept').value;
+  // 顯示所有本月獎金表中的人員（含當月離職但仍有獎金者），不再硬性排除 status!=='在職'
   var emps = _rosterData.filter(function(p){
-    return (p.factory||'售後服務處')===branch && p.dept_code===dept && p.status==='在職';
+    return (p.factory||'售後服務處')===branch && p.dept_code===dept;
   });
   var html = '<option value="">選擇人員...</option>';
-  emps.forEach(function(p){ html += '<option value="'+p.emp_id+'" data-name="'+p.emp_name+'">'+p.emp_name+(p.job_title?' ('+p.job_title+')':'')+'</option>'; });
+  emps.forEach(function(p){
+    var isResigned = p.status !== '在職';
+    var tailTitle = p.job_title ? ' ('+p.job_title+')' : '';
+    var tailStatus = isResigned ? ' — 離職' : '';
+    html += '<option value="'+p.emp_id+'" data-name="'+p.emp_name+'">'
+          + p.emp_name + tailTitle + tailStatus + '</option>';
+  });
   document.getElementById('ebEmp').innerHTML = html;
 }
 async function saveExtraBonus() {
