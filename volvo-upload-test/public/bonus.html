@@ -3815,16 +3815,31 @@ function exportBonusExcel() {
 
       // ── 資料列 ──
       var tbody = tbl.querySelector('tbody');
+      var deptMrNotes = []; // 主管考核說明：在部門資料列後單獨列出
       if (tbody) {
         Array.from(tbody.querySelectorAll('tr')).forEach(function(tr) {
           var cells = [];
+          var mrNoteThisRow = '';
           tr.querySelectorAll('td').forEach(function(td) {
-            var cl = td.cloneNode(true);
-            cl.querySelectorAll('button,select,.spinner').forEach(function(e){ e.remove(); });
-            var txt = clean(cl.innerText).replace(/\s+/g,' ').trim();
+            var isMrCell = td.hasAttribute('data-mrcell');
             var val;
-            if (txt === '—' || txt === '') val = '';
-            else { var n = toNum(txt); val = n !== null ? n : txt; }
+            if (isMrCell) {
+              // 主管考核 td：只取 span 內的金額，div 的說明另外蒐集
+              var spanEl = td.querySelector('span');
+              var divEl  = td.querySelector('div');
+              var spanTxt = spanEl
+                ? clean(spanEl.innerText).replace(/[＋+]/g,'').replace(/—/g,'').trim()
+                : '';
+              var mn = toNum(spanTxt);
+              val = mn !== null ? mn : '';
+              if (divEl) mrNoteThisRow = clean(divEl.innerText);
+            } else {
+              var cl = td.cloneNode(true);
+              cl.querySelectorAll('button,select,.spinner').forEach(function(e){ e.remove(); });
+              var txt = clean(cl.innerText).replace(/\s+/g,' ').trim();
+              if (txt === '—' || txt === '') val = '';
+              else { var n = toNum(txt); val = n !== null ? n : txt; }
+            }
             // 處理 colspan，補空格讓欄位對齊
             var span = parseInt(td.getAttribute('colspan') || '1');
             cells.push(val);
@@ -3852,7 +3867,19 @@ function exportBonusExcel() {
               newRow.slice(3).some(function(c){return c!=='' && c!==0;})) {
             rows.push(newRow);
           }
+          // 蒐集本列的主管考核說明（需有姓名、說明文字、非彙總列）
+          if (mrNoteThisRow && cells[0] && typeof cells[0] === 'string' && cells[0].indexOf('（') === -1) {
+            deptMrNotes.push({ name: cells[0], note: mrNoteThisRow });
+          }
         });
+      }
+
+      // ── 部門下方：主管考核說明 ──
+      if (deptMrNotes.length) {
+        rows.push([]);
+        rows.push(['【' + (deptName || fcLabel) + ' — 主管考核說明】']);
+        rows.push(['姓名', '理由']);
+        deptMrNotes.forEach(function(mn) { rows.push([mn.name, mn.note]); });
       }
     });
 
