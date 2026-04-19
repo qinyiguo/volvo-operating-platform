@@ -433,14 +433,19 @@ function renderWorkingDaysBar() {
     const revCol   = revRate === null ? '#64748b' : revRate >= 100 ? '#10b981' : revRate >= 80 ? '#f59e0b' : '#ef4444';
     const gap      = (revRate !== null && wdPct > 0) ? revRate - wdPct : null;
     const gapCol   = gap === null ? '#64748b' : gap >= 3 ? '#10b981' : gap <= -5 ? '#ef4444' : '#f59e0b';
-    const gapText  = gap !== null ? `${gap >= 3 ? '🚀' : gap <= -5 ? '⚠️' : '〜'} ${gap >= 0 ? '+' : ''}${gap.toFixed(1)}%` : '—';
+    const gapText  = gap !== null ? `${gap >= 0 ? '+' : ''}${gap.toFixed(1)}%` : '—';
+    // 紅綠燈:gap 決定狀態燈（vs 天數進度的差）
+    const lightIcon  = gap === null ? '⚪' : gap >= 3 ? '🟢' : gap <= -5 ? '🔴' : '🟡';
+    const lightLabel = gap === null ? '無資料' : gap >= 3 ? '超前' : gap <= -5 ? '落後' : '符合';
     const markerHtml = revRate !== null ? `<div class="wd-rev-marker" style="left:${Math.min(100,revRate).toFixed(1)}%" title="有費達成率 ${revRate.toFixed(1)}%"></div>` : '';
     const borderR  = bi < BRANCHES.length - 1 ? 'border-right:1px solid #2d3f56;' : '';
 
     return `<div class="wd-branch-cell" style="padding:14px 16px;${borderR}display:flex;flex-direction:column;gap:8px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
         <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:14px">${lightIcon}</span>
           <span style="font-size:13px;font-weight:800;color:${col}">${br}</span>
+          <span style="font-size:11px;font-weight:700;color:${gapCol}">${lightLabel}</span>
           ${isManual
             ? `<span style="font-size:10px;color:#10b981;background:rgba(16,185,129,.12);padding:1px 5px;border-radius:4px">✅ 手動</span>`
             : `<span style="font-size:10px;color:#f59e0b;background:rgba(245,158,11,.1);padding:1px 5px;border-radius:4px">⚠️ 自動</span>`}
@@ -480,35 +485,95 @@ function renderWorkingDaysBar() {
     return;
   }
 
+  // ── 敘事式狀態 Hero ──
+  const statusIcon   = gDelta === null ? '⚪' : gDelta >= 3 ? '🚀' : gDelta <= -5 ? '🚨' : '✓';
+  const statusText   = gDelta === null ? '尚未設定目標' :
+                       gDelta >=  3 ? '集團超前' :
+                       gDelta <= -5 ? '集團落後' : '集團符合進度';
+  const headlineCol  = gDelta === null ? '#64748b' : gDelta >= 3 ? '#10b981' : gDelta <= -5 ? '#ef4444' : '#3b82f6';
+  const heroBorder   = headlineCol;
+
+  // 缺口 / CTA 計算
+  const gGap         = gTarget > 0 ? gTarget - gActual : null;
+  const daysLeft     = gTotal > 0 ? Math.max(0, gTotal - gElapsed) : null;
+  const needPerDay   = (gGap !== null && daysLeft !== null && daysLeft > 0) ? gGap / daysLeft : null;
+  const worstBranches = BRANCHES
+    .map(br => {
+      const s = _wdSummary.find(r => r.branch === br);
+      const elapsed = s ? parseInt(s.auto_working_days||0) : 0;
+      const total   = s ? parseInt(s.working_days||0) : 0;
+      const wdPct   = total > 0 ? elapsed / total * 100 : null;
+      const revRate = (_revRates && _revRates[br] != null) ? _revRates[br] : null;
+      const gap     = (revRate !== null && wdPct !== null) ? revRate - wdPct : null;
+      return { br, gap };
+    })
+    .filter(x => x.gap !== null && x.gap <= -5)
+    .sort((a,b) => a.gap - b.gap);
+
+  let ctaHtml = '';
+  if (gDelta !== null && gDelta <= -5 && gGap !== null) {
+    const worstText = worstBranches.length
+      ? `<b style="color:#ef4444">${worstBranches.map(w=>`${w.br} ${w.gap.toFixed(1)}%`).join(' · ')}</b> 最急`
+      : '';
+    ctaHtml = `<div style="margin-top:10px;padding:10px 14px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:8px;font-size:12px;color:#e2e8f0;line-height:1.7">
+      📉 缺口 <b style="color:#f87171">${fmtK(gGap)}</b>${daysLeft !== null && needPerDay !== null ? `,距月底剩 <b style="color:#fff">${daysLeft} 天</b>,單日需達 <b style="color:#f87171">${fmtK(needPerDay)}</b> 才能追平目標` : ''}${worstText ? `　→ ${worstText}` : ''}
+    </div>`;
+  } else if (gDelta !== null && gDelta >= 3) {
+    ctaHtml = `<div style="margin-top:10px;padding:8px 14px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:8px;font-size:12px;color:#34d399">
+      ✨ 全集團超前進度 ${gDelta.toFixed(1)}%,維持節奏即可達標。
+    </div>`;
+  }
+
+  const revPctStr    = gRevPct !== null ? gRevPct.toFixed(0) : '—';
+  const estPctStr    = gEstPct !== null ? gEstPct.toFixed(0) : '—';
+  const wdPctStr     = gMonthPct !== null ? gMonthPct.toFixed(0) : '—';
+
+  // 疊合進度條:以 100% 為軌,天數進度半透明底 + 有費達成實色條,讓落差一目了然
+  const wdPctBar   = gMonthPct !== null ? Math.min(100, gMonthPct).toFixed(1) : 0;
+  const revPctBar  = gRevPct   !== null ? Math.min(100, gRevPct).toFixed(1)   : 0;
+  const estPctBar  = gEstPct   !== null ? Math.min(100, gEstPct).toFixed(1)   : null;
+
   // 全廠模式 — 集團大卡使用 wd-branch-grid class for mobile override
   el.innerHTML = `
-  <div style="background:#1a2332;border:2px solid #f97316;border-radius:12px;overflow:hidden;margin-bottom:0">
-    <div class="group-card-header" style="background:linear-gradient(135deg,rgba(249,115,22,.1),rgba(249,115,22,.04));border-bottom:1px solid rgba(249,115,22,.3);padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-      <div>
-        <div style="font-size:13px;font-weight:800;color:#f97316;margin-bottom:2px">🏢 集團進度總覽</div>
-        <div style="font-size:11px;color:#475569">AMA + AMC + AMD 加權合計</div>
+  <div style="background:#1a2332;border:2px solid ${heroBorder};border-radius:14px;overflow:hidden;margin-bottom:0">
+    <div class="group-card-header" style="background:linear-gradient(135deg,${headlineCol}1a,${headlineCol}06);border-bottom:1px solid ${headlineCol}40;padding:18px 22px">
+      <!-- 敘事標題 -->
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+        <span style="font-size:22px;font-weight:900;color:${headlineCol};line-height:1">${statusIcon} ${statusText}${gDelta !== null ? ` <span style="font-size:16px">${gDelta >= 0 ? '+' : ''}${gDelta.toFixed(1)}pp</span>` : ''}</span>
+        <span style="font-size:11px;color:#64748b">AMA + AMC + AMD 加權合計</span>
       </div>
-      <div style="flex:1;min-width:160px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-          <span style="font-size:11px;color:#64748b">📅 天數進度（加權）</span>
-          <span style="font-size:12px;font-weight:800;color:${gFillCol}">${gMonthPct !== null ? gMonthPct.toFixed(1)+'%' : '—'}</span>
-        </div>
-        <div class="wd-track" style="height:8px">
-          <div class="wd-fill" style="width:${gMonthBarW}%;background:${gFillCol};height:8px"></div>
-          ${gMarker}
-        </div>
-      </div>
-      <div class="group-card-stats" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        ${gMonthPct !== null ? `<div style="text-align:center"><div class="group-total-num" style="font-size:24px;font-weight:900;color:${gFillCol};line-height:1">${gMonthPct.toFixed(0)}%</div><div style="font-size:10px;color:#475569">天數進度</div></div>` : ''}
-        ${gRevPct !== null ? `<div style="text-align:center"><div class="group-total-num" style="font-size:24px;font-weight:900;color:${gRevCol};line-height:1">${gRevPct.toFixed(0)}%</div><div style="font-size:10px;color:#475569">有費達成</div></div>` : ''}
-        ${gEstPct !== null ? `<div style="text-align:center"><div class="group-total-num" style="font-size:24px;font-weight:900;color:${gEstCol};line-height:1">${gEstPct.toFixed(0)}%</div><div style="font-size:10px;color:#475569">預估達成</div></div>` : ''}
+      <!-- 三個關鍵數字,水平排列 -->
+      <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:12px">
         <div>
-          <div style="font-size:10px;color:#64748b;margin-bottom:2px">有費實際 / 目標</div>
-          <div style="font-size:14px;font-weight:800;color:#f97316">${fmtK(gActual)} <span style="font-size:11px;color:#64748b;font-weight:400">/ ${gTarget > 0 ? fmtK(gTarget) : '未設定'}</span></div>
-          ${gEst > 0 ? `<div style="font-size:11px;color:${gEstCol};margin-top:1px">預估 ${fmtK(gEst)}</div>` : ''}
+          <div style="font-size:10px;color:#64748b;font-weight:700">📅 天數進度</div>
+          <div style="font-size:20px;font-weight:900;color:${gFillCol};line-height:1.2">${wdPctStr}%</div>
+          <div style="font-size:10px;color:#475569">${gElapsed}/${gTotal > 0 ? gTotal : '?'} 天</div>
         </div>
-        <span style="padding:4px 10px;border-radius:8px;font-size:12px;font-weight:800;background:${gDeltaCol}18;color:${gDeltaCol};border:1px solid ${gDeltaCol}33">${gDeltaText}</span>
+        <div>
+          <div style="font-size:10px;color:#64748b;font-weight:700">🔶 有費達成</div>
+          <div style="font-size:20px;font-weight:900;color:${gRevCol};line-height:1.2">${revPctStr}%</div>
+          <div style="font-size:10px;color:#475569">${fmtK(gActual)} / ${gTarget > 0 ? fmtK(gTarget) : '—'}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:#64748b;font-weight:700">📊 預估達成</div>
+          <div style="font-size:20px;font-weight:900;color:${gEstCol};line-height:1.2">${estPctStr}%</div>
+          <div style="font-size:10px;color:#475569">預估 ${gEst > 0 ? fmtK(gEst) : '—'}</div>
+        </div>
       </div>
+      <!-- 疊合進度條:灰底軌 + 有費實色 + 天數進度 marker -->
+      ${gTarget > 0 ? `<div>
+        <div class="wd-track" style="height:10px;position:relative">
+          <div class="wd-fill" style="width:${revPctBar}%;background:${gRevCol};height:10px;border-radius:4px"></div>
+          ${estPctBar !== null ? `<div style="position:absolute;top:0;left:${estPctBar}%;width:2px;height:10px;background:${gEstCol};opacity:.9" title="預估 ${estPctStr}%"></div>` : ''}
+          <div style="position:absolute;top:-2px;left:${wdPctBar}%;width:3px;height:14px;background:#fff;border-radius:2px" title="天數進度 ${wdPctStr}%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:#64748b">
+          <span>0%</span>
+          <span style="color:#fff">⬆ 當前時間點 ${wdPctStr}%</span>
+          <span>100% 目標</span>
+        </div>
+      </div>` : ''}
+      ${ctaHtml}
     </div>
     <div class="wd-branch-grid" style="display:grid;grid-template-columns:repeat(3,1fr)">
       ${branchMiniCards}
