@@ -3717,6 +3717,8 @@ function exportBonusExcel() {
   var period = document.getElementById('selPeriod')?.value || '';
   var branch = document.getElementById('selFactory')?.value || '全部';
   var wb = XLSX.utils.book_new();
+  // 累積所有部門小計，之後做「獎金彙總」sheet 作為簽核主頁
+  var summaryList = []; // [{ branch, dept, people, perf, promo, review, total }]
 
   function clean(txt) {
     return (txt || '')
@@ -3872,6 +3874,21 @@ function exportBonusExcel() {
             // 判斷是「部門彙總列」還是「個人資料列」
             var isSummary = typeof newRow[0]==='string' && /[（(]\s*\d+\s*人\s*[）)]/.test(newRow[0]);
             pushR(isSummary ? 'summary' : 'data', newRow);
+            if (isSummary) {
+              // 擷取人數 + 蒐集到全域彙總
+              var pm = newRow[0].match(/[（(]\s*(\d+)\s*人\s*[）)]/);
+              var peopleN = pm ? parseInt(pm[1]) : 0;
+              var cleanDeptName = newRow[0].replace(/\s*[（(][^）)]*[）)]\s*$/, '');
+              summaryList.push({
+                branch: fcLabel,
+                dept: cleanDeptName,
+                people: peopleN,
+                perf:   typeof newRow[3] === 'number' ? newRow[3] : 0,
+                promo:  typeof newRow[4] === 'number' ? newRow[4] : 0,
+                review: typeof newRow[5] === 'number' ? newRow[5] : 0,
+                total:  typeof newRow[6] === 'number' ? newRow[6] : 0,
+              });
+            }
           }
           // 蒐集本列的主管考核說明（需有姓名、說明文字、非彙總列）
           if (mrNoteThisRow && cells[0] && typeof cells[0] === 'string' && cells[0].indexOf('（') === -1) {
@@ -3893,7 +3910,8 @@ function exportBonusExcel() {
 
     // ── 簽核欄 ──
     pushR('empty', []);
-    pushR('signHeader', ['承辦人', '', '單位主管', '', '最高主管', '', '總經理室']);
+    // 5 個簽核角色橫向分布在 7 欄：0=承辦人｜1~2=單位主管｜3=最高主管｜4~5=總經理室｜6=董事長室
+    pushR('signHeader', ['承辦人', '單位主管', '', '最高主管', '總經理室', '', '董事長室']);
     pushR('signBlank', Array(7).fill(''));
     pushR('signBlank', Array(7).fill(''));
     pushR('signBlank', Array(7).fill(''));
@@ -3923,6 +3941,74 @@ function exportBonusExcel() {
   });
 
   if (!wb.SheetNames.length) { alert('找不到資料，請先查詢獎金名單'); return; }
+
+  // ══ 建立「獎金彙總」首頁（簽核主頁） ══
+  if (summaryList.length) {
+    var sRows = [], sRoles = [];
+    function sPush(role, arr) { sRows.push(arr || []); sRoles.push(role || 'empty'); }
+
+    sPush('factory', ['獎金彙總 — ' + branch, '', '', '期間：' + period.slice(0,4) + '年' + parseInt(period.slice(4)) + '月', '', '', '']);
+    sPush('empty', []);
+    sPush('colHeader', ['據點', '部門', '人數', '績效獎金', '促銷獎金', '主管考核', '總金額']);
+
+    // 同一個 branch 的部門一起顯示；branch 改變時插一個小計列
+    var curBranch = null;
+    var brAgg = null;
+    function flushBranchAgg() {
+      if (!brAgg) return;
+      sPush('summary', [curBranch + ' 小計', '', brAgg.people, brAgg.perf, brAgg.promo, brAgg.review, brAgg.total]);
+      brAgg = null;
+    }
+    summaryList.forEach(function(r) {
+      if (curBranch !== r.branch) {
+        flushBranchAgg();
+        curBranch = r.branch;
+        brAgg = { people:0, perf:0, promo:0, review:0, total:0 };
+      }
+      sPush('data', [r.branch, r.dept, r.people, r.perf, r.promo, r.review, r.total]);
+      brAgg.people += r.people; brAgg.perf += r.perf; brAgg.promo += r.promo;
+      brAgg.review += r.review; brAgg.total += r.total;
+    });
+    flushBranchAgg();
+
+    // 全體總計
+    var gP = summaryList.reduce(function(s,r){return s + r.people;}, 0);
+    var gPerf = summaryList.reduce(function(s,r){return s + r.perf;}, 0);
+    var gPromo = summaryList.reduce(function(s,r){return s + r.promo;}, 0);
+    var gReview = summaryList.reduce(function(s,r){return s + r.review;}, 0);
+    var gTotal = summaryList.reduce(function(s,r){return s + r.total;}, 0);
+    sPush('empty', []);
+    sPush('summary', ['合計', summaryList.length + ' 部門', gP, gPerf, gPromo, gReview, gTotal]);
+
+    // 簽核欄
+    sPush('empty', []);
+    sPush('signHeader', ['承辦人', '單位主管', '', '最高主管', '總經理室', '', '董事長室']);
+    sPush('signBlank', Array(7).fill(''));
+    sPush('signBlank', Array(7).fill(''));
+    sPush('signBlank', Array(7).fill(''));
+
+    var sWs = XLSX.utils.aoa_to_sheet(sRows);
+    _xlsxAutoWidth(sWs, sRows);
+    _applyBonusStyles(sWs, sRows, sRoles);
+    if (!sWs['!rows']) sWs['!rows'] = [];
+    // 簽核列高
+    var sSignRow = sRows.length - 3;
+    sWs['!rows'][sSignRow]   = { hpt: 50 };
+    sWs['!rows'][sSignRow+1] = { hpt: 50 };
+    sWs['!rows'][sSignRow+2] = { hpt: 50 };
+    // 標題列加高
+    for (var sri = 0; sri < sRoles.length; sri++) {
+      if (sRoles[sri] === 'factory') sWs['!rows'][sri] = { hpt: 26 };
+      else if (sRoles[sri] === 'colHeader') sWs['!rows'][sri] = { hpt: 22 };
+    }
+
+    XLSX.utils.book_append_sheet(wb, sWs, '獎金彙總');
+    // 把「獎金彙總」排到第一頁
+    var names = wb.SheetNames;
+    var lastIdx = names.indexOf('獎金彙總');
+    if (lastIdx > 0) { names.splice(lastIdx, 1); names.unshift('獎金彙總'); }
+  }
+
   XLSX.writeFile(wb, '獎金表_' + period + '_' + branch + '.xlsx');
 }
 
@@ -4055,29 +4141,37 @@ function _applyBonusStyles(ws, rows, roles) {
 
   // ── 跨欄置中：文字列若內容只佔少數欄，自動 merge 到全寬置中 ──
   if (!ws['!merges']) ws['!merges'] = [];
-  function addMerge(r, c1, c2) {
+  function addMerge(r, c1, c2, hAlign) {
     if (c1 >= c2) return;
     ws['!merges'].push({ s:{r:r, c:c1}, e:{r:r, c:c2} });
-    // 設定起始格的對齊為置中 + wrap，讓長文字跨欄置中換行
+    // 合併後的對齊：hAlign 可指定；預設靠左 + wrap（長文字跨欄從左邊開始讀）
     var addr = XLSX.utils.encode_cell({r:r, c:c1});
     if (ws[addr]) {
       ws[addr].s = ws[addr].s || {};
       ws[addr].s.alignment = Object.assign({}, ws[addr].s.alignment || {}, {
-        horizontal:'center', vertical:'center', wrapText:true
+        horizontal: hAlign || 'left', vertical:'center', wrapText:true
       });
     }
   }
   roles.forEach(function(role, R) {
     if (role === 'factory') {
-      // A:C 廠別名稱跨置中、D:G 期間文字跨置中
+      // A:C 廠別名稱、D:G 期間文字
       addMerge(R, 0, 2);
       addMerge(R, 3, 6);
     } else if (role === 'dept' || role === 'noteTitle') {
-      // 整列 A:G 跨欄置中
+      // 整列 A:G 跨欄
       addMerge(R, 0, 6);
     } else if (role === 'noteHeader' || role === 'noteData') {
-      // 「理由」欄 B:G 跨欄置中（理由文字常常很長）
+      // 「理由」欄 B:G 跨欄
       addMerge(R, 1, 6);
+    } else if (role === 'signHeader') {
+      // 簽核標題列：5 個簽核角色分布 — 單位主管跨 1-2、總經理室跨 4-5
+      addMerge(R, 1, 2, 'center');
+      addMerge(R, 4, 5, 'center');
+    } else if (role === 'signBlank') {
+      // 簽核空白格：同步套用橫向合併讓格子對齊
+      addMerge(R, 1, 2, 'center');
+      addMerge(R, 4, 5, 'center');
     }
   });
 
