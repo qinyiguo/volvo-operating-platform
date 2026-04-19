@@ -137,7 +137,7 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
 .secHd{font-size:13px;font-weight:700;color:var(--txt);margin-bottom:9px;padding-bottom:6px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;}
 .card{background:var(--bg2);border:1px solid var(--bdr);border-radius:10px;padding:13px 15px;position:relative;}
 .kpiRow{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;}
-.kpiRow2{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:8px;}
+.kpiRow2{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px;}
 .kc{background:var(--bg3);border:1px solid var(--bdr);border-radius:8px;padding:11px 13px;}
 .kl{font-size:11px;color:var(--txt3);font-weight:700;margin-bottom:4px;}
 .kv{font-size:20px;font-weight:900;line-height:1.1;}
@@ -224,16 +224,16 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
 
 @keyframes spin{to{transform:rotate(360deg);}}
 
-/* ═══ Chart info card overlay (floating top-right) ═══ */
-.chartWrap{position:relative;}
-.chartInfoCard{position:absolute;top:6px;right:8px;background:rgba(15,23,42,0.82);border:1px solid var(--bdr);border-radius:8px;padding:7px 11px;font-size:10px;line-height:1.55;color:var(--txt);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;z-index:3;font-weight:600;min-width:140px;box-shadow:0 2px 10px rgba(0,0,0,0.15);}
-[data-theme="light"] .chartInfoCard{background:rgba(255,255,255,0.92);box-shadow:0 2px 10px rgba(0,0,0,0.08);}
-.chartInfoCard .cicRow{display:flex;justify-content:space-between;gap:10px;white-space:nowrap;}
+/* ═══ Chart info card (now inline in avg-row, no longer overlapping chart line) ═══ */
+.chartInfoCard{display:inline-flex;align-items:center;flex-wrap:wrap;gap:4px 10px;background:var(--bg3);border:1px solid var(--bdr);border-radius:7px;padding:4px 10px;font-size:11px;line-height:1.5;color:var(--txt);font-weight:600;}
+.chartInfoCard .cicRow{display:inline-flex;align-items:baseline;gap:5px;white-space:nowrap;}
 .chartInfoCard .cicLbl{color:var(--txt3);font-weight:500;}
 .chartInfoCard .cicVal{font-weight:800;}
 .chartInfoCard .cicVal.pos{color:#10b981;}
 .chartInfoCard .cicVal.neg{color:#ef4444;}
-.chartInfoCard .cicSep{height:1px;background:var(--bdr);margin:4px -3px;}
+.chartInfoCard .cicSep{display:inline-block;width:1px;height:11px;background:var(--bdr);margin:0 1px;}
+.avgRow{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;margin-bottom:5px;font-size:11px;color:var(--txt3);}
+.avgRow > .chartInfoCard{margin-left:auto;}
 
 /* ═══ GridStack note canvas ═══ */
 .noteCanvas.grid-stack{background:transparent;min-height:120px;border-radius:7px;transition:background .15s;}
@@ -1652,17 +1652,18 @@ if (typeof Chart !== 'undefined') Chart.register(ChartEnhancer);
 function attachInfoCard(canvasId, cur, tgt, ly, opts){
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
-  const container = canvas.parentElement;
-  if (!container) return;
-  container.classList.add('chartWrap');
-  let card = container.querySelector('.chartInfoCard');
-  if (!card) {
-    card = document.createElement('div');
-    card.className = 'chartInfoCard';
-    container.appendChild(card);
+  // Target the avg-row of this chart's card (inline placement — no longer overlapping chart)
+  const card = canvas.closest('.card');
+  const avgRow = card?.querySelector('.avgRow');
+  if (!avgRow) return;
+  let infoEl = avgRow.querySelector('.chartInfoCard');
+  if (!infoEl) {
+    infoEl = document.createElement('div');
+    infoEl.className = 'chartInfoCard';
+    avgRow.appendChild(infoEl);
   }
-  if ((!cur || cur <= 0) && (!tgt || tgt <= 0)) { card.style.display = 'none'; return; }
-  card.style.display = '';
+  if ((!cur || cur <= 0) && (!tgt || tgt <= 0)) { infoEl.style.display = 'none'; return; }
+  infoEl.style.display = '';
   const fmt = (opts && opts.fmt) || fK;
   const rows = [];
   rows.push(`<div class="cicRow"><span class="cicLbl">本月</span><span class="cicVal">${fmt(cur||0)}</span></div>`);
@@ -1679,7 +1680,7 @@ function attachInfoCard(canvasId, cur, tgt, ly, opts){
     rows.push(`<div class="cicSep"></div>`);
     rows.push(`<div class="cicRow"><span class="cicLbl">YoY</span><span class="cicVal ${cls}">${yoy >= 0 ? '+' : ''}${yoy.toFixed(1)}%</span></div>`);
   }
-  card.innerHTML = rows.join('');
+  infoEl.innerHTML = rows.join('');
 }
 
 // ── Wire HTML legend as clickable toggle ──
@@ -1974,9 +1975,20 @@ function rKpi2(id,act,tgt,ly,col,metricKey){
   const ach=t>0?a/t*100:null,yoy=l>0?(a-l)/l*100:null;
   const momHtml = momChip(a, prev);
   const light=ach!==null?achLight(ach):'';
+  // YTD: sum actual+target for current-year months within the 12M window up to curPeriod
+  const curYear = (curPeriod||'').slice(0,4);
+  let ytdA = 0, ytdT = 0;
+  (last12Months||[]).forEach((p, i) => {
+    if (p && p.startsWith(curYear) && p <= curPeriod) {
+      ytdA += act[i] || 0;
+      ytdT += tgt[i] || 0;
+    }
+  });
+  const ytdAch = ytdT > 0 ? ytdA / ytdT * 100 : null;
   document.getElementById(id).innerHTML=`
     <div class="kc" style="border-color:${achC(ach||0)}44"><div class="kl">本月 / 達成率 ${light} ${momHtml}</div><div class="kv" style="color:${col};font-size:18px">${fK(a)}</div><div class="ks" style="color:${achC(ach||0)}">${ach!==null?ach.toFixed(0)+'%':'—'} | 目標 ${fK(t)}</div></div>
-    <div class="kc" style="border-color:${yoy>=0?'#10b98133':'#ef444433'}"><div class="kl">YoY</div><div class="kv" style="color:${yoy>=0?'#10b981':'#ef4444'};font-size:18px">${yoy!==null?(yoy>=0?'+':'')+yoy.toFixed(1)+'%':'—'}</div><div class="ks">去年 ${fK(l)}</div></div>`;
+    <div class="kc" style="border-color:${yoy>=0?'#10b98133':'#ef444433'}"><div class="kl">YoY</div><div class="kv" style="color:${yoy>=0?'#10b981':'#ef4444'};font-size:18px">${yoy!==null?(yoy>=0?'+':'')+yoy.toFixed(1)+'%':'—'}</div><div class="ks">去年 ${fK(l)}</div></div>
+    <div class="kc" style="border-color:${achC(ytdAch||0)}44"><div class="kl">YTD 達成率</div><div class="kv" style="color:${achC(ytdAch||0)};font-size:18px">${ytdAch!==null?ytdAch.toFixed(1)+'%':'—'}</div><div class="ks">累計 ${fK(ytdA)} / 目標 ${fK(ytdT)}</div></div>`;
   // Branch breakdown row
   if(metricKey)renderBranchKpi(id+'_br',metricKey,false);
 }
