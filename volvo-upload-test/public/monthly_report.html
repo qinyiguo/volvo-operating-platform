@@ -2270,11 +2270,13 @@ function renderRich(nid){
     disableDrag:!_gsEditMode,
   }, el);
   el._grid=grid;
-  grid.on('change', nodes=>{
-    if(!Array.isArray(nodes))return;
+  // GridStack 11.x change event: callback(event, nodes) — nodes is in arg 2 OR event.detail
+  grid.on('change', (event, items)=>{
+    const list = Array.isArray(items) ? items : (event && Array.isArray(event.detail) ? event.detail : []);
+    if(!list.length)return;
     const d=richData[nid];if(!d)return;
     if(!d.layout)d.layout={};
-    nodes.forEach(n=>{
+    list.forEach(n=>{
       if(n.id)d.layout[n.id]={x:n.x,y:n.y,w:n.w,h:n.h};
     });
   });
@@ -2552,10 +2554,12 @@ function renderExtraRich(sec,nid){
   el.innerHTML=html;
   if(typeof GridStack==='undefined')return;
   const grid=GridStack.init({column:12,cellHeight:40,margin:4,handle:'.gsHandle',animate:true,float:true,disableResize:!_gsEditMode,disableDrag:!_gsEditMode},el);
-  grid.on('change',nodes=>{
+  grid.on('change',(event,items)=>{
+    const list = Array.isArray(items) ? items : (event && Array.isArray(event.detail) ? event.detail : []);
+    if(!list.length)return;
     const n2=_findExtra(sec,nid);if(!n2)return;
     if(!n2.layout)n2.layout={};
-    (nodes||[]).forEach(nd=>{if(nd.id)n2.layout[nd.id]={x:nd.x,y:nd.y,w:nd.w,h:nd.h};});
+    list.forEach(nd=>{if(nd.id)n2.layout[nd.id]={x:nd.x,y:nd.y,w:nd.w,h:nd.h};});
   });
 }
 function addExtraTextBox(sec,nid){
