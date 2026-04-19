@@ -17,8 +17,37 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>月報分析 — 營收趨勢 & WIP</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@11.2.0/dist/gridstack.min.css">
-<script defer src="https://cdn.jsdelivr.net/npm/gridstack@11.2.0/dist/gridstack-all.js"></script>
+<!-- GridStack: multi-CDN fallback chain (jsdelivr → unpkg → cdnjs) -->
+<link id="gsCSS" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@11.2.0/dist/gridstack.min.css"
+      onerror="this.onerror=null;this.href='https://unpkg.com/gridstack@11.2.0/dist/gridstack.min.css';this.setAttribute('data-fb','unpkg');this.addEventListener('error',function(){this.href='https://cdnjs.cloudflare.com/ajax/libs/gridstack.js/11.2.0/gridstack.min.css';this.setAttribute('data-fb','cdnjs');});">
+<script>
+  // Chain-load GridStack JS with CDN fallbacks
+  (function loadGridStack(){
+    var cdns = [
+      'https://cdn.jsdelivr.net/npm/gridstack@11.2.0/dist/gridstack-all.js',
+      'https://unpkg.com/gridstack@11.2.0/dist/gridstack-all.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/gridstack.js/11.2.0/gridstack-all.js',
+    ];
+    var i = 0;
+    function tryNext(){
+      if (i >= cdns.length) {
+        window._gsLoadFailed = true;
+        console.warn('[monthly_report] All GridStack CDNs failed. Falling back to static note rendering.');
+        document.dispatchEvent(new CustomEvent('gridstack-unavailable'));
+        return;
+      }
+      var s = document.createElement('script');
+      s.src = cdns[i++];
+      s.onload = function(){
+        window._gsLoadedFrom = s.src;
+        document.dispatchEvent(new CustomEvent('gridstack-ready'));
+      };
+      s.onerror = tryNext;
+      document.head.appendChild(s);
+    }
+    tryNext();
+  })();
+</script>
 <style>
 /* ═══ Theme Variables ═══ */
 :root{
@@ -607,10 +636,16 @@ body.pres-mode .cPBar{display:none !important;}
   <button class="addNoteBtn" onclick="openAddNote()">&#10133; 新增說明</button>
   <button class="gsEditBtn" id="gsEditBtn" onclick="toggleGSEdit()" title="切換版面編輯模式：可自由拖拉調整說明元件位置與大小">&#9999;&#65039; 版面編輯</button>
   <span id="gsTplHint" style="font-size:11px;color:var(--txt3);display:none">套用範本 →</span>
-  <span id="gsTplBtns" style="display:none">
+  <span id="gsTplBtns" style="display:none;align-items:center;gap:5px">
+    <select class="tplBtn" id="tplTargetSel" title="要套用範本的說明區" style="padding:4px 8px"></select>
     <button class="tplBtn" onclick="applyTemplate(event,'leftRight')" title="左圖右文：圖片/表格放左，文字放右">&#8680; 左圖右文</button>
     <button class="tplBtn" onclick="applyTemplate(event,'topBottom')" title="上表下註：表格/圖片放上，文字放下">&#8681; 上表下註</button>
     <button class="tplBtn" onclick="applyTemplate(event,'threeCol')" title="三欄平行對照">&#8801; 三欄對照</button>
+    <span style="width:1px;height:16px;background:var(--bdr);margin:0 2px"></span>
+    <button class="tplBtn" onclick="openSaveTplModal()" title="把目前選定區的版面存成可重用範本">&#128190; 存為範本</button>
+    <select class="tplBtn" id="customTplSel" onchange="applyCustomTemplate(this.value)" title="套用自訂範本">
+      <option value="">自訂範本…</option>
+    </select>
   </span>
   <span id="saveOk" class="saveOk">&#9989; 已儲存</span>
   <span id="nSt" class="nSt"></span>
@@ -660,6 +695,25 @@ body.pres-mode .cPBar{display:none !important;}
     <div class="mBtns">
       <button class="mBtn mBtnCancel" onclick="closeModal('tableModal')">取消</button>
       <button class="mBtn mBtnPrimary" onclick="confirmAddTable()">插入</button>
+    </div>
+  </div>
+</div>
+
+<!-- Save-template Modal -->
+<div class="modal" id="saveTplModal" style="display:none">
+  <div class="modalBox">
+    <div class="modalTitle">&#128190; 將目前版面存為範本</div>
+    <div class="mRow"><div class="mLbl">範本名稱</div>
+      <input class="mInput" id="tplName" placeholder="例：月檢範本、事故保險分析…"></div>
+    <div class="mRow"><div class="mLbl">來源說明區</div>
+      <select class="mInput" id="tplSourceSel"></select></div>
+    <div style="font-size:11px;color:var(--txt3);line-height:1.5;margin-top:4px">
+      將目前來源說明區每個元件的位置與大小記錄下來。之後可在任何月份／據點的任何說明區一鍵套用。
+      範本儲存在本瀏覽器（localStorage），不會上傳到伺服器。
+    </div>
+    <div class="mBtns">
+      <button class="mBtn mBtnCancel" onclick="closeModal('saveTplModal')">取消</button>
+      <button class="mBtn mBtnPrimary" onclick="confirmSaveTpl()">儲存</button>
     </div>
   </div>
 </div>
@@ -1958,7 +2012,7 @@ let _autoSaving=false;
 async function autoSave(){
   if(_autoSaving)return;_autoSaving=true;
   try{
-    SECS.forEach(sec=>(extraNotes[sec]||[]).forEach(n=>{const ta=document.getElementById('eta-'+n.id);if(ta)n.content=ta.value;}));
+    // (legacy single-textarea sync removed — texts are now tracked live via updateExtraTextBox)
     const textEntries=[
       ...NOTE_IDS.map(id=>{const t=richData[id]?.texts?.[0];return{key:nKey(id),value:typeof t==='string'?t:(t?.content||'')};}),
       ...SECS.map(sec=>({key:nKey('extra_'+sec),value:JSON.stringify(extraNotes[sec]||[])})),
@@ -2134,8 +2188,8 @@ function confirmAddTable(){
   const tblRows=[hdrs,...Array.from({length:rows},()=>Array(hdrs.length).fill(''))];
   if(t.startsWith('extra:')){
     const[,sec,nid]=t.split(':');
-    const n=extraNotes[sec]?.find(x=>x.id===nid);
-    if(n){if(!n.tables)n.tables=[];n.tables.push(tblRows);renderExtraRich(sec,nid);}
+    const n=(extraNotes[sec]||[]).find(x=>x.id===nid);
+    if(n){if(!n.tables)n.tables=[];n.tables.push({id:_newId('tb'),data:tblRows});renderExtraRich(sec,nid);}
   }else{
     const d=_ensureRich(t);
     d.tables.push({id:_newId('tb'),data:tblRows});
@@ -2226,9 +2280,29 @@ function renderRich(nid){
   });
 }
 
+// If GridStack finishes loading AFTER renderRich ran (slow CDN), re-render all primary areas so grids get initialized
+document.addEventListener('gridstack-ready', ()=>{
+  if (typeof GridStack === 'undefined') return;
+  NOTE_IDS.forEach(id => renderRich(id));
+  SECS.forEach(sec => (extraNotes[sec]||[]).forEach(n => renderExtraRich(sec, n.id)));
+});
+// If all CDNs failed, show a discreet banner so users know drag/resize is disabled
+document.addEventListener('gridstack-unavailable', ()=>{
+  if (document.getElementById('gsFailBanner')) return;
+  const b = document.createElement('div');
+  b.id = 'gsFailBanner';
+  b.style.cssText = 'position:fixed;bottom:56px;right:14px;background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.45);color:#f59e0b;padding:6px 11px;border-radius:7px;font-size:11px;font-weight:700;z-index:80;box-shadow:0 2px 10px rgba(0,0,0,.25);';
+  b.innerHTML = '⚠️ 拖拉版面元件離線中（CDN 不可達）｜說明內容仍可編輯與儲存';
+  document.body.appendChild(b);
+});
+
 // ── View / Edit mode toggle ──
 let _gsEditMode=false;
 function toggleGSEdit(){
+  if (typeof GridStack === 'undefined') {
+    alert('版面編輯功能尚未載入（GridStack 無法從 CDN 載入）。說明內容仍可編輯與儲存。');
+    return;
+  }
   _gsEditMode=!_gsEditMode;
   document.body.classList.toggle('gs-edit',_gsEditMode);
   const btn=document.getElementById('gsEditBtn');
@@ -2239,7 +2313,7 @@ function toggleGSEdit(){
   const hint=document.getElementById('gsTplHint');
   const tpl=document.getElementById('gsTplBtns');
   if(hint)hint.style.display=_gsEditMode?'':'none';
-  if(tpl)tpl.style.display=_gsEditMode?'':'none';
+  if(tpl)tpl.style.display=_gsEditMode?'inline-flex':'none';
   // Toggle drag/resize on all grids
   document.querySelectorAll('.noteCanvas.grid-stack').forEach(el=>{
     const g=el.gridstack;
@@ -2247,35 +2321,49 @@ function toggleGSEdit(){
     g.enableMove(_gsEditMode);
     g.enableResize(_gsEditMode);
   });
+  if(_gsEditMode){
+    refreshTplTargetSel();
+    refreshCustomTplSelect();
+  }
 }
 
 // ── Templates: arrange items into preset layouts ──
-function applyTemplate(ev,name){
-  // Find target note area: closest note section with items — fallback to first non-empty
-  let targetNid=null;
+// Resolve template target from the selector (populated when entering edit mode) — fallback: first non-empty area
+function _resolveTplTarget(){
+  const sel=document.getElementById('tplTargetSel');
+  const val=sel?.value;
+  if(val && richData[val]) return val;
   for(const id of NOTE_IDS){
     const d=richData[id];
-    if(d && (d.texts.length+d.images.length+d.tables.length)>0){ targetNid=id; break; }
+    if(d && (d.texts.length+d.images.length+d.tables.length)>0) return id;
   }
+  return null;
+}
+function _flashTplHint(msg){
+  const hint=document.getElementById('gsTplHint');
+  if(!hint)return;
+  const old=hint.textContent;hint.textContent=msg;hint.style.color='#10b981';
+  setTimeout(()=>{hint.textContent=old;hint.style.color='';},1600);
+}
+function applyTemplate(ev,name){
+  const targetNid=_resolveTplTarget();
   if(!targetNid){alert('請先在任一說明區新增文字/圖片/表格元件再套用範本');return;}
   const d=richData[targetNid];
   if(!d.layout)d.layout={};
   const all=[...d.texts.map(t=>({id:t.id,kind:'txt'})),...d.images.map(i=>({id:i.id,kind:'img'})),...d.tables.map(t=>({id:t.id,kind:'tbl'}))];
+  if(!all.length){alert(`「${NOTE_CFG[targetNid]?.label||targetNid}」說明區沒有任何元件`);return;}
 
   if(name==='leftRight'){
-    // Images/tables left (w=6), texts right (w=6)
     let leftY=0,rightY=0;
     all.forEach(it=>{
       if(it.kind==='txt'){ d.layout[it.id]={x:6,y:rightY,w:6,h:3}; rightY+=3; }
       else{ d.layout[it.id]={x:0,y:leftY,w:6,h:4}; leftY+=4; }
     });
   }else if(name==='topBottom'){
-    // Tables/images full width on top, texts below
     let y=0;
     all.filter(it=>it.kind!=='txt').forEach(it=>{ d.layout[it.id]={x:0,y,w:12,h:it.kind==='tbl'?4:5}; y+=it.kind==='tbl'?4:5; });
     all.filter(it=>it.kind==='txt').forEach(it=>{ d.layout[it.id]={x:0,y,w:12,h:3}; y+=3; });
   }else if(name==='threeCol'){
-    // Three columns of width 4
     const cols=[[],[],[]];
     all.forEach((it,i)=>cols[i%3].push(it));
     const yPerCol=[0,0,0];
@@ -2286,44 +2374,205 @@ function applyTemplate(ev,name){
     }));
   }
   renderRich(targetNid);
-  // Hint
-  const hint=document.getElementById('gsTplHint');
-  if(hint){const old=hint.textContent;hint.textContent='✓ 範本已套用';setTimeout(()=>{hint.textContent=old;},1400);}
+  _flashTplHint(`✓ 已套用至「${NOTE_CFG[targetNid]?.label||targetNid}」`);
   ev?.stopPropagation?.();
 }
 
-// ── Extra notes ──
+// ── Custom templates (localStorage-backed) ──
+const TPL_LS_KEY='monthly_custom_templates_v1';
+function _loadCustomTpls(){
+  try{const raw=localStorage.getItem(TPL_LS_KEY);return raw?JSON.parse(raw):{};}catch{return{};}
+}
+function _saveCustomTpls(obj){
+  try{localStorage.setItem(TPL_LS_KEY,JSON.stringify(obj));}catch(e){alert('儲存範本失敗（localStorage 滿了？）');}
+}
+function refreshCustomTplSelect(){
+  const sel=document.getElementById('customTplSel');if(!sel)return;
+  const tpls=_loadCustomTpls();
+  const names=Object.keys(tpls).sort();
+  sel.innerHTML='<option value="">自訂範本…</option>'
+    + names.map(n=>`<option value="${n.replace(/"/g,'&quot;')}">${n}</option>`).join('')
+    + (names.length?`<option value="__del__" style="color:#ef4444">🗑 管理（刪除…）</option>`:'');
+}
+function refreshTplTargetSel(){
+  const sel=document.getElementById('tplTargetSel');if(!sel)return;
+  const opts=NOTE_IDS.map(id=>{
+    const d=richData[id]||{};
+    const n=(d.texts?.length||0)+(d.images?.length||0)+(d.tables?.length||0);
+    return `<option value="${id}">${NOTE_CFG[id]?.label||id}${n>0?` (${n})`:' (空)'}</option>`;
+  }).join('');
+  const prev=sel.value;
+  sel.innerHTML=opts;
+  if(prev&&Array.from(sel.options).some(o=>o.value===prev))sel.value=prev;
+}
+function openSaveTplModal(){
+  refreshTplTargetSel();
+  const src=document.getElementById('tplSourceSel');
+  const tgt=document.getElementById('tplTargetSel');
+  if(src&&tgt)src.innerHTML=tgt.innerHTML;
+  document.getElementById('tplName').value='';
+  document.getElementById('saveTplModal').style.display='flex';
+}
+function confirmSaveTpl(){
+  const name=document.getElementById('tplName').value.trim();
+  if(!name){alert('請輸入範本名稱');return;}
+  const src=document.getElementById('tplSourceSel').value;
+  const d=richData[src];
+  if(!d){alert('來源說明區無資料');return;}
+  // Build a shape-only template: array of {kind, x, y, w, h}
+  const items=[];
+  d.texts.forEach(t=>{const L=d.layout?.[t.id];if(L)items.push({kind:'txt',x:L.x,y:L.y,w:L.w,h:L.h});});
+  d.images.forEach(im=>{const L=d.layout?.[im.id];if(L)items.push({kind:'img',x:L.x,y:L.y,w:L.w,h:L.h});});
+  d.tables.forEach(tb=>{const L=d.layout?.[tb.id];if(L)items.push({kind:'tbl',x:L.x,y:L.y,w:L.w,h:L.h});});
+  if(!items.length){alert('來源說明區的元件還沒有位置資訊（先進編輯模式拖拉過）');return;}
+  const tpls=_loadCustomTpls();
+  tpls[name]={items,savedAt:new Date().toISOString()};
+  _saveCustomTpls(tpls);
+  refreshCustomTplSelect();
+  closeModal('saveTplModal');
+  _flashTplHint(`✓ 範本「${name}」已存`);
+}
+function applyCustomTemplate(name){
+  const sel=document.getElementById('customTplSel');
+  if(!name){return;}
+  if(name==='__del__'){
+    const tpls=_loadCustomTpls();
+    const list=Object.keys(tpls);
+    if(!list.length){sel.value='';return;}
+    const pick=prompt('要刪除哪個範本？輸入名稱：\n\n'+list.map(n=>'• '+n).join('\n'));
+    if(pick&&tpls[pick]){delete tpls[pick];_saveCustomTpls(tpls);refreshCustomTplSelect();_flashTplHint(`✓ 已刪除「${pick}」`);}
+    sel.value='';return;
+  }
+  const tpls=_loadCustomTpls();
+  const tpl=tpls[name];
+  if(!tpl){sel.value='';return;}
+  const targetNid=_resolveTplTarget();
+  if(!targetNid){alert('請先選擇目標說明區');sel.value='';return;}
+  const d=richData[targetNid];
+  if(!d.layout)d.layout={};
+  // Match items by kind in order: assign template slots to same-kind items in sequence;
+  // leftover items keep auto-position.
+  const byKind={txt:[],img:[],tbl:[]};
+  d.texts.forEach(t=>byKind.txt.push(t.id));
+  d.images.forEach(im=>byKind.img.push(im.id));
+  d.tables.forEach(tb=>byKind.tbl.push(tb.id));
+  const consumed={txt:0,img:0,tbl:0};
+  tpl.items.forEach(slot=>{
+    const id=byKind[slot.kind]?.[consumed[slot.kind]];
+    if(id){d.layout[id]={x:slot.x,y:slot.y,w:slot.w,h:slot.h};consumed[slot.kind]++;}
+  });
+  renderRich(targetNid);
+  _flashTplHint(`✓ 「${name}」已套用`);
+  sel.value='';
+}
+
+// ── Extra notes (GridStack-backed, parallel to primary notes) ──
 function openAddNote(){document.getElementById('newNoteTitle').value='';document.getElementById('addNoteModal').style.display='flex';}
 function confirmAddNote(){
   const title=document.getElementById('newNoteTitle').value.trim()||'補充說明';
   const sec=document.getElementById('newNoteSection').value;
   if(!extraNotes[sec])extraNotes[sec]=[];
-  extraNotes[sec].push({id:'en_'+Date.now(),title,content:'',images:[],tables:[]});
+  extraNotes[sec].push({id:'en_'+Date.now().toString(36),title,texts:[],images:[],tables:[],layout:{}});
   renderExtraNotes(sec);closeModal('addNoteModal');
 }
+// Migrate legacy extra note shape: content:string → texts:[{id,content}]; add ids to images/tables; ensure layout
+function migrateExtraNote(n){
+  if(!n)return null;
+  if(!n.texts){
+    n.texts = n.content ? [{id:_newId('t'),content:n.content}] : [];
+    delete n.content;
+  }else{
+    n.texts=n.texts.map(t=>typeof t==='string'?{id:_newId('t'),content:t}:(t.id?t:{...t,id:_newId('t')}));
+  }
+  n.images=(n.images||[]).map(im=>im&&im.id?im:{...(im||{}),id:_newId('i')});
+  n.tables=(n.tables||[]).map(tb=>Array.isArray(tb)?{id:_newId('tb'),data:tb}:(tb&&tb.id?tb:{...(tb||{}),id:_newId('tb')}));
+  n.layout=n.layout||{};
+  return n;
+}
+function _findExtra(sec,nid){return (extraNotes[sec]||[]).find(x=>x.id===nid)||null;}
 function renderExtraNotes(sec){
   const el=document.getElementById('extra-notes-'+sec);if(!el)return;
-  const list=extraNotes[sec]||[];
+  // Destroy any existing extra grids in this section
+  el.querySelectorAll('.noteCanvas.grid-stack').forEach(g=>{if(g.gridstack){try{g.gridstack.destroy(false);}catch{}}});
+  const list=(extraNotes[sec]||[]).map(migrateExtraNote).filter(Boolean);
+  extraNotes[sec]=list;
   el.innerHTML=list.map(n=>`
     <div class="extraNote">
       <button class="extraNoteDel" onclick="delExtraNote('${sec}','${n.id}')">✕</button>
-      <div class="extraNoteTitle"><span class="noteDot"></span><input value="${n.title.replace(/"/g,'&quot;')}" placeholder="說明標題…" onchange="updateExtraTitle('${sec}','${n.id}',this.value)"></div>
+      <div class="extraNoteTitle"><span class="noteDot"></span><input value="${(n.title||'').replace(/"/g,'&quot;')}" placeholder="說明標題…" onchange="updateExtraTitle('${sec}','${n.id}',this.value)"></div>
       <div class="noteToolbar">
-        <button class="nToolBtn" onclick="openTblModal('extra:${sec}:${n.id}')">📊 新增表格</button>
+        <button class="nToolBtn" onclick="addExtraTextBox('${sec}','${n.id}')">📝 文字框</button>
         <button class="nToolBtn" onclick="trigExtraImg('${sec}','${n.id}')">📷 上傳圖片</button>
+        <button class="nToolBtn" onclick="openTblModal('extra:${sec}:${n.id}')">📊 新增表格</button>
       </div>
       <input type="file" accept="image/*" id="eimg-${n.id}" style="display:none" onchange="handleExtraImg('${sec}','${n.id}',this)">
-      <div class="noteRich" id="erich-${n.id}">
-        <textarea class="noteBox" style="min-height:75px" id="eta-${n.id}" onchange="updateExtraContent('${sec}','${n.id}',this.value)">${n.content||''}</textarea>
-      </div>
+      <div class="noteCanvas grid-stack" id="erich-${n.id}" data-sec="${sec}" data-nid="${n.id}"></div>
     </div>`).join('');
   list.forEach(n=>renderExtraRich(sec,n.id));
 }
+function _buildGsItemExtra(sec,nid,kind,id,contentHtml,layoutOpt){
+  const n=_findExtra(sec,nid);
+  const lay=layoutOpt||n?.layout?.[id]||defaultLayoutFor(id);
+  const attrs=lay.x!=null
+    ? `gs-id="${id}" gs-x="${lay.x}" gs-y="${lay.y}" gs-w="${lay.w||6}" gs-h="${lay.h||3}" gs-min-w="2" gs-min-h="2"`
+    : `gs-id="${id}" gs-w="${lay.w||6}" gs-h="${lay.h||3}" gs-min-w="2" gs-min-h="2" gs-auto-position="true"`;
+  const delBtn=kind==='txt'?`<button class="gsItemDel" onclick="delExtraTextBox('${sec}','${nid}','${id}')">✕</button>`
+              :kind==='img'?`<button class="gsItemDel" onclick="delExtraImg('${sec}','${nid}','${id}')">✕</button>`
+              :`<button class="gsItemDel" onclick="delExtraTbl('${sec}','${nid}','${id}')">✕</button>`;
+  return `<div class="grid-stack-item" ${attrs}>
+    <div class="grid-stack-item-content">
+      <span class="gsHandle" title="拖曳移動">⠿</span>
+      ${delBtn}
+      <div class="gsItemContent">${contentHtml}</div>
+    </div>
+  </div>`;
+}
 function renderExtraRich(sec,nid){
   const el=document.getElementById('erich-'+nid);if(!el)return;
-  const n=(extraNotes[sec]||[]).find(x=>x.id===nid)||{images:[],tables:[]};
-  [...el.children].forEach(c=>{if(!c.classList.contains('noteBox'))c.remove();});
-  el.insertAdjacentHTML('beforeend',buildRichHTML(n,'delExtraImg',`'${sec}','${nid}'`,'delExtraTbl',`'${sec}','${nid}'`,'updateExtraCell',`'${sec}','${nid}'`));
+  const n=_findExtra(sec,nid);if(!n)return;
+  if(el.gridstack){try{el.gridstack.destroy(false);}catch{}}
+  el.innerHTML='';
+  if(!n.texts.length&&!n.images.length&&!n.tables.length){el.style.minHeight='0';return;}
+  el.style.minHeight='120px';
+  let html='';
+  n.texts.forEach(t=>{
+    const safe=(t.content||'').replace(/</g,'&lt;');
+    html+=_buildGsItemExtra(sec,nid,'txt',t.id,`<textarea class="noteBox" oninput="updateExtraTextBox('${sec}','${nid}','${t.id}',this.value)">${safe}</textarea>`);
+  });
+  n.images.forEach(im=>{
+    html+=_buildGsItemExtra(sec,nid,'img',im.id,`<img src="${im.data}">`);
+  });
+  n.tables.forEach(tb=>{
+    const rows=tb.data||[];const hdrs=rows[0]||[];const body=rows.slice(1);
+    const tblHtml=`<div class="noteTblScroll"><table><tr>${hdrs.map((hh,ci)=>`<th contenteditable class="editableCell" onblur="updateExtraCell('${sec}','${nid}','${tb.id}',0,${ci},this)">${hh}</th>`).join('')}</tr>
+      ${body.map((row,ri)=>`<tr>${row.map((cell,ci)=>`<td contenteditable class="editableCell" onblur="updateExtraCell('${sec}','${nid}','${tb.id}',${ri+1},${ci},this)">${cell}</td>`).join('')}</tr>`).join('')}
+    </table></div>`;
+    html+=_buildGsItemExtra(sec,nid,'tbl',tb.id,tblHtml);
+  });
+  el.innerHTML=html;
+  if(typeof GridStack==='undefined')return;
+  const grid=GridStack.init({column:12,cellHeight:40,margin:4,handle:'.gsHandle',animate:true,float:true,disableResize:!_gsEditMode,disableDrag:!_gsEditMode},el);
+  grid.on('change',nodes=>{
+    const n2=_findExtra(sec,nid);if(!n2)return;
+    if(!n2.layout)n2.layout={};
+    (nodes||[]).forEach(nd=>{if(nd.id)n2.layout[nd.id]={x:nd.x,y:nd.y,w:nd.w,h:nd.h};});
+  });
+}
+function addExtraTextBox(sec,nid){
+  const n=_findExtra(sec,nid);if(!n)return;
+  if(!n.texts)n.texts=[];
+  n.texts.push({id:_newId('t'),content:''});
+  renderExtraRich(sec,nid);
+}
+function delExtraTextBox(sec,nid,id){
+  const n=_findExtra(sec,nid);if(!n)return;
+  n.texts=(n.texts||[]).filter(t=>t.id!==id);
+  if(n.layout)delete n.layout[id];
+  renderExtraRich(sec,nid);
+}
+function updateExtraTextBox(sec,nid,id,val){
+  const n=_findExtra(sec,nid);if(!n)return;
+  const t=(n.texts||[]).find(x=>x.id===id);if(t)t.content=val;
 }
 function trigExtraImg(sec,nid){document.getElementById('eimg-'+nid)?.click();}
 function handleExtraImg(sec,nid,input){
@@ -2331,18 +2580,39 @@ function handleExtraImg(sec,nid,input){
   const rd=new FileReader();
   rd.onload=async e=>{
     const compressed=await compressImage(e.target.result);
-    const n=(extraNotes[sec]||[]).find(x=>x.id===nid);
-    if(!n)return;if(!n.images)n.images=[];
-    n.images.push({name:file.name,data:compressed});renderExtraRich(sec,nid);
+    const n=_findExtra(sec,nid);if(!n)return;
+    if(!n.images)n.images=[];
+    n.images.push({id:_newId('i'),name:file.name,data:compressed});
+    renderExtraRich(sec,nid);
   };
   rd.readAsDataURL(file);input.value='';
 }
-function delExtraImg(sec,nid,i){const n=(extraNotes[sec]||[]).find(x=>x.id===nid);if(n){n.images.splice(i,1);renderExtraRich(sec,nid);}}
-function delExtraTbl(sec,nid,i){const n=(extraNotes[sec]||[]).find(x=>x.id===nid);if(n){n.tables.splice(i,1);renderExtraRich(sec,nid);}}
-function updateExtraCell(sec,nid,ti,ri,ci,el){const n=(extraNotes[sec]||[]).find(x=>x.id===nid);if(n?.tables?.[ti])n.tables[ti][ri][ci]=el.textContent;}
-function updateExtraTitle(sec,nid,val){const n=(extraNotes[sec]||[]).find(x=>x.id===nid);if(n)n.title=val;}
-function updateExtraContent(sec,nid,val){const n=(extraNotes[sec]||[]).find(x=>x.id===nid);if(n)n.content=val;}
-function delExtraNote(sec,nid){if(!extraNotes[sec])return;extraNotes[sec]=extraNotes[sec].filter(n=>n.id!==nid);renderExtraNotes(sec);}
+function delExtraImg(sec,nid,id){
+  const n=_findExtra(sec,nid);if(!n)return;
+  n.images=(n.images||[]).filter(im=>im.id!==id);
+  if(n.layout)delete n.layout[id];
+  renderExtraRich(sec,nid);
+}
+function delExtraTbl(sec,nid,id){
+  const n=_findExtra(sec,nid);if(!n)return;
+  n.tables=(n.tables||[]).filter(tb=>tb.id!==id);
+  if(n.layout)delete n.layout[id];
+  renderExtraRich(sec,nid);
+}
+function updateExtraCell(sec,nid,tid,ri,ci,el){
+  const n=_findExtra(sec,nid);if(!n)return;
+  const t=(n.tables||[]).find(x=>x.id===tid);
+  if(t&&t.data&&t.data[ri])t.data[ri][ci]=el.textContent;
+}
+function updateExtraTitle(sec,nid,val){const n=_findExtra(sec,nid);if(n)n.title=val;}
+function delExtraNote(sec,nid){
+  if(!extraNotes[sec])return;
+  // Destroy grid first to clean up
+  const gridEl=document.getElementById('erich-'+nid);
+  if(gridEl&&gridEl.gridstack){try{gridEl.gridstack.destroy(false);}catch{}}
+  extraNotes[sec]=extraNotes[sec].filter(n=>n.id!==nid);
+  renderExtraNotes(sec);
+}
 
 // ── Modal helpers ──
 function closeModal(id){document.getElementById(id).style.display='none';}
@@ -2389,7 +2659,7 @@ async function loadNotes(seq){
 async function saveAll(){
   const btn=document.getElementById('saveBtn'),ok=document.getElementById('saveOk'),st=document.getElementById('nSt');
   btn.disabled=true;btn.textContent='儲存中…';st.innerHTML='<span class="sSp"></span>';
-  SECS.forEach(sec=>(extraNotes[sec]||[]).forEach(n=>{const ta=document.getElementById('eta-'+n.id);if(ta)n.content=ta.value;}));
+  // (legacy single-textarea sync removed — texts are now tracked live via updateExtraTextBox)
   const textEntries=[
     ...NOTE_IDS.map(id=>{const t=richData[id]?.texts?.[0];return{key:nKey(id),value:typeof t==='string'?t:(t?.content||'')};}),
     ...SECS.map(sec=>({key:nKey('extra_'+sec),value:JSON.stringify(extraNotes[sec]||[])})),
