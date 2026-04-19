@@ -205,6 +205,12 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
 .nav-link{padding:12px 12px;color:#64748b;font-size:12px;font-weight:600;text-decoration:none;border-bottom:2px solid transparent;white-space:nowrap;flex-shrink:0;transition:color .15s;}
 .nav-link:hover{color:#e2e8f0;}
 .nav-link.active{color:#3b82f6;border-bottom-color:#3b82f6;}
+/* 亮版覆蓋（本檔用 data-theme 切換，不走 body.light-theme）*/
+[data-theme="light"] .nav          { background:#ffffff; border-bottom-color:#e2e8f0; box-shadow:0 2px 12px rgba(0,0,0,.08); }
+[data-theme="light"] .nav-brand    { color:#1e293b; }
+[data-theme="light"] .nav-link     { color:#64748b; }
+[data-theme="light"] .nav-link:hover { color:#1e293b; }
+[data-theme="light"] .nav-link.active { color:#3b82f6; border-bottom-color:#3b82f6; }
 </style>
 <nav class="nav">
   <span class="nav-brand">🚗 Volvo DMS</span>
@@ -549,13 +555,28 @@ let branchKpiData={}; // {AMA:{bd,tgt}, AMC:{bd,tgt}, AMD:{bd,tgt}}
 async function sf(url,opt){try{const r=await fetch(url,opt||{});if(!r.ok)return null;return await r.json();}catch{return null;}}
 
 // ── Theme ──
-function toggleTheme(){
+// 本頁用 <html data-theme="..."> 切色，同時同步 body.light-theme class
+// 讓 theme.css 內共用的 body.light-theme [style*=…] 覆蓋規則（例如 auth.js
+// 產生的使用者 badge、modal 的 inline 深色背景）也能作用。
+function _applyMonthlyTheme(mode){
   const html=document.documentElement;
-  const dark=html.getAttribute('data-theme')=='dark';
-  html.setAttribute('data-theme',dark?'light':'dark');
-  document.getElementById('themeBtn').textContent=dark?'🌙 暗版':'☀️ 亮版';
+  html.setAttribute('data-theme', mode);
+  document.body.classList.toggle('light-theme', mode==='light');
+  try { localStorage.setItem('volvo_theme', mode); } catch(e){}
+  const btn=document.getElementById('themeBtn');
+  if (btn) btn.textContent = mode==='light' ? '🌙 暗版' : '☀️ 亮版';
+}
+function toggleTheme(){
+  const dark=document.documentElement.getAttribute('data-theme')==='dark';
+  _applyMonthlyTheme(dark?'light':'dark');
   destCharts();buildAll();
 }
+// 載入時依照儲存值套用主題（本頁一次搞定 data-theme + body class）
+(function initMonthlyTheme(){
+  let saved='dark';
+  try { saved = localStorage.getItem('volvo_theme') || 'dark'; } catch(e){}
+  _applyMonthlyTheme(saved==='light'?'light':'dark');
+})();
 function isDark(){return document.documentElement.getAttribute('data-theme')!=='light';}
 function chartColors(){
   return isDark()?{tc:'#64748b',gc:'rgba(255,255,255,0.04)',ptBorder:'#0f172a'}
