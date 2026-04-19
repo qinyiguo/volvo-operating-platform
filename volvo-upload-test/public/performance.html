@@ -661,7 +661,8 @@ async function loadRevenueKPI(period,branch){
       const gEst=ALL.reduce((s,br)=>s+parseFloat(eMap[br]?.[`${metricKey}_estimate`]||0),0);
       const rate=gTarget>0?gActual/gTarget*100:null;
       const estRate=gTarget>0&&gEst>0?gEst/gTarget*100:null;
-      const yoy=gLY>0?(gActual-gLY)/gLY*100:null;
+      // YoY:預估完整月 vs 去年同月（apples-to-apples，避免月中誤導）
+      const yoy=(gLY>0&&gEst>0)?(gEst-gLY)/gLY*100:null;
       const rCol=rate===null?'#64748b':rate>=100?'#10b981':rate>=80?'#f59e0b':'#ef4444';
       const eCol=estRate===null?'#64748b':estRate>=100?'#10b981':estRate>=80?'#f59e0b':'#f97316';
       const barW=rate!==null?Math.min(100,rate).toFixed(0):0;
@@ -676,7 +677,9 @@ async function loadRevenueKPI(period,branch){
         const sTgt=ALL.reduce((s,br)=>s+parseFloat(tMap[br]?.[`${sm.key}_target`]||0),0);
         const sLY=ALL.reduce((s,br)=>s+parseFloat(tMap[br]?.[`${sm.key}_last_year`]||0),0);
         const sEst=ALL.reduce((s,br)=>s+parseFloat(eMap[br]?.[`${sm.key}_estimate`]||0),0);
-        const r=sTgt>0?sAct/sTgt*100:null,er=sTgt>0&&sEst>0?sEst/sTgt*100:null,yoy=sLY>0?(sAct-sLY)/sLY*100:null;
+        const r=sTgt>0?sAct/sTgt*100:null,er=sTgt>0&&sEst>0?sEst/sTgt*100:null;
+        // YoY:預估完整月 vs 去年同月（避免月中誤導）
+        const yoy=(sLY>0&&sEst>0)?(sEst-sLY)/sLY*100:null;
         const rc=r===null?'#64748b':r>=100?'#10b981':r>=80?'#f59e0b':'#ef4444';
         const ec=er===null?'#64748b':er>=100?'#10b981':er>=80?'#f59e0b':'#f97316';
         const bw=r!==null?Math.min(100,r).toFixed(0):0,ebw=er!==null?Math.min(100,er).toFixed(0):0;
@@ -695,7 +698,7 @@ async function loadRevenueKPI(period,branch){
           <div style="display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:12px;color:#64748b;align-items:center">
             <span>目標</span><span style="text-align:right;color:#94a3b8;font-weight:700">${sTgt>0?fmtK(sTgt):'未設定'}</span>
             ${sEst>0?`<span style="color:${ec}">預估</span><span style="text-align:right;color:${ec};font-weight:700">${fmtK(sEst)}</span>`:''}
-            <span>去年同期</span><span style="text-align:right"><span style="color:#94a3b8;font-weight:600">${sLY>0?fmtK(sLY):'—'}</span>${yoy!==null?`<span style="color:${yoy>=0?'#10b981':'#ef4444'};margin-left:5px">${yoy>=0?'▲':'▼'}${Math.abs(yoy).toFixed(1)}%</span>`:''}</span>
+            <span>去年同月</span><span style="text-align:right"><span style="color:#94a3b8;font-weight:600">${sLY>0?fmtK(sLY):'—'}</span>${yoy!==null?`<span style="color:${yoy>=0?'#10b981':'#ef4444'};margin-left:5px">${yoy>=0?'▲':'▼'}${Math.abs(yoy).toFixed(1)}%</span>`:''}</span>
           </div></div>`;
       }).join('');
       return`<div style="background:#1a2332;border:2px solid ${color}44;border-radius:12px;overflow:hidden">
@@ -719,7 +722,7 @@ async function loadRevenueKPI(period,branch){
             <div style="display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12px;color:#64748b">
               <span>目標</span><span style="color:#94a3b8;font-weight:700">${gTarget>0?fmtK(gTarget):'未設定'}</span>
               ${gEst>0?`<span style="color:${eCol}">預估</span><span style="color:${eCol};font-weight:700">${fmtK(gEst)}</span>`:''}
-              <span>去年同期</span><span><span style="color:#94a3b8;font-weight:600">${gLY>0?fmtK(gLY):'—'}</span>${yoy!==null?`<span style="color:${yoy>=0?'#10b981':'#ef4444'};margin-left:4px">${yoy>=0?'▲':'▼'}${Math.abs(yoy).toFixed(1)}%</span>`:''}</span>
+              <span>去年同月</span><span><span style="color:#94a3b8;font-weight:600">${gLY>0?fmtK(gLY):'—'}</span>${yoy!==null?`<span style="color:${yoy>=0?'#10b981':'#ef4444'};margin-left:4px">${yoy>=0?'▲':'▼'}${Math.abs(yoy).toFixed(1)}%</span>`:''}</span>
             </div>
           </div>
         </div>
@@ -739,7 +742,9 @@ async function loadRevenueKPI(period,branch){
       BRANCHES.forEach((br,bi)=>{
         const col=brColors[br]||'#64748b',t=tMap[br]||{},e=eMap[br]||{},bd=bdata[br]||{};
         const actual=bd[m.actualKey]||0,target=parseFloat(t[`${m.key}_target`]||0),ly=parseFloat(t[`${m.key}_last_year`]||0),est=parseFloat(e[`${m.key}_estimate`]||0);
-        const rate=target>0?actual/target*100:null,estRate=target>0&&est>0?est/target*100:null,yoy=ly>0?(actual-ly)/ly*100:null;
+        const rate=target>0?actual/target*100:null,estRate=target>0&&est>0?est/target*100:null;
+        // YoY:預估完整月 vs 去年同月（apples-to-apples，避免月中誤導）
+        const yoy=(ly>0&&est>0)?(est-ly)/ly*100:null;
         const rCol=rate===null?'#64748b':rate>=100?'#10b981':rate>=80?'#f59e0b':'#ef4444';
         const eCol=estRate===null?'#64748b':estRate>=100?'#10b981':estRate>=80?'#f59e0b':'#f97316';
         const barW=rate!==null?Math.min(100,rate).toFixed(0):0,estBarW=estRate!==null?Math.min(100,estRate).toFixed(0):0;
@@ -781,7 +786,7 @@ async function loadRevenueKPI(period,branch){
           <div style="display:grid;grid-template-columns:auto 1fr;gap:2px 8px;font-size:11px;color:#64748b;align-items:center">
             <span>目標</span><span style="text-align:right;color:#94a3b8;font-weight:600">${target>0?fmtK(target):'未設定'}</span>
             ${est>0?`<span style="color:${eCol}">預估</span><span style="text-align:right;color:${eCol};font-weight:700">${fmtK(est)}</span>`:''}
-            <span>去年同期</span><span style="text-align:right">
+            <span>去年同月</span><span style="text-align:right">
               <span style="color:#94a3b8;font-weight:600">${ly>0?fmtK(ly):'—'}</span>
               ${yoy!==null?`<span style="color:${yoy>=0?'#10b981':'#ef4444'};margin-left:4px">${yoy>=0?'▲':'▼'}${Math.abs(yoy).toFixed(1)}%</span>`:''}
             </span>
@@ -794,11 +799,98 @@ async function loadRevenueKPI(period,branch){
     if(!branch){groupEl.innerHTML=buildGroupCard('paid','paid_total','集團有費合計','#f97316');groupEl.style.display='';}
     else{groupEl.style.display='none';}
     document.getElementById('revKPI-paid').innerHTML=buildCard({key:'paid',label:'🔶 有費營收',color:'#f97316',actualKey:'paid_total'},true);
-    document.getElementById('revKPI-sub').innerHTML=[
-      {key:'general',label:'💙 一般營收',color:'#3b82f6',actualKey:'general_total'},
-      {key:'bodywork',label:'🔨 鈑烤營收',color:'#8b5cf6',actualKey:'bodywork_total'},
-      {key:'extended',label:'🛡️ 延保營收',color:'#10b981',actualKey:'extended'},
-    ].map(m=>buildCard(m,false)).join('');
+
+    // ── 各類營收 × 各廠 矩陣（取代原本三張分卡的 9 cells）──
+    document.getElementById('revKPI-sub').innerHTML = (function buildSubMatrix(){
+      const SUB = [
+        {key:'general', actualKey:'general_total', label:'💙 一般',  color:'#3b82f6'},
+        {key:'bodywork',actualKey:'bodywork_total',label:'🔨 鈑烤',  color:'#8b5cf6'},
+        {key:'extended',actualKey:'extended',      label:'🛡️ 延保', color:'#10b981'},
+      ];
+      const COLS = [...BRANCHES.map(b=>({key:b, label:b, color:brColors[b]||'#94a3b8', isBranch:true}))];
+      if (!branch) COLS.push({key:'__group', label:'集團', color:'#f97316', isBranch:false});
+
+      const headerCells = COLS.map((c,i)=>`
+        <th style="padding:10px 12px;text-align:right;font-size:11px;font-weight:800;color:${c.color};
+                   background:#0f172a;border-bottom:1px solid #2d3f56;
+                   ${i===0?'border-left:1px solid #2d3f56':''}">${c.label}</th>
+      `).join('');
+
+      const buildCellMetrics = (sm, colKey) => {
+        let actual, target, ly, est;
+        if (colKey === '__group') {
+          actual = BRANCHES.reduce((s,br)=>s+(bdata[br]?.[sm.actualKey]||0),0);
+          target = BRANCHES.reduce((s,br)=>s+parseFloat(tMap[br]?.[`${sm.key}_target`]||0),0);
+          ly     = BRANCHES.reduce((s,br)=>s+parseFloat(tMap[br]?.[`${sm.key}_last_year`]||0),0);
+          est    = BRANCHES.reduce((s,br)=>s+parseFloat(eMap[br]?.[`${sm.key}_estimate`]||0),0);
+        } else {
+          actual = bdata[colKey]?.[sm.actualKey] || 0;
+          target = parseFloat(tMap[colKey]?.[`${sm.key}_target`] || 0);
+          ly     = parseFloat(tMap[colKey]?.[`${sm.key}_last_year`] || 0);
+          est    = parseFloat(eMap[colKey]?.[`${sm.key}_estimate`] || 0);
+        }
+        const rate    = target > 0 ? actual / target * 100 : null;
+        const estRate = target > 0 && est > 0 ? est / target * 100 : null;
+        // YoY 改用「預估完整月 vs 去年同月」做 apples-to-apples 比較
+        // （原本用 actual MTD vs 去年整月，月中時必然顯示誤導性的大幅衰退）
+        const yoy     = (ly > 0 && est > 0) ? (est - ly) / ly * 100 : null;
+        return { actual, target, ly, est, rate, estRate, yoy };
+      };
+
+      const rows = SUB.map(sm => {
+        const cells = COLS.map((c,ci) => {
+          const m = buildCellMetrics(sm, c.key);
+          const rCol = m.rate === null ? '#475569' : m.rate >= 100 ? '#10b981' : m.rate >= 80 ? '#f59e0b' : '#ef4444';
+          const eCol = m.estRate === null ? '#475569' : m.estRate >= 100 ? '#10b981' : m.estRate >= 80 ? '#f59e0b' : '#f97316';
+          const yCol = m.yoy === null ? '#475569' : m.yoy >= 0 ? '#10b981' : '#ef4444';
+          const barW = m.rate !== null ? Math.min(100, m.rate).toFixed(1) : 0;
+          const isGroup = c.key === '__group';
+          return `<td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.4);${ci===0?'border-left:1px solid #2d3f56':''}${isGroup?'background:rgba(249,115,22,.04)':''};vertical-align:top">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
+              <span style="font-size:${isGroup?'15px':'14px'};font-weight:${isGroup?'900':'800'};color:#e2e8f0">${fmtK(m.actual)}</span>
+              <span style="font-size:11px;font-weight:800;color:${rCol}">${m.rate !== null ? m.rate.toFixed(1)+'%' : '—'}</span>
+            </div>
+            <div style="background:#0f172a;border-radius:2px;height:4px;margin-bottom:6px">
+              <div style="width:${barW}%;height:4px;border-radius:2px;background:${rCol}"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b;line-height:1.5">
+              <span>目 ${m.target>0?fmtK(m.target):'—'}</span>
+              ${m.est>0?`<span style="color:${eCol};font-weight:600">預 ${fmtK(m.est)}</span>`:'<span>—</span>'}
+            </div>
+            <div style="font-size:10px;color:#64748b;line-height:1.5">
+              ${m.ly>0?`vs 去年 ${fmtK(m.ly)}`:'去年 —'}
+              ${m.yoy!==null?`<span style="color:${yCol};font-weight:700;margin-left:4px">${m.yoy>=0?'▲':'▼'}${Math.abs(m.yoy).toFixed(1)}%</span>`:''}
+            </div>
+          </td>`;
+        }).join('');
+        return `<tr>
+          <th style="padding:10px 14px;text-align:left;font-size:13px;font-weight:800;color:${sm.color};
+                     background:#0f172a;border-bottom:1px solid #2d3f56;border-right:1px solid #2d3f56;white-space:nowrap">
+            ${sm.label}
+          </th>
+          ${cells}
+        </tr>`;
+      }).join('');
+
+      return `
+      <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:12px;overflow:hidden">
+        <div style="padding:12px 18px 10px;border-bottom:1px solid #2d3f56;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <span style="font-size:14px;font-weight:800;color:#e2e8f0">📊 各類營收 × 各廠</span>
+          <span style="font-size:11px;color:#475569">▲▼ = 預估完整月 vs 去年同月（apples-to-apples）</span>
+        </div>
+        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+          <table style="width:100%;border-collapse:separate;border-spacing:0;font-size:12px">
+            <thead>
+              <tr>
+                <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748b;background:#0f172a;border-bottom:1px solid #2d3f56;border-right:1px solid #2d3f56">類別</th>
+                ${headerCells}
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
+    })();
     section.style.display='';
   }catch(e){document.getElementById('revKPI-paid').innerHTML=`<div style="color:#ef4444;padding:12px">${e.message}</div>`;section.style.display='';}
 }
@@ -926,7 +1018,7 @@ async function loadPerformance(period,branch){
           </div>
           <div style="font-size:11px;color:#64748b;line-height:2">
             <div style="display:flex;justify-content:space-between"><span>目標</span><span style="color:#94a3b8;font-weight:600">${fmtV(d.target)}</span></div>
-            <div style="display:flex;justify-content:space-between;align-items:center"><span>去年同期</span>
+            <div style="display:flex;justify-content:space-between;align-items:center"><span>去年同月</span>
               <span><span style="color:#94a3b8;font-weight:600">${fmtV(d.last_year)}</span>
               ${yoy!==null?`<span style="color:${yoy>=0?'#10b981':'#ef4444'};margin-left:5px;font-size:11px">${yoy>=0?'▲':'▼'}${Math.abs(yoy).toFixed(1)}%</span>`:''}</span>
             </div>
