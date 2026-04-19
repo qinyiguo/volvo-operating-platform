@@ -1487,10 +1487,14 @@ function buildWip(tc,gc,isAME){
 }
 
 // ── Custom Chart.js plugin: future shading + achievement bands + latest-point bubble ──
+// Options stored in a WeakMap instead of chart.options.plugins to avoid Chart.js v4's
+// config proxy auto-invoking function-valued options (scriptable options) which would
+// call our formatter with a chart-context object and crash on primitive coercion.
+const _enhancerOpts = new WeakMap();
 const ChartEnhancer = {
   id: 'chartEnhancer',
   beforeDatasetsDraw(chart) {
-    const opts = chart.options.plugins && chart.options.plugins.chartEnhancer;
+    const opts = _enhancerOpts.get(chart);
     if (!opts || !opts.enabled) return;
     const ca = chart.chartArea, sx = chart.scales.x, sy = chart.scales.y;
     if (!ca || !sx) return;
@@ -1534,7 +1538,7 @@ const ChartEnhancer = {
     }
   },
   afterDatasetsDraw(chart) {
-    const opts = chart.options.plugins && chart.options.plugins.chartEnhancer;
+    const opts = _enhancerOpts.get(chart);
     if (!opts || !opts.enabled) return;
     const ca = chart.chartArea, sx = chart.scales.x, sy = chart.scales.y;
     if (!ca || !sx || !sy) return;
@@ -1689,19 +1693,11 @@ function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder,tip
   const latestTarget = (tgt && latestIdx >= 0 && tgt[latestIdx] > 0) ? tgt[latestIdx] : 0;
   const eh = ehOpts || {};
 
-  return new Chart(document.getElementById(id),{
+  const chartInst = new Chart(document.getElementById(id),{
     type:'line',data:{labels,datasets:ds},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{
         legend:{display:false},
-        chartEnhancer:{
-          enabled:true, isDark:isDark(),
-          latestIdx: eh.suppressLatest ? -1 : latestIdx,
-          futureStartIdx: futureStartIdx >= 0 ? futureStartIdx : null,
-          target: eh.showBands ? latestTarget : 0,
-          showBands: !!eh.showBands,
-          fmtLabel: tipFmt,
-        },
         tooltip:{
           boxWidth:20, boxHeight:2, padding:9,
           callbacks:{
@@ -1730,6 +1726,17 @@ function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder,tip
       scales:{x:{ticks:{font:{size:10},color:tc},grid:{color:gc}},
               y:{ticks:{font:{size:11},color:tc,callback:fmt},grid:{color:gc},min:niceMin,max:niceMax}}}
   });
+  // Store enhancer options in WeakMap (not in chart options — avoids Chart.js config proxy auto-invoking fmtLabel)
+  _enhancerOpts.set(chartInst, {
+    enabled: true, isDark: isDark(),
+    latestIdx: eh.suppressLatest ? -1 : latestIdx,
+    futureStartIdx: futureStartIdx >= 0 ? futureStartIdx : null,
+    target: eh.showBands ? latestTarget : 0,
+    showBands: !!eh.showBands,
+    fmtLabel: tipFmt,
+  });
+  chartInst.update('none');
+  return chartInst;
 }
 function destCharts(){Object.values(charts).forEach(c=>{try{c.destroy();}catch{}});charts={};}
 
