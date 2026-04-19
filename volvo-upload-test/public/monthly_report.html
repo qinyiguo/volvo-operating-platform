@@ -193,6 +193,23 @@ body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;background:var(--
 
 @keyframes spin{to{transform:rotate(360deg);}}
 
+/* ═══ Chart info card overlay (floating top-right) ═══ */
+.chartWrap{position:relative;}
+.chartInfoCard{position:absolute;top:6px;right:8px;background:rgba(15,23,42,0.82);border:1px solid var(--bdr);border-radius:8px;padding:7px 11px;font-size:10px;line-height:1.55;color:var(--txt);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;z-index:3;font-weight:600;min-width:140px;box-shadow:0 2px 10px rgba(0,0,0,0.15);}
+[data-theme="light"] .chartInfoCard{background:rgba(255,255,255,0.92);box-shadow:0 2px 10px rgba(0,0,0,0.08);}
+.chartInfoCard .cicRow{display:flex;justify-content:space-between;gap:10px;white-space:nowrap;}
+.chartInfoCard .cicLbl{color:var(--txt3);font-weight:500;}
+.chartInfoCard .cicVal{font-weight:800;}
+.chartInfoCard .cicVal.pos{color:#10b981;}
+.chartInfoCard .cicVal.neg{color:#ef4444;}
+.chartInfoCard .cicSep{height:1px;background:var(--bdr);margin:4px -3px;}
+
+/* ═══ Clickable HTML legend ═══ */
+.legClickable .li{cursor:pointer;transition:opacity .15s;user-select:none;padding:1px 3px;border-radius:4px;}
+.legClickable .li:hover{background:var(--bg3);}
+.legClickable .li.off{opacity:.32;}
+.legClickable .li.off .ld,.legClickable .li.off .ld-d{opacity:.35;}
+
 /* ═══ Storyboard / Summary Board ═══ */
 .storyBoard{background:linear-gradient(135deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--bdr);border-radius:12px;padding:14px 16px;margin-bottom:14px;box-shadow:var(--shadow);}
 .storyTitle{font-size:14px;font-weight:800;color:var(--txt);margin-bottom:11px;display:flex;align-items:center;gap:7px;}
@@ -1065,9 +1082,21 @@ function buildOneRevChart(key, lc, lyc, tc, gc, ptBorder){
   const ly =months.map(p=>tData[p]?.tgt?.[`${key}_ly`]||0);
   const tgt=months.map(p=>tData[p]?.tgt?.[key]||0);
   if(charts[key]){try{charts[key].destroy();}catch{}}
-  charts[key]=mkLine('c_'+key,labels,act,ly,tgt,lc,lyc,TGT_COLOR,null,true,tc,gc,ptBorder);
+  // Main paid chart gets achievement bands; sub-charts (gen/bw/ext) skip bands to avoid visual noise
+  charts[key]=mkLine('c_'+key,labels,act,ly,tgt,lc,lyc,TGT_COLOR,null,true,tc,gc,ptBorder,null,{showBands:key==='paid'});
   refreshAvgBadge(key,act,n);
   refreshPeriodBtns(key,n);
+
+  // Floating info card: 本月 / 目標 / 差距 / YoY
+  let latestIdx=-1; for(let i=act.length-1;i>=0;i--) if(act[i]!=null && act[i]>0){latestIdx=i;break;}
+  if(latestIdx>=0){
+    attachInfoCard('c_'+key, act[latestIdx], tgt[latestIdx]||0, ly[latestIdx]||0);
+  }
+  // Clickable legend (find .leg sibling within same card)
+  const canvas=document.getElementById('c_'+key);
+  const card=canvas?.closest('.card');
+  const legEl=card?.querySelector('.leg');
+  if(legEl) wireLegend(legEl, charts[key]);
 }
 
 function buildCarsCharts(tc, gc, ptBorder, isAME){
@@ -1084,21 +1113,28 @@ function buildCarsCharts(tc, gc, ptBorder, isAME){
   charts.cars=mkLine('c_cars',labels,carsAct,[],[],lc,LY_COLOR,null,v=>Math.round(v).toLocaleString(),false,tc,gc,ptBorder,v=>Math.round(v).toLocaleString()+'台');
   refreshAvgBadge('cars',carsAct,n);
   refreshPeriodBtns('cars',n);
+  {
+    let li=-1; for(let i=carsAct.length-1;i>=0;i--) if(carsAct[i]!=null && carsAct[i]>0){li=i;break;}
+    if(li>=0) attachInfoCard('c_cars', carsAct[li], 0, 0, {fmt:v=>Math.round(v).toLocaleString()+' 台'});
+  }
 
   if(charts.rpv){try{charts.rpv.destroy();}catch{}}
+  let rpvSeries;
   if(isAME){
     // AME: RPV = bw revenue (K) * 1000 / bw car count
     const bwRev=months.map(p=>tData[p]?.bd?.bw||0);
-    const rpv=carsAct.map((c,i)=>c==null?null:(c>0?Math.round(bwRev[i]*1000/c):null));
-    charts.rpv=mkLine('c_rpv',labels,rpv,[],[],BW_LINE_COLOR,LY_COLOR,null,v=>Math.round(v).toLocaleString(),false,tc,gc,ptBorder,v=>Math.round(v).toLocaleString()+'元/台');
-    refreshAvgBadge('rpv',rpv,n);
-    refreshPeriodBtns('rpv',n);
+    rpvSeries=carsAct.map((c,i)=>c==null?null:(c>0?Math.round(bwRev[i]*1000/c):null));
+    charts.rpv=mkLine('c_rpv',labels,rpvSeries,[],[],BW_LINE_COLOR,LY_COLOR,null,v=>Math.round(v).toLocaleString(),false,tc,gc,ptBorder,v=>Math.round(v).toLocaleString()+'元/台');
   } else {
     const paid=months.map(p=>tData[p]?.bd?.paid||0);
-    const rpv=carsAct.map((c,i)=>c==null?null:(c>0?Math.round(paid[i]*1000/c):null));
-    charts.rpv=mkLine('c_rpv',labels,rpv,[],[],LINE_COLOR,LY_COLOR,null,v=>Math.round(v).toLocaleString(),false,tc,gc,ptBorder,v=>Math.round(v).toLocaleString()+'元/台');
-    refreshAvgBadge('rpv',rpv,n);
-    refreshPeriodBtns('rpv',n);
+    rpvSeries=carsAct.map((c,i)=>c==null?null:(c>0?Math.round(paid[i]*1000/c):null));
+    charts.rpv=mkLine('c_rpv',labels,rpvSeries,[],[],LINE_COLOR,LY_COLOR,null,v=>Math.round(v).toLocaleString(),false,tc,gc,ptBorder,v=>Math.round(v).toLocaleString()+'元/台');
+  }
+  refreshAvgBadge('rpv',rpvSeries,n);
+  refreshPeriodBtns('rpv',n);
+  {
+    let li=-1; for(let i=rpvSeries.length-1;i>=0;i--) if(rpvSeries[i]!=null && rpvSeries[i]>0){li=i;break;}
+    if(li>=0) attachInfoCard('c_rpv', rpvSeries[li], 0, 0, {fmt:v=>Math.round(v).toLocaleString()+' 元/台'});
   }
 }
 
@@ -1412,8 +1448,170 @@ function buildWip(tc,gc,isAME){
   });
 }
 
+// ── Custom Chart.js plugin: future shading + achievement bands + latest-point bubble ──
+const ChartEnhancer = {
+  id: 'chartEnhancer',
+  beforeDatasetsDraw(chart) {
+    const opts = chart.options.plugins && chart.options.plugins.chartEnhancer;
+    if (!opts || !opts.enabled) return;
+    const ca = chart.chartArea, sx = chart.scales.x, sy = chart.scales.y;
+    if (!ca || !sx) return;
+    const ctx = chart.ctx;
+
+    // (A) Achievement bands (green/yellow/red horizontal)
+    if (opts.showBands && opts.target > 0 && sy) {
+      const t = opts.target;
+      const y100 = sy.getPixelForValue(t);
+      const y85  = sy.getPixelForValue(t * 0.85);
+      ctx.save();
+      // Clamp into chart area
+      const clip = (yy)=>Math.min(ca.bottom, Math.max(ca.top, yy));
+      const yA = clip(y100), yB = clip(y85);
+      // Green band (>=100%)
+      ctx.fillStyle = 'rgba(16,185,129,0.05)';
+      ctx.fillRect(ca.left, ca.top, ca.width, Math.max(0, yA - ca.top));
+      // Yellow (85~100%)
+      ctx.fillStyle = 'rgba(245,158,11,0.05)';
+      ctx.fillRect(ca.left, yA, ca.width, Math.max(0, yB - yA));
+      // Red (<85%)
+      ctx.fillStyle = 'rgba(239,68,68,0.05)';
+      ctx.fillRect(ca.left, yB, ca.width, Math.max(0, ca.bottom - yB));
+      ctx.restore();
+    }
+
+    // (B) Future-region gray overlay + "預測區" label
+    if (opts.futureStartIdx != null && opts.futureStartIdx >= 0 && opts.futureStartIdx < chart.data.labels.length) {
+      const xS = sx.getPixelForValue(opts.futureStartIdx);
+      if (xS < ca.right) {
+        ctx.save();
+        ctx.fillStyle = opts.isDark ? 'rgba(148,163,184,0.08)' : 'rgba(148,163,184,0.13)';
+        ctx.fillRect(xS, ca.top, ca.right - xS, ca.height);
+        ctx.fillStyle = opts.isDark ? 'rgba(148,163,184,0.6)' : 'rgba(100,116,139,0.7)';
+        ctx.font = 'bold 10px -apple-system, "Microsoft JhengHei", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText('預測區', (xS + ca.right) / 2, ca.top + 4);
+        ctx.restore();
+      }
+    }
+  },
+  afterDatasetsDraw(chart) {
+    const opts = chart.options.plugins && chart.options.plugins.chartEnhancer;
+    if (!opts || !opts.enabled) return;
+    const ca = chart.chartArea, sx = chart.scales.x, sy = chart.scales.y;
+    if (!ca || !sx || !sy) return;
+    const ctx = chart.ctx;
+    const ds = chart.data.datasets[0];
+    if (!ds || !chart.isDatasetVisible(0)) return;
+
+    // (C) Latest-point enlarged marker + value bubble
+    if (opts.latestIdx != null && opts.latestIdx >= 0) {
+      const v = ds.data[opts.latestIdx];
+      if (v != null && v > 0) {
+        const x = sx.getPixelForValue(opts.latestIdx);
+        const y = sy.getPixelForValue(v);
+        const col = typeof ds.borderColor === 'string' ? ds.borderColor : '#f97316';
+        ctx.save();
+        // Halo
+        ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI*2);
+        ctx.fillStyle = col + '33'; ctx.fill();
+        // Solid point
+        ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI*2);
+        ctx.fillStyle = col; ctx.fill();
+        ctx.strokeStyle = opts.isDark ? '#0f172a' : '#ffffff';
+        ctx.lineWidth = 2; ctx.stroke();
+
+        // Bubble
+        const label = opts.fmtLabel ? opts.fmtLabel(v) : Math.round(v).toLocaleString();
+        ctx.font = 'bold 11px -apple-system, "Microsoft JhengHei", sans-serif';
+        const tw = ctx.measureText(label).width;
+        const padX = 8, bh = 20;
+        const bw = tw + padX * 2;
+        let bx = x - bw / 2;
+        bx = Math.max(ca.left + 2, Math.min(ca.right - bw - 2, bx));
+        let by = y - bh - 12;
+        if (by < ca.top + 2) by = y + 12;
+        const r = 5;
+        ctx.fillStyle = col;
+        ctx.beginPath();
+        ctx.moveTo(bx + r, by);
+        ctx.lineTo(bx + bw - r, by); ctx.arcTo(bx + bw, by, bx + bw, by + r, r);
+        ctx.lineTo(bx + bw, by + bh - r); ctx.arcTo(bx + bw, by + bh, bx + bw - r, by + bh, r);
+        ctx.lineTo(bx + r, by + bh); ctx.arcTo(bx, by + bh, bx, by + bh - r, r);
+        ctx.lineTo(bx, by + r); ctx.arcTo(bx, by, bx + r, by, r);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, bx + bw / 2, by + bh / 2 + 0.5);
+        ctx.restore();
+      }
+    }
+  },
+};
+if (typeof Chart !== 'undefined') Chart.register(ChartEnhancer);
+
+// ── Floating info card: shows 本月/目標/差距 in top-right of chart ──
+function attachInfoCard(canvasId, cur, tgt, ly, opts){
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const container = canvas.parentElement;
+  if (!container) return;
+  container.classList.add('chartWrap');
+  let card = container.querySelector('.chartInfoCard');
+  if (!card) {
+    card = document.createElement('div');
+    card.className = 'chartInfoCard';
+    container.appendChild(card);
+  }
+  if ((!cur || cur <= 0) && (!tgt || tgt <= 0)) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  const fmt = (opts && opts.fmt) || fK;
+  const rows = [];
+  rows.push(`<div class="cicRow"><span class="cicLbl">本月</span><span class="cicVal">${fmt(cur||0)}</span></div>`);
+  if (tgt > 0) {
+    const gap = (cur||0) - tgt;
+    const pct = tgt > 0 ? (gap / tgt * 100) : 0;
+    const cls = gap >= 0 ? 'pos' : 'neg';
+    rows.push(`<div class="cicRow"><span class="cicLbl">目標</span><span class="cicVal">${fmt(tgt)}</span></div>`);
+    rows.push(`<div class="cicRow"><span class="cicLbl">差距</span><span class="cicVal ${cls}">${gap >= 0 ? '+' : '-'}${fmt(Math.abs(gap))}${tgt > 0 ? ` (${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%)` : ''}</span></div>`);
+  }
+  if (ly > 0 && cur > 0) {
+    const yoy = (cur - ly) / ly * 100;
+    const cls = yoy >= 0 ? 'pos' : 'neg';
+    rows.push(`<div class="cicSep"></div>`);
+    rows.push(`<div class="cicRow"><span class="cicLbl">YoY</span><span class="cicVal ${cls}">${yoy >= 0 ? '+' : ''}${yoy.toFixed(1)}%</span></div>`);
+  }
+  card.innerHTML = rows.join('');
+}
+
+// ── Wire HTML legend as clickable toggle ──
+function wireLegend(legEl, chart){
+  if (!legEl || !chart) return;
+  legEl.classList.add('legClickable');
+  // Map label text (short or full) to dataset index
+  const labelMap = {};
+  chart.data.datasets.forEach((ds, i) => { if (ds.label) labelMap[ds.label] = i; });
+  const shortToLong = {'今年':'今年實際','去年':'去年同期','目標':'預算目標'};
+  legEl.querySelectorAll('.li').forEach(li => {
+    const txt = li.textContent.trim();
+    const idx = labelMap[txt] != null ? labelMap[txt] : labelMap[shortToLong[txt]];
+    if (idx == null) return;
+    li.dataset.dsIdx = idx;
+    // Reflect current visibility
+    li.classList.toggle('off', !chart.isDatasetVisible(idx));
+    li.onclick = () => {
+      const visible = chart.isDatasetVisible(idx);
+      chart.setDatasetVisibility(idx, !visible);
+      li.classList.toggle('off', visible);
+      chart.update();
+    };
+  });
+}
+
 // ── mkLine ──
-function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder,tipFmtFn){
+function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder,tipFmtFn,ehOpts){
   const allV=[...act,...(ly||[]),...(showTgt&&tgt?tgt:[])].filter(v=>v>0);
   const minV=allV.length?Math.min(...allV):0,maxV=allV.length?Math.max(...allV):100;
   const spread=(maxV-minV)||maxV*.1||5;
@@ -1444,15 +1642,52 @@ function mkLine(id,labels,act,ly,tgt,lc,lyc,tgtc,yFmt,showTgt,tc,gc,ptBorder,tip
     pointStyle:'circle',pointRadius:3,pointBorderWidth:0,pointBackgroundColor:TGT_COLOR,
   });
   if(avg!==null)ds.push({label:'期間平均',data:Array(act.length).fill(avg),borderColor:avgColor,borderDash:[3,3],borderWidth:1.8,pointRadius:0,fill:false,tension:0});
+
+  // Compute latest actual index + future start index for plugin
+  let latestIdx = -1;
+  for (let i = act.length - 1; i >= 0; i--) if (act[i] != null && act[i] > 0) { latestIdx = i; break; }
+  let futureStartIdx = -1;
+  for (let i = 0; i < act.length; i++) if (act[i] == null) { futureStartIdx = i; break; }
+  const latestTarget = (tgt && latestIdx >= 0 && tgt[latestIdx] > 0) ? tgt[latestIdx] : 0;
+  const eh = ehOpts || {};
+
   return new Chart(document.getElementById(id),{
     type:'line',data:{labels,datasets:ds},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{
         legend:{display:false},
-        tooltip:{boxWidth:20,boxHeight:2,callbacks:{label:ctx=>{
-          if(ctx.dataset.label==='期間平均')return`期間平均: ${tipFmt(ctx.raw)}`;
-          return`${ctx.dataset.label}: ${tipFmt(ctx.raw)}`;
-        }}}
+        chartEnhancer:{
+          enabled:true, isDark:isDark(),
+          latestIdx: eh.suppressLatest ? -1 : latestIdx,
+          futureStartIdx: futureStartIdx >= 0 ? futureStartIdx : null,
+          target: eh.showBands ? latestTarget : 0,
+          showBands: !!eh.showBands,
+          fmtLabel: tipFmt,
+        },
+        tooltip:{
+          boxWidth:20, boxHeight:2, padding:9,
+          callbacks:{
+            label: ctx => {
+              if (ctx.dataset.label === '期間平均') return `期間平均: ${tipFmt(ctx.raw)}`;
+              return `${ctx.dataset.label}: ${tipFmt(ctx.raw)}`;
+            },
+            afterBody: (items) => {
+              const getVal = lbl => { const it = items.find(i => i.dataset.label === lbl); return it ? it.raw : null; };
+              const a = getVal('今年實際'), t = getVal('預算目標'), l = getVal('去年同期');
+              const lines = [];
+              if (a != null && t != null && t > 0) {
+                const ach = a / t * 100;
+                const diff = a - t;
+                lines.push(`達成率 ${ach.toFixed(1)}% (${diff >= 0 ? '+' : ''}${tipFmt(Math.abs(diff)).replace(/^/, diff >= 0 ? '' : '-')})`);
+              }
+              if (a != null && l != null && l > 0) {
+                const yoy = (a - l) / l * 100;
+                lines.push(`YoY ${yoy >= 0 ? '+' : ''}${yoy.toFixed(1)}%`);
+              }
+              return lines;
+            },
+          },
+        },
       },
       scales:{x:{ticks:{font:{size:10},color:tc},grid:{color:gc}},
               y:{ticks:{font:{size:11},color:tc,callback:fmt},grid:{color:gc},min:niceMin,max:niceMax}}}
