@@ -195,6 +195,31 @@
     .achieve-chip { padding: 6px 10px; gap: 6px; }
   }
 
+  /* ═══ 營運 Excel 上傳（移自 settings.html，scoped with .opu- prefix） ═══ */
+  .opu-btn{background:#10b981;color:#fff;}
+  .opu-btn:hover{background:#059669;}
+  .opu-hint{background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:11px 14px;font-size:12px;color:#94a3b8;line-height:1.8;margin-bottom:14px;}
+  .opu-hint strong{color:#e2e8f0;}
+  .opu-hint code{background:#0f172a;padding:1px 5px;border-radius:3px;color:#60a5fa;font-size:11px;}
+  .opu-zone{border:2px dashed #2d3f56;border-radius:8px;padding:36px;text-align:center;cursor:pointer;transition:all .2s;}
+  .opu-zone:hover,.opu-zone.drag{border-color:#3b82f6;background:rgba(59,130,246,.05);}
+  .opu-zone .icon{font-size:36px;margin-bottom:8px;}
+  .opu-zone p{color:#64748b;font-size:12px;margin-top:4px;}
+  .opu-zone input[type=file]{display:none;}
+  .opu-file-item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #2d3f56;font-size:13px;}
+  .opu-result-item{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #2d3f56;font-size:13px;gap:8px;}
+  .opu-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;}
+  .opu-badge-g{background:rgba(16,185,129,.15);color:#10b981;}
+  .opu-badge-r{background:rgba(239,68,68,.15);color:#ef4444;}
+  .opu-badge-b{background:rgba(59,130,246,.15);color:#3b82f6;}
+  .opu-tbl{width:100%;border-collapse:collapse;font-size:12px;}
+  .opu-tbl th,.opu-tbl td{padding:8px 10px;border-bottom:1px solid #2d3f56;text-align:left;}
+  .opu-tbl th{background:#0f172a;color:#94a3b8;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;}
+  .opu-tbl td{color:#e2e8f0;}
+  .opu-tbl td.num,.opu-tbl th.num{text-align:right;}
+  .opu-card{background:#0f172a;border:1px solid #2d3f56;border-radius:10px;padding:14px 16px;margin-bottom:12px;}
+  .opu-card-title{font-size:13px;font-weight:700;color:#fff;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+
 </style>
 </head>
 <body>
@@ -223,6 +248,7 @@
       </select>
       <button class="btn btn-primary" onclick="doLoad()">查詢</button>
       <span id="lastUpdate" style="margin-left:auto;font-size:11px;color:#64748b;white-space:nowrap"></span>
+      <button class="btn opu-btn" onclick="openOpUploadModal()" style="font-size:12px;padding:7px 14px;white-space:nowrap" title="上傳 DMS 匯出的四種 Excel 報表至資料庫">&#128202; 營運 Excel 上傳</button>
       <button class="btn btn-secondary" onclick="openEstimateModal()" style="font-size:12px;padding:7px 14px;white-space:nowrap">✏️ 業績預估</button>
     </div>
     <div class="tab-bar-wrap">
@@ -1063,6 +1089,100 @@ function closeEstimateModal() {
   document.body.style.overflow = '';
 }
 
+/* ───────── 營運 Excel 上傳 Modal ───────── */
+let opuSelectedFiles = [];
+let _opuWired = false;
+function _opuWire() {
+  if (_opuWired) return;
+  const zone = document.getElementById('opuZone');
+  const fi = document.getElementById('opuFileInput');
+  if (!zone || !fi) return;
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+  zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag'); opuHandleFiles(e.dataTransfer.files); });
+  fi.addEventListener('change', e => opuHandleFiles(e.target.files));
+  _opuWired = true;
+}
+function openOpUploadModal() {
+  document.getElementById('opUploadModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  _opuWire();
+  opuLoadHistory();
+}
+function closeOpUploadModal() {
+  document.getElementById('opUploadModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+function opuHandleFiles(files) {
+  opuSelectedFiles = Array.from(files).filter(f => f.name.match(/\.xlsx?$/i)).slice(0, 8);
+  const list = document.getElementById('opuFileList');
+  if (!opuSelectedFiles.length) { list.innerHTML = ''; document.getElementById('opuBtnUpload').disabled = true; return; }
+  list.innerHTML = opuSelectedFiles.map(f => `<div class="opu-file-item"><span>📄 ${f.name}</span><span style="color:#64748b">${(f.size/1024).toFixed(0)} KB</span></div>`).join('');
+  document.getElementById('opuBtnUpload').disabled = false;
+}
+async function opuDoUpload() {
+  if (!opuSelectedFiles.length) return;
+  const btn = document.getElementById('opuBtnUpload');
+  const status = document.getElementById('opuUploadStatus');
+  btn.disabled = true;
+  status.textContent = '上傳中…';
+  status.style.color = '#64748b';
+  const formData = new FormData();
+  opuSelectedFiles.forEach(f => formData.append('files', f));
+  try {
+    const res = await fetch('/api/upload', { method: 'POST', body: formData });
+    const data = await res.json();
+    opuShowResults(data.results || []);
+    opuSelectedFiles = [];
+    document.getElementById('opuFileList').innerHTML = '';
+    document.getElementById('opuFileInput').value = '';
+    status.textContent = '';
+    opuLoadHistory();
+  } catch (err) {
+    status.textContent = '上傳失敗: ' + err.message;
+    status.style.color = '#ef4444';
+  } finally {
+    btn.disabled = false;
+  }
+}
+function opuShowResults(results) {
+  document.getElementById('opuResultsCard').style.display = '';
+  document.getElementById('opuResults').innerHTML = (results || []).map(r =>
+    `<div class="opu-result-item"><span style="font-weight:600">${r.filename}</span>
+      <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">${
+        r.status === 'success'
+          ? `<span class="opu-badge opu-badge-g">成功</span><span style="color:#64748b;font-size:12px">${r.fileType||'-'}/${r.branch||'-'}/${r.period||'-'}/${r.rowCount||0}筆</span>`
+          : `<span class="opu-badge opu-badge-r">失敗</span><span style="color:#ef4444;font-size:12px">${r.error||''}</span>`
+      }</div></div>`
+  ).join('');
+}
+async function opuLoadHistory() {
+  const tbody = document.getElementById('opuHistoryBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="7" style="color:#64748b;padding:16px;text-align:center"><span class="spinner"></span> 載入中</td></tr>';
+  try {
+    const res = await fetch('/api/history');
+    const data = await res.json();
+    if (!Array.isArray(data) || !data.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="color:#64748b;padding:16px;text-align:center">尚無紀錄</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(h =>
+      `<tr>
+        <td style="font-size:11px;color:#94a3b8;white-space:nowrap">${new Date(h.created_at).toLocaleString('zh-TW')}</td>
+        <td style="font-size:12px">${h.file_name||''}</td>
+        <td><span class="opu-badge opu-badge-b">${h.file_type||'-'}</span></td>
+        <td>${h.branch||'-'}</td>
+        <td>${h.period||'-'}</td>
+        <td class="num">${(h.row_count||0).toLocaleString()}</td>
+        <td><span class="opu-badge ${h.status==='success'?'opu-badge-g':'opu-badge-r'}">${h.status==='success'?'成功':'失敗'}</span></td>
+      </tr>`
+    ).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="7" style="color:#ef4444;padding:16px;text-align:center">${e.message}</td></tr>`;
+  }
+}
+
 function switchEstTab(tab) {
   ['input','history'].forEach(function(t) {
     var content = document.getElementById('estTabContent-'+t);
@@ -1478,14 +1598,77 @@ async function submitWeeklyEstimate() {
 }
 
 document.addEventListener('keydown', function(e) {
-  if (e.key==='Escape' && document.getElementById('estimateModal') &&
-      document.getElementById('estimateModal').style.display!=='none')
-    closeEstimateModal();
+  if (e.key!=='Escape') return;
+  const estM = document.getElementById('estimateModal');
+  if (estM && estM.style.display !== 'none') { closeEstimateModal(); return; }
+  const opM = document.getElementById('opUploadModal');
+  if (opM && opM.style.display !== 'none') { closeOpUploadModal(); return; }
 });
  
 </script>
 
  <!-- ════ 業績預估 Modal ════ -->
+<!-- ═══ 營運 Excel 上傳 Modal ═══ -->
+<div id="opUploadModal"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:800;
+         align-items:center;justify-content:center;padding:16px;overflow-y:auto"
+  onclick="if(event.target===this)closeOpUploadModal()">
+  <div style="background:#1a2740;border:1px solid #2d4060;border-radius:14px;
+              width:100%;max-width:880px;display:flex;flex-direction:column;
+              box-shadow:0 24px 64px rgba(0,0,0,.88);margin:auto;max-height:90vh">
+    <div style="display:flex;align-items:flex-start;gap:12px;padding:16px 20px;border-bottom:1px solid #2d3f56;flex-shrink:0">
+      <div style="flex:1">
+        <div style="font-size:15px;font-weight:800;color:#fff">&#128202; 營運 Excel 上傳</div>
+        <div style="font-size:12px;color:#64748b;margin-top:3px">將 DMS 匯出的四種報表上傳至資料庫</div>
+      </div>
+      <button onclick="closeOpUploadModal()"
+        style="width:30px;height:30px;border-radius:7px;border:1px solid #2d3f56;
+               background:#0f172a;color:#64748b;font-size:18px;line-height:1;cursor:pointer;
+               display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
+    </div>
+    <div style="padding:18px 20px;overflow-y:auto;flex:1">
+      <div class="opu-hint">
+        &#9888;&#65039; <strong>檔名需包含據點和期間</strong>，例如：<br>
+        <code>維修收入分類明細_AMA_202501.xlsx</code>&ensp;
+        <code>技師績效報表_AMC_202501.xlsx</code>&ensp;
+        <code>零件銷售明細_AMD_202501.xlsx</code>&ensp;
+        <code>業務查詢_AMA_202501.xlsx</code>
+      </div>
+      <div class="opu-card">
+        <div class="opu-card-title">選擇檔案</div>
+        <div class="opu-zone" id="opuZone" onclick="document.getElementById('opuFileInput').click()">
+          <div class="icon">&#128202;</div>
+          <strong>拖拉檔案到這裡，或點擊選擇</strong>
+          <p>支援 .xlsx / .xls，最多 8 個</p>
+          <input type="file" id="opuFileInput" multiple accept=".xlsx,.xls">
+        </div>
+        <div id="opuFileList" style="margin-top:10px"></div>
+        <div style="margin-top:14px;display:flex;gap:8px;align-items:center">
+          <button class="btn btn-primary" id="opuBtnUpload" disabled onclick="opuDoUpload()">上傳</button>
+          <span id="opuUploadStatus" style="font-size:13px;color:#64748b"></span>
+        </div>
+      </div>
+      <div class="opu-card" id="opuResultsCard" style="display:none">
+        <div class="opu-card-title">上傳結果</div>
+        <div id="opuResults"></div>
+      </div>
+      <div class="opu-card">
+        <div class="opu-card-title">&#128220; 最近上傳紀錄
+          <span class="card-title-note" style="margin-left:auto">
+            <button class="btn btn-secondary" style="padding:5px 10px;font-size:11px" onclick="opuLoadHistory()">重新整理</button>
+          </span>
+        </div>
+        <div style="overflow-x:auto;max-height:320px">
+          <table class="opu-tbl">
+            <thead><tr><th>時間</th><th>檔案</th><th>類型</th><th>據點</th><th>期間</th><th class="num">筆數</th><th>狀態</th></tr></thead>
+            <tbody id="opuHistoryBody"><tr><td colspan="7" style="color:#64748b;padding:16px;text-align:center">尚未載入</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="estimateModal"
   style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:800;
          align-items:center;justify-content:center;padding:16px;overflow-y:auto"
