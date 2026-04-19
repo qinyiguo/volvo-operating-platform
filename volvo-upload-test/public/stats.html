@@ -615,10 +615,16 @@
 
  <!-- ══ 施工周轉率 ══ -->
   <div id="tab-tech-turnover" style="display:none">
-    <div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#94a3b8;line-height:1.8;margin-bottom:14px">
-      🔄 <strong>引電技師施工周轉率</strong>：只計算引電台次（排除保險鈑烤、自費鈑烤）。<br>
-      周轉率 = 總引電台次 ÷ 技師人數 ÷ 工作天數（<strong>台 / 人 / 天</strong>）。<br>
-      技師人數來自人員名冊（引擎維護科，不含領班）；引電台次以 <code>distinct(plate_no, settle_date)</code> 計算。
+    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+      <div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#94a3b8;line-height:1.8;flex:1;min-width:280px">
+        🔄 <strong>引電技師施工周轉率</strong>：只計算引電台次（排除保險鈑烤、自費鈑烤）。<br>
+        周轉率 = 總引電台次 ÷ 技師人數 ÷ 工作天數（<strong>台 / 人 / 天</strong>）。<br>
+        技師人數來自人員名冊（引擎維護科，不含領班）；引電台次以 <code>distinct(plate_no, settle_date)</code> 計算。
+      </div>
+      <button onclick="openBayConfigModal()" title="設定各據點引擎/鈑金/烤漆工位數（影響工位承接率計算）"
+        style="padding:8px 14px;background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.4);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">
+        🔧 各據點工位設定
+      </button>
     </div>
     <div id="techTurnoverContent">
       <div class="loading"><span class="spinner"></span>載入中</div>
@@ -778,6 +784,48 @@
   </div>
 </div>
 
+<!-- ══ 各據點工位設定 Modal（移自 settings.html） ══ -->
+<div id="bayConfigModal"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;
+         align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto"
+  onclick="if(event.target===this)closeBayConfigModal()">
+  <div style="background:#1a2740;border:1px solid #2d4060;border-radius:14px;
+              width:100%;max-width:720px;display:flex;flex-direction:column;
+              box-shadow:0 24px 64px rgba(0,0,0,.85);margin:auto">
+    <div style="display:flex;align-items:center;gap:8px;padding:16px 20px;border-bottom:1px solid #2d3f56;flex-shrink:0">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:15px;font-weight:800;color:#fff">🔧 各據點工位設定</div>
+        <div style="font-size:12px;color:#64748b;margin-top:3px">設定各據點引擎/鈑金/烤漆工位數，用於計算工位承接率</div>
+      </div>
+      <button onclick="saveBayConfig()"
+        style="padding:7px 14px;background:#3b82f6;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">
+        💾 儲存
+      </button>
+      <button onclick="closeBayConfigModal()"
+        style="width:30px;height:30px;border-radius:7px;border:1px solid #2d3f56;
+               background:#0f172a;color:#64748b;font-size:18px;line-height:1;cursor:pointer;
+               display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
+    </div>
+    <div style="padding:18px 20px;overflow-y:auto;max-height:calc(100vh - 160px)">
+      <div id="bayConfigMsg" style="font-size:13px;min-height:20px;margin-bottom:10px"></div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr>
+              <th style="padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:left;color:#94a3b8;font-size:11px;font-weight:700;text-transform:uppercase">據點</th>
+              <th style="padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:center;color:#8b5cf6;font-size:12px">🔧 引擎工位</th>
+              <th style="padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:center;color:#f97316;font-size:12px">🔨 鈑金工位</th>
+              <th style="padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:center;color:#06b6d4;font-size:12px">🎨 烤漆工位</th>
+              <th style="padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:center;color:#10b981;font-size:12px">合計</th>
+            </tr>
+          </thead>
+          <tbody id="bayConfigBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="wipDetailModal"
   style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;
          align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto"
@@ -842,6 +890,95 @@ async function openTechHoursConfig() {
 function closeTechHoursConfig() {
   document.getElementById('techHoursConfigModal').style.display = 'none';
   document.body.style.overflow = '';
+}
+
+// ══ 各據點工位設定（移自 settings.html） ══
+let _bayConfig = {};
+async function openBayConfigModal() {
+  document.getElementById('bayConfigModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  document.getElementById('bayConfigMsg').textContent = '';
+  try {
+    _bayConfig = await fetch('/api/tech-bay-config').then(r => r.json());
+  } catch(e) { _bayConfig = {}; }
+  renderBayConfigTable();
+}
+function closeBayConfigModal() {
+  document.getElementById('bayConfigModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+function renderBayConfigTable() {
+  const BRANCHES = ['AMA','AMC','AMD'];
+  const brColors = { AMA:'#3b82f6', AMC:'#10b981', AMD:'#f59e0b' };
+  document.getElementById('bayConfigBody').innerHTML = BRANCHES.map(br => {
+    const b  = _bayConfig[br] || {};
+    const e  = b.engine   || 0;
+    const bw = b.bodywork || 0;
+    const p  = b.paint    || 0;
+    const col = brColors[br];
+    return `<tr>
+      <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3)">
+        <span style="background:${col}22;color:${col};padding:3px 10px;border-radius:6px;font-size:12px;font-weight:700">${br}</span>
+      </td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center">
+        <input type="number" id="bay-${br}-engine" value="${e}" min="0" max="99"
+          style="background:#0f172a;border:1px solid #2d3f56;color:#8b5cf6;padding:6px 10px;border-radius:6px;font-size:14px;font-weight:800;width:70px;text-align:center;outline:none"
+          oninput="updateBayTotal('${br}')">
+      </td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center">
+        <input type="number" id="bay-${br}-bodywork" value="${bw}" min="0" max="99"
+          style="background:#0f172a;border:1px solid #2d3f56;color:#f97316;padding:6px 10px;border-radius:6px;font-size:14px;font-weight:800;width:70px;text-align:center;outline:none"
+          oninput="updateBayTotal('${br}')">
+      </td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center">
+        <input type="number" id="bay-${br}-paint" value="${p}" min="0" max="99"
+          style="background:#0f172a;border:1px solid #2d3f56;color:#06b6d4;padding:6px 10px;border-radius:6px;font-size:14px;font-weight:800;width:70px;text-align:center;outline:none"
+          oninput="updateBayTotal('${br}')">
+      </td>
+      <td id="bay-${br}-total"
+        style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center;font-size:16px;font-weight:800;color:#10b981">
+        ${e + bw + p}
+      </td>
+    </tr>`;
+  }).join('');
+}
+function updateBayTotal(br) {
+  const e  = parseInt(document.getElementById(`bay-${br}-engine`)?.value   || 0);
+  const bw = parseInt(document.getElementById(`bay-${br}-bodywork`)?.value || 0);
+  const p  = parseInt(document.getElementById(`bay-${br}-paint`)?.value    || 0);
+  const el = document.getElementById(`bay-${br}-total`);
+  if (el) el.textContent = e + bw + p;
+}
+async function saveBayConfig() {
+  const BRANCHES = ['AMA','AMC','AMD'];
+  const cfg = {};
+  BRANCHES.forEach(br => {
+    cfg[br] = {
+      engine:   parseInt(document.getElementById(`bay-${br}-engine`)?.value   || 0),
+      bodywork: parseInt(document.getElementById(`bay-${br}-bodywork`)?.value || 0),
+      paint:    parseInt(document.getElementById(`bay-${br}-paint`)?.value    || 0),
+    };
+  });
+  const msgEl = document.getElementById('bayConfigMsg');
+  try {
+    const r = await fetch('/api/tech-bay-config', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cfg),
+    }).then(r => r.json());
+    if (r.error) throw new Error(r.error);
+    _bayConfig = cfg;
+    msgEl.textContent = '✅ 工位設定已儲存（重新查詢以套用到周轉率）';
+    msgEl.style.color = '#10b981';
+    // Auto-refresh turnover panel if it's currently shown
+    if (document.getElementById('tab-tech-turnover')?.style.display !== 'none' && typeof loadAll === 'function') {
+      setTimeout(() => loadAll(), 500);
+    }
+    setTimeout(() => { msgEl.textContent = ''; }, 2500);
+  } catch(e) {
+    msgEl.textContent = '❌ ' + e.message;
+    msgEl.style.color = '#ef4444';
+  }
 }
 
 async function loadTechCapacityConfig() {
@@ -1058,7 +1195,9 @@ function setTrMsg(msg, color) {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     const m = document.getElementById('techHoursConfigModal');
-    if (m && m.style.display !== 'none') closeTechHoursConfig();
+    if (m && m.style.display !== 'none') { closeTechHoursConfig(); return; }
+    const bm = document.getElementById('bayConfigModal');
+    if (bm && bm.style.display !== 'none') { closeBayConfigModal(); return; }
   }
 });
 
