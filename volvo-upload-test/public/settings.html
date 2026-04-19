@@ -546,8 +546,7 @@
 
 <!-- ══ Main Layout ══ -->
 <div id="mobileSectionNav" style="display:none">
-  <button class="mob-sec-btn active" id="mob-menu-upload" onclick="showSection('upload')">📤 上傳</button>
-  <button class="mob-sec-btn" id="mob-menu-dbstatus" onclick="showSection('dbstatus')">🗄️ 資料庫</button>
+  <button class="mob-sec-btn active" id="mob-menu-dbstatus" onclick="showSection('dbstatus')">🗄️ 資料庫</button>
   <button class="mob-sec-btn" id="mob-menu-sa-config" onclick="showSection('sa-config')">📋 指標銷售</button>
   <button class="mob-sec-btn" id="mob-menu-working-days" onclick="showSection('working-days')">📅 工作天</button>
   <button class="mob-sec-btn" id="mob-menu-beauty-op-hours" onclick="showSection('beauty-op-hours')">🎨 美容工時</button>
@@ -564,10 +563,7 @@
   <div class="sidebar">
     <div class="sidebar-section">
       <div class="sidebar-label">資料管理</div>
-      <div class="sidebar-item active" onclick="showSection('upload')" id="menu-upload">
-        <span class="icon">📤</span> 上傳 Excel
-      </div>
-      <div class="sidebar-item" onclick="showSection('dbstatus')" id="menu-dbstatus">
+      <div class="sidebar-item active" onclick="showSection('dbstatus')" id="menu-dbstatus">
         <span class="icon">🗄️</span> 資料庫狀態
       </div>
     </div>
@@ -613,48 +609,10 @@
   </div>
 
   <div class="main">
-    <!-- ── 上傳 Excel ── -->
-    <div class="section-page active" id="section-upload">
-      <div class="page-title">📤 上傳 Excel</div>
-      <p class="page-sub">將 DMS 匯出的四種報表上傳至資料庫</p>
-      <div class="hint">
-        ⚠️ <strong>檔名需包含據點和期間</strong>，例如：<br>
-        <code>維修收入分類明細_AMA_202501.xlsx</code>　
-        <code>技師績效報表_AMC_202501.xlsx</code>　
-        <code>零件銷售明細_AMD_202501.xlsx</code>　
-        <code>業務查詢_AMA_202501.xlsx</code>
-      </div>
-      <div class="card">
-        <div class="card-title">選擇檔案</div>
-        <div class="upload-zone" id="zone" onclick="document.getElementById('fileInput').click()">
-          <div class="icon">📊</div>
-          <strong>拖拉檔案到這裡，或點擊選擇</strong>
-          <p>支援 .xlsx / .xls，最多 8 個</p>
-        </div>
-        <input type="file" id="fileInput" multiple accept=".xlsx,.xls">
-        <div id="fileList" style="margin-top:10px"></div>
-        <div style="margin-top:14px;display:flex;gap:8px;align-items:center">
-          <button class="btn btn-primary" id="btnUpload" disabled onclick="doUpload()">上傳</button>
-          <span id="uploadStatus" style="font-size:13px;color:#64748b"></span>
-        </div>
-      </div>
-      <div class="card" id="resultsCard" style="display:none">
-        <div class="card-title">上傳結果</div>
-        <div id="results"></div>
-      </div>
-      <div class="card">
-        <div class="card-title">📜 最近上傳紀錄 <span class="card-title-note"><button class="btn btn-secondary btn-sm" onclick="loadHistory()">重新整理</button></span></div>
-        <div style="overflow-x:auto">
-          <table>
-            <thead><tr><th>時間</th><th>檔案</th><th>類型</th><th>據點</th><th>期間</th><th class="num">筆數</th><th>狀態</th></tr></thead>
-            <tbody id="historyBody"><tr><td colspan="7" style="color:#64748b;padding:16px"><span class="spinner"></span>載入中</td></tr></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+    <!-- ── 上傳 Excel 已移至「業績指標」頁右上角「📊 營運 Excel 上傳」按鈕 ── -->
 
     <!-- ── 資料庫狀態 ── -->
-    <div class="section-page" id="section-dbstatus">
+    <div class="section-page active" id="section-dbstatus">
       <div class="page-title">🗄️ 資料庫狀態</div>
       <p class="page-sub">各資料表目前的筆數</p>
       <div class="card">
@@ -1186,7 +1144,7 @@ document.addEventListener('keydown',e=>{
 });
 
 // ══ Sidebar ══
-const sections=['upload','dbstatus','sa-config','working-days','beauty-op-hours','tech-wage-config','revenue-targets','performance','person-targets','bay-config','password','users','auditlog'];
+const sections=['dbstatus','sa-config','working-days','beauty-op-hours','tech-wage-config','revenue-targets','performance','person-targets','bay-config','password','users','auditlog'];
 function showSection(id){
   sections.forEach(s=>{
     document.getElementById(`section-${s}`).classList.toggle('active',s===id);
@@ -1211,17 +1169,7 @@ function showSection(id){
   if(id==='auditlog') { loadAuditLogs(1); loadAuditSummary(); }
 }
 
-// ══ Upload ══
-let selectedFiles=[];
-const zone=document.getElementById('zone');
-zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag');});
-zone.addEventListener('dragleave',()=>zone.classList.remove('drag'));
-zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag');handleFiles(e.dataTransfer.files);});
-document.getElementById('fileInput').addEventListener('change',e=>handleFiles(e.target.files));
-function handleFiles(files){selectedFiles=Array.from(files).filter(f=>f.name.match(/\.xlsx?$/i));const list=document.getElementById('fileList');if(!selectedFiles.length){list.innerHTML='';return;}list.innerHTML=selectedFiles.map(f=>`<div class="file-item"><span>📄 ${f.name}</span><span style="color:#64748b">${(f.size/1024).toFixed(0)} KB</span></div>`).join('');document.getElementById('btnUpload').disabled=false;}
-async function doUpload(){if(!selectedFiles.length)return;const btn=document.getElementById('btnUpload'),status=document.getElementById('uploadStatus');btn.disabled=true;status.textContent='上傳中...';const formData=new FormData();selectedFiles.forEach(f=>formData.append('files',f));try{const res=await fetch('/api/upload',{method:'POST',body:formData});const data=await res.json();showResults(data.results);selectedFiles=[];document.getElementById('fileList').innerHTML='';loadHistory();}catch(err){status.textContent='上傳失敗: '+err.message;}finally{btn.disabled=false;status.textContent='';}}
-function showResults(results){document.getElementById('resultsCard').style.display='';document.getElementById('results').innerHTML=results.map(r=>`<div class="result-item"><span style="font-weight:600">${r.filename}</span><div style="display:flex;gap:8px;align-items:center">${r.status==='success'?`<span class="badge badge-green">成功</span><span style="color:#64748b;font-size:12px">${r.fileType}/${r.branch||'-'}/${r.period||'-'}/${r.rowCount}筆</span>`:`<span class="badge badge-red">失敗</span><span style="color:#ef4444;font-size:12px">${r.error}</span>`}</div></div>`).join('');}
-async function loadHistory(){try{const data=await(await fetch('/api/history')).json();const tbody=document.getElementById('historyBody');if(!data.length){tbody.innerHTML='<tr><td colspan="7" style="color:#64748b;padding:16px">尚無紀錄</td></tr>';return;}tbody.innerHTML=data.map(h=>`<tr><td style="font-size:12px;color:#64748b;white-space:nowrap">${new Date(h.created_at).toLocaleString('zh-TW')}</td><td style="font-size:12px">${h.file_name}</td><td><span class="badge badge-blue">${h.file_type||'-'}</span></td><td>${h.branch||'-'}</td><td>${h.period||'-'}</td><td class="num">${h.row_count?.toLocaleString()||0}</td><td><span class="badge ${h.status==='success'?'badge-green':'badge-red'}">${h.status==='success'?'成功':'失敗'}</span></td></tr>`).join('');}catch(e){document.getElementById('historyBody').innerHTML=`<tr><td colspan="7" style="color:#ef4444">${e.message}</td></tr>`;}}
+// ══ Upload Excel 已移至 performance.html（業績指標頁右上角「📊 營運 Excel 上傳」按鈕） ══
 async function loadCounts(){try{const data=await(await fetch('/api/counts')).json();if(data.error)throw new Error(data.error);document.getElementById('counts').innerHTML=data.map(r=>`<div class="count-card"><div class="count-val">${parseInt(r['筆數']).toLocaleString()}</div><div class="count-label">${r['表格']}</div></div>`).join('');}catch(e){document.getElementById('counts').innerHTML=`<span style="color:#ef4444;font-size:13px">❌ ${e.message}</span>`;}}
 
 // ══ SA 銷售設定 ══
@@ -2378,7 +2326,7 @@ async function deleteUser(id, username) {
 // ══ 初始化 ══
 (async () => {
   await DmsAuth.init({ requiredPermission: 'page:settings' });
-  loadHistory();
+  loadCounts();
 })();
 function initTheme(){const s=localStorage.getItem('volvo_theme')||'dark';applyTheme(s,false);}
 function applyTheme(t,re){if(t==='light')document.body.classList.add('light-theme');else document.body.classList.remove('light-theme');const b=document.getElementById('themeToggleBtn');if(b)b.textContent=t==='light'?'🌙':'☀️';localStorage.setItem('volvo_theme',t);}
