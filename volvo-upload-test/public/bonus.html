@@ -4023,18 +4023,18 @@ function _applyBonusStyles(ws, rows, roles) {
   };
   var ref = XLSX.utils.decode_range(ws['!ref'] || 'A1');
   var maxC = ref.e.c;
+  // 完整橫跨 7 欄的列：空白格也補底色 + 邊框；其餘只局部欄有內容的列不補空白格
+  var FULL_WIDTH = { factory:1, dept:1, colHeader:1, data:1, summary:1, noteTitle:1, signHeader:1, signBlank:1 };
   for (var R = ref.s.r; R <= ref.e.r; R++) {
     var role = roles[R] || 'empty';
     var baseStyle = STYLES[role];
     for (var C = ref.s.c; C <= maxC; C++) {
       var addr = XLSX.utils.encode_cell({r:R, c:C});
       var cell = ws[addr];
-      // 為「有樣式但空白」的儲存格補空字串，讓邊框、底色能套用
       if (!cell) {
-        if (!baseStyle) continue;
+        if (!baseStyle || !FULL_WIDTH[role]) continue;
         cell = ws[addr] = { v: '', t: 's' };
       }
-      // 千分位
       if (typeof cell.v === 'number') cell.z = '#,##0';
       if (!baseStyle) continue;
       var s = JSON.parse(JSON.stringify(baseStyle));
@@ -4052,6 +4052,35 @@ function _applyBonusStyles(ws, rows, roles) {
       cell.s = s;
     }
   }
+
+  // ── 跨欄置中：文字列若內容只佔少數欄，自動 merge 到全寬置中 ──
+  if (!ws['!merges']) ws['!merges'] = [];
+  function addMerge(r, c1, c2) {
+    if (c1 >= c2) return;
+    ws['!merges'].push({ s:{r:r, c:c1}, e:{r:r, c:c2} });
+    // 設定起始格的對齊為置中 + wrap，讓長文字跨欄置中換行
+    var addr = XLSX.utils.encode_cell({r:r, c:c1});
+    if (ws[addr]) {
+      ws[addr].s = ws[addr].s || {};
+      ws[addr].s.alignment = Object.assign({}, ws[addr].s.alignment || {}, {
+        horizontal:'center', vertical:'center', wrapText:true
+      });
+    }
+  }
+  roles.forEach(function(role, R) {
+    if (role === 'factory') {
+      // A:C 廠別名稱跨置中、D:G 期間文字跨置中
+      addMerge(R, 0, 2);
+      addMerge(R, 3, 6);
+    } else if (role === 'dept' || role === 'noteTitle') {
+      // 整列 A:G 跨欄置中
+      addMerge(R, 0, 6);
+    } else if (role === 'noteHeader' || role === 'noteData') {
+      // 「理由」欄 B:G 跨欄置中（理由文字常常很長）
+      addMerge(R, 1, 6);
+    }
+  });
+
   // 凍結首列
   ws['!freeze'] = { xSplit: 0, ySplit: 1 };
 }
