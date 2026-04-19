@@ -1,4 +1,22 @@
 <!DOCTYPE html>
+<!--
+  public/stats.html — 各廠明細（最大前端檔，~5000 行 + 3000 行 JS）
+  -------------------------------------------------------------
+  路徑:  /stats.html
+  權限:  page:stats
+  10 個分頁:
+    維修收入 / 單車銷售 / 個人業績 / 零件銷售 / 精品配件 /
+    指標銷售 / 每日進廠 / WIP / 技師工時 / 周轉率
+  重要 Modal:
+    - WIP 詳細（含狀態編輯 + 歷史紀錄）
+    - 技師工時產能設定 / 組別設定
+    - 個人業績:科別設定 / 業績目標設定
+  相依 API: /api/stats/*、/api/wip/status*、/api/bonus/pp-alloc、
+           /api/tech-*-config、/api/person-targets
+  已知技術債:
+    KPI hero 卡片模板重複在 loadWip() 與 _refreshWipKPI()，
+    改版需兩邊一起改（或抽成 renderWipKpiCards()）。
+-->
 <html lang="zh-TW">
 <head>
 <link rel="stylesheet" href="/theme.css">

@@ -1,3 +1,30 @@
+/**
+ * routes/wip.js  mount: app.use('/api', …)
+ * -------------------------------------------------------------
+ * WIP 未結工單的狀態備註 + 歷史紀錄。
+ *
+ *   GET    /api/wip/status?period=YYYYMM&branch=AMA
+ *     依 period/branch 撈 WIP 狀態備註，回 { rows, statusMap }
+ *
+ *   PUT    /api/wip/status/:work_order/:branch
+ *     單筆更新（UPSERT wip_status_notes + INSERT wip_status_history）
+ *     一次 transaction 同時寫兩表，保留歷史軌跡。
+ *
+ *   PUT    /api/wip/status/batch
+ *     批次更新（多筆工單一次送）
+ *
+ *   DELETE /api/wip/status/:work_order/:branch
+ *     清除狀態回到「未填寫」
+ *
+ *   GET    /api/wip/status/:work_order/:branch/history
+ *     取最近 200 筆歷史紀錄（stats.html 編輯面板展開時用）
+ *
+ *   GET    /api/wip/status-options
+ *     回傳 WIP_STATUSES 列表給前端
+ *
+ * 狀態值（固定白名單）:
+ *   等料 / 施工中 / 待修 / 待客確認 / 已可結帳 / 暫緩 / 已結清 / 未填寫
+ */
 const router = require('express').Router();
 const pool   = require('../db/pool');
 const { requireAuth } = require('../lib/authMiddleware');

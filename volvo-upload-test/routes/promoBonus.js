@@ -1,3 +1,23 @@
+/**
+ * routes/promoBonus.js  mount: app.use('/api', …)
+ * -------------------------------------------------------------
+ * 促銷 / 專案獎金規則與計算（獨立於一般月績效獎金）。
+ *
+ *   GET    /api/promo-bonus/configs            規則列表
+ *   POST   /api/promo-bonus/configs            (feature:bonus_edit)
+ *   PUT    /api/promo-bonus/configs/:id        (feature:bonus_edit)
+ *   DELETE /api/promo-bonus/configs/:id        (feature:bonus_edit)
+ *   GET    /api/promo-bonus/results?period&branch
+ *     計算所有啟用中規則的每人獎金結果（把 SA 矩陣快取後平行計算）。
+ *
+ * 規則類型（rule_type）:
+ *   sa_qty          每 N 單/台給固定金額
+ *   parts_discount  特定零件類別 × 折扣範圍 × 比例
+ *   sa_tier         門檻階梯型（含 tiers 陣列，bonus_type: pct/per_unit/fixed）
+ *   sa_pct          指標銷售總額 × %
+ *
+ * 與 stats.js 直接函式呼叫取 SA 矩陣（不走 HTTP loopback）。
+ */
 const { computeSaMatrix } = require('./stats');
 const router = require('express').Router();
 const pool   = require('../db/pool');

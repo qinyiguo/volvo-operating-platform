@@ -1,3 +1,23 @@
+/**
+ * routes/personTargets.js  mount: app.use('/api', …)
+ * -------------------------------------------------------------
+ * SA 個人業績目標（person_metric_targets）+ 個人業績達成率計算。
+ * 支援拖曳排序（order 欄位）。
+ *
+ *   GET  /api/person-targets/persons               依指標類型推算可用人員
+ *   GET  /api/person-targets                       目標列表
+ *   PUT  /api/person-targets/batch      (feature:targets) 批次寫入
+ *   DELETE /api/person-targets          (feature:targets)
+ *   POST /api/person-targets/copy-from-last-month  (feature:targets) 從上月複製
+ *   GET  /api/stats/person-performance             個人達成率（主要端點）
+ *   GET  /api/stats/person-performance-all         所有人員的彙總版
+ *   GET  /api/bonus/pp-alloc
+ *   PUT  /api/bonus/pp-alloc            (feature:bonus_edit) 個人占比配置
+ *
+ * SQL 注意:
+ *   personTargets.js:168 的動態欄位 selectExpr/groupField 來源是寫死的
+ *   白名單 ternary，不是 user input，不會 SQL injection（已驗證）。
+ */
 const router = require('express').Router();
 const pool   = require('../db/pool');
 const { requireAuth, requirePermission } = require('../lib/authMiddleware');

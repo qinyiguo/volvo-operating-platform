@@ -1,3 +1,21 @@
+/**
+ * routes/query.js  mount: app.use('/api', …)
+ * -------------------------------------------------------------
+ * 四大資料表的全文查詢端點（/query.html 用）+ 系統設定雜項。
+ *
+ * 查詢（requireAuth）:
+ *   GET /api/query/repair_income | tech_performance | parts_sales | business_query
+ *   GET /api/periods                        所有有效期間清單
+ *   GET /api/counts                         各資料表筆數
+ *
+ * 系統設定（寫入需 page:settings）:
+ *   GET/PUT /api/income-config/:key         收入設定（外賣 category 等）
+ *   GET/PUT/DELETE /api/working-days        工作天數設定
+ *   GET/PUT/DELETE /api/beauty-op-hours/:op_code  美容工時代碼標準時數
+ *
+ * 查詢端點不加 LIMIT（供前端 CSV 匯出用）。若畫面慢請先看
+ * period + branch 索引是否有建。
+ */
 const router = require('express').Router();
 const pool   = require('../db/pool');
 const { requireAuth, requirePermission } = require('../lib/authMiddleware');

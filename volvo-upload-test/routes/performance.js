@@ -1,3 +1,16 @@
+/**
+ * routes/performance.js  mount: app.use('/api', …)
+ * -------------------------------------------------------------
+ * 業績指標定義與月目標管理。performance.html / settings.html 使用。
+ *
+ *   GET    /api/performance-metrics            指標定義列表
+ *   POST   /api/performance-metrics            (feature:targets)
+ *   PUT    /api/performance-metrics/:id        (feature:targets)
+ *   DELETE /api/performance-metrics/:id        (feature:targets)
+ *   GET    /api/performance-targets            各指標月目標與去年實績
+ *   PUT    /api/performance-targets/batch      (feature:targets) 批次寫入
+ *   POST   /api/upload-performance-targets-native  (feature:upload) 原生 Excel 匯入
+ */
 const router = require('express').Router();
 const multer = require('multer');
 const XLSX   = require('xlsx');

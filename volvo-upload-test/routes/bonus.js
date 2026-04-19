@@ -1,3 +1,32 @@
+/**
+ * routes/bonus.js  mount: app.use('/api', …)
+ * -------------------------------------------------------------
+ * 獎金表頁（/bonus.html）的後端。~860 行。
+ *
+ * 人員名冊（staff_roster）:
+ *   POST /bonus/upload-roster      (feature:upload)  上傳 Excel
+ *   GET  /bonus/roster             依 period/factory/status 篩選
+ *   PATCH /bonus/roster/:period/:emp_id  (feature:bonus_edit) 人工調整廠別
+ *   GET  /bonus/roster-periods     已有資料的 period 列表
+ *   GET  /bonus/roster-summary     部門彙總、本月到 / 離職人數
+ *
+ * 獎金指標 / 目標:
+ *   GET  /bonus/metrics       POST/PUT/DELETE  (feature:bonus_edit)
+ *   GET  /bonus/targets       PUT /bonus/targets/batch  (feature:bonus_edit)
+ *   PUT  /bonus/actual-override           (feature:bonus_edit)
+ *   PUT  /bonus/dept-mode / /dept-weights (feature:bonus_edit)
+ *   PUT  /bonus/beauty-branches           (feature:bonus_edit)
+ *   POST /bonus/extra-bonuses             (feature:bonus_edit)
+ *   PUT  /bonus/promo-dept-mode           (feature:bonus_edit)
+ *
+ * 核心計算:
+ *   GET  /bonus/progress   依廠別目標 × 科別占比 × 個人相對權重算應領獎金
+ *                          內部會 fetch loopback 呼叫 /api/stats/tech-hours，
+ *                          需帶 internalAuthHeaders() 產生的 shared secret。
+ *
+ * Helpers:
+ *   computePerfActual / computeRevenueActual / inferFactory / activeFilter
+ */
 const router = require('express').Router();
 const multer = require('multer');
 const XLSX   = require('xlsx');

@@ -1,3 +1,14 @@
+/**
+ * lib/parsers.js
+ * -------------------------------------------------------------
+ * 各 Excel 報表的中文欄位 alias 對應與 row 清洗。
+ *
+ * 匯出的 parse* 函式接收 xlsx sheet_to_json 後的陣列，
+ * 回傳準備寫入 DB 的物件陣列。
+ *
+ * DMS 報表若改版（欄名換字），請來這裡改 alias 表，
+ * 上層 routes/upload.js 不用動。
+ */
 const { pick, num, parseDate, parseDateTime } = require('./utils');
 
 // 只排除「完全空白」或「純中文且無數字/英文」的值（真正的標題/合計列）

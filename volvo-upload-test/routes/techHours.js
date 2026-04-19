@@ -1,3 +1,26 @@
+/**
+ * routes/techHours.js  mount: app.use('/api', …)
+ * -------------------------------------------------------------
+ * 技師工時 / 產能 / 工位 / 組別相關 API。~850 行。
+ *
+ * 統計端點（只 requireAuth）:
+ *   GET /api/stats/tech-hours        目標 vs 實際工時（含折扣回推）
+ *   GET /api/stats/tech-hours-raw    折扣工時明細
+ *   GET /api/stats/tech-turnover     施工周轉率（引電 + 集團鈑烤）
+ *
+ * 設定端點:
+ *   GET  /api/tech-capacity-config   產能利用率設定（含 default fallback）
+ *   PUT  /api/tech-capacity-config   (feature:bonus_edit)
+ *   GET  /api/tech-bay-config        各廠工位數
+ *   PUT  /api/tech-bay-config        (feature:bonus_edit)
+ *   GET  /api/tech-group-config-v2   技師分組
+ *   PUT  /api/tech-group-config-v2   (feature:bonus_edit)
+ *
+ * 重要細節:
+ *   - discount 欄位可能為小數 (0~1) 或百分比 (1~100)，SQL 須同時處理兩種。
+ *   - 折扣回推: discount < 1 時自動回推到 100% 再計工時。
+ *   - 只算「引擎 / 鈑金 / 烤漆」科別技師（由 staff_roster.dept_name 判斷）。
+ */
 const router = require('express').Router();
 const pool   = require('../db/pool');
 const { requireAuth, requirePermission } = require('../lib/authMiddleware');

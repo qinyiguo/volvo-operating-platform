@@ -1,4 +1,16 @@
 <!DOCTYPE html>
+<!--
+  public/monthly_report.html — 月報
+  -------------------------------------------------------------
+  路徑:  /monthly_report.html
+  權限:  page:monthly
+  功能:  月度營收趨勢、WIP 彙整、可拖曳排序的區塊 + 可插圖備註。
+  注意:
+    - 本檔自有 data-theme="dark/light" 系統（改 <html> 的 attribute）
+      與其他頁 body.light-theme 不同。toggleTheme() 會 rebuild
+      charts。auth.js 的全域 toggleTheme 以 typeof 檢查過、不會
+      覆蓋本檔的實作。
+-->
 <html lang="zh-TW" data-theme="dark">
 <head>
 <script src="/auth.js"></script>

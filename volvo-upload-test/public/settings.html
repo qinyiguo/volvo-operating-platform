@@ -1,4 +1,19 @@
 <!DOCTYPE html>
+<!--
+  public/settings.html — 系統設定
+  -------------------------------------------------------------
+  路徑:  /settings.html
+  權限:  page:settings（各功能另需對應 feature 權限）
+  10 個設定分頁:
+    上傳 Excel / 資料庫狀態 / 指標銷售設定 / 工作天數 /
+    工資代碼設定 / 營收目標 / 零配精品銷售 / 個人業績目標 /
+    工位設定 / 管理員密碼 + 使用者管理 + 操作紀錄
+  相依 API: /api/upload、/api/sa-config、/api/working-days、
+           /api/tech-wage-config、/api/revenue-targets、
+           /api/performance-*、/api/person-targets、
+           /api/tech-bay-config、/api/auth/settings*、
+           /api/users*、/api/audit-logs
+-->
 <html lang="zh-TW">
 <head>
 <link rel="stylesheet" href="/theme.css">

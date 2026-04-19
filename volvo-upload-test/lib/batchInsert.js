@@ -1,3 +1,17 @@
+/**
+ * lib/batchInsert.js
+ * -------------------------------------------------------------
+ * 大量寫入 helper：把解析後的 Excel rows 以 500 筆 / 200 筆為一組
+ * 批次 INSERT，避免逐筆 query 造成的效能問題。
+ *
+ *   batchInsert(client, table, cols, rows)
+ *     一次性欄位對齊 INSERT（500 筆/批）。client 需為 pool.connect() 取得的連線。
+ *
+ *   upsertPartsCatalog(client, rows)
+ *     parts_catalog 專用，ON CONFLICT (part_number) DO UPDATE。
+ *
+ * 主要被 routes/upload.js 於 Excel 解析完成後呼叫。
+ */
 const batchInsert = async (client, table, cols, rows) => {
   let total = 0;
   const BATCH = 500;

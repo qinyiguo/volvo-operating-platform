@@ -1,3 +1,16 @@
+/**
+ * routes/vctl.js  mount: app.use('/api', …)
+ * -------------------------------------------------------------
+ * VCTL 商務政策指標（performance.html 底部用）。
+ *
+ *   GET    /api/vctl/metrics           指標定義列表
+ *   POST   /api/vctl/metrics           (feature:bonus_edit)
+ *   PUT    /api/vctl/metrics/:id       (feature:bonus_edit)
+ *   DELETE /api/vctl/metrics/:id       (feature:bonus_edit)
+ *   GET    /api/stats/vctl             計算各指標售價 / 成本 / 毛利率實績
+ *
+ * source_type: parts / accessories / boutique / wage
+ */
 const router = require('express').Router();
 const pool   = require('../db/pool');
 const { requireAuth, requirePermission } = require('../lib/authMiddleware');

@@ -1,4 +1,15 @@
 <!DOCTYPE html>
+<!--
+  public/login.html — 登入頁（自成一格，不用 theme.css / auth.js）
+  -------------------------------------------------------------
+  路徑:  /login.html
+  權限:  公開
+  行為:  檢查 localStorage.dms_token；若已登入就直接導去對應首頁，
+         否則顯示登入表單，POST /api/users/login 成功後寫入 token
+         再依使用者權限導頁（super_admin → performance；其他
+         依 permissions 找第一個有權限的頁）。
+  刻意不引用共用 CSS/JS 以避免循環依賴。動畫與配色完全自包含。
+-->
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">

@@ -1,3 +1,25 @@
+/**
+ * routes/bodyshopBonus.js  mount: app.use('/api', …)
+ * -------------------------------------------------------------
+ * 業務鈑烤取送獎金:申請 → 比對 DMS 資料 → 結算。
+ *
+ * 申請階段:
+ *   GET  /bodyshop-bonus/settings              bonus_rate / 公式設定
+ *   PUT  /bodyshop-bonus/settings              (feature:bonus_edit)
+ *   POST /bodyshop-bonus/upload                (feature:upload) 申請 Excel
+ *   POST /bodyshop-bonus/match                 (feature:bonus_edit)
+ *     依車牌比對 repair_income，自動填入結算期 / 金額 / 獎金。
+ *   POST /bodyshop-bonus/reset-match           (feature:bonus_edit)
+ *
+ * 檢視 / 維護:
+ *   GET  /bodyshop-bonus/applications          申請列表
+ *   GET  /bodyshop-bonus/summary               各期各申請人彙總
+ *   GET  /bodyshop-bonus/pending               pending 清單
+ *   GET  /bodyshop-bonus/periods               已有資料的期間
+ *   PATCH /bodyshop-bonus/applications/:id/rate  (feature:bonus_edit)
+ *   PATCH /bodyshop-bonus/applications/:id/note  (feature:bonus_edit)
+ *   DELETE /bodyshop-bonus/applications/:id      (feature:bonus_edit)
+ */
 const router = require('express').Router();
 const multer = require('multer');
 const XLSX   = require('xlsx');

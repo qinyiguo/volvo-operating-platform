@@ -1,3 +1,13 @@
+/**
+ * routes/managerReview.js  mount: app.use('/api/manager-review', …)
+ * -------------------------------------------------------------
+ * 主管審核調整獎金（manager_review 表，period+emp_id 唯一）。
+ *
+ *   GET  /api/manager-review?period=YYYYMM        取該期間所有人的調整
+ *   POST /api/manager-review   (feature:bonus_edit)  upsert 單筆調整金額/備註
+ *
+ * 路徑與其他 router 不同，mount 在 /api/manager-review 而非 /api。
+ */
 const express = require('express');
 const router  = express.Router();
 const pool = require('../db/pool');

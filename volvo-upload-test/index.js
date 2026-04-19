@@ -1,3 +1,20 @@
+/**
+ * index.js
+ * -------------------------------------------------------------
+ * Express 應用程式主入口。
+ *
+ * 做三件事:
+ *   1. 全域 middleware: CORS（env-driven 白名單）、express.json、
+ *      express.static、auditMiddleware（log 所有已登入請求）。
+ *   2. 掛載所有 /api 路由。順序重要:含「未驗證端點」的 users.js
+ *      （/users/login）與 auth.js（/auth/settings）必須最早掛上，
+ *      否則會被後面 router 的 router.use(requireAuth) 攔截。
+ *   3. 啟動時跑 initDatabase() 建表補欄位，並啟一個 24h 週期
+ *      cleanupStaleRows() 清理過期 session / 180 天前 audit_logs /
+ *      365 天前 upload_history。
+ *
+ * 環境變數: 見 db/pool.js + lib/authMiddleware.js + README。
+ */
 require('dotenv').config();
 const express      = require('express');
 const cors         = require('cors');

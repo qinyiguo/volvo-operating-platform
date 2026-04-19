@@ -1,3 +1,22 @@
+/**
+ * db/init.js
+ * -------------------------------------------------------------
+ * 啟動時自動執行的 schema 初始化 / 升級腳本。
+ *
+ * 原則:
+ *   - 全部用 CREATE TABLE IF NOT EXISTS / ALTER TABLE ...
+ *     ADD COLUMN IF NOT EXISTS，所以重跑不會破壞現有資料。
+ *   - 新增欄位 / 新表請加在這裡，不要分散到各 route 檔的
+ *     top-level pool.query()（那會被 .catch(()=>{}) 吞錯）。
+ *   - ALTER TABLE 語句必須在對應 CREATE TABLE 之後，否則
+ *     全新部署時會因表不存在而啟動失敗。
+ *
+ * Bootstrap:
+ *   第一次啟動且 users 表為空時，建立 admin 超管帳號。
+ *   密碼優先讀 INITIAL_ADMIN_PASSWORD；沒設則隨機產生一次並印到 stdout。
+ *   settings_password 同理（INITIAL_SETTINGS_PASSWORD）。
+ *   兩個密碼都以 pbkdf2$salt$hash 儲存，不落明文。
+ */
 const pool = require('./pool');
 
 const initDatabase = async () => {
