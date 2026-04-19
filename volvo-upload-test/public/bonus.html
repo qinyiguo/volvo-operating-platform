@@ -3808,11 +3808,13 @@ function exportBonusExcel() {
         rows.push([]);
       }
 
-      // ── 欄位標題列 ──
-      rows.push(colHeaders);
+      // ── 欄位標題列（壓縮為 7 欄：姓名/職務/狀態/績效獎金/促銷獎金/主管考核/總獎金） ──
+      // 績效獎金 = 各指標獎金加總 + 額外獎金（不含促銷獎金、主管考核）
+      var L = colHeaders.length;
+      rows.push(['姓名', '職務', '狀態', '績效獎金', '促銷獎金', '主管考核', '總獎金']);
 
       // ── 資料列 ──
-var tbody = tbl.querySelector('tbody');
+      var tbody = tbl.querySelector('tbody');
       if (tbody) {
         Array.from(tbody.querySelectorAll('tr')).forEach(function(tr) {
           var cells = [];
@@ -3828,7 +3830,28 @@ var tbody = tbl.querySelector('tbody');
             cells.push(val);
             for (var s = 1; s < span; s++) cells.push('');
           });
-          if (cells.some(function(c){ return c !== '' && c !== 0; })) rows.push(cells);
+          // 壓縮：3~(L-4) 區段加總 = 績效獎金（各指標 + 額外獎金）
+          var perf = 0, hasPerfVal = false;
+          for (var i = 3; i <= L - 4 && i < cells.length; i++) {
+            if (typeof cells[i] === 'number') { perf += cells[i]; hasPerfVal = true; }
+          }
+          var promo  = cells[L-3];
+          var review = cells[L-2];
+          var total  = cells[L-1];
+          var newRow = [
+            cells[0] || '',
+            cells[1] || '',
+            cells[2] || '',
+            hasPerfVal ? perf : '',
+            typeof promo === 'number' ? promo : (promo || ''),
+            typeof review === 'number' ? review : (review || ''),
+            typeof total === 'number' ? total : (total || ''),
+          ];
+          // 跳過整列皆空的列
+          if (newRow.slice(0,3).some(function(c){return c!=='';}) ||
+              newRow.slice(3).some(function(c){return c!=='' && c!==0;})) {
+            rows.push(newRow);
+          }
         });
       }
     });
@@ -3837,10 +3860,10 @@ var tbody = tbl.querySelector('tbody');
 
     // ── 簽核欄 ──
     rows.push([]);
-    rows.push(['承辦人', '', '', '單位主管', '', '', '最高主管', '', '', '總經理室', '', '', '董事長室']);
-    rows.push(Array(13).fill(''));
-    rows.push(Array(13).fill(''));
-    rows.push(Array(13).fill(''));
+    rows.push(['承辦人', '', '單位主管', '', '最高主管', '', '總經理室']);
+    rows.push(Array(7).fill(''));
+    rows.push(Array(7).fill(''));
+    rows.push(Array(7).fill(''));
 
     var ws = XLSX.utils.aoa_to_sheet(rows);
     _xlsxAutoWidth(ws, rows);
