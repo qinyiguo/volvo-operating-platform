@@ -3725,12 +3725,286 @@ function openExportChooser() {
   openModal('exportChooserModal');
 }
 
-// ══ 匯出 PDF — 透過瀏覽器列印對話框（選擇「另存為 PDF」） ══
+// ══ 匯出 PDF — 開新視窗渲染與 Excel 一致的版面，再呼叫該視窗的 print() ══
+// 不做 window.print() 整頁列印（會把網頁雜訊也帶進去）
 function exportBonusPdf() {
-  // 等 modal 關閉動畫結束再列印，避免 modal 殘影出現在 PDF
-  setTimeout(function(){
-    window.print();
-  }, 220);
+  var period = document.getElementById('selPeriod')?.value || '';
+  var branch = document.getElementById('selFactory')?.value || '全部';
+  var periodLabel = period.slice(0,4) + '年' + parseInt(period.slice(4)) + '月';
+
+  function clean(txt) {
+    return (txt || '')
+      .replace(/[\u{1F300}-\u{1FFFF}]/gu, '')
+      .replace(/[▶►▸⚡📐💵🎁🎯💰📊🏆👥📂✏️📝🗑🏭🏢📦]/g, '')
+      .replace(/\s+/g, ' ').trim();
+  }
+  function toNum(txt) {
+    var s = (txt||'').replace(/,/g,'').replace(/元/,'').trim();
+    var m = s.match(/^-?\d+(\.\d+)?$/);
+    return m ? parseFloat(s) : null;
+  }
+  function escHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function fmtNum(v) {
+    if (v == null || v === '') return '';
+    if (typeof v === 'number') return v.toLocaleString();
+    return escHtml(v);
+  }
+
+  // 與 Excel 共用的簽核欄 HTML
+  function signRowHtml() {
+    return '<div class="signRow">'
+      + ['承辦人','單位主管','最高主管','總經理室','董事長室'].map(function(n){
+        return '<div class="signBox"><div class="lbl">'+n+'</div><div class="box"></div></div>';
+      }).join('')
+      + '</div>';
+  }
+
+  var summaryList = []; // 累積給彙總頁用
+  var factoryHtmls = [];
+
+  document.querySelectorAll('#progressInner > div').forEach(function(sec) {
+    var fcSpan = sec.querySelector('span[style*="font-size:16px"][style*="font-weight:900"]');
+    if (!fcSpan) return;
+    var fcLabel = clean(fcSpan.innerText);
+    if (!fcLabel) return;
+
+    var deptHtmls = [];
+
+    sec.querySelectorAll('div[style*="border-top"]').forEach(function(deptDiv) {
+      var tbl = deptDiv.querySelector('table');
+      if (!tbl) return;
+      var deptSpan = deptDiv.querySelector('span[style*="font-weight:800"][style*="color:#cbd5e1"]');
+      var deptName = deptSpan ? clean(deptSpan.innerText) : '';
+
+      // 解析 thead — 與 Excel 相同邏輯
+      var ths = Array.from(tbl.querySelectorAll('thead th'));
+      var metricInfos = [];
+      var colHeaders = [];
+      ths.forEach(function(th, idx) {
+        var clone = th.cloneNode(true);
+        clone.querySelectorAll('button').forEach(function(b){ b.remove(); });
+        var divs = Array.from(clone.querySelectorAll('div'));
+        if (idx < 3) { colHeaders.push(clean(clone.innerText)); return; }
+        if (!divs.length) { colHeaders.push(clean(clone.innerText)); return; }
+        var mName = clean(divs[0]?.innerText || ''), mTarget='', mActual='', mRate='';
+        divs.forEach(function(d){
+          var t = clean(d.innerText);
+          if (t.includes('目標')) mTarget = t.replace(/目標/,'').trim();
+          else { var rm = t.match(/(\d+\.?\d*)\s*%/); if (rm) { mRate = rm[0]; mActual = t.replace(rm[0],'').trim(); } }
+        });
+        if (mName && !mName.includes('尚無') && !mName.includes('待填')) {
+          metricInfos.push({ name:mName, target:mTarget, actual:mActual, rate:mRate });
+        }
+        colHeaders.push(mName || clean(clone.innerText));
+      });
+      var L = colHeaders.length;
+
+      // 指標資訊表
+      var metricHtml = '';
+      if (metricInfos.length) {
+        metricHtml = '<table class="metric"><thead><tr>'
+          + '<th>指標名稱</th><th class="num">目標</th><th class="num">實績</th><th class="num">達成率</th>'
+          + '</tr></thead><tbody>'
+          + metricInfos.map(function(mi){
+            var t = toNum(mi.target), a = toNum(mi.actual);
+            return '<tr>'
+              + '<td>'+escHtml(mi.name)+'</td>'
+              + '<td class="num">'+(t!==null?fmtNum(t):escHtml(mi.target))+'</td>'
+              + '<td class="num">'+(a!==null?fmtNum(a):escHtml(mi.actual))+'</td>'
+              + '<td class="num">'+escHtml(mi.rate)+'</td>'
+              + '</tr>';
+          }).join('')
+          + '</tbody></table>';
+      }
+
+      // 資料列 — 與 Excel 相同壓縮邏輯
+      var dataRowsHtml = '';
+      var deptMrNotes = [];
+      var tbody = tbl.querySelector('tbody');
+      if (tbody) {
+        Array.from(tbody.querySelectorAll('tr')).forEach(function(tr) {
+          var cells = [];
+          var mrNoteThisRow = '';
+          tr.querySelectorAll('td').forEach(function(td) {
+            var isMrCell = td.hasAttribute('data-mrcell');
+            var val;
+            if (isMrCell) {
+              var spanEl = td.querySelector('span'), divEl = td.querySelector('div');
+              var spanTxt = spanEl ? clean(spanEl.innerText).replace(/[＋+]/g,'').replace(/—/g,'').trim() : '';
+              var mn = toNum(spanTxt);
+              val = mn !== null ? mn : '';
+              if (divEl) mrNoteThisRow = clean(divEl.innerText);
+            } else {
+              var cl = td.cloneNode(true);
+              cl.querySelectorAll('button,select,.spinner').forEach(function(e){ e.remove(); });
+              var txt = clean(cl.innerText).replace(/\s+/g,' ').trim();
+              if (txt === '—' || txt === '') val = '';
+              else { var n = toNum(txt); val = n !== null ? n : txt; }
+            }
+            var sp = parseInt(td.getAttribute('colspan') || '1');
+            cells.push(val);
+            for (var s = 1; s < sp; s++) cells.push('');
+          });
+          var perf = 0, hasPerfVal = false;
+          for (var i = 3; i <= L - 4 && i < cells.length; i++) {
+            if (typeof cells[i] === 'number') { perf += cells[i]; hasPerfVal = true; }
+          }
+          var newRow = [
+            cells[0] || '', cells[1] || '', cells[2] || '',
+            hasPerfVal ? perf : '',
+            typeof cells[L-3] === 'number' ? cells[L-3] : (cells[L-3] || ''),
+            typeof cells[L-2] === 'number' ? cells[L-2] : (cells[L-2] || ''),
+            typeof cells[L-1] === 'number' ? cells[L-1] : (cells[L-1] || ''),
+          ];
+          if (newRow.slice(0,3).some(function(c){return c!=='';}) ||
+              newRow.slice(3).some(function(c){return c!=='' && c!==0;})) {
+            var isSummary = typeof newRow[0]==='string' && /[（(]\s*\d+\s*人\s*[）)]/.test(newRow[0]);
+            dataRowsHtml += '<tr'+(isSummary?' class="sumRow"':'')+'>'
+              + newRow.slice(0,3).map(function(c){return '<td>'+escHtml(c)+'</td>';}).join('')
+              + newRow.slice(3).map(function(c){return '<td class="num">'+fmtNum(c)+'</td>';}).join('')
+              + '</tr>';
+            if (isSummary) {
+              var pm = newRow[0].match(/[（(]\s*(\d+)\s*人\s*[）)]/);
+              var peopleN = pm ? parseInt(pm[1]) : 0;
+              var cleanDeptName = newRow[0].replace(/\s*[（(][^）)]*[）)]\s*$/, '');
+              summaryList.push({
+                branch: fcLabel, dept: cleanDeptName, people: peopleN,
+                perf: typeof newRow[3]==='number'?newRow[3]:0,
+                promo: typeof newRow[4]==='number'?newRow[4]:0,
+                review: typeof newRow[5]==='number'?newRow[5]:0,
+                total: typeof newRow[6]==='number'?newRow[6]:0,
+              });
+            }
+          }
+          if (mrNoteThisRow && cells[0] && typeof cells[0] === 'string' && cells[0].indexOf('（') === -1) {
+            deptMrNotes.push({ name: cells[0], note: mrNoteThisRow });
+          }
+        });
+      }
+
+      var dataTblHtml = '<table class="data"><thead><tr>'
+        + ['姓名','職務','狀態','績效獎金','促銷獎金','主管考核','總獎金']
+            .map(function(h){return '<th>'+h+'</th>';}).join('')
+        + '</tr></thead><tbody>' + dataRowsHtml + '</tbody></table>';
+
+      var notesHtml = '';
+      if (deptMrNotes.length) {
+        notesHtml = '<div class="noteTitle">【'+escHtml(deptName||fcLabel)+' — 主管考核說明】</div>'
+          + '<table class="note"><thead><tr><th style="width:120px">姓名</th><th>理由</th></tr></thead><tbody>'
+          + deptMrNotes.map(function(mn){return '<tr><td>'+escHtml(mn.name)+'</td><td class="reason">'+escHtml(mn.note)+'</td></tr>';}).join('')
+          + '</tbody></table>';
+      }
+
+      deptHtmls.push(
+        (deptName ? '<div class="deptTitle">【'+escHtml(deptName)+'】</div>' : '')
+        + metricHtml + dataTblHtml + notesHtml
+      );
+    });
+
+    if (deptHtmls.length) {
+      factoryHtmls.push(
+        '<section class="sheet">'
+          + '<h2>'+escHtml(fcLabel)+'<span class="periodLabel">期間：'+escHtml(periodLabel)+'</span></h2>'
+          + deptHtmls.join('')
+          + signRowHtml()
+        + '</section>'
+      );
+    }
+  });
+
+  if (!factoryHtmls.length) { alert('找不到資料，請先查詢獎金名單'); return; }
+
+  // ── 彙總頁 ──
+  var summaryHtml = '';
+  if (summaryList.length) {
+    var rowsHtml = '';
+    var curBr = null, brAgg = null;
+    function flushBr() {
+      if (!brAgg) return;
+      rowsHtml += '<tr class="sumRow"><td>'+escHtml(curBr)+' 小計</td><td></td>'
+        + '<td class="num">'+fmtNum(brAgg.people)+'</td>'
+        + '<td class="num">'+fmtNum(brAgg.perf)+'</td>'
+        + '<td class="num">'+fmtNum(brAgg.promo)+'</td>'
+        + '<td class="num">'+fmtNum(brAgg.review)+'</td>'
+        + '<td class="num">'+fmtNum(brAgg.total)+'</td></tr>';
+      brAgg = null;
+    }
+    summaryList.forEach(function(r) {
+      if (curBr !== r.branch) { flushBr(); curBr = r.branch; brAgg = {people:0,perf:0,promo:0,review:0,total:0}; }
+      rowsHtml += '<tr><td>'+escHtml(r.branch)+'</td><td>'+escHtml(r.dept)+'</td>'
+        + '<td class="num">'+fmtNum(r.people)+'</td>'
+        + '<td class="num">'+fmtNum(r.perf)+'</td>'
+        + '<td class="num">'+fmtNum(r.promo)+'</td>'
+        + '<td class="num">'+fmtNum(r.review)+'</td>'
+        + '<td class="num">'+fmtNum(r.total)+'</td></tr>';
+      brAgg.people += r.people; brAgg.perf += r.perf; brAgg.promo += r.promo;
+      brAgg.review += r.review; brAgg.total += r.total;
+    });
+    flushBr();
+    var gP=0,gPerf=0,gPromo=0,gReview=0,gTotal=0;
+    summaryList.forEach(function(r){gP+=r.people;gPerf+=r.perf;gPromo+=r.promo;gReview+=r.review;gTotal+=r.total;});
+    rowsHtml += '<tr class="grandTotal"><td colspan="2">合計（'+summaryList.length+' 部門）</td>'
+      + '<td class="num">'+fmtNum(gP)+'</td>'
+      + '<td class="num">'+fmtNum(gPerf)+'</td>'
+      + '<td class="num">'+fmtNum(gPromo)+'</td>'
+      + '<td class="num">'+fmtNum(gReview)+'</td>'
+      + '<td class="num">'+fmtNum(gTotal)+'</td></tr>';
+    summaryHtml = '<section class="sheet">'
+      + '<h2>獎金彙總 — '+escHtml(branch)+'<span class="periodLabel">期間：'+escHtml(periodLabel)+'</span></h2>'
+      + '<table class="data summaryTbl"><thead><tr>'
+      + ['據點','部門','人數','績效獎金','促銷獎金','主管考核','總金額'].map(function(h){return '<th>'+h+'</th>';}).join('')
+      + '</tr></thead><tbody>'+rowsHtml+'</tbody></table>'
+      + signRowHtml()
+      + '</section>';
+  }
+
+  var BORDER = '#D1D5DB';
+  var styles = ''
+    + '*{box-sizing:border-box;}'
+    + 'body{font-family:"Microsoft JhengHei","PingFang TC",sans-serif;margin:0;padding:0;color:#1E293B;}'
+    + '.sheet{padding:14px 18px;}'
+    + '.sheet + .sheet{page-break-before:always;}'
+    + 'h2{background:#DBEAFE;color:#1E40AF;padding:10px 14px;font-size:16px;margin:0 0 10px;border:1px solid '+BORDER+';font-weight:800;}'
+    + '.periodLabel{margin-left:18px;font-weight:600;font-size:13px;color:#1E40AF;}'
+    + '.deptTitle{background:#475569;color:#fff;padding:8px 12px;font-size:13px;font-weight:700;margin:14px 0 0;border:1px solid '+BORDER+';border-bottom:none;}'
+    + 'table{border-collapse:collapse;width:100%;margin:0 0 4px;font-size:11px;}'
+    + 'td,th{border:1px solid '+BORDER+';padding:5px 8px;vertical-align:middle;}'
+    + 'td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;}'
+    + 'table.metric thead th{background:#E2E8F0;color:#334155;font-weight:700;text-align:center;}'
+    + 'table.metric tbody td{background:#F8FAFC;}'
+    + 'table.data{margin-bottom:0;}'
+    + 'table.data thead th{background:#2563EB;color:#fff;font-weight:700;text-align:center;padding:7px 8px;}'
+    + 'table.data tbody td{background:#fff;}'
+    + 'table.data tbody tr.sumRow td{background:#FEF3C7;color:#92400E;font-weight:700;border-top:2px solid #F59E0B;border-bottom:2px solid #F59E0B;}'
+    + 'table.data tbody tr.grandTotal td{background:#FED7AA;color:#7C2D12;font-weight:800;border-top:2px solid #EA580C;border-bottom:2px solid #EA580C;}'
+    + '.noteTitle{background:#7C3AED;color:#fff;padding:7px 12px;font-size:12px;font-weight:700;margin:0;border:1px solid '+BORDER+';border-bottom:none;}'
+    + 'table.note thead th{background:#EDE9FE;color:#5B21B6;font-weight:700;text-align:left;padding:6px 10px;}'
+    + 'table.note tbody td{background:#F5F3FF;}'
+    + 'table.note tbody td.reason{white-space:normal;line-height:1.6;}'
+    + '.signRow{margin-top:18px;display:grid;grid-template-columns:1fr 1.4fr 1fr 1.4fr 1fr;gap:6px;}'
+    + '.signBox{border:1px solid #334155;min-height:90px;display:flex;flex-direction:column;}'
+    + '.signBox .lbl{background:#F1F5F9;color:#334155;text-align:center;font-weight:700;padding:5px 4px;border-bottom:1px solid #334155;font-size:11px;}'
+    + '.signBox .box{flex:1;}'
+    + '@page{size:A4 landscape;margin:8mm;}'
+    + '@media print{body{margin:0;}}';
+
+  var html = '<!DOCTYPE html><html lang="zh-TW"><head><meta charset="utf-8">'
+    + '<title>獎金表_'+escHtml(period)+'_'+escHtml(branch)+'</title>'
+    + '<style>'+styles+'</style></head><body>'
+    + summaryHtml + factoryHtmls.join('')
+    + '<script>window.addEventListener("load",function(){setTimeout(function(){window.print();},250);});<\/script>'
+    + '</body></html>';
+
+  // 開新視窗渲染並列印
+  var w = window.open('', '_blank', 'width=1200,height=800');
+  if (!w) { alert('PDF 列印視窗被瀏覽器擋掉，請允許彈出視窗後重試'); return; }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
 }
 
 // ══ 匯出 Excel ══
@@ -4278,7 +4552,7 @@ async function _saveBeautyBranchModal() {
           onmouseout="this.style.background='rgba(239,68,68,.12)'">
           <span style="font-size:30px;line-height:1">📄</span>
           <span style="font-size:14px">PDF</span>
-          <span style="font-size:11px;color:#fca5a5;font-weight:500">瀏覽器列印 → 另存 PDF</span>
+          <span style="font-size:11px;color:#fca5a5;font-weight:500">同 Excel 版面 → 另存 PDF</span>
         </button>
       </div>
     </div>
