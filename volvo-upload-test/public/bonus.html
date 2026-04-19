@@ -3896,20 +3896,19 @@ function exportBonusExcel() {
         });
       }
 
-      // ── 部門下方：主管考核說明 ──
+      // ── 部門下方：主管考核說明（緊接在小計列下方，不留空白）──
       if (deptMrNotes.length) {
-        pushR('empty', []);
         pushR('noteTitle', ['【' + (deptName || fcLabel) + ' — 主管考核說明】']);
         pushR('noteHeader', ['姓名', '理由']);
         deptMrNotes.forEach(function(mn) { pushR('noteData', [mn.name, mn.note]); });
       }
+      // 部門結尾留一空白列，作為與下一個部門的視覺分隔
+      pushR('empty', []);
     });
 
     if (rows.length <= 3) return;
 
-    // ── 簽核欄 ──
-    pushR('empty', []);
-    // 5 個簽核角色橫向分布在 7 欄：0=承辦人｜1~2=單位主管｜3=最高主管｜4~5=總經理室｜6=董事長室
+    // ── 簽核欄 ──（前一部門已經留空白列，這裡不再多加）
     pushR('signHeader', ['承辦人', '單位主管', '', '最高主管', '總經理室', '', '董事長室']);
     pushR('signBlank', Array(7).fill(''));
     pushR('signBlank', Array(7).fill(''));
