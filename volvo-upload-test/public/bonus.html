@@ -20,7 +20,9 @@
 <head>
 <link rel="stylesheet" href="/theme.css">
  <script src="/auth.js"></script>
- <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+ <!-- xlsx-js-style: drop-in fork of SheetJS with cell style support (fills, fonts, borders) -->
+ <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"
+         onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';document.head.appendChild(s);"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Volvo 獎金表</title>
@@ -3736,8 +3738,10 @@ function exportBonusExcel() {
     if (!fcLabel) return;
 
     var rows = [];
-    rows.push([fcLabel, '', '', '期間：' + period.slice(0,4) + '年' + parseInt(period.slice(4)) + '月']);
-    rows.push([]);
+    var roles = [];
+    function pushR(role, arr) { rows.push(arr || []); roles.push(role || 'empty'); }
+    pushR('factory', [fcLabel, '', '', '期間：' + period.slice(0,4) + '年' + parseInt(period.slice(4)) + '月']);
+    pushR('empty', []);
 
     sec.querySelectorAll('div[style*="border-top"]').forEach(function(deptDiv) {
       var tbl = deptDiv.querySelector('table');
@@ -3746,7 +3750,7 @@ function exportBonusExcel() {
       // 部門名稱
       var deptSpan = deptDiv.querySelector('span[style*="font-weight:800"][style*="color:#cbd5e1"]');
       var deptName = deptSpan ? clean(deptSpan.innerText) : '';
-      if (deptName) rows.push(['【' + deptName + '】']);
+      if (deptName) pushR('dept', ['【' + deptName + '】']);
 
       // 解析 thead：分離指標資訊 vs 欄位名稱
       var ths = Array.from(tbl.querySelectorAll('thead th'));
@@ -3794,24 +3798,24 @@ function exportBonusExcel() {
 
       // ── 指標目標/實績放在表格上方 ──
       if (metricInfos.length) {
-        rows.push(['指標名稱', '目標', '實績', '達成率']);
+        pushR('metricHeader', ['指標名稱', '目標', '實績', '達成率']);
         metricInfos.forEach(function(mi) {
           var tgt = toNum(mi.target);
           var act = toNum(mi.actual);
-          rows.push([
+          pushR('metricData', [
             mi.name,
             tgt !== null ? tgt : mi.target,
             act !== null ? act : mi.actual,
             mi.rate
           ]);
         });
-        rows.push([]);
+        pushR('empty', []);
       }
 
       // ── 欄位標題列（壓縮為 7 欄：姓名/職務/狀態/績效獎金/促銷獎金/主管考核/總獎金） ──
       // 績效獎金 = 各指標獎金加總 + 額外獎金（不含促銷獎金、主管考核）
       var L = colHeaders.length;
-      rows.push(['姓名', '職務', '狀態', '績效獎金', '促銷獎金', '主管考核', '總獎金']);
+      pushR('colHeader', ['姓名', '職務', '狀態', '績效獎金', '促銷獎金', '主管考核', '總獎金']);
 
       // ── 資料列 ──
       var tbody = tbl.querySelector('tbody');
@@ -3865,7 +3869,9 @@ function exportBonusExcel() {
           // 跳過整列皆空的列
           if (newRow.slice(0,3).some(function(c){return c!=='';}) ||
               newRow.slice(3).some(function(c){return c!=='' && c!==0;})) {
-            rows.push(newRow);
+            // 判斷是「部門彙總列」還是「個人資料列」
+            var isSummary = typeof newRow[0]==='string' && /[（(]\s*\d+\s*人\s*[）)]/.test(newRow[0]);
+            pushR(isSummary ? 'summary' : 'data', newRow);
           }
           // 蒐集本列的主管考核說明（需有姓名、說明文字、非彙總列）
           if (mrNoteThisRow && cells[0] && typeof cells[0] === 'string' && cells[0].indexOf('（') === -1) {
@@ -3876,40 +3882,41 @@ function exportBonusExcel() {
 
       // ── 部門下方：主管考核說明 ──
       if (deptMrNotes.length) {
-        rows.push([]);
-        rows.push(['【' + (deptName || fcLabel) + ' — 主管考核說明】']);
-        rows.push(['姓名', '理由']);
-        deptMrNotes.forEach(function(mn) { rows.push([mn.name, mn.note]); });
+        pushR('empty', []);
+        pushR('noteTitle', ['【' + (deptName || fcLabel) + ' — 主管考核說明】']);
+        pushR('noteHeader', ['姓名', '理由']);
+        deptMrNotes.forEach(function(mn) { pushR('noteData', [mn.name, mn.note]); });
       }
     });
 
     if (rows.length <= 3) return;
 
     // ── 簽核欄 ──
-    rows.push([]);
-    rows.push(['承辦人', '', '單位主管', '', '最高主管', '', '總經理室']);
-    rows.push(Array(7).fill(''));
-    rows.push(Array(7).fill(''));
-    rows.push(Array(7).fill(''));
+    pushR('empty', []);
+    pushR('signHeader', ['承辦人', '', '單位主管', '', '最高主管', '', '總經理室']);
+    pushR('signBlank', Array(7).fill(''));
+    pushR('signBlank', Array(7).fill(''));
+    pushR('signBlank', Array(7).fill(''));
 
     var ws = XLSX.utils.aoa_to_sheet(rows);
     _xlsxAutoWidth(ws, rows);
 
-    // 數字千分位格式
-    var ref = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-    for (var R = ref.s.r; R <= ref.e.r; R++) {
-      for (var C = ref.s.c; C <= ref.e.c; C++) {
-        var a = XLSX.utils.encode_cell({r:R,c:C});
-        if (ws[a] && typeof ws[a].v === 'number') ws[a].z = '#,##0';
-      }
-    }
+    // 套用樣式（若 xlsx-js-style 未載入，.s 屬性會被原版 xlsx 忽略，仍可正常匯出無色版本）
+    _applyBonusStyles(ws, rows, roles);
 
-    // 列高：簽核區
+    // 列高
     if (!ws['!rows']) ws['!rows'] = [];
+    // 簽核列高
     var signRow = rows.length - 3;
     ws['!rows'][signRow]   = { hpt: 50 };
     ws['!rows'][signRow+1] = { hpt: 50 };
     ws['!rows'][signRow+2] = { hpt: 50 };
+    // 標題列加高
+    for (var ri = 0; ri < roles.length; ri++) {
+      if (roles[ri] === 'factory') ws['!rows'][ri] = { hpt: 24 };
+      else if (roles[ri] === 'dept' || roles[ri] === 'noteTitle') ws['!rows'][ri] = { hpt: 20 };
+      else if (roles[ri] === 'colHeader') ws['!rows'][ri] = { hpt: 22 };
+    }
 
     var sheetName = fcLabel.replace(/[\\/*[\]?:]/g,'').slice(0,28);
     XLSX.utils.book_append_sheet(wb, ws, sheetName || ('Sheet'+(wb.SheetNames.length+1)));
@@ -3934,6 +3941,119 @@ function _xlsxAutoWidth(ws, rows) {
     widths.push({ wch: Math.min(max * 1.4, 35) });
   }
   ws['!cols'] = widths;
+}
+
+/**
+ * 套用獎金表樣式。需要 xlsx-js-style 才會生效；若載入失敗，.s 屬性被原版 xlsx 忽略，
+ * 匯出的檔案仍可正常打開（只是無色版）。
+ */
+function _applyBonusStyles(ws, rows, roles) {
+  var BORDER = { style:'thin', color:{rgb:'D1D5DB'} };
+  var BORDER_MED = { style:'medium', color:{rgb:'334155'} };
+  var FULL_BORDER = { top:BORDER, bottom:BORDER, left:BORDER, right:BORDER };
+  var STYLES = {
+    factory: {
+      font: { bold:true, sz:14, color:{rgb:'1E40AF'} },
+      fill: { fgColor:{rgb:'DBEAFE'} },
+      alignment: { vertical:'center' },
+      border: FULL_BORDER,
+    },
+    dept: {
+      font: { bold:true, sz:12, color:{rgb:'FFFFFF'} },
+      fill: { fgColor:{rgb:'475569'} },
+      alignment: { vertical:'center' },
+      border: FULL_BORDER,
+    },
+    metricHeader: {
+      font: { bold:true, sz:11, color:{rgb:'334155'} },
+      fill: { fgColor:{rgb:'E2E8F0'} },
+      alignment: { horizontal:'center', vertical:'center' },
+      border: FULL_BORDER,
+    },
+    metricData: {
+      font: { sz:11, color:{rgb:'1E293B'} },
+      fill: { fgColor:{rgb:'F8FAFC'} },
+      alignment: { vertical:'center' },
+      border: FULL_BORDER,
+    },
+    colHeader: {
+      font: { bold:true, sz:11, color:{rgb:'FFFFFF'} },
+      fill: { fgColor:{rgb:'2563EB'} },
+      alignment: { horizontal:'center', vertical:'center' },
+      border: FULL_BORDER,
+    },
+    data: {
+      font: { sz:11, color:{rgb:'1E293B'} },
+      alignment: { vertical:'center' },
+      border: FULL_BORDER,
+    },
+    summary: {
+      font: { bold:true, sz:11, color:{rgb:'92400E'} },
+      fill: { fgColor:{rgb:'FEF3C7'} },
+      alignment: { vertical:'center' },
+      border: { top:{style:'medium',color:{rgb:'F59E0B'}}, bottom:{style:'medium',color:{rgb:'F59E0B'}}, left:BORDER, right:BORDER },
+    },
+    noteTitle: {
+      font: { bold:true, sz:12, color:{rgb:'FFFFFF'} },
+      fill: { fgColor:{rgb:'7C3AED'} },
+      alignment: { vertical:'center' },
+      border: FULL_BORDER,
+    },
+    noteHeader: {
+      font: { bold:true, sz:11, color:{rgb:'5B21B6'} },
+      fill: { fgColor:{rgb:'EDE9FE'} },
+      alignment: { horizontal:'center', vertical:'center' },
+      border: FULL_BORDER,
+    },
+    noteData: {
+      font: { sz:11, color:{rgb:'1E293B'} },
+      fill: { fgColor:{rgb:'F5F3FF'} },
+      alignment: { vertical:'center', wrapText:true },
+      border: FULL_BORDER,
+    },
+    signHeader: {
+      font: { bold:true, sz:11, color:{rgb:'334155'} },
+      fill: { fgColor:{rgb:'F1F5F9'} },
+      alignment: { horizontal:'center', vertical:'center' },
+      border: { top:BORDER_MED, bottom:BORDER, left:BORDER, right:BORDER },
+    },
+    signBlank: {
+      border: FULL_BORDER,
+    },
+  };
+  var ref = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+  var maxC = ref.e.c;
+  for (var R = ref.s.r; R <= ref.e.r; R++) {
+    var role = roles[R] || 'empty';
+    var baseStyle = STYLES[role];
+    for (var C = ref.s.c; C <= maxC; C++) {
+      var addr = XLSX.utils.encode_cell({r:R, c:C});
+      var cell = ws[addr];
+      // 為「有樣式但空白」的儲存格補空字串，讓邊框、底色能套用
+      if (!cell) {
+        if (!baseStyle) continue;
+        cell = ws[addr] = { v: '', t: 's' };
+      }
+      // 千分位
+      if (typeof cell.v === 'number') cell.z = '#,##0';
+      if (!baseStyle) continue;
+      var s = JSON.parse(JSON.stringify(baseStyle));
+      // 數字欄位右對齊
+      if ((role === 'data' || role === 'summary') && C >= 3) {
+        s.alignment = Object.assign({}, s.alignment || {}, { horizontal:'right' });
+      }
+      if (role === 'metricData' && C >= 1 && C <= 3) {
+        s.alignment = Object.assign({}, s.alignment || {}, { horizontal:'right' });
+      }
+      // 部門彙總列：第一欄內容（「XX部（N人）」）跨到 C=2
+      if (role === 'summary' && C <= 2) {
+        s.alignment = Object.assign({}, s.alignment || {}, { horizontal:'left' });
+      }
+      cell.s = s;
+    }
+  }
+  // 凍結首列
+  ws['!freeze'] = { xSplit: 0, ySplit: 1 };
 }
 
  function _openBeautyBranchModal(fc, dkey) {
