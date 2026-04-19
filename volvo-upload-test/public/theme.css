@@ -393,6 +393,16 @@ body.light-theme [style*="background:#1e3050"] { background: #f1f5f9 !important;
 body.light-theme [style*="border-color:#1e3050"] { border-color: #e2e8f0 !important; }
 body.light-theme [style*="color:#2d4060"] { color: #94a3b8 !important; }
 
+/* 補 audit 漏掉的深色 inline 背景:
+   #1a0f2e / #1a4a2e 出現在 bonus.html 的促銷 / 主管審核標籤；
+   #374151 出現在 performance.html 的圖表分隔線。 */
+body.light-theme [style*="background:#1a0f2e"],
+body.light-theme [style*="background: #1a0f2e"] { background: #faf5ff !important; }
+body.light-theme [style*="background:#1a4a2e"],
+body.light-theme [style*="background: #1a4a2e"] { background: #f0fdf4 !important; }
+body.light-theme [style*="background:#374151"],
+body.light-theme [style*="background: #374151"] { background: #e2e8f0 !important; }
+
 /* 補齊：stats.html / bonus.html 等仍出現但原本沒對應 light 覆蓋的深色 inline 值 */
 body.light-theme [style*="background:#253347"],
 body.light-theme [style*="background: #253347"] { background: #f1f5f9 !important; color: #475569 !important; }
