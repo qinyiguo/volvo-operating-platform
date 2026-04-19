@@ -164,7 +164,6 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
       </select>
       <button class="btn btn-primary" onclick="doLoad()">查詢</button>
       <button class="btn btn-secondary btn-sm" onclick="showUploadModal()" style="margin-left:auto">📤 上傳人員資料</button>
-      <button class="btn btn-secondary btn-sm no-print" onclick="exportBonusExcel()" style="background:#1a4a2e;color:#4ade80;border-color:#166534">📊 匯出 Excel</button>
       <span id="lastUpdate" style="font-size:11px;color:#64748b;white-space:nowrap"></span>
     </div>
     <div class="tab-bar">
@@ -199,8 +198,8 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
       </div>
     </div>
   <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
-  <button class="btn btn-secondary" onclick="openExtraBonusModal()" style="font-size:13px">💵 額外獎金設定</button>
-</div>
+    <button class="btn btn-secondary no-print" onclick="exportBonusExcel()" style="font-size:13px;background:#1a4a2e;color:#4ade80;border-color:#166534">📊 匯出 Excel</button>
+  </div>
     <div id="progressContent"><div class="empty">請先選擇期間後按查詢</div></div>
   </div>
 <div id="tab-bodyshop" style="display:none">
