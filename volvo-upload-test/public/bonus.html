@@ -4093,7 +4093,7 @@ function exportBonusExcel() {
         colHeaders.push(mName || clean(clone.innerText));
       });
 
-      // ── 指標目標/實績放在表格上方 ──
+      // ── 指標目標/實績放在表格上方（緊接在資料表之上，不留空白）──
       if (metricInfos.length) {
         pushR('metricHeader', ['指標名稱', '目標', '實績', '達成率']);
         metricInfos.forEach(function(mi) {
@@ -4106,7 +4106,6 @@ function exportBonusExcel() {
             mi.rate
           ]);
         });
-        pushR('empty', []);
       }
 
       // ── 欄位標題列（壓縮為 7 欄：姓名/職務/狀態/績效獎金/促銷獎金/主管考核/總獎金） ──
