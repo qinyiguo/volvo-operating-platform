@@ -1,3 +1,18 @@
+/**
+ * routes/auth.js  mount: app.use('/api', …)
+ * -------------------------------------------------------------
+ * 設定頁（settings.html）專用的密碼登入。**獨立於使用者帳號系統**。
+ *
+ *   POST   /api/auth/settings              密碼換 8h in-memory token
+ *   GET    /api/auth/settings/check?token  token 是否有效
+ *   PUT    /api/auth/settings/password     修改設定頁密碼（需 token）
+ *
+ * 密碼存於 app_settings.settings_password，格式 pbkdf2$salt$hash。
+ * 舊明文資料在成功登入後會自動升級為 hash。
+ *
+ * 本檔全部端點皆不經 requireAuth（是登入入口本身），
+ * 所以必須在 index.js 內早於其他 router 掛載。
+ */
 const router = require('express').Router();
 const crypto = require('crypto');
 const pool   = require('../db/pool');

@@ -1,3 +1,27 @@
+/**
+ * routes/users.js  mount: app.use('/api', …)
+ * -------------------------------------------------------------
+ * 使用者帳號系統（登入、使用者管理、權限授予、個人設定）。
+ *
+ * 公開:
+ *   POST /api/users/login            帳密登入 → user_sessions token
+ *
+ * 登入後:
+ *   POST /api/users/logout           撤銷當前 token
+ *   GET  /api/users/me               目前使用者 + 權限清單
+ *   GET  /api/users/permissions-schema   前端用的權限定義表
+ *   PUT  /api/users/:id/password     改密碼（本人需附 current_password）
+ *   PUT  /api/users/me/profile       更新顯示名稱
+ *
+ * 需 feature:user_manage:
+ *   GET /users   POST /users   PUT /users/:id   DELETE /users/:id
+ *
+ * 角色三層:  super_admin > branch_admin > user
+ *   canManageRole() 強制不可越權編輯。
+ *   所有密碼以 pbkdf2 100k/sha256 hash，16-byte salt。
+ *
+ * 本檔含 /users/login（未驗證），必須在 index.js 內早於其他 router 掛載。
+ */
 const router  = require('express').Router();
 const crypto  = require('crypto');
 const pool    = require('../db/pool');

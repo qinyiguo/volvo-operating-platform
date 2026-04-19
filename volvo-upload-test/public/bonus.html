@@ -1,4 +1,21 @@
 <!DOCTYPE html>
+<!--
+  public/bonus.html — 獎金表
+  -------------------------------------------------------------
+  路徑:  /bonus.html
+  權限:  page:bonus（編輯需 feature:bonus_edit）
+  主要區塊:
+    - 人員名冊（在職 / 留職停薪 / 本月離職）
+    - 獎金指標管理（DMS 來源、職稱分層階梯、科別篩選）
+    - 獎金進度(依廠別 × 科別占比 × 個人相對權重算應領)
+    - 促銷獎金規則設定
+    - 鈑烤獎金申請/比對
+    - 主管審核調整
+  注意:
+    - 頁面 ~4000 行且全部 inline <style>；改版先備份。
+    - esc() helper 在 script 區塊最前面，任何寫 innerHTML 的地方
+      如果放使用者/DB 字串，都要用 esc() 先 escape。
+-->
 <html lang="zh-TW">
 <head>
 <link rel="stylesheet" href="/theme.css">

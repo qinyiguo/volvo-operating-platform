@@ -1,3 +1,18 @@
+/**
+ * lib/utils.js
+ * -------------------------------------------------------------
+ * 跨檔共用的小工具。
+ *
+ *   pick(row, ...keys)     取第一個非空值（for Excel 欄位 alias）
+ *   num(val)               安全轉 number（NaN → 0）
+ *   parseDate(val)         轉 YYYY-MM-DD
+ *   parseDateTime(val)     轉 ISO 字串（+08:00）
+ *   detectFileType(fn,sh)  依檔名 / sheet 名判斷是哪張 Excel 報表
+ *   detectBranch(fn)       檔名中的 AMA / AMC / AMD
+ *   detectPeriod(fn)       檔名中的 6 位 YYYYMM
+ *
+ * 主要被 routes/upload.js 與 lib/parsers.js 使用。
+ */
 const pick = (row, ...keys) => {
   for (const k of keys) {
     if (row[k] !== undefined && row[k] !== null && row[k] !== '') return row[k];

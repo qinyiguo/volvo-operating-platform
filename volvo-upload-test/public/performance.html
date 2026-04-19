@@ -1,4 +1,19 @@
 <!DOCTYPE html>
+<!--
+  public/performance.html — 業績指標與預估
+  -------------------------------------------------------------
+  路徑:  /performance.html（登入後通常的預設首頁）
+  權限:  page:performance
+  主要區塊:
+    - 工作天進度條（vs 有費達成率）
+    - 有費 KPI 卡片（集團合計 + 三廠 YoY）
+    - 收入分解表（一般/保險/延保/票券/外賣）
+    - 各自訂業績指標達成率（performance_metrics）
+    - 業績預估 Modal（每週一次鎖定，含歷史）
+    - VCTL 商務政策指標（毛利率底部表）
+  相依 API: /api/stats/performance, /api/revenue-targets,
+           /api/revenue-estimates/*, /api/stats/vctl
+-->
 <html lang="zh-TW">
 <head>
 <link rel="stylesheet" href="/theme.css">

@@ -1,3 +1,23 @@
+/**
+ * routes/revenue.js  mount: app.use('/api', …)
+ * -------------------------------------------------------------
+ * 四大營收目標 + 業績預估（週次鎖定）。
+ *
+ * 月目標:
+ *   GET    /api/revenue-targets                       一般/鈑烤/延保/有費 月目標
+ *   PUT    /api/revenue-targets/batch     (feature:targets)
+ *   DELETE /api/revenue-targets           (feature:targets)
+ *   POST   /api/upload-revenue-targets            (feature:upload)
+ *   POST   /api/upload-revenue-targets-native     (feature:upload)
+ *
+ * 業績預估（revenue_estimates + revenue_estimate_history）:
+ *   GET  /api/revenue-estimates                       各站本月最新預估（即時顯示）
+ *   PUT  /api/revenue-estimates/batch     (feature:targets)
+ *   GET  /api/revenue-estimates/week-status           各站本週是否已提交
+ *   GET  /api/revenue-estimates/history               週次提交歷史
+ *   POST /api/revenue-estimates/weekly-submit  (feature:targets) 提交週次預估
+ *     每自然週每站最多一次，提交後鎖定寫入 history 表不可覆蓋。
+ */
 const router = require('express').Router();
 const multer = require('multer');
 const XLSX   = require('xlsx');

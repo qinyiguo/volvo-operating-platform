@@ -1,3 +1,20 @@
+/**
+ * routes/upload.js  mount: app.use('/api', …)
+ * -------------------------------------------------------------
+ * Excel 上傳總入口。
+ *
+ *   POST /api/upload   （feature:upload）
+ *     接 multer 上傳的 Excel 檔（最多 8 個、50MB 限制）。
+ *     依檔名自動識別報表類型與據點期間 → 刪除同據點同期間舊資料
+ *     → 用 parsers.js 解析 → 呼叫 batchInsert。
+ *
+ * 支援報表:
+ *   repair_income / tech_performance / parts_sales / business_query /
+ *   parts_catalog（不需據點/期間）
+ *
+ * 員工基本資料（staff_roster）由 routes/bonus.js 的 /bonus/upload-roster
+ * 單獨處理。
+ */
 const router  = require('express').Router();
 const multer  = require('multer');
 const XLSX    = require('xlsx');

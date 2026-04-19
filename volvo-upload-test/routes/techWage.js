@@ -1,3 +1,14 @@
+/**
+ * routes/techWage.js  mount: app.use('/api', …)
+ * -------------------------------------------------------------
+ * 工資代碼追蹤設定 + 工資代碼統計矩陣。
+ *
+ *   GET    /api/tech-wage-config               工資代碼設定列表
+ *   POST   /api/tech-wage-config               (feature:bonus_edit)
+ *   PUT    /api/tech-wage-config/:id           (feature:bonus_edit)
+ *   DELETE /api/tech-wage-config/:id           (feature:bonus_edit)
+ *   GET    /api/stats/tech-wage-matrix         依工資代碼統計台數 / 金額 / 工時
+ */
 const router = require('express').Router();
 const pool   = require('../db/pool');
 const { requireAuth, requirePermission } = require('../lib/authMiddleware');

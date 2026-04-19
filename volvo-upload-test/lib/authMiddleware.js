@@ -1,3 +1,24 @@
+/**
+ * lib/authMiddleware.js
+ * -------------------------------------------------------------
+ * 身份驗證與權限中介層（所有 /api 路由的守門員）。
+ *
+ * 匯出:
+ *   requireAuth(req,res,next)     要求合法 Bearer token，失敗回 401
+ *   requirePermission(key)        工廠函式；super_admin 自動通過；失敗回 403
+ *   softAuth                      只附加 req.user，不阻擋
+ *   internalAuthHeaders()         同 process 內部 fetch loopback 用，回傳
+ *                                 { 'x-internal-service': INTERNAL_TOKEN }
+ *   ALL_PERMISSIONS / PAGE_* / BRANCH_* / FEATURE_*  權限鍵定義
+ *
+ * 權限鍵分三類:
+ *   page:*       頁面存取（performance / stats / query / bonus / settings / monthly）
+ *   branch:*     可見廠別（AMA / AMC / AMD）
+ *   feature:*    功能動作（upload / targets / bonus_edit / user_manage）
+ *
+ * Token 來源: 只接受 Authorization: Bearer <token>
+ *             （?_token= query 已停用，避免 log/referer 外洩）
+ */
 
 const crypto = require('crypto');
 const pool = require('../db/pool');

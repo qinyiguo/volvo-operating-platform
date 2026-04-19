@@ -1,3 +1,18 @@
+/**
+ * routes/saConfig.js  mount: app.use('/api', …)
+ * -------------------------------------------------------------
+ * SA 指標銷售矩陣的篩選條件設定（sa_sales_config 表）。
+ *
+ *   GET    /api/sa-config/parts-lookup  零件快查（新增指標時 autocomplete 用）
+ *   GET    /api/sa-config               所有已建立的指標列表
+ *   POST   /api/sa-config               (feature:bonus_edit) 新增
+ *   PUT    /api/sa-config/:id           (feature:bonus_edit) 更新
+ *   DELETE /api/sa-config/:id           (feature:bonus_edit) 刪除
+ *
+ * filters 欄位邏輯:
+ *   同類型多值 OR (類別碼 93 OR 94)
+ *   不同類型 AND (類別碼 93 AND 功能碼 1832)
+ */
 const router = require('express').Router();
 const pool   = require('../db/pool');
 const { requireAuth, requirePermission } = require('../lib/authMiddleware');

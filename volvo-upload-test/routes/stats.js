@@ -1,3 +1,31 @@
+/**
+ * routes/stats.js  mount: app.use('/api', …)
+ * -------------------------------------------------------------
+ * 各廠明細頁（/stats.html）所有統計 API 的後端。本檔最長（~1000 行）。
+ *
+ * 全部路由都只需 requireAuth（讀取型，不做寫入）。
+ *
+ * 提供 GET /api/stats/* 族群，全部支援 ?period=YYYYMM&branch=AMA:
+ *   /repair              維修收入彙總 (by 帳類 / SA / totals)
+ *   /income-summary      收入分類明細（含外賣）
+ *   /income-breakdown    有費 / 無費收入分解
+ *   /revenue-per-vehicle 單車銷售額
+ *   /sa-car-count        SA 個人進廠台數
+ *   /sa-paid-revenue     SA 個人各類型營收
+ *   /parts               零件銷售彙總
+ *   /boutique-accessories 精品配件矩陣
+ *   /sa-sales-matrix     SA 指標銷售矩陣（view=sales_person | pickup_person）
+ *   /performance         業績指標達成率
+ *   /daily               每日進廠台數
+ *   /wip                 WIP 未結工單
+ *
+ * 另匯出:
+ *   computeSaMatrix(period, branch, view)
+ *     給 routes/promoBonus.js 以直接函式呼叫（不走 HTTP loopback）
+ *     來拿 SA 矩陣資料。
+ *
+ * 技師姓名正規化邏輯（斜線/空格/多人）集中在 canonicalExpr。
+ */
 const router = require('express').Router();
 const pool   = require('../db/pool');
 const { requireAuth } = require('../lib/authMiddleware');
