@@ -121,6 +121,7 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
   .print-sign-section { display: block !important; }
   #extraBonusModal, #mrModal, #promoModal, #metricModal,
   #uploadModal, #empEditModal, #bodyshopUploadModal, #bodyshopSettingsModal,
+  #exportChooserModal,
   #lockScreen, .no-print { display: none !important; }
   body { background: white !important; color: black !important; font-size: 11px; }
   .container { padding: 4px !important; }
@@ -198,7 +199,7 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
       </div>
     </div>
   <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
-    <button class="btn btn-secondary no-print" onclick="exportBonusExcel()" style="font-size:13px;background:#1a4a2e;color:#4ade80;border-color:#166534">📊 匯出 Excel</button>
+    <button class="btn btn-secondary no-print" onclick="openExportChooser()" style="font-size:13px;background:#1a4a2e;color:#4ade80;border-color:#166534">📤 匯出當月獎金表</button>
   </div>
     <div id="progressContent"><div class="empty">請先選擇期間後按查詢</div></div>
   </div>
@@ -3711,7 +3712,28 @@ function renderEbList(filterFc, filterDkey) {
   }).join('');
 }
 
-  // ══ 匯出 Excel ══
+  // ══ 匯出 — 格式選擇器 ══
+function openExportChooser() {
+  // 必須在 獎金名單 分頁、且有資料才能匯出
+  var tabProgress = document.getElementById('tab-progress');
+  if (!tabProgress || tabProgress.style.display === 'none') {
+    alert('請先切到「獎金名單」分頁');
+    return;
+  }
+  var hasData = document.querySelectorAll('#progressInner > div').length > 0;
+  if (!hasData) { alert('找不到資料，請先按「查詢」載入獎金名單'); return; }
+  openModal('exportChooserModal');
+}
+
+// ══ 匯出 PDF — 透過瀏覽器列印對話框（選擇「另存為 PDF」） ══
+function exportBonusPdf() {
+  // 等 modal 關閉動畫結束再列印，避免 modal 殘影出現在 PDF
+  setTimeout(function(){
+    window.print();
+  }, 220);
+}
+
+// ══ 匯出 Excel ══
 function exportBonusExcel() {
   var period = document.getElementById('selPeriod')?.value || '';
   var branch = document.getElementById('selFactory')?.value || '全部';
@@ -4231,6 +4253,37 @@ async function _saveBeautyBranchModal() {
 }
   
 </script>
+
+  <!-- 匯出格式選擇 Modal -->
+<div class="modal-bd" id="exportChooserModal">
+  <div class="modal-win" style="max-width:440px">
+    <div class="modal-head">
+      <div class="modal-title">📤 匯出當月獎金表</div>
+      <button class="modal-close" onclick="closeModal('exportChooserModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:13px;color:#94a3b8;margin-bottom:14px;line-height:1.7">請選擇匯出格式：</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <button onclick="closeModal('exportChooserModal');exportBonusExcel();"
+          style="padding:18px 10px;background:#1a4a2e;border:1.5px solid #166534;border-radius:10px;cursor:pointer;color:#4ade80;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .12s"
+          onmouseover="this.style.background='#1f5b39'"
+          onmouseout="this.style.background='#1a4a2e'">
+          <span style="font-size:30px;line-height:1">📊</span>
+          <span style="font-size:14px">Excel</span>
+          <span style="font-size:11px;color:#86efac;font-weight:500">.xlsx 含格式色彩</span>
+        </button>
+        <button onclick="closeModal('exportChooserModal');exportBonusPdf();"
+          style="padding:18px 10px;background:rgba(239,68,68,.12);border:1.5px solid rgba(239,68,68,.4);border-radius:10px;cursor:pointer;color:#f87171;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .12s"
+          onmouseover="this.style.background='rgba(239,68,68,.2)'"
+          onmouseout="this.style.background='rgba(239,68,68,.12)'">
+          <span style="font-size:30px;line-height:1">📄</span>
+          <span style="font-size:14px">PDF</span>
+          <span style="font-size:11px;color:#fca5a5;font-weight:500">瀏覽器列印 → 另存 PDF</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
   <!-- 額外獎金設定 Modal -->
 <div class="modal-bd" id="extraBonusModal">
