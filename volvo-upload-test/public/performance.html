@@ -138,8 +138,7 @@
     /* Btn primary in card title */
     .card-title a[href="/settings.html"] { font-size: 11px; padding: 3px 7px; }
 
-    /* ── Revenue KPI sub-grid → single column ── */
-    #revKPI-sub { grid-template-columns: 1fr !important; }
+    /* ── Revenue KPI sub-grid 已改為單一矩陣，無需 grid override ── */
 
     /* ── Revenue KPI card inner branch grid → stack ── */
     .rev-branch-grid { grid-template-columns: 1fr !important; }
@@ -241,7 +240,7 @@
     <div id="revenueKPISection" style="margin-bottom:20px;display:none">
       <div id="revKPI-group" style="margin-bottom:12px"></div>
       <div id="revKPI-paid" style="margin-bottom:12px"></div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px" id="revKPI-sub"></div>
+      <div id="revKPI-sub"></div>
     </div>
     <div class="card">
       <div class="card-title">📊 收入明細分解<span id="perfBreakdownPeriod" class="card-title-note"></span></div>
@@ -845,21 +844,21 @@ async function loadRevenueKPI(period,branch){
           const yCol = m.yoy === null ? '#475569' : m.yoy >= 0 ? '#10b981' : '#ef4444';
           const barW = m.rate !== null ? Math.min(100, m.rate).toFixed(1) : 0;
           const isGroup = c.key === '__group';
-          return `<td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.4);${ci===0?'border-left:1px solid #2d3f56':''}${isGroup?'background:rgba(249,115,22,.04)':''};vertical-align:top">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
+          return `<td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.4);${ci===0?'border-left:1px solid #2d3f56':''}${isGroup?'background:rgba(249,115,22,.04)':''};vertical-align:top;min-width:150px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:4px;white-space:nowrap">
               <span style="font-size:${isGroup?'15px':'14px'};font-weight:${isGroup?'900':'800'};color:#e2e8f0">${fmtK(m.actual)}</span>
               <span style="font-size:11px;font-weight:800;color:${rCol}">${m.rate !== null ? m.rate.toFixed(1)+'%' : '—'}</span>
             </div>
             <div style="background:#0f172a;border-radius:2px;height:4px;margin-bottom:6px">
               <div style="width:${barW}%;height:4px;border-radius:2px;background:${rCol}"></div>
             </div>
-            <div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b;line-height:1.5">
+            <div style="display:flex;justify-content:space-between;gap:10px;font-size:10px;color:#64748b;line-height:1.5;white-space:nowrap">
               <span>目 ${m.target>0?fmtK(m.target):'—'}</span>
               ${m.est>0?`<span style="color:${eCol};font-weight:600">預 ${fmtK(m.est)}</span>`:'<span>—</span>'}
             </div>
-            <div style="font-size:10px;color:#64748b;line-height:1.5">
+            <div style="font-size:10px;color:#64748b;line-height:1.5;white-space:nowrap">
               ${m.ly>0?`vs 去年 ${fmtK(m.ly)}`:'去年 —'}
-              ${m.yoy!==null?`<span style="color:${yCol};font-weight:700;margin-left:4px">${m.yoy>=0?'▲':'▼'}${Math.abs(m.yoy).toFixed(1)}%</span>`:''}
+              ${m.yoy!==null?`<span style="color:${yCol};font-weight:700;margin-left:6px">${m.yoy>=0?'▲':'▼'}${Math.abs(m.yoy).toFixed(1)}%</span>`:''}
             </div>
           </td>`;
         }).join('');
