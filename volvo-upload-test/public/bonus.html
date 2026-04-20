@@ -2377,7 +2377,10 @@ html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);tex
       html+='<div style="background:'+fcColor+'18;border-top:1px solid '+fcColor+'44;padding:10px 18px;display:flex;align-items:center;justify-content:space-between">'
         +'<span style="font-size:13px;font-weight:700;color:'+fcColor+'">'+fcLabel+' 合計 '+fcTotalPpl+' 人'+(fcBonusPpl>0?' / <span style="color:#10b981">'+fcBonusPpl+' 人有獎金</span>':'')+'</span>'
         +(fcHasMetrics?'<span style="font-size:18px;font-weight:900;color:'+(fcTotalBonus>0?'#f59e0b':'#475569')+'">'+(fcTotalBonus>0?fcTotalBonus.toLocaleString()+' 元':'—')+'</span>':'')
-      +'</div></div></div>';
+      +'</div>';
+      // 電子簽核 — 檢查人
+      html+='<div id="sig-' + fc.replace(/\W/g,'_') + '" data-fc="'+fc+'" data-fclabel="'+fcLabel+'" style="background:#0f172a;border-top:1px solid '+fcColor+'44;padding:12px 18px"></div>';
+      html+='</div></div>';
     }
 
     if (!hasMetrics) {
@@ -2387,9 +2390,168 @@ html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);tex
     }
 
     el.innerHTML=html;
+    // 渲染後載入並掛上每個廠別的檢查人簽核面板
+    loadAndRenderSignatures();
   } catch(e) {
     el.innerHTML='<div style="color:#ef4444;padding:16px">'+esc(e.message)+'<br><small style="color:#475569">'+esc(e.stack)+'</small></div>';
   }
+}
+
+// ══════════════════════════════════════════════
+// 電子簽核（檢查人）
+// ══════════════════════════════════════════════
+let _sigMap = {}; // { branch: {signer_name, signature_data, signed_at, id} }
+async function loadAndRenderSignatures() {
+  if (!_period) return;
+  try {
+    var rows = await fetch('/api/bonus/signatures?period=' + encodeURIComponent(_period) + '&role=checker')
+      .then(function(r){ return r.json(); });
+    _sigMap = {};
+    (rows || []).forEach(function(s){ _sigMap[s.branch] = s; });
+  } catch(e) { _sigMap = {}; }
+  document.querySelectorAll('[data-fc][id^="sig-"]').forEach(function(el){
+    renderSignaturePanel(el);
+  });
+}
+function renderSignaturePanel(el) {
+  var fc = el.getAttribute('data-fc') || '';
+  var fcLabel = el.getAttribute('data-fclabel') || fc;
+  var sig = _sigMap[fc];
+  var locked = !!_periodLocked;
+  if (sig) {
+    var ts = sig.signed_at ? new Date(sig.signed_at).toLocaleString('zh-TW') : '';
+    el.innerHTML =
+      '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">'
+      +   '<div style="font-size:12px;font-weight:700;color:#94a3b8;white-space:nowrap">✅ 檢查人簽核</div>'
+      +   '<img src="'+sig.signature_data+'" alt="signature" style="max-height:48px;background:#fff;border:1px solid #2d3f56;border-radius:6px;padding:2px 6px">'
+      +   '<div style="flex:1;min-width:140px">'
+      +     '<div style="font-size:13px;font-weight:700;color:#e2e8f0">'+escHtmlLite(sig.signer_name||'')+'</div>'
+      +     '<div style="font-size:10px;color:#64748b">簽於 '+ts+'</div>'
+      +   '</div>'
+      +   (locked
+          ? '<span style="font-size:11px;color:#64748b">🔒 期間已鎖定</span>'
+          : '<button onclick="openSignatureModal(\''+escAttr(fc)+'\',\''+escAttr(fcLabel)+'\')" style="padding:5px 11px;background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.3);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">重新簽核</button>'
+            + '<button onclick="revokeSignature('+sig.id+')" style="padding:5px 11px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">撤銷</button>')
+      + '</div>';
+  } else {
+    el.innerHTML =
+      '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'
+      +   '<div style="font-size:12px;font-weight:700;color:#f59e0b">⏳ 尚未簽核</div>'
+      +   '<div style="flex:1;font-size:11px;color:#64748b">主管確認核發金額後，請於此簽核（電子簽名）。</div>'
+      +   (locked
+          ? '<span style="font-size:11px;color:#64748b">🔒 期間已鎖定，無法簽核</span>'
+          : '<button onclick="openSignatureModal(\''+escAttr(fc)+'\',\''+escAttr(fcLabel)+'\')" style="padding:7px 16px;background:#10b981;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">✍️ 檢查人簽核</button>')
+      + '</div>';
+  }
+}
+function escHtmlLite(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s){ return String(s==null?'':s).replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+
+// ── 簽名 Canvas Modal ──
+let _sigCtx = null, _sigDrawing = false, _sigDirty = false, _sigCurBranch = '', _sigCurLabel = '';
+function openSignatureModal(branch, label) {
+  if (_periodLocked) { alert('此期間獎金表已鎖定，無法簽核'); return; }
+  _sigCurBranch = branch; _sigCurLabel = label;
+  var bg = document.getElementById('sigModalBg');
+  if (bg) bg.remove();
+  // Prefill signer name from logged-in user if available
+  var defaultName = '';
+  try { defaultName = (window.DmsAuth && DmsAuth.user && DmsAuth.user.name) || sessionStorage.getItem('volvo_user_name') || ''; } catch(e) {}
+  var html = '<div id="sigModalBg" onclick="if(event.target===this)closeSigModal()"'
+    + ' style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px">'
+    + '<div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px 22px;width:100%;max-width:640px">'
+    +   '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'
+    +     '<div style="font-size:15px;font-weight:800;color:#e2e8f0">✍️ 檢查人簽核 — '+escHtmlLite(label)+'</div>'
+    +     '<div style="flex:1"></div>'
+    +     '<button onclick="closeSigModal()" style="width:28px;height:28px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#64748b;font-size:16px;cursor:pointer">×</button>'
+    +   '</div>'
+    +   '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">'
+    +     '<label style="font-size:11px;color:#64748b;font-weight:700">簽核人姓名</label>'
+    +     '<input id="sigSignerName" type="text" value="'+escHtmlLite(defaultName)+'" placeholder="例：王大明" style="background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:7px 10px;border-radius:6px;font-size:13px;outline:none">'
+    +   '</div>'
+    +   '<div style="font-size:11px;color:#64748b;margin-bottom:5px">請在下方簽名（支援滑鼠 / 觸控筆）</div>'
+    +   '<div style="background:#fff;border:2px dashed #334155;border-radius:8px;overflow:hidden;touch-action:none">'
+    +     '<canvas id="sigCanvas" width="600" height="220" style="display:block;width:100%;height:220px;cursor:crosshair;background:#fff"></canvas>'
+    +   '</div>'
+    +   '<div id="sigMsg" style="font-size:12px;color:#ef4444;min-height:16px;margin-top:6px"></div>'
+    +   '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">'
+    +     '<button onclick="clearSigCanvas()" style="padding:7px 14px;background:transparent;border:1px solid #475569;color:#94a3b8;border-radius:6px;font-size:12px;cursor:pointer">🗑 清除重畫</button>'
+    +     '<button onclick="closeSigModal()" style="padding:7px 14px;background:transparent;border:1px solid #475569;color:#94a3b8;border-radius:6px;font-size:12px;cursor:pointer">取消</button>'
+    +     '<button onclick="submitSignature()" style="padding:7px 22px;background:#10b981;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">💾 確認簽核</button>'
+    +   '</div>'
+    + '</div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+  setTimeout(initSigCanvas, 0);
+}
+function closeSigModal() {
+  var bg = document.getElementById('sigModalBg'); if (bg) bg.remove();
+  _sigCtx = null; _sigDrawing = false; _sigDirty = false;
+}
+function initSigCanvas() {
+  var c = document.getElementById('sigCanvas');
+  if (!c) return;
+  // scale for HiDPI
+  var rect = c.getBoundingClientRect();
+  c.width = rect.width * 2;
+  c.height = rect.height * 2;
+  var ctx = c.getContext('2d');
+  ctx.scale(2, 2);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#1e293b';
+  ctx.lineWidth = 2.2;
+  _sigCtx = ctx;
+  _sigDirty = false;
+  function getPos(e) {
+    var r = c.getBoundingClientRect();
+    var t = (e.touches && e.touches[0]) || e;
+    return { x: (t.clientX - r.left), y: (t.clientY - r.top) };
+  }
+  function down(e) { e.preventDefault(); _sigDrawing = true; var p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }
+  function move(e) { if (!_sigDrawing) return; e.preventDefault(); var p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); _sigDirty = true; }
+  function up(e) { _sigDrawing = false; }
+  c.addEventListener('mousedown', down);
+  c.addEventListener('mousemove', move);
+  window.addEventListener('mouseup', up);
+  c.addEventListener('touchstart', down, {passive:false});
+  c.addEventListener('touchmove', move, {passive:false});
+  c.addEventListener('touchend', up);
+}
+function clearSigCanvas() {
+  var c = document.getElementById('sigCanvas');
+  if (!c || !_sigCtx) return;
+  _sigCtx.clearRect(0, 0, c.width, c.height);
+  _sigDirty = false;
+}
+async function submitSignature() {
+  var msg = document.getElementById('sigMsg');
+  var name = (document.getElementById('sigSignerName').value || '').trim();
+  if (!name) { if(msg)msg.textContent = '請輸入簽核人姓名'; return; }
+  if (!_sigDirty) { if(msg)msg.textContent = '請先簽名'; return; }
+  var c = document.getElementById('sigCanvas');
+  var dataUrl = c.toDataURL('image/png');
+  try {
+    var res = await fetch('/api/bonus/signatures', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ period: _period, branch: _sigCurBranch, role: 'checker', signer_name: name, signature_data: dataUrl })
+    });
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error || '儲存失敗');
+    closeSigModal();
+    await loadAndRenderSignatures();
+  } catch(e) {
+    if (msg) msg.textContent = '儲存失敗：' + e.message;
+  }
+}
+async function revokeSignature(id) {
+  if (!confirm('確定要撤銷此簽核嗎？')) return;
+  try {
+    var res = await fetch('/api/bonus/signatures/' + id, { method: 'DELETE' });
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error || '撤銷失敗');
+    await loadAndRenderSignatures();
+  } catch(e) { alert('撤銷失敗：' + e.message); }
 }
 
 function toggleProgSection(id) {
