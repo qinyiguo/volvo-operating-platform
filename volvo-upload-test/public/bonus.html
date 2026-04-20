@@ -4233,7 +4233,10 @@ function exportBonusPdf() {
     + '.periodLabel{margin-left:18px;font-weight:600;font-size:13px;color:#000;}'
     + '.deptTitle{background:#475569;color:#fff;padding:8px 12px;font-size:13px;font-weight:700;margin:14px 0 0;border:1px solid '+BORDER+';border-bottom:none;}'
     + 'table{border-collapse:collapse;width:100%;margin:0 0 4px;font-size:11px;}'
-    + 'thead{display:table-row-group;}'
+    // thead 用預設的 table-header-group → 跨頁時瀏覽器會自動在每一頁頂端重複欄位標題列
+    + 'thead{display:table-header-group;}'
+    + 'tfoot{display:table-footer-group;}'
+    // 列不可被分頁切斷（避免分頁處看到半個列造成字體發灰的視覺殘影）
     + 'tr{page-break-inside:avoid;break-inside:avoid;}'
     + 'td,th{border:1px solid '+BORDER+';padding:5px 8px;vertical-align:middle;color:#000;}'
     + 'td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;}'
