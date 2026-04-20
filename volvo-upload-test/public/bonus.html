@@ -2054,7 +2054,7 @@ var eff0=te0?te0.rate:(meta00.useAuto?meta00.autoRate:null);
       }
       var fcHasMetrics=deptKeys.some(function(dk){return getMetricIdsForDept(dk, fc).length>0;});
 
-      html+='<div style="margin-bottom:14px;border:2px solid '+fcColor+'55;border-radius:12px;overflow:hidden">'
+      html+='<div data-fc="'+fc.replace(/"/g,'&quot;')+'" data-fc-label="'+fcLabel.replace(/"/g,'&quot;')+'" style="margin-bottom:14px;border:2px solid '+fcColor+'55;border-radius:12px;overflow:hidden">'
         +'<div id="'+fcId+'-hdr" style="background:'+fcColor+'1e;padding:12px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none" onclick="toggleProgSection(\''+fcId+'\')">'
           +'<span id="'+fcId+'-arrow" style="font-size:12px;color:'+fcColor+';transition:transform .2s;display:inline-block;transform:rotate(90deg)">▶</span>'
           +'<span style="font-size:16px;font-weight:900;color:'+fcColor+'">'+fcLabel+'</span>'
@@ -4202,10 +4202,12 @@ function openExportChooser() {
 
 // ══ 匯出 PDF — 開新視窗渲染與 Excel 一致的版面，再呼叫該視窗的 print() ══
 // 不做 window.print() 整頁列印（會把網頁雜訊也帶進去）
-function exportBonusPdf() {
+async function exportBonusPdf() {
   var period = document.getElementById('selPeriod')?.value || '';
   var branch = document.getElementById('selFactory')?.value || '全部';
   var periodLabel = period.slice(0,4) + '年' + parseInt(period.slice(4)) + '月';
+  // 匯出前先刷新簽核狀態，確保剛簽的能反映到 PDF
+  try { await loadAndRenderSignatures(); } catch(e) {}
 
   function clean(txt) {
     return (txt || '')
@@ -4238,10 +4240,22 @@ function exportBonusPdf() {
       + '</div>';
   }
   // 單據點頁：只放一個「檢查人」簽核格
-  function signRowHtmlSingle() {
-    return '<div class="signRow signRowSingle">'
-      + '<div class="signBox"><div class="lbl">檢查人</div><div class="box"></div></div>'
-      + '</div>';
+  function signRowHtmlSingle(fcKey) {
+    var sig = fcKey && _sigMap ? _sigMap[fcKey] : null;
+    var inner;
+    if (sig) {
+      var ts = sig.signed_at ? new Date(sig.signed_at).toLocaleString('zh-TW', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
+      inner = '<div class="signBox signed">'
+        +   '<div class="lbl">檢查人</div>'
+        +   '<div class="box sigBox">'
+        +     '<img src="'+escHtml(sig.signature_data)+'" alt="sig" class="sigImg">'
+        +     '<div class="sigMeta"><span class="sigName">'+escHtml(sig.signer_name||'')+'</span><span class="sigTs">'+escHtml(ts)+'</span></div>'
+        +   '</div>'
+        + '</div>';
+    } else {
+      inner = '<div class="signBox"><div class="lbl">檢查人</div><div class="box"></div></div>';
+    }
+    return '<div class="signRow signRowSingle">' + inner + '</div>';
   }
 
   var summaryList = []; // 累積給彙總頁用
@@ -4252,6 +4266,8 @@ function exportBonusPdf() {
     if (!fcSpan) return;
     var fcLabel = clean(fcSpan.innerText);
     if (!fcLabel) return;
+    // 廠別 key（data-fc）— 用來對應簽核 _sigMap
+    var fcKey = sec.getAttribute('data-fc') || fcLabel;
 
     var deptHtmls = [];
 
@@ -4394,7 +4410,7 @@ function exportBonusPdf() {
         '<section class="sheet factorySheet">'
           + '<h2>'+escHtml(fcLabel)+'<span class="periodLabel">期間：'+escHtml(periodLabel)+'</span></h2>'
           + deptHtmls.join('')
-          + signRowHtmlSingle()
+          + signRowHtmlSingle(fcKey)
         + '</section>'
       );
     }
@@ -4483,6 +4499,12 @@ function exportBonusPdf() {
     + '.signBox{border:1px solid #334155;min-height:90px;display:flex;flex-direction:column;}'
     + '.signBox .lbl{background:#F1F5F9;color:#000;text-align:center;font-weight:700;padding:5px 4px;border-bottom:1px solid #334155;font-size:11px;}'
     + '.signBox .box{flex:1;}'
+    // 已簽核版本：box 內放簽名圖 + 姓名/時間
+    + '.signBox.signed .sigBox{display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:4px;gap:2px;}'
+    + '.signBox.signed .sigImg{max-width:100%;max-height:60px;object-fit:contain;background:#fff;}'
+    + '.signBox.signed .sigMeta{display:flex;justify-content:space-between;width:100%;font-size:9px;color:#334155;padding:0 2px;}'
+    + '.signBox.signed .sigName{font-weight:700;}'
+    + '.signBox.signed .sigTs{color:#64748b;}'
     + '@page{size:A4 portrait;margin:10mm 8mm;}'
     + '@media print{body{margin:0;}*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important;}}';
 
@@ -4502,9 +4524,11 @@ function exportBonusPdf() {
 }
 
 // ══ 匯出 Excel ══
-function exportBonusExcel() {
+async function exportBonusExcel() {
   var period = document.getElementById('selPeriod')?.value || '';
   var branch = document.getElementById('selFactory')?.value || '全部';
+  // 匯出前先刷新簽核狀態，確保剛簽的能寫入檢查人格
+  try { await loadAndRenderSignatures(); } catch(e) {}
   var wb = XLSX.utils.book_new();
   // 累積所有部門小計，之後做「獎金彙總」sheet 作為簽核主頁
   var summaryList = []; // [{ branch, dept, people, perf, promo, review, total }]
@@ -4527,6 +4551,9 @@ function exportBonusExcel() {
     if (!fcSpan) return;
     var fcLabel = clean(fcSpan.innerText);
     if (!fcLabel) return;
+    // 廠別 key 對應 _sigMap
+    var fcKey = sec.getAttribute('data-fc') || fcLabel;
+    var fcSig = (typeof _sigMap !== 'undefined' && _sigMap) ? _sigMap[fcKey] : null;
 
     var rows = [];
     var roles = [];
@@ -4700,9 +4727,17 @@ function exportBonusExcel() {
 
     // ── 據點 sheet 只放「檢查人」簽核；完整 5 簽核欄集中在獎金彙總首頁 ──
     pushR('signHeaderSingle', ['檢查人', '', '', '', '', '', '']);
-    pushR('signBlankSingle',  Array(7).fill(''));
-    pushR('signBlankSingle',  Array(7).fill(''));
-    pushR('signBlankSingle',  Array(7).fill(''));
+    if (fcSig) {
+      // 已簽核：第一列放簽核人姓名、第二列放簽核時間；第三列留空以維持簽核格高度
+      var sigTs = fcSig.signed_at ? new Date(fcSig.signed_at).toLocaleString('zh-TW', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
+      pushR('signBlankSingle', [fcSig.signer_name || '', '', '', '', '', '', '']);
+      pushR('signBlankSingle', ['簽於 ' + sigTs, '', '', '', '', '', '']);
+      pushR('signBlankSingle', Array(7).fill(''));
+    } else {
+      pushR('signBlankSingle', Array(7).fill(''));
+      pushR('signBlankSingle', Array(7).fill(''));
+      pushR('signBlankSingle', Array(7).fill(''));
+    }
 
     var ws = XLSX.utils.aoa_to_sheet(rows);
     _xlsxAutoWidth(ws, rows);
