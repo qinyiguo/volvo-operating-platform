@@ -2110,9 +2110,11 @@ loadWipLastMonthComparison();
   };
 
   try {
+    const period = (typeof getPeriod === 'function' ? getPeriod() : '') || '';
+    const periodQ = period ? `period=${encodeURIComponent(period)}` : '';
     const [totalData, ...brData] = await Promise.all([
-      fetch('/api/stats/wip/last-month-comparison').then(r=>r.json()),
-      ...BRANCHES.map(br => fetch(`/api/stats/wip/last-month-comparison?branch=${br}`).then(r=>r.json()))
+      fetch(`/api/stats/wip/last-month-comparison${periodQ?'?'+periodQ:''}`).then(r=>r.json()),
+      ...BRANCHES.map(br => fetch(`/api/stats/wip/last-month-comparison?branch=${br}${periodQ?'&'+periodQ:''}`).then(r=>r.json()))
     ]);
     if (!totalData.ok) throw new Error(totalData.error);
 

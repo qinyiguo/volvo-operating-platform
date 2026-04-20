@@ -846,11 +846,21 @@ router.get('/stats/sa-paid-revenue', async (req, res) => {
 
 // WIP 上月結清率比較
 router.get('/stats/wip/last-month-comparison', async (req, res) => {
-  const { branch } = req.query;
+  const { branch, period } = req.query;
   try {
-    const now = new Date();
-    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const lmPrefix = `${lastMonth.getFullYear()}${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
+    // 若前端有傳 period（使用者在頁面上選的月份），以該月為基準計算「上月」
+    // 沒傳則 fallback 為系統當月的上月
+    let lmPrefix;
+    if (period && /^\d{6}$/.test(period)) {
+      const y = parseInt(period.slice(0,4));
+      const m = parseInt(period.slice(4));
+      const lastMonth = new Date(y, m - 2, 1); // 選定月的前一個月
+      lmPrefix = `${lastMonth.getFullYear()}${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
+    } else {
+      const now = new Date();
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      lmPrefix = `${lastMonth.getFullYear()}${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
+    }
 
     const hasBranch = branch && branch !== '全部';
     const params = hasBranch ? [branch] : [];
