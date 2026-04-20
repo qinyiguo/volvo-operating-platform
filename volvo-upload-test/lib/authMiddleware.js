@@ -53,6 +53,7 @@ const FEATURE_PERMISSIONS = {
   'feature:upload':       'Excel 上傳',
   'feature:targets':      '目標設定',
   'feature:bonus_edit':   '獎金指標設定',
+  'feature:bonus_sign':   '獎金簽核',
   'feature:user_manage':  '使用者管理',
 };
 
