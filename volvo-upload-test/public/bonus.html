@@ -184,20 +184,14 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
     <div id="rosterTree"><div class="loading"><span class="spinner"></span>載入中</div></div>
   </div>
 <div id="tab-progress" style="display:none">
-    <!-- ══ 促銷獎金獨立設定 ══ -->
-    <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:12px;margin-bottom:14px;overflow:hidden">
-      <div style="background:linear-gradient(135deg,rgba(16,185,129,.1),rgba(16,185,129,.04));padding:14px 20px;display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none" onclick="togglePromoSection()">
-        <span id="promoSectionArrow" style="font-size:11px;color:#10b981;display:inline-block;transition:transform .2s;transform:rotate(90deg)">▶</span>
-        <span style="font-size:14px;font-weight:800;color:#10b981">🎁 促銷獎金設定</span>
-        <span id="promoConfigCount" style="font-size:12px;color:#64748b;background:#0f172a;padding:2px 10px;border-radius:10px"></span>
-        <button onclick="event.stopPropagation();openPromoModal(null)"
-          style="margin-left:auto;padding:5px 14px;background:#10b981;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">
-          ⚙️ 促銷獎金規則設定
-        </button>
-      </div>
-      <div id="promoSectionBody" style="display:block;padding:14px 20px">
-        <div id="promoConfigList"><div class="loading"><span class="spinner"></span>載入中</div></div>
-      </div>
+    <!-- ══ 促銷獎金規則設定入口 ══ -->
+    <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:12px;margin-bottom:14px;padding:14px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:linear-gradient(135deg,rgba(16,185,129,.1),rgba(16,185,129,.04))">
+      <span style="font-size:14px;font-weight:800;color:#10b981">🎁 促銷獎金設定</span>
+      <span id="promoConfigCount" style="font-size:12px;color:#64748b;background:#0f172a;padding:2px 10px;border-radius:10px"></span>
+      <button onclick="openPromoModal()"
+        style="margin-left:auto;padding:6px 16px;background:#10b981;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">
+        ⚙️ 促銷獎金規則設定
+      </button>
     </div>
   <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
     <button class="btn btn-secondary no-print" onclick="openExportChooser()" style="font-size:13px;background:#1a4a2e;color:#4ade80;border-color:#166534">📤 匯出當月獎金表</button>
@@ -458,12 +452,26 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
 
   <!-- 促銷獎金設定 Modal -->
 <div class="modal-bd" id="promoModal">
-  <div class="modal-win" style="max-width:640px">
+  <div class="modal-win" style="max-width:720px">
     <div class="modal-head">
-      <div class="modal-title" id="promoModalTitle">新增促銷獎金規則</div>
+      <div class="modal-title" id="promoModalTitle">⚙️ 促銷獎金規則設定</div>
       <button class="modal-close" onclick="closeModal('promoModal')">×</button>
     </div>
     <div class="modal-body">
+      <!-- ── 列表檢視：顯示已設定規則 ── -->
+      <div id="promoListView">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div style="flex:1;font-size:13px;color:#94a3b8">目前已設定 <span id="promoModalCount" style="font-weight:700;color:#10b981">0</span> 條規則</div>
+          <button class="btn btn-primary" onclick="showPromoEditor()" style="background:#10b981;border:none;font-weight:700">＋ 新增規則</button>
+        </div>
+        <div id="promoConfigList" style="max-height:480px;overflow-y:auto">
+          <div class="loading"><span class="spinner"></span>載入中</div>
+        </div>
+      </div>
+      <!-- ── 編輯檢視：新增 / 編輯單一規則 ── -->
+      <div id="promoEditorView" style="display:none">
+        <button onclick="showPromoList()" style="background:transparent;border:none;color:#60a5fa;font-size:12px;cursor:pointer;margin-bottom:10px;padding:0">← 返回規則清單</button>
+        <div id="promoEditorTitle" style="font-size:14px;font-weight:800;color:#e2e8f0;margin-bottom:12px">新增促銷獎金規則</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
         <div class="form-group">
           <label>規則名稱 <span style="color:#ef4444">*</span></label>
@@ -615,9 +623,14 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
           </label>
         </div>
       </div>
+      </div>
+      <!-- /promoEditorView -->
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('promoModal')">取消</button>
+    <div class="modal-footer" id="promoListFooter">
+      <button class="btn btn-secondary" onclick="closeModal('promoModal')">關閉</button>
+    </div>
+    <div class="modal-footer" id="promoEditorFooter" style="display:none">
+      <button class="btn btn-secondary" onclick="showPromoList()">返回清單</button>
       <button class="btn btn-primary" id="pmBtnSave" onclick="savePromoCfg()">💾 儲存規則</button>
     </div>
   </div>
@@ -2388,11 +2401,13 @@ const ALL_PAYCODES = ['一般','票劵','內結','保險','延保','保固','善
 const CATALOG_TYPES = ['精品','配件'];
 
 function togglePromoSection() {
+  // 促銷獎金設定已改為 Modal 形式；舊的折疊區塊已移除。此函式留著避免舊呼叫點出錯
   var body = document.getElementById('promoSectionBody');
+  if (!body) return;
   var arrow = document.getElementById('promoSectionArrow');
   var open = body.style.display !== 'none';
   body.style.display = open ? 'none' : '';
-  arrow.style.transform = open ? 'rotate(0deg)' : 'rotate(90deg)';
+  if (arrow) arrow.style.transform = open ? 'rotate(0deg)' : 'rotate(90deg)';
   if (!open && !_promoCfgs.length) loadPromoConfigs();
 }
 
@@ -2475,10 +2490,42 @@ function addPmTierRow() {
   renderPmTierRows();
 }
 
+// 切換 Modal 內的兩種檢視
+function showPromoList() {
+  document.getElementById('promoListView').style.display = '';
+  document.getElementById('promoEditorView').style.display = 'none';
+  document.getElementById('promoListFooter').style.display = '';
+  document.getElementById('promoEditorFooter').style.display = 'none';
+  document.getElementById('promoModalTitle').textContent = '⚙️ 促銷獎金規則設定';
+  // 重新渲染列表（規則可能剛被新增/編輯）
+  renderPromoConfigList();
+  var cntEl = document.getElementById('promoModalCount');
+  if (cntEl) cntEl.textContent = _promoCfgs.length;
+}
+function showPromoEditor(id) {
+  document.getElementById('promoListView').style.display = 'none';
+  document.getElementById('promoEditorView').style.display = '';
+  document.getElementById('promoListFooter').style.display = 'none';
+  document.getElementById('promoEditorFooter').style.display = '';
+  document.getElementById('promoEditorTitle').textContent = id ? '✏️ 編輯促銷獎金規則' : '＋ 新增促銷獎金規則';
+  document.getElementById('promoModalTitle').textContent = id ? '✏️ 編輯促銷獎金規則' : '＋ 新增促銷獎金規則';
+  _openPromoEditor(id);
+}
 async function openPromoModal(id) {
+  // 不帶 id → 顯示規則清單；帶 id → 直接打開編輯該筆規則
+  if (!_promoCfgs.length) {
+    try { await loadPromoConfigs(); } catch(e) {}
+  }
+  openModal('promoModal');
+  if (id) {
+    showPromoEditor(id);
+  } else {
+    showPromoList();
+  }
+}
+async function _openPromoEditor(id) {
   _editingPromoCfgId = id || null;
   var cfg = _promoCfgs.find(function(c){ return c.id === id; }) || {};
-  document.getElementById('promoModalTitle').textContent = id ? '編輯促銷獎金規則' : '新增促銷獎金規則';
   document.getElementById('pmRuleName').value = cfg.rule_name || '';
   document.getElementById('pmRuleType').value = cfg.rule_type || 'sa_qty';
   document.getElementById('pmSortOrder').value = cfg.sort_order || 0;
@@ -2541,7 +2588,6 @@ async function openPromoModal(id) {
   if (tierSM) tierSM.value = cfg.stat_method || 'amount';
   renderPmTierRows();
   onPmRuleTypeChange();
-  openModal('promoModal');
   setTimeout(function(){ document.getElementById('pmRuleName').focus(); }, 80);
 }
 
@@ -2619,8 +2665,9 @@ async function savePromoCfg() {
     var method = _editingPromoCfgId ? 'PUT' : 'POST';
     var data   = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) }).then(r=>r.json());
     if (data.error) throw new Error(data.error);
-    closeModal('promoModal');
     await loadPromoConfigs();
+    // 儲存後回到規則清單（不關閉 Modal，讓使用者可以繼續編輯其他規則）
+    showPromoList();
     // 重新計算進度
     var inner = document.getElementById('progressInner');
     if (inner) { inner.innerHTML = '<div class="loading"><span class="spinner"></span>重新計算中</div>'; await renderProgressContent(); }
