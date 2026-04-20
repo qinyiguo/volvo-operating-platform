@@ -3954,12 +3954,18 @@ function exportBonusPdf() {
     return escHtml(v);
   }
 
-  // 與 Excel 共用的簽核欄 HTML
-  function signRowHtml() {
+  // 獎金彙總首頁的完整 5 簽核欄
+  function signRowHtmlFull() {
     return '<div class="signRow">'
       + ['承辦人','單位主管','最高主管','總經理室','董事長室'].map(function(n){
         return '<div class="signBox"><div class="lbl">'+n+'</div><div class="box"></div></div>';
       }).join('')
+      + '</div>';
+  }
+  // 單據點頁：只放一個「檢查人」簽核格
+  function signRowHtmlSingle() {
+    return '<div class="signRow signRowSingle">'
+      + '<div class="signBox"><div class="lbl">檢查人</div><div class="box"></div></div>'
       + '</div>';
   }
 
@@ -4110,10 +4116,10 @@ function exportBonusPdf() {
 
     if (deptHtmls.length) {
       factoryHtmls.push(
-        '<section class="sheet">'
+        '<section class="sheet factorySheet">'
           + '<h2>'+escHtml(fcLabel)+'<span class="periodLabel">期間：'+escHtml(periodLabel)+'</span></h2>'
           + deptHtmls.join('')
-          + signRowHtml()
+          + signRowHtmlSingle()
         + '</section>'
       );
     }
@@ -4156,12 +4162,12 @@ function exportBonusPdf() {
       + '<td class="num">'+fmtNum(gPromo)+'</td>'
       + '<td class="num">'+fmtNum(gReview)+'</td>'
       + '<td class="num">'+fmtNum(gTotal)+'</td></tr>';
-    summaryHtml = '<section class="sheet">'
+    summaryHtml = '<section class="sheet summarySheet">'
       + '<h2>獎金彙總 — '+escHtml(branch)+'<span class="periodLabel">期間：'+escHtml(periodLabel)+'</span></h2>'
       + '<table class="data summaryTbl"><thead><tr>'
       + ['據點','部門','人數','績效獎金','促銷獎金','主管考核','總金額'].map(function(h){return '<th>'+h+'</th>';}).join('')
       + '</tr></thead><tbody>'+rowsHtml+'</tbody></table>'
-      + signRowHtml()
+      + signRowHtmlFull()
       + '</section>';
   }
 
@@ -4171,6 +4177,11 @@ function exportBonusPdf() {
     + 'body{font-family:"Microsoft JhengHei","PingFang TC",sans-serif;margin:0;padding:0;color:#000;}'
     + '.sheet{padding:14px 18px;}'
     + '.sheet + .sheet{page-break-before:always;}'
+    // 保險：每個據點 sheet 都強制從新頁開始（跨據點即分頁）
+    + '.factorySheet{page-break-before:always;break-before:page;}'
+    // 單一簽核欄：固定寬度在左側，不再是 5 欄 grid
+    + '.signRow.signRowSingle{grid-template-columns:240px 1fr;}'
+    + '.signRow.signRowSingle > .signBox{max-width:240px;}'
     + 'h2{background:#DBEAFE;color:#000;padding:10px 14px;font-size:16px;margin:0 0 10px;border:1px solid '+BORDER+';font-weight:800;}'
     + '.periodLabel{margin-left:18px;font-weight:600;font-size:13px;color:#000;}'
     + '.deptTitle{background:#475569;color:#fff;padding:8px 12px;font-size:13px;font-weight:700;margin:14px 0 0;border:1px solid '+BORDER+';border-bottom:none;}'
@@ -4409,11 +4420,11 @@ function exportBonusExcel() {
 
     if (rows.length <= 3) return;
 
-    // ── 簽核欄 ──（前一部門已經留空白列，這裡不再多加）
-    pushR('signHeader', ['承辦人', '單位主管', '', '最高主管', '總經理室', '', '董事長室']);
-    pushR('signBlank', Array(7).fill(''));
-    pushR('signBlank', Array(7).fill(''));
-    pushR('signBlank', Array(7).fill(''));
+    // ── 據點 sheet 只放「檢查人」簽核；完整 5 簽核欄集中在獎金彙總首頁 ──
+    pushR('signHeaderSingle', ['檢查人', '', '', '', '', '', '']);
+    pushR('signBlankSingle',  Array(7).fill(''));
+    pushR('signBlankSingle',  Array(7).fill(''));
+    pushR('signBlankSingle',  Array(7).fill(''));
 
     var ws = XLSX.utils.aoa_to_sheet(rows);
     _xlsxAutoWidth(ws, rows);
@@ -4605,19 +4616,34 @@ function _applyBonusStyles(ws, rows, roles) {
     signBlank: {
       border: FULL_BORDER,
     },
+    // 單據點專用：只在 col 0~2 畫一個「檢查人」簽核格
+    signHeaderSingle: {
+      font: { bold:true, sz:11, color:{rgb:'334155'} },
+      fill: { fgColor:{rgb:'F1F5F9'} },
+      alignment: { horizontal:'center', vertical:'center' },
+      border: { top:BORDER_MED, bottom:BORDER, left:BORDER, right:BORDER },
+    },
+    signBlankSingle: {
+      border: FULL_BORDER,
+    },
   };
   var ref = XLSX.utils.decode_range(ws['!ref'] || 'A1');
   var maxC = ref.e.c;
   // 完整橫跨 7 欄的列：空白格也補底色 + 邊框；其餘只局部欄有內容的列不補空白格
   var FULL_WIDTH = { factory:1, dept:1, colHeader:1, data:1, summary:1, noteTitle:1, signHeader:1, signBlank:1 };
+  // 單一檢查人簽核：只在 cols 0~2 範圍內補格子/上樣式
+  var SINGLE_SIG_ROLES = { signHeaderSingle:1, signBlankSingle:1 };
   for (var R = ref.s.r; R <= ref.e.r; R++) {
     var role = roles[R] || 'empty';
     var baseStyle = STYLES[role];
     for (var C = ref.s.c; C <= maxC; C++) {
+      // 單據點簽核：只處理 col 0~2；3~6 保持空白不塗色
+      if (SINGLE_SIG_ROLES[role] && C > 2) continue;
       var addr = XLSX.utils.encode_cell({r:R, c:C});
       var cell = ws[addr];
       if (!cell) {
-        if (!baseStyle || !FULL_WIDTH[role]) continue;
+        if (!baseStyle) continue;
+        if (!FULL_WIDTH[role] && !SINGLE_SIG_ROLES[role]) continue;
         cell = ws[addr] = { v: '', t: 's' };
       }
       if (typeof cell.v === 'number') cell.z = '#,##0';
@@ -4671,6 +4697,9 @@ function _applyBonusStyles(ws, rows, roles) {
       // 簽核空白格：同步套用橫向合併讓格子對齊
       addMerge(R, 1, 2, 'center');
       addMerge(R, 4, 5, 'center');
+    } else if (role === 'signHeaderSingle' || role === 'signBlankSingle') {
+      // 單據點：只畫一個「檢查人」簽核格，橫跨 cols 0-2；3-6 留白
+      addMerge(R, 0, 2, 'center');
     }
   });
 
