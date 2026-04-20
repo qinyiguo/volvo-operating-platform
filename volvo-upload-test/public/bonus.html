@@ -2245,8 +2245,9 @@ var promoDetailData = encodeURIComponent(JSON.stringify(
   }).filter(function(x){return x.amount>0;})
 ));
 var extraAmt = mRow.extraBonus||0;
+var _safeEbEmpId = (p4.emp_id||'').replace(/'/g,"\\'");
 html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;background:rgba(59,130,246,.03);font-weight:900;">'
-  +(extraAmt>0?'<span onclick="openExtraBonusModal()" style="color:#60a5fa;font-size:14px;cursor:pointer;text-decoration:underline dotted">'+extraAmt.toLocaleString()+'<span style="font-size:9px;margin-left:1px">元</span></span>':'<span style="color:#2d4060">—</span>')
+  +(extraAmt>0?'<span onclick="showExtraBonusNote(\''+_safeEbEmpId+'\',this)" style="color:#60a5fa;font-size:14px;cursor:pointer;text-decoration:underline dotted" title="點擊查看事由">'+extraAmt.toLocaleString()+'<span style="font-size:9px;margin-left:1px">元</span></span>':'<span style="color:#2d4060">—</span>')
 +'</td>';
 
 // 促銷獎金 td
@@ -2778,24 +2779,99 @@ var _mrModalCurrent = null;
 function _openMRModal(deptKey) {
   _mrModalCurrent = deptKey;
   var list = _mrModalDepts[deptKey] || [];
+  var titleEl = document.getElementById('mrModalTitle');
+  var deptName = (deptKey || '').split('-')[1] || deptKey || '';
+  if (titleEl) titleEl.textContent = '💼 主管考核設定 — ' + (deptName || '');
+  // 填 人員 下拉（本部門成員）
+  var empSel = document.getElementById('mrEmp');
+  if (empSel) {
+    empSel.innerHTML = '<option value="">選擇人員...</option>'
+      + list.map(function(emp){
+        var safeId = (emp.empId||'').replace(/"/g,'&quot;');
+        return '<option value="'+safeId+'" data-name="'+(emp.name||'').replace(/"/g,'&quot;')+'">'
+          + (emp.name||'') + (emp.title?' ('+emp.title+')':'') + '</option>';
+      }).join('');
+  }
+  document.getElementById('mrAmount').value = '';
+  document.getElementById('mrReason').value = '';
+  _renderMRList();
+  document.getElementById('mrModal').style.display = 'flex';
+}
+
+// 渲染「本月已設定清單」：列出本部門所有已設主管考核的人員
+function _renderMRList() {
   var body = document.getElementById('mrModalBody');
   if (!body) return;
-  var html = '';
-  list.forEach(function(emp) {
-    var safeId = emp.empId.replace(/'/g,"\\'");
-    html += '<div style="display:grid;grid-template-columns:1fr 80px 1fr;gap:6px;align-items:center;padding:7px 0;border-bottom:1px solid rgba(45,63,86,.3)">'
-      +'<div><div style="color:#e2e8f0;font-size:13px;font-weight:700">'+emp.name+'</div>'
-      +'<div style="color:#64748b;font-size:11px">'+emp.title+'</div></div>'
-      +'<input type="number" step="100" value="'+(emp.val||'')+'" placeholder="0" data-modalempid="'+safeId+'"'
-      +' style="width:100%;text-align:center;background:#1a0f2e;border:1.5px solid #4a1d96;border-radius:6px;color:#c4b5fd;padding:5px 4px;font-size:13px;font-weight:800;outline:none"'
-      +' onfocus="this.style.borderColor=\'#8b5cf6\'" onblur="this.style.borderColor=\'#4a1d96\'">'
-      +'<input type="text" value="'+emp.note+'" placeholder="備註（選填）" data-modalnote="'+safeId+'"'
-      +' style="width:100%;background:rgba(139,92,246,.06);border:none;border-bottom:1px solid #3b2063;color:#94a3b8;padding:5px 6px;font-size:11px;outline:none;border-radius:0"'
-      +' onfocus="this.style.borderBottomColor=\'#8b5cf6\'" onblur="this.style.borderBottomColor=\'#3b2063\'">'
-    +'</div>';
-  });
-  body.innerHTML = html || '<div style="color:#475569;text-align:center;padding:20px">此部門無人員資料</div>';
-  document.getElementById('mrModal').style.display = 'flex';
+  var list = _mrModalDepts[_mrModalCurrent] || [];
+  var rowsHtml = list
+    .filter(function(emp){
+      var mr = _managerReviewMap[emp.empId];
+      return mr && (parseInt(mr.amount)||0) !== 0;
+    })
+    .map(function(emp){
+      var mr = _managerReviewMap[emp.empId] || {};
+      var amt = parseInt(mr.amount)||0;
+      var note = mr.note || '';
+      var safeId = (emp.empId||'').replace(/'/g,"\\'");
+      var amtColor = amt > 0 ? '#c4b5fd' : '#f87171';
+      return '<div style="background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:6px">'
+        + '<div style="flex:1;min-width:0">'
+        +   '<div style="font-weight:700;font-size:13px;color:#e2e8f0">'+emp.name+'<span style="color:#64748b;font-weight:400;margin-left:4px;font-size:11px">'+(emp.title||'')+'</span></div>'
+        +   (note?'<div style="font-size:11px;color:#94a3b8;margin-top:2px">'+note+'</div>':'')
+        + '</div>'
+        + '<span style="font-size:15px;font-weight:900;color:'+amtColor+';white-space:nowrap">'+(amt>0?'+':'')+amt.toLocaleString()+' 元</span>'
+        + '<button class="btn btn-danger btn-sm" onclick="_deleteMRSingle(\''+safeId+'\')" style="padding:4px 10px;font-size:11px">刪除</button>'
+        + '</div>';
+    }).join('');
+  body.innerHTML = rowsHtml || '<div style="color:#475569;font-size:12px;padding:8px 0;text-align:center">此部門尚無主管考核記錄</div>';
+}
+
+async function _saveMRSingle() {
+  var empSel = document.getElementById('mrEmp');
+  var empId = empSel && empSel.value;
+  if (!empId) { alert('請先選擇人員'); return; }
+  var empName = empSel.options[empSel.selectedIndex]?.getAttribute('data-name') || '';
+  var amount = parseInt(document.getElementById('mrAmount').value) || 0;
+  var note = document.getElementById('mrReason').value.trim();
+  var period = document.getElementById('selPeriod')?.value || '';
+  if (!period) { alert('請先選擇期間'); return; }
+  try {
+    await fetch('/api/manager-review', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ period: period, emp_id: empId, amount: amount, note: note })
+    });
+    if (!_managerReviewMap[empId]) _managerReviewMap[empId] = {};
+    _managerReviewMap[empId].amount = amount;
+    _managerReviewMap[empId].note = note;
+    // 清空輸入、重渲染清單 + 本頁獎金名單
+    document.getElementById('mrAmount').value = '';
+    document.getElementById('mrReason').value = '';
+    empSel.value = '';
+    _renderMRList();
+    var inner = document.getElementById('progressInner');
+    if (inner && typeof renderProgressContent === 'function') {
+      inner.innerHTML = '<div class="loading"><span class="spinner"></span>重新計算中</div>';
+      renderProgressContent();
+    }
+  } catch(e) { alert('儲存失敗：'+e.message); }
+}
+
+async function _deleteMRSingle(empId) {
+  var period = document.getElementById('selPeriod')?.value || '';
+  if (!period) return;
+  try {
+    await fetch('/api/manager-review', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ period: period, emp_id: empId, amount: 0, note: '' })
+    });
+    if (_managerReviewMap[empId]) { _managerReviewMap[empId].amount = 0; _managerReviewMap[empId].note = ''; }
+    _renderMRList();
+    var inner = document.getElementById('progressInner');
+    if (inner && typeof renderProgressContent === 'function') {
+      inner.innerHTML = '<div class="loading"><span class="spinner"></span>重新計算中</div>';
+      renderProgressContent();
+    }
+  } catch(e) { alert('刪除失敗：'+e.message); }
 }
 
 function _closeMRModal() {
@@ -2804,6 +2880,7 @@ function _closeMRModal() {
   _mrModalCurrent = null;
 }
 
+// 留著舊 batch 版本以防有其他地方呼叫（未使用也無害）
 async function _saveMRModal() {
   var body = document.getElementById('mrModalBody');
   if (!body) return;
@@ -3022,11 +3099,17 @@ async function openActualOverrideModal(metricId, metricName, period, isManual, m
     } catch(e) {}
   }
 
-  // 計算預設單位
+  // 計算預設單位 — 金額類強制 K（千元）、時間/件數類保留原始數字
   const _mForUnit = _metrics.find(function(x){ return x.id === metricId; });
   const curStatField = (_mForUnit && _mForUnit.stat_field) || 'amount';
-  const defaultUnit = (metricSource === 'tech_hours') ? 'raw' : (curStatField === 'amount' ? 'k' : 'raw');
-  const unitRow = `
+  const isMoney = curStatField === 'amount' && metricSource !== 'tech_hours';
+  const defaultUnit = isMoney ? 'k' : 'raw';
+  // 金額類：隱藏輸入單位切換、強制 K；其他類型維持可切換
+  const unitRow = isMoney ? `
+    <input type="hidden" name="aoUnit" value="k">
+    <div style="margin-bottom:10px;padding:7px 12px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);border-radius:6px;font-size:11px;color:#93c5fd">
+      💰 金額類指標，以 <strong style="color:#fff">K（千元）</strong> 為單位輸入（例如輸入 <strong style="color:#fff">8035</strong> = 8,035,000 元）
+    </div>` : `
     <div style="margin-bottom:10px;padding:8px 12px;background:#0f172a;border-radius:6px;border:1px solid #2d3f56">
       <div style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:6px">輸入單位</div>
       <div style="display:flex;gap:16px">
@@ -3041,9 +3124,15 @@ async function openActualOverrideModal(metricId, metricName, period, isManual, m
       </div>
     </div>`;
 
+  // 金額類：把資料庫儲存的原始金額轉成 K 顯示於輸入框，使用者直覺看到千元
+  const displayTarget = (isMoney && curTarget !== '' && curTarget != null) ? (Math.round(Number(curTarget)/1000 * 100) / 100) : curTarget;
+  const displayVal    = (isMoney && curVal    !== '' && curVal    != null) ? (Math.round(Number(curVal)   /1000 * 100) / 100) : curVal;
+  const targetPlaceholder = isMoney ? '例：36,621（單位 K）' : '例：500（手動設定目標）';
+  const valPlaceholder    = isMoney ? '例：33,584（單位 K）' : (isManual ? '例：480（實際完成量）' : '例：320（小時）');
+
   const targetRow = isManual ? `
-    <div style="font-size:11px;color:#64748b;margin-bottom:4px">當月目標值</div>
-    <input type="number" id="aoTargetInput" value="${curTarget}" min="0" step="0.1" placeholder="例：500（手動設定目標）"
+    <div style="font-size:11px;color:#64748b;margin-bottom:4px">當月目標值${isMoney?'（K）':''}</div>
+    <input type="number" id="aoTargetInput" value="${displayTarget}" min="0" step="${isMoney?'1':'0.1'}" placeholder="${targetPlaceholder}"
       style="width:100%;background:#0f172a;border:1px solid #3b82f6;color:#3b82f6;padding:8px 12px;border-radius:6px;font-size:14px;font-weight:800;outline:none;margin-bottom:10px">
   ` : '';
 
@@ -3063,8 +3152,8 @@ async function openActualOverrideModal(metricId, metricName, period, isManual, m
           <input type="radio" name="aoDisplayFmt" value="raw" ${((_metrics.find(x=>x.id===metricId)||{}).stat_field||'amount')!=='amount'?'checked':''} style="accent-color:#3b82f6"> 🔢 直接顯示（分數/件數）
         </label>
       </div>` : ''}
-      <div style="font-size:11px;color:#64748b;margin-bottom:4px">當月實績值（留空 = ${isManual?'不顯示達成率':'使用 DMS 自動計算'}）</div>
-      <input type="number" id="aoValInput" value="${curVal}" min="0" step="0.1" placeholder="${isManual?'例：480（實際完成量）':'例：320（小時）'}"
+      <div style="font-size:11px;color:#64748b;margin-bottom:4px">當月實績值${isMoney?'（K）':''}（留空 = ${isManual?'不顯示達成率':'使用 DMS 自動計算'}）</div>
+      <input type="number" id="aoValInput" value="${displayVal}" min="0" step="${isMoney?'1':'0.1'}" placeholder="${valPlaceholder}"
         style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#f59e0b;padding:8px 12px;border-radius:6px;font-size:14px;font-weight:800;outline:none;margin-bottom:10px">
             ${unitRow}
           <div style="font-size:11px;color:#64748b;margin-bottom:4px">備註</div>
@@ -3103,15 +3192,17 @@ async function saveActualOverride(metricId, period, branch, isManual) {
     }
   }
   const msgEl = document.getElementById('aoMsg');
-  // 若是 manual 指標，同步儲存部門目標
+  // 若是 manual 指標，同步儲存部門目標（K 模式下輸入值 × 1000 換回原始金額）
   if (isManual) {
     const tgtVal = document.getElementById('aoTargetInput')?.value.trim();
     if (tgtVal !== '' && tgtVal != null) {
+      const tgtRaw = parseFloat(tgtVal);
+      const tgtFinal = (unit === 'k') ? tgtRaw * 1000 : tgtRaw;
       const m = _metrics.find(function(x){ return x.id === metricId; });
       const deptCodes = (m && m.target_dept_codes) || [];
-const tEntries = deptCodes.length
-        ? deptCodes.map(function(dc){ return { metric_id: metricId, dept_code: dc, period: period, target_value: parseFloat(tgtVal) }; })
-        : [{ metric_id: metricId, dept_code: null, period: period, target_value: parseFloat(tgtVal) }];
+      const tEntries = deptCodes.length
+        ? deptCodes.map(function(dc){ return { metric_id: metricId, dept_code: dc, period: period, target_value: tgtFinal }; })
+        : [{ metric_id: metricId, dept_code: null, period: period, target_value: tgtFinal }];
       await fetch('/api/bonus/targets/batch', {
         method: 'PUT', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ entries: tEntries })
@@ -3684,6 +3775,55 @@ async function saveExtraBonus() {
     if(inner){inner.innerHTML='<div class="loading"><span class="spinner"></span>重新計算中</div>';renderProgressContent();}
   } catch(e){ alert('儲存失敗：'+e.message); }
 }
+
+// 點擊員工列的額外獎金金額 → 彈出小氣泡顯示該員工的所有事由（_extraBonusList 內 reason 欄位）
+function showExtraBonusNote(empId, anchorEl) {
+  // 清掉舊的
+  document.querySelectorAll('.ebNotePop').forEach(function(e){e.remove();});
+  var items = (_extraBonusList || []).filter(function(r){ return r.emp_id === empId; });
+  if (!items.length) {
+    // 如果沒有資料，fallback 開 modal（用舊行為）
+    if (typeof openExtraBonusModal === 'function') openExtraBonusModal();
+    return;
+  }
+  var empName = items[0].emp_name || '';
+  var total = items.reduce(function(s,r){ return s + (parseInt(r.amount)||0); }, 0);
+  var listHtml = items.map(function(r){
+    var amt = parseInt(r.amount)||0;
+    return '<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid rgba(45,63,86,.3);font-size:12px">'
+      + '<span style="color:#e2e8f0;flex:1">'+((r.reason||'').replace(/</g,'&lt;')||'<span style="color:#64748b">（無事由）</span>')+'</span>'
+      + '<span style="color:#60a5fa;font-weight:900;white-space:nowrap">'+amt.toLocaleString()+' 元</span>'
+      + '</div>';
+  }).join('');
+  var pop = document.createElement('div');
+  pop.className = 'ebNotePop';
+  pop.style.cssText = 'position:fixed;z-index:10000;background:#1a2332;border:1px solid #3b82f6;border-radius:10px;padding:14px 16px;min-width:280px;max-width:400px;box-shadow:0 20px 50px rgba(0,0,0,.6)';
+  pop.innerHTML =
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #2d3f56">'
+    +   '<div><div style="font-size:11px;color:#64748b">額外獎金事由</div>'
+    +   '<div style="font-size:14px;font-weight:900;color:#60a5fa">'+empName+'</div></div>'
+    +   '<div style="text-align:right"><div style="font-size:10px;color:#64748b">合計</div><div style="font-size:16px;font-weight:900;color:#fff">'+total.toLocaleString()+' 元</div></div>'
+    + '</div>'
+    + listHtml
+    + '<button onclick="this.closest(\'.ebNotePop\').remove()" style="margin-top:10px;width:100%;padding:5px;border-radius:6px;border:1px solid #334155;background:transparent;color:#94a3b8;cursor:pointer;font-size:12px">關閉</button>';
+  document.body.appendChild(pop);
+  // 定位在點擊元素附近
+  var rect = anchorEl.getBoundingClientRect();
+  var pr = pop.getBoundingClientRect();
+  var top = rect.bottom + 6;
+  var left = rect.right - pr.width;
+  if (left < 8) left = 8;
+  if (top + pr.height > window.innerHeight - 8) top = rect.top - pr.height - 6;
+  pop.style.top = top + 'px';
+  pop.style.left = left + 'px';
+  // 點擊其他地方關閉
+  setTimeout(function(){
+    document.addEventListener('click', function handler(e){
+      if (!pop.contains(e.target)) { pop.remove(); document.removeEventListener('click', handler); }
+    });
+  }, 10);
+}
+
 async function deleteExtraBonus(id) {
   if(!confirm('確定刪除？')) return;
   await fetch('/api/bonus/extra-bonuses/'+id,{method:'DELETE'});
@@ -4618,18 +4758,34 @@ async function _saveBeautyBranchModal() {
 
 <!-- 主管考核 Modal -->
 <div id="mrModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.65);align-items:center;justify-content:center">
-  <div style="background:#0f172a;border:1px solid #2d4060;border-radius:14px;width:480px;max-height:82vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.6)">
+  <div style="background:#0f172a;border:1px solid #2d4060;border-radius:14px;width:560px;max-width:92vw;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.6)">
     <div style="padding:16px 20px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center">
-      <span style="color:#a78bfa;font-weight:900;font-size:15px">💼 主管考核設定</span>
+      <span id="mrModalTitle" style="color:#a78bfa;font-weight:900;font-size:15px">💼 主管考核設定</span>
       <button onclick="_closeMRModal()" style="background:none;border:none;color:#64748b;font-size:18px;cursor:pointer;line-height:1;padding:2px 6px">✕</button>
     </div>
-    <div style="padding:10px 20px 4px;display:grid;grid-template-columns:1fr 80px 1fr;gap:6px;font-size:11px;color:#475569;font-weight:700;border-bottom:1px solid #1e293b">
-      <span>姓名／職稱</span><span style="text-align:center">調整金額</span><span>備註</span>
+    <div style="padding:14px 20px;border-bottom:1px solid #1e293b;background:rgba(139,92,246,.04)">
+      <div style="display:grid;grid-template-columns:1fr 90px;gap:8px;margin-bottom:8px">
+        <div>
+          <label style="display:block;font-size:11px;color:#64748b;font-weight:700;margin-bottom:3px">人員</label>
+          <select id="mrEmp" class="form-select" style="width:100%">
+            <option value="">選擇人員...</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;color:#64748b;font-weight:700;margin-bottom:3px">金額（元）</label>
+          <input type="number" id="mrAmount" class="form-input" placeholder="±" step="100" style="width:100%">
+        </div>
+      </div>
+      <div style="margin-bottom:8px">
+        <label style="display:block;font-size:11px;color:#64748b;font-weight:700;margin-bottom:3px">理由</label>
+        <input type="text" id="mrReason" class="form-input" placeholder="例：5S、CSI 滿意度、專案貢獻..." style="width:100%">
+      </div>
+      <button onclick="_saveMRSingle()" class="btn btn-primary" style="width:100%;background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none">＋ 新增／更新</button>
     </div>
+    <div style="padding:10px 20px 4px;font-size:12px;color:#64748b;font-weight:700;border-bottom:1px solid #1e293b">本月已設定清單</div>
     <div id="mrModalBody" style="overflow-y:auto;flex:1;padding:8px 20px"></div>
-    <div style="padding:12px 20px;border-top:1px solid #1e293b;display:flex;justify-content:flex-end;gap:8px">
-      <button onclick="_closeMRModal()" style="padding:6px 18px;border-radius:7px;border:1px solid #334155;background:transparent;color:#94a3b8;cursor:pointer;font-size:13px">取消</button>
-      <button onclick="_saveMRModal()" style="padding:6px 22px;border-radius:7px;border:none;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;font-weight:900;cursor:pointer;font-size:13px">💾 儲存</button>
+    <div style="padding:10px 20px;border-top:1px solid #1e293b;display:flex;justify-content:flex-end">
+      <button onclick="_closeMRModal()" style="padding:6px 22px;border-radius:7px;border:1px solid #334155;background:transparent;color:#94a3b8;cursor:pointer;font-size:13px">關閉</button>
     </div>
   </div>
 </div>
