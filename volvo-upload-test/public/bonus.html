@@ -3106,8 +3106,9 @@ async function openActualOverrideModal(metricId, metricName, period, isManual, m
   const isMoney = curStatField === 'amount' && metricSource !== 'tech_hours';
   const defaultUnit = isMoney ? 'k' : 'raw';
   // 金額類：隱藏輸入單位切換、強制 K；其他類型維持可切換
+  // 注意：此處用「display:none 的已勾選 radio」而不是 hidden input，因為 document.querySelector('...:checked') 不會匹配 hidden input
   const unitRow = isMoney ? `
-    <input type="hidden" name="aoUnit" value="k">
+    <input type="radio" name="aoUnit" value="k" checked style="display:none">
     <div style="margin-bottom:10px;padding:7px 12px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);border-radius:6px;font-size:11px;color:#93c5fd">
       💰 金額類指標，以 <strong style="color:#fff">K（千元）</strong> 為單位輸入（例如輸入 <strong style="color:#fff">8035</strong> = 8,035,000 元）
     </div>` : `
@@ -3174,7 +3175,12 @@ async function openActualOverrideModal(metricId, metricName, period, isManual, m
 async function saveActualOverride(metricId, period, branch, isManual) {
   const val     = document.getElementById('aoValInput')?.value.trim();
   const note    = document.getElementById('aoNoteInput')?.value.trim() || '';
-  const unit    = document.querySelector('input[name="aoUnit"]:checked')?.value || 'raw';
+  // 金額類指標強制使用 K 單位（不信任 DOM radio，避免 hidden/display:none 時選不到造成 fallback raw 的 bug）
+  const _mForSave = _metrics.find(function(x){ return x.id === metricId; });
+  const isMoneyForSave = _mForSave && _mForSave.stat_field === 'amount';
+  const unit = isMoneyForSave
+    ? 'k'
+    : (document.querySelector('input[name="aoUnit"]:checked')?.value || 'raw');
   const rawVal  = val === '' ? null : parseFloat(val);
   const finalVal = (rawVal !== null && unit === 'k') ? rawVal * 1000 : rawVal;
   // 將 unit 選擇同步存入 bonus_metrics.stat_field（寫 DB，跨裝置同步）
