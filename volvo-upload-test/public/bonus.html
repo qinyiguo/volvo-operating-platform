@@ -3250,55 +3250,67 @@ async function clearActualOverride(metricId, period, branch) {
 
   function _openPromoDetail(empName, dataJSON) {
   var items = JSON.parse(decodeURIComponent(dataJSON));
-    var rows = items.map(function(item){
-    var breakdown = '';
+  // 按金額大小排序（金額多的先看）
+  items.sort(function(a,b){ return (b.amount||0) - (a.amount||0); });
+
+  function breakdownText(item) {
     if (item.rule_type==='sa_qty' && item.qty>0 && item.bonus_per_unit>0) {
-      breakdown = '<div style="font-size:11px;color:#64748b;margin-top:3px">'
-        +item.qty+'件 × '+item.bonus_per_unit.toLocaleString()+'元'
-        +(item.per_qty>1?' （每'+item.per_qty+'件觸發）':'')
-        +' = <span style="color:#10b981">'+item.amount.toLocaleString()+'元</span></div>';
-    } else if ((item.rule_type==='sa_pct'||item.rule_type==='parts_discount') && item.sales_amt>0) {
-      breakdown = '<div style="font-size:11px;color:#64748b;margin-top:3px">'
-        +item.sales_amt.toLocaleString()+'元 × '+item.bonus_pct+'%'
-        +' = <span style="color:#10b981">'+item.amount.toLocaleString()+'元</span></div>';
-   } else if (item.rule_type==='sa_tier' && item.actual_amt>0) {
-     var tierDesc = '';
-     if (item.tier_match) {
-       var tv = item.tier_match.bonus_value, tt = item.tier_match.bonus_type;
-       if (tt === 'pct') {
-         tierDesc = ' × ' + tv + '%';
-       } else if (tt === 'per_unit') {
-         tierDesc = ' × ' + parseFloat(tv).toLocaleString() + '元/件';
-       } else if (tt === 'fixed') {
-         tierDesc = '（固定金額）';
-       }
-     }
-     breakdown = '<div style="font-size:11px;color:#64748b;margin-top:3px">'
-       +'實績 '+item.actual_amt.toLocaleString()+'元'
-       +tierDesc
-       +' = <span style="color:#10b981">'+item.amount.toLocaleString()+'元</span></div>';
-   }
-    return '<tr><td style="padding:8px 12px;color:#e2e8f0;font-size:13px">'
-      +item.name+breakdown+'</td>'
-      +'<td style="padding:8px 12px;text-align:right;color:#10b981;font-size:13px;font-weight:700;vertical-align:top">'+item.amount.toLocaleString()+' 元</td></tr>';
+      return item.qty+' 件 × '+item.bonus_per_unit.toLocaleString()+' 元'
+        +(item.per_qty>1?'（每'+item.per_qty+'件）':'');
+    }
+    if ((item.rule_type==='sa_pct'||item.rule_type==='parts_discount') && item.sales_amt>0) {
+      return item.sales_amt.toLocaleString()+' 元 × '+item.bonus_pct+'%';
+    }
+    if (item.rule_type==='sa_tier' && item.actual_amt>0) {
+      var tierDesc = '';
+      if (item.tier_match) {
+        var tv = item.tier_match.bonus_value, tt = item.tier_match.bonus_type;
+        if (tt === 'pct') tierDesc = ' × ' + tv + '%';
+        else if (tt === 'per_unit') tierDesc = ' × ' + parseFloat(tv).toLocaleString() + ' 元/件';
+        else if (tt === 'fixed') tierDesc = '（固定金額）';
+      }
+      return '實績 '+item.actual_amt.toLocaleString()+' 元'+tierDesc;
+    }
+    return '';
+  }
+
+  var cards = items.map(function(item){
+    var bd = breakdownText(item);
+    var nameSafe = String(item.name||'').replace(/</g,'&lt;');
+    return '<div style="background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;min-width:0">'
+      + '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">'
+      +   '<span style="color:#e2e8f0;font-size:12.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0" title="'+nameSafe+'">'+nameSafe+'</span>'
+      +   '<span style="color:#10b981;font-size:13px;font-weight:900;white-space:nowrap">'+item.amount.toLocaleString()+' 元</span>'
+      + '</div>'
+      + (bd?'<div style="font-size:10.5px;color:#64748b;line-height:1.4">'+bd+'</div>':'')
+      + '</div>';
   }).join('');
+
   var total = items.reduce(function(s,x){return s+x.amount;},0);
+  var countTxt = items.length + ' 項';
   var html = '<div id="promoDetailBg" onclick="if(event.target===this)this.remove()"'
-    +' style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center">'
-    +'<div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:24px;min-width:360px;max-width:90vw">'
-    +'<div style="font-size:15px;font-weight:800;color:#10b981;margin-bottom:4px">🎁 促銷獎金明細</div>'
-    +'<div style="font-size:12px;color:#64748b;margin-bottom:16px">'+empName+'</div>'
-    +'<table style="width:100%;border-collapse:collapse">'
-    +'<thead><tr><th style="text-align:left;padding:6px 12px;font-size:11px;color:#64748b;border-bottom:1px solid #2d3f56">規則名稱</th>'
-    +'<th style="text-align:right;padding:6px 12px;font-size:11px;color:#64748b;border-bottom:1px solid #2d3f56">獎金</th></tr></thead>'
-    +'<tbody>'+rows+'</tbody>'
-    +'<tfoot><tr style="background:rgba(16,185,129,.08)">'
-    +'<td style="padding:8px 12px;font-weight:700;color:#10b981">合計</td>'
-    +'<td style="padding:8px 12px;text-align:right;font-weight:900;color:#10b981;font-size:15px">'+total.toLocaleString()+' 元</td>'
-    +'</tr></tfoot></table>'
-    +'<div style="display:flex;justify-content:flex-end;margin-top:16px">'
-    +'<button onclick="document.getElementById(\'promoDetailBg\').remove()" style="padding:6px 18px;border-radius:6px;border:1px solid #475569;background:transparent;color:#94a3b8;font-size:12px;cursor:pointer">關閉</button>'
-    +'</div></div></div>';
+    + ' style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px">'
+    + '<div style="background:#1e293b;border:1px solid #334155;border-radius:12px;width:100%;max-width:900px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.7)">'
+    // Header
+    +   '<div style="padding:14px 20px;border-bottom:1px solid #2d3f56;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">'
+    +     '<div style="flex:1;min-width:0">'
+    +       '<div style="font-size:15px;font-weight:800;color:#10b981">🎁 促銷獎金明細</div>'
+    +       '<div style="font-size:12px;color:#94a3b8;margin-top:3px">'+empName+' <span style="color:#64748b;margin-left:6px">·'+countTxt+'</span></div>'
+    +     '</div>'
+    +     '<div style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.35);border-radius:8px;padding:7px 14px;text-align:right">'
+    +       '<div style="font-size:10px;color:#10b981;font-weight:700">合計</div>'
+    +       '<div style="font-size:18px;font-weight:900;color:#10b981">'+total.toLocaleString()+' 元</div>'
+    +     '</div>'
+    +   '</div>'
+    // Body — responsive grid
+    +   '<div style="padding:14px 20px;overflow-y:auto;flex:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px">'
+    +     cards
+    +   '</div>'
+    // Footer
+    +   '<div style="padding:10px 20px;border-top:1px solid #2d3f56;display:flex;justify-content:flex-end">'
+    +     '<button onclick="document.getElementById(\'promoDetailBg\').remove()" style="padding:6px 22px;border-radius:7px;border:1px solid #475569;background:transparent;color:#94a3b8;font-size:13px;cursor:pointer">關閉</button>'
+    +   '</div>'
+    + '</div></div>';
   var ex = document.getElementById('promoDetailBg'); if(ex) ex.remove();
   document.body.insertAdjacentHTML('beforeend', html);
 }
