@@ -4033,11 +4033,14 @@ function exportBonusPdf() {
             var isMrCell = td.hasAttribute('data-mrcell');
             var val;
             if (isMrCell) {
-              var spanEl = td.querySelector('span'), divEl = td.querySelector('div');
+              var spanEl = td.querySelector('span');
               var spanTxt = spanEl ? clean(spanEl.innerText).replace(/[＋+]/g,'').replace(/—/g,'').trim() : '';
               var mn = toNum(spanTxt);
               val = mn !== null ? mn : '';
-              if (divEl) mrNoteThisRow = clean(divEl.innerText);
+              // 主管考核說明：事由不再顯示於 cell 的 div，改從 _managerReviewMap 讀
+              var mrEid = td.getAttribute('data-mrcell');
+              var mrRec = (_managerReviewMap && _managerReviewMap[mrEid]) || null;
+              if (mrRec && mrRec.note) mrNoteThisRow = String(mrRec.note).trim();
             } else {
               var cl = td.cloneNode(true);
               cl.querySelectorAll('button,select,.spinner').forEach(function(e){ e.remove(); });
@@ -4326,15 +4329,16 @@ function exportBonusExcel() {
             var isMrCell = td.hasAttribute('data-mrcell');
             var val;
             if (isMrCell) {
-              // 主管考核 td：只取 span 內的金額，div 的說明另外蒐集
+              // 主管考核 td：只取 span 內的金額；說明從 _managerReviewMap 讀（不再顯示於 cell）
               var spanEl = td.querySelector('span');
-              var divEl  = td.querySelector('div');
               var spanTxt = spanEl
                 ? clean(spanEl.innerText).replace(/[＋+]/g,'').replace(/—/g,'').trim()
                 : '';
               var mn = toNum(spanTxt);
               val = mn !== null ? mn : '';
-              if (divEl) mrNoteThisRow = clean(divEl.innerText);
+              var mrEid = td.getAttribute('data-mrcell');
+              var mrRec = (_managerReviewMap && _managerReviewMap[mrEid]) || null;
+              if (mrRec && mrRec.note) mrNoteThisRow = String(mrRec.note).trim();
             } else {
               var cl = td.cloneNode(true);
               cl.querySelectorAll('button,select,.spinner').forEach(function(e){ e.remove(); });
