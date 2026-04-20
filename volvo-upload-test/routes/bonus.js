@@ -924,4 +924,54 @@ router.put('/bonus/promo-dept-mode', requirePermission('feature:bonus_edit'), as
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// ═════════════════════════════════════════════════════════════════
+// 獎金電子簽核（檢查人 / 單位主管 / 最高主管 / 總經理室 / 董事長室）
+// ═════════════════════════════════════════════════════════════════
+
+// GET /api/bonus/signatures?period=YYYYMM[&branch=X][&role=checker]
+router.get('/bonus/signatures', async (req, res) => {
+  const { period, branch, role } = req.query;
+  const conds = [], params = [];
+  if (period) { params.push(period); conds.push(`period=$${params.length}`); }
+  if (branch) { params.push(branch); conds.push(`branch=$${params.length}`); }
+  if (role)   { params.push(role);   conds.push(`role=$${params.length}`); }
+  const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
+  try {
+    const r = await pool.query(
+      `SELECT id, period, branch, role, signer_name, signer_emp_id, signature_data, signed_at
+       FROM bonus_signatures ${where} ORDER BY signed_at DESC`, params);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/bonus/signatures   body: { period, branch, role, signer_name, signer_emp_id, signature_data }
+router.post('/bonus/signatures', requirePermission('feature:bonus_edit'), async (req, res) => {
+  const { period, branch, role, signer_name, signer_emp_id, signature_data } = req.body;
+  if (!period || !branch || !signer_name || !signature_data) {
+    return res.status(400).json({ error: '參數不完整（需 period, branch, signer_name, signature_data）' });
+  }
+  if (checkPeriodLock(period, res)) return;
+  try {
+    const { rows } = await pool.query(`
+      INSERT INTO bonus_signatures (period, branch, role, signer_name, signer_emp_id, signature_data, signed_at)
+      VALUES ($1, $2, $3, $4, $5, $6, NOW())
+      ON CONFLICT (period, branch, role)
+      DO UPDATE SET signer_name=$4, signer_emp_id=$5, signature_data=$6, signed_at=NOW()
+      RETURNING id, period, branch, role, signer_name, signer_emp_id, signed_at
+    `, [period, branch, role || 'checker', signer_name, signer_emp_id || null, signature_data]);
+    res.json(rows[0]);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/bonus/signatures/:id
+router.delete('/bonus/signatures/:id', requirePermission('feature:bonus_edit'), async (req, res) => {
+  try {
+    const r = await pool.query('SELECT period FROM bonus_signatures WHERE id=$1', [req.params.id]);
+    const p = r.rows[0]?.period;
+    if (p && checkPeriodLock(p, res)) return;
+    await pool.query('DELETE FROM bonus_signatures WHERE id=$1', [req.params.id]);
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = router;

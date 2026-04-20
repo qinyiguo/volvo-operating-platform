@@ -506,6 +506,22 @@ await client.query(`
   )
 `);
 
+// 獎金電子簽核（主管確認核發金額後於 檢查人 欄位簽名）
+await client.query(`
+  CREATE TABLE IF NOT EXISTS bonus_signatures (
+    id SERIAL PRIMARY KEY,
+    period VARCHAR(6) NOT NULL,
+    branch VARCHAR(50) NOT NULL,
+    role VARCHAR(32) NOT NULL DEFAULT 'checker',
+    signer_name VARCHAR(100) NOT NULL,
+    signer_emp_id VARCHAR(50),
+    signature_data TEXT NOT NULL,
+    signed_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (period, branch, role)
+  )
+`);
+await client.query(`CREATE INDEX IF NOT EXISTS idx_bonus_sig_period ON bonus_signatures(period)`);
+
     // ── 查詢效能索引 ──
 await client.query(`CREATE INDEX IF NOT EXISTS idx_repair_income_period_branch ON repair_income(period, branch)`);
 await client.query(`CREATE INDEX IF NOT EXISTS idx_tech_performance_period_branch ON tech_performance(period, branch)`);
