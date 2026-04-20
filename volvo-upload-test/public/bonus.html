@@ -2261,9 +2261,10 @@ if (mrVal) {
   var mrColor = mrVal>0?'#c4b5fd':'#f87171';
   var mrBg    = mrVal>0?'rgba(167,139,250,.18)':'rgba(239,68,68,.15)';
   var mrPre   = mrVal>0?'＋':'';
-  html+='<span style="display:inline-flex;align-items:baseline;gap:2px;padding:2px 10px;border-radius:20px;font-size:13px;font-weight:900;background:'+mrBg+';color:'+mrColor+'">'
+  var mrName  = (p4.emp_name||'').replace(/'/g,"\\'");
+  html+='<span onclick="showManagerReviewNote(\''+safeEmpId+'\',\''+mrName+'\',this)" title="點擊查看事由"'
+        +' style="display:inline-flex;align-items:baseline;gap:2px;padding:2px 10px;border-radius:20px;font-size:13px;font-weight:900;background:'+mrBg+';color:'+mrColor+';cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px">'
         +mrPre+mrVal.toLocaleString()+'<span style="font-size:9px;margin-left:2px">元</span></span>';
-  if (mrNote) html+='<div style="font-size:10px;color:#64748b;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px" title="'+mrNote.replace(/"/g,'&quot;')+'">'+mrNote+'</div>';
 } else {
   html+='<span style="color:#334155">—</span>';
 }
@@ -3786,6 +3787,43 @@ async function saveExtraBonus() {
     var inner=document.getElementById('progressInner');
     if(inner){inner.innerHTML='<div class="loading"><span class="spinner"></span>重新計算中</div>';renderProgressContent();}
   } catch(e){ alert('儲存失敗：'+e.message); }
+}
+
+// 點擊員工列的主管考核金額 → 彈出小氣泡顯示該員工的事由（_managerReviewMap 內 note 欄位）
+function showManagerReviewNote(empId, empName, anchorEl) {
+  document.querySelectorAll('.ebNotePop, .mrNotePop').forEach(function(e){e.remove();});
+  var mr = (_managerReviewMap && _managerReviewMap[empId]) || {};
+  var amt = parseInt(mr.amount)||0;
+  var note = mr.note || '';
+  var amtColor = amt > 0 ? '#c4b5fd' : '#f87171';
+  var amtPre   = amt > 0 ? '+' : '';
+  var pop = document.createElement('div');
+  pop.className = 'mrNotePop';
+  pop.style.cssText = 'position:fixed;z-index:10000;background:#1a1832;border:1px solid #7c3aed;border-radius:10px;padding:14px 16px;min-width:280px;max-width:400px;box-shadow:0 20px 50px rgba(0,0,0,.6)';
+  pop.innerHTML =
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #3b2063">'
+    +   '<div><div style="font-size:11px;color:#94a3b8">主管考核事由</div>'
+    +   '<div style="font-size:14px;font-weight:900;color:#a78bfa">'+empName+'</div></div>'
+    +   '<div style="text-align:right"><div style="font-size:10px;color:#64748b">調整金額</div><div style="font-size:16px;font-weight:900;color:'+amtColor+'">'+amtPre+amt.toLocaleString()+' 元</div></div>'
+    + '</div>'
+    + (note
+        ? '<div style="font-size:13px;line-height:1.7;color:#e2e8f0;background:#0f172a;border:1px solid #2d3f56;border-radius:7px;padding:10px 12px;white-space:pre-wrap">'+String(note).replace(/</g,'&lt;')+'</div>'
+        : '<div style="font-size:12px;color:#64748b;font-style:italic;padding:6px 0">（此筆主管考核未填寫事由）</div>')
+    + '<button onclick="this.closest(\'.mrNotePop\').remove()" style="margin-top:10px;width:100%;padding:5px;border-radius:6px;border:1px solid #334155;background:transparent;color:#94a3b8;cursor:pointer;font-size:12px">關閉</button>';
+  document.body.appendChild(pop);
+  var rect = anchorEl.getBoundingClientRect();
+  var pr = pop.getBoundingClientRect();
+  var top = rect.bottom + 6;
+  var left = rect.right - pr.width;
+  if (left < 8) left = 8;
+  if (top + pr.height > window.innerHeight - 8) top = rect.top - pr.height - 6;
+  pop.style.top = top + 'px';
+  pop.style.left = left + 'px';
+  setTimeout(function(){
+    document.addEventListener('click', function handler(e){
+      if (!pop.contains(e.target)) { pop.remove(); document.removeEventListener('click', handler); }
+    });
+  }, 10);
 }
 
 // 點擊員工列的額外獎金金額 → 彈出小氣泡顯示該員工的所有事由（_extraBonusList 內 reason 欄位）
