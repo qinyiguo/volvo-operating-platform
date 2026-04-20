@@ -143,7 +143,35 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
   [style*="display:none"] { display: none !important; }
   @page { size: A4 landscape; margin: 8mm; }
 }
-  
+
+/* ─── 手機版（獎金表） ─────────────────────────────── */
+@media (max-width: 768px) {
+  /* 視窗容器：縮小兩側留白 */
+  .container { padding: 8px !important; }
+
+  /* 多數 panel / modal 以 inline style 指定 1fr 1fr 或 1fr 1fr 1fr，
+     在窄螢幕一律改為單欄，避免擠壓 / 溢出 */
+  [style*="grid-template-columns:1fr 1fr 1fr"],
+  [style*="grid-template-columns: 1fr 1fr 1fr"],
+  [style*="grid-template-columns:1fr 1fr"],
+  [style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* 橫向排列的按鈕列換行、加大點擊區 */
+  [style*="display:flex"][style*="justify-content:flex-end"] {
+    flex-wrap: wrap;
+  }
+
+  /* 簽名 canvas：縮高，避免「確認簽核」被擠到畫面外 */
+  #sigCanvas { height: 170px !important; }
+}
+
+@media (max-width: 480px) {
+  #sigCanvas { height: 150px !important; }
+  /* Modal 內 padding 再收斂一點 */
+  .modal-bd { padding: 8px !important; }
+}
 </style>
 </head>
 <body>

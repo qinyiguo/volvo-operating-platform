@@ -222,6 +222,11 @@
   .wd-existing-item > .info { flex-basis: 100%; }
   #revManualGrid .table-scroll { overflow-x: auto; }
   #revManualGrid table { min-width: 680px; }
+  .modal-close { min-width: 44px; min-height: 44px; }
+  /* 使用者權限編輯 modal 的兩欄 grid 於窄螢幕改為單欄 */
+  #umPermSection > div[style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
 }
 @media (max-width: 480px) {
   .nav-brand { font-size: 12px; }
