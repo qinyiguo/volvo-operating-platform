@@ -61,6 +61,7 @@ const RESOURCE_LABELS = {
   '/api/revenue-estimates/weekly-submit': '週次預估提交',
   '/api/bonus/progress':            '獎金進度查詢',
   '/api/bonus/metrics':             '獎金指標設定',
+  '/api/bonus/signatures':          '獎金簽核',
   '/api/revenue-targets':           '營收目標設定',
   '/api/performance-metrics':       '業績指標設定',
   '/api/wip/status':                'WIP 狀態更新',

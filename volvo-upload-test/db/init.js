@@ -554,6 +554,15 @@ await client.query(`CREATE INDEX IF NOT EXISTS idx_business_query_period_branch 
       )
     `);
 
+    // 新增 feature:bonus_sign（獎金簽核）權限：讓所有已能瀏覽獎金表（page:bonus）
+    // 的使用者自動獲得簽核權限，免去管理員逐一設定。僅執行一次，ON CONFLICT 忽略。
+    await client.query(`
+      INSERT INTO user_permissions (user_id, permission_key)
+      SELECT user_id, 'feature:bonus_sign' FROM user_permissions
+      WHERE permission_key = 'page:bonus'
+      ON CONFLICT (user_id, permission_key) DO NOTHING
+    `);
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS user_sessions (
         token      VARCHAR(70)  PRIMARY KEY,
