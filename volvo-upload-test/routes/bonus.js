@@ -945,7 +945,8 @@ router.get('/bonus/signatures', async (req, res) => {
 });
 
 // POST /api/bonus/signatures   body: { period, branch, role, signer_name, signer_emp_id, signature_data }
-router.post('/bonus/signatures', requirePermission('feature:bonus_edit'), async (req, res) => {
+// 簽核僅需瀏覽獎金表之權限，各據點主管（無 feature:bonus_edit）即可簽名。
+router.post('/bonus/signatures', requirePermission('page:bonus'), async (req, res) => {
   const { period, branch, role, signer_name, signer_emp_id, signature_data } = req.body;
   if (!period || !branch || !signer_name || !signature_data) {
     return res.status(400).json({ error: '參數不完整（需 period, branch, signer_name, signature_data）' });
@@ -964,7 +965,7 @@ router.post('/bonus/signatures', requirePermission('feature:bonus_edit'), async 
 });
 
 // DELETE /api/bonus/signatures/:id
-router.delete('/bonus/signatures/:id', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.delete('/bonus/signatures/:id', requirePermission('page:bonus'), async (req, res) => {
   try {
     const r = await pool.query('SELECT period FROM bonus_signatures WHERE id=$1', [req.params.id]);
     const p = r.rows[0]?.period;
