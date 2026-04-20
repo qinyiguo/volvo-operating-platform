@@ -12,6 +12,7 @@ const express = require('express');
 const router  = express.Router();
 const pool = require('../db/pool');
 const { requireAuth, requirePermission } = require('../lib/authMiddleware');
+const { bonusPeriodLockAt, isBonusPeriodLocked } = require('../lib/bonusPeriodLock');
 
 router.use(requireAuth);
 
@@ -27,19 +28,6 @@ router.get('/', async (req, res) => {
     res.json(r.rows);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-
-// 與 routes/bonus.js 共用同一份 lock 邏輯（次月最後一天 23:00 後鎖定）
-function bonusPeriodLockAt(period) {
-  if (!period || !/^\d{6}$/.test(String(period))) return null;
-  const y = parseInt(period.slice(0, 4));
-  const m = parseInt(period.slice(4));
-  const lastDay = new Date(y, m + 1, 0).getDate();
-  return new Date(y, m, lastDay, 23, 0, 0, 0);
-}
-function isBonusPeriodLocked(period) {
-  const t = bonusPeriodLockAt(period);
-  return t ? Date.now() >= t.getTime() : false;
-}
 
 // POST /api/manager-review  { period, emp_id, amount, note }
 router.post('/', requirePermission('feature:bonus_edit'), async (req, res) => {

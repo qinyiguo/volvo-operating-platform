@@ -38,41 +38,11 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 
 router.use(requireAuth);
 
 // ─────────────────────────────────────────────────────────────────
-// 獎金期間鎖定機制
-// 規則：當期 YYYYMM 的獎金，在「次月最後一天的 23:00」之後鎖定，
-//       之後任何規則 / 人員 / 額外獎金 / 主管考核 / 手動實績 等異動
-//       都不會影響已送審的獎金表。
-// 例：202603 → 2026/4/30 23:00 之後鎖定
+// 獎金期間鎖定（純計算；無 DB 寫入。共用 lib/bonusPeriodLock.js）
+// 規則：YYYYMM 的獎金在「次月最後一天 23:00」之後鎖定，防止規則/人員/
+//      額外獎金/主管考核/手動實績 等異動影響已送審的獎金表。
 // ─────────────────────────────────────────────────────────────────
-function bonusPeriodLockAt(period) {
-  if (!period || !/^\d{6}$/.test(String(period))) return null;
-  const y = parseInt(period.slice(0, 4));
-  const m = parseInt(period.slice(4));
-  // 次月最後一天 = 「次月 + 1」的第 0 天
-  // m 為 1-indexed；JS Date 月份為 0-indexed
-  const nextMonthIdx0 = m; // 0-indexed of next month (e.g., m=3→nextMonthIdx0=3 = April)
-  const lastDay = new Date(y, nextMonthIdx0 + 1, 0).getDate(); // 「次月 + 1」的第 0 天 = 次月最後一天
-  return new Date(y, nextMonthIdx0, lastDay, 23, 0, 0, 0);
-}
-function isBonusPeriodLocked(period) {
-  const t = bonusPeriodLockAt(period);
-  if (!t) return false;
-  return Date.now() >= t.getTime();
-}
-// Express middleware-like: 若 period 已鎖定，回 403 並中止
-function checkPeriodLock(period, res) {
-  if (!period) return false;
-  if (isBonusPeriodLocked(period)) {
-    const lockAt = bonusPeriodLockAt(period);
-    res.status(403).json({
-      error: '此期間（' + period.slice(0,4) + '/' + period.slice(4) + '）獎金表已鎖定，無法修改',
-      locked: true,
-      lock_at: lockAt && lockAt.toISOString(),
-    });
-    return true;
-  }
-  return false;
-}
+const { bonusPeriodLockAt, isBonusPeriodLocked, checkPeriodLock } = require('../lib/bonusPeriodLock');
 
 // 公開 API：讓前端查詢某期間是否已鎖定
 router.get('/bonus/period-lock-status', (req, res) => {
@@ -303,6 +273,7 @@ router.post('/bonus/upload-roster', requirePermission('feature:upload'), upload.
   if (!req.file) return res.status(400).json({ error: '請選擇檔案' });
   const period = String(req.body.period || '').trim();
   if (!period.match(/^\d{6}$/)) return res.status(400).json({ error: '請指定期間（YYYYMM）' });
+  if (checkPeriodLock(period, res)) return;
   try {
     const rows = parseRosterExcel(req.file.buffer);
     if (!rows.length) return res.status(400).json({ error: '找不到有效資料列' });
@@ -360,6 +331,7 @@ router.get('/bonus/roster', async (req, res) => {
 router.patch('/bonus/roster/:period/:emp_id', requirePermission('feature:bonus_edit'), async (req, res) => {
   const { period, emp_id } = req.params;
   const { factory, dept_code, dept_name } = req.body;
+  if (checkPeriodLock(period, res)) return;
   try {
     const p = [factory || null];
     const sets = ['factory=$1', 'updated_at=NOW()'];
@@ -527,6 +499,10 @@ router.put('/bonus/targets/batch', requirePermission('feature:bonus_edit'), asyn
 
 router.delete('/bonus/targets/:id', requirePermission('feature:bonus_edit'), async (req, res) => {
   try {
+    // 先讀出該筆 target 的 period 做鎖定檢查
+    const r = await pool.query('SELECT period FROM bonus_targets WHERE id=$1', [req.params.id]);
+    const p = r.rows[0]?.period;
+    if (p && checkPeriodLock(p, res)) return;
     await pool.query(`DELETE FROM bonus_targets WHERE id=$1`, [req.params.id]);
     res.json({ ok: true });
   } catch(err) { res.status(500).json({ error: err.message }); }
@@ -915,6 +891,7 @@ router.get('/bonus/beauty-branches', async (req, res) => {
 router.put('/bonus/beauty-branches', requirePermission('feature:bonus_edit'), async (req, res) => {
   const { period, assignments } = req.body;
   if (!period) return res.status(400).json({error:'period為必填'});
+  if (checkPeriodLock(period, res)) return;
   const key = `beauty_branch_${period}`;
   try {
     await pool.query(
