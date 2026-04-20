@@ -28,10 +28,31 @@ router.get('/', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// 與 routes/bonus.js 共用同一份 lock 邏輯（次月最後一天 23:00 後鎖定）
+function bonusPeriodLockAt(period) {
+  if (!period || !/^\d{6}$/.test(String(period))) return null;
+  const y = parseInt(period.slice(0, 4));
+  const m = parseInt(period.slice(4));
+  const lastDay = new Date(y, m + 1, 0).getDate();
+  return new Date(y, m, lastDay, 23, 0, 0, 0);
+}
+function isBonusPeriodLocked(period) {
+  const t = bonusPeriodLockAt(period);
+  return t ? Date.now() >= t.getTime() : false;
+}
+
 // POST /api/manager-review  { period, emp_id, amount, note }
 router.post('/', requirePermission('feature:bonus_edit'), async (req, res) => {
   const { period, emp_id, amount, note } = req.body;
   if (!period || !emp_id) return res.status(400).json({ error: '缺少必要欄位' });
+  if (isBonusPeriodLocked(period)) {
+    const lockAt = bonusPeriodLockAt(period);
+    return res.status(403).json({
+      error: '此期間（' + period.slice(0,4) + '/' + period.slice(4) + '）獎金表已鎖定，無法修改主管考核',
+      locked: true,
+      lock_at: lockAt && lockAt.toISOString(),
+    });
+  }
   try {
     await pool.query(`
       INSERT INTO manager_review (period, emp_id, amount, note)

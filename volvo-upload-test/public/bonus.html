@@ -116,6 +116,16 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
 .role-tag button { background:none; border:none; color:#475569; cursor:pointer; font-size:14px; line-height:1; padding:0 2px; }
 .role-tag button:hover { color:#ef4444; }
 
+/* 獎金期間鎖定：禁用所有編輯類動作（保留檢視 / 匯出） */
+body.bonus-period-locked button[onclick*="openExtraBonusModal"],
+body.bonus-period-locked button[onclick*="_openMRModal"],
+body.bonus-period-locked button[onclick*="openActualOverrideModal"],
+body.bonus-period-locked button[onclick*="openMetricModal"],
+body.bonus-period-locked button[onclick*="openPromoModal"],
+body.bonus-period-locked button[onclick*="openWeightModal"],
+body.bonus-period-locked button[onclick*="_ppOpen"]
+{ opacity:.45; pointer-events:none; cursor:not-allowed !important; }
+
   @media print {
   .sticky-header, nav, .tab-bar, .btn, button,
   .print-sign-section { display: block !important; }
@@ -865,10 +875,66 @@ async function doLoad() {
   if (!_period){ alert('請先選擇期間'); return; }
   _actualPeriod=''; _rosterData=[]; _rosterLoadedPeriod='';
   document.getElementById('lastUpdate').textContent='更新中...';
-  await Promise.all([loadRoster(), loadMetrics()]);
+  await Promise.all([loadRoster(), loadMetrics(), refreshPeriodLockState()]);
   const progressTab=document.getElementById('tab-progress');
   if (progressTab&&progressTab.style.display!=='none') await loadProgress();
   document.getElementById('lastUpdate').textContent=new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})+' 更新';
+}
+
+// ── 獎金期間鎖定狀態 ──
+let _periodLocked = false;
+let _periodLockAt = null;
+function bonusLockAtForPeriod(period) {
+  if (!period || !/^\d{6}$/.test(String(period))) return null;
+  var y = parseInt(period.slice(0,4));
+  var m = parseInt(period.slice(4));
+  var lastDay = new Date(y, m + 1, 0).getDate();
+  return new Date(y, m, lastDay, 23, 0, 0, 0);
+}
+async function refreshPeriodLockState() {
+  _periodLocked = false; _periodLockAt = null;
+  if (!_period) return;
+  // 先用前端計算當作預判（即時更新 UI），再對齊後端權威值
+  var localLockAt = bonusLockAtForPeriod(_period);
+  if (localLockAt) {
+    _periodLockAt = localLockAt;
+    _periodLocked = Date.now() >= localLockAt.getTime();
+  }
+  try {
+    var r = await fetch('/api/bonus/period-lock-status?period=' + encodeURIComponent(_period)).then(r=>r.json());
+    if (r) {
+      _periodLocked = !!r.locked;
+      _periodLockAt = r.lock_at ? new Date(r.lock_at) : _periodLockAt;
+    }
+  } catch(e) {}
+  renderPeriodLockBanner();
+}
+function renderPeriodLockBanner() {
+  var holder = document.getElementById('periodLockBanner');
+  if (!holder) {
+    holder = document.createElement('div');
+    holder.id = 'periodLockBanner';
+    holder.style.cssText = 'margin:12px 0;padding:10px 14px;border-radius:8px;font-size:12px;display:flex;align-items:center;gap:10px';
+    var tabProgress = document.getElementById('tab-progress');
+    if (tabProgress) tabProgress.insertBefore(holder, tabProgress.firstChild);
+  }
+  if (_periodLocked) {
+    holder.style.background = 'rgba(239,68,68,.1)';
+    holder.style.border = '1px solid rgba(239,68,68,.4)';
+    holder.style.color = '#fca5a5';
+    holder.innerHTML = '🔒 <strong>本期獎金表已鎖定</strong>（' + (_periodLockAt ? _periodLockAt.toLocaleString('zh-TW') : '') + ' 後）— 規則異動、人員調整、額外獎金、主管考核 等皆無法修改，避免影響已送審的金額。';
+    document.body.classList.add('bonus-period-locked');
+  } else if (_periodLockAt) {
+    var hoursLeft = Math.max(0, Math.floor((_periodLockAt.getTime() - Date.now()) / 3600000));
+    holder.style.background = 'rgba(245,158,11,.08)';
+    holder.style.border = '1px solid rgba(245,158,11,.3)';
+    holder.style.color = '#fbbf24';
+    holder.innerHTML = '⏰ 本期獎金表將於 <strong>' + _periodLockAt.toLocaleString('zh-TW') + '</strong> 鎖定（剩餘約 ' + hoursLeft + ' 小時）。鎖定後將無法修改任何規則 / 人員 / 獎金內容。';
+    document.body.classList.remove('bonus-period-locked');
+  } else {
+    holder.style.display = 'none';
+    document.body.classList.remove('bonus-period-locked');
+  }
 }
 
 // ══ 人員名單 ══
@@ -4255,7 +4321,7 @@ function exportBonusPdf() {
     + '.signBox{border:1px solid #334155;min-height:90px;display:flex;flex-direction:column;}'
     + '.signBox .lbl{background:#F1F5F9;color:#000;text-align:center;font-weight:700;padding:5px 4px;border-bottom:1px solid #334155;font-size:11px;}'
     + '.signBox .box{flex:1;}'
-    + '@page{size:A4 landscape;margin:8mm;}'
+    + '@page{size:A4 portrait;margin:10mm 8mm;}'
     + '@media print{body{margin:0;}*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important;}}';
 
   var html = '<!DOCTYPE html><html lang="zh-TW"><head><meta charset="utf-8">'
