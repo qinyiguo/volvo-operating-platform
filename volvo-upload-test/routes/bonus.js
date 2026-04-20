@@ -37,6 +37,25 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 
 
 router.use(requireAuth);
 
+// ─────────────────────────────────────────────────────────────────
+// 獎金期間鎖定（純計算；無 DB 寫入。共用 lib/bonusPeriodLock.js）
+// 規則：YYYYMM 的獎金在「次月最後一天 23:00」之後鎖定，防止規則/人員/
+//      額外獎金/主管考核/手動實績 等異動影響已送審的獎金表。
+// ─────────────────────────────────────────────────────────────────
+const { bonusPeriodLockAt, isBonusPeriodLocked, checkPeriodLock } = require('../lib/bonusPeriodLock');
+
+// 公開 API：讓前端查詢某期間是否已鎖定
+router.get('/bonus/period-lock-status', (req, res) => {
+  const { period } = req.query;
+  if (!period) return res.json({ locked: false, lock_at: null });
+  const lockAt = bonusPeriodLockAt(period);
+  res.json({
+    period,
+    locked: isBonusPeriodLocked(period),
+    lock_at: lockAt && lockAt.toISOString(),
+  });
+});
+
 // ══════════════════════════════════════════════
 // Helpers
 // ══════════════════════════════════════════════
@@ -254,6 +273,7 @@ router.post('/bonus/upload-roster', requirePermission('feature:upload'), upload.
   if (!req.file) return res.status(400).json({ error: '請選擇檔案' });
   const period = String(req.body.period || '').trim();
   if (!period.match(/^\d{6}$/)) return res.status(400).json({ error: '請指定期間（YYYYMM）' });
+  if (checkPeriodLock(period, res)) return;
   try {
     const rows = parseRosterExcel(req.file.buffer);
     if (!rows.length) return res.status(400).json({ error: '找不到有效資料列' });
@@ -311,6 +331,7 @@ router.get('/bonus/roster', async (req, res) => {
 router.patch('/bonus/roster/:period/:emp_id', requirePermission('feature:bonus_edit'), async (req, res) => {
   const { period, emp_id } = req.params;
   const { factory, dept_code, dept_name } = req.body;
+  if (checkPeriodLock(period, res)) return;
   try {
     const p = [factory || null];
     const sets = ['factory=$1', 'updated_at=NOW()'];
@@ -452,6 +473,9 @@ router.get('/bonus/targets', async (req, res) => {
 router.put('/bonus/targets/batch', requirePermission('feature:bonus_edit'), async (req, res) => {
   const { entries } = req.body;
   if (!Array.isArray(entries) || !entries.length) return res.status(400).json({ error: '無資料' });
+  // 任一筆 entry 的 period 已鎖定 → 拒絕整批
+  const lockedPeriod = entries.find(function(e){ return e && e.period && isBonusPeriodLocked(e.period); });
+  if (lockedPeriod && checkPeriodLock(lockedPeriod.period, res)) return;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -475,6 +499,10 @@ router.put('/bonus/targets/batch', requirePermission('feature:bonus_edit'), asyn
 
 router.delete('/bonus/targets/:id', requirePermission('feature:bonus_edit'), async (req, res) => {
   try {
+    // 先讀出該筆 target 的 period 做鎖定檢查
+    const r = await pool.query('SELECT period FROM bonus_targets WHERE id=$1', [req.params.id]);
+    const p = r.rows[0]?.period;
+    if (p && checkPeriodLock(p, res)) return;
     await pool.query(`DELETE FROM bonus_targets WHERE id=$1`, [req.params.id]);
     res.json({ ok: true });
   } catch(err) { res.status(500).json({ error: err.message }); }
@@ -744,6 +772,7 @@ router.get('/bonus/actual-override', async (req, res) => {
 router.put('/bonus/actual-override', requirePermission('feature:bonus_edit'), async (req, res) => {
   const { metric_id, period, branch, actual_value, note } = req.body;
   if (!metric_id || !period) return res.status(400).json({ error: '參數不完整' });
+  if (checkPeriodLock(period, res)) return;
   try {
     await pool.query(`
       INSERT INTO bonus_actual_overrides (metric_id, period, branch, actual_value, note, updated_at)
@@ -758,6 +787,7 @@ router.put('/bonus/actual-override', requirePermission('feature:bonus_edit'), as
 router.delete('/bonus/actual-override', requirePermission('feature:bonus_edit'), async (req, res) => {
   const { metric_id, period, branch } = req.query;
   if (!metric_id || !period) return res.status(400).json({ error: '參數不完整' });
+  if (checkPeriodLock(period, res)) return;
   try {
     await pool.query(
       `DELETE FROM bonus_actual_overrides WHERE metric_id=$1 AND period=$2 AND COALESCE(branch,'')=$3`,
@@ -825,6 +855,7 @@ router.get('/bonus/extra-bonuses', async (req, res) => {
 // POST 新增額外獎金
 router.post('/bonus/extra-bonuses', requirePermission('feature:bonus_edit'), async (req, res) => {
   const { period, emp_id, emp_name, branch, dept_code, amount, reason } = req.body;
+  if (checkPeriodLock(period, res)) return;
   try {
     const { rows } = await pool.query(
       `INSERT INTO bonus_extra (period,emp_id,emp_name,branch,dept_code,amount,reason)
@@ -838,6 +869,10 @@ router.post('/bonus/extra-bonuses', requirePermission('feature:bonus_edit'), asy
 // DELETE 刪除額外獎金
 router.delete('/bonus/extra-bonuses/:id', requirePermission('feature:bonus_edit'), async (req, res) => {
   try {
+    // 鎖定檢查：先讀出該筆 record 的 period
+    const r = await pool.query('SELECT period FROM bonus_extra WHERE id=$1', [req.params.id]);
+    const p = r.rows[0]?.period;
+    if (p && checkPeriodLock(p, res)) return;
     await pool.query('DELETE FROM bonus_extra WHERE id=$1', [req.params.id]);
     res.json({ok: true});
   } catch(e) { res.status(500).json({error: e.message}); }
@@ -856,6 +891,7 @@ router.get('/bonus/beauty-branches', async (req, res) => {
 router.put('/bonus/beauty-branches', requirePermission('feature:bonus_edit'), async (req, res) => {
   const { period, assignments } = req.body;
   if (!period) return res.status(400).json({error:'period為必填'});
+  if (checkPeriodLock(period, res)) return;
   const key = `beauty_branch_${period}`;
   try {
     await pool.query(

@@ -12,6 +12,7 @@ const express = require('express');
 const router  = express.Router();
 const pool = require('../db/pool');
 const { requireAuth, requirePermission } = require('../lib/authMiddleware');
+const { bonusPeriodLockAt, isBonusPeriodLocked } = require('../lib/bonusPeriodLock');
 
 router.use(requireAuth);
 
@@ -32,6 +33,14 @@ router.get('/', async (req, res) => {
 router.post('/', requirePermission('feature:bonus_edit'), async (req, res) => {
   const { period, emp_id, amount, note } = req.body;
   if (!period || !emp_id) return res.status(400).json({ error: '缺少必要欄位' });
+  if (isBonusPeriodLocked(period)) {
+    const lockAt = bonusPeriodLockAt(period);
+    return res.status(403).json({
+      error: '此期間（' + period.slice(0,4) + '/' + period.slice(4) + '）獎金表已鎖定，無法修改主管考核',
+      locked: true,
+      lock_at: lockAt && lockAt.toISOString(),
+    });
+  }
   try {
     await pool.query(`
       INSERT INTO manager_review (period, emp_id, amount, note)

@@ -28,6 +28,8 @@ const { requireAuth, requirePermission } = require('../lib/authMiddleware');
 
 router.use(requireAuth);
 
+const { checkPeriodLock } = require('../lib/bonusPeriodLock');
+
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 // ══ 正規化車牌 ══
@@ -204,6 +206,17 @@ router.post('/bodyshop-bonus/upload', requirePermission('feature:upload'), uploa
   try {
     const rows = parseFormExcel(req.file.buffer);
     if (!rows.length) return res.status(400).json({ error: '找不到有效資料' });
+    // 鎖定檢查：任一列屬於已鎖定期間即拒絕整批
+    const { isBonusPeriodLocked, bonusPeriodLockAt } = require('../lib/bonusPeriodLock');
+    const lockedRow = rows.find(function(r){ return r.app_period && isBonusPeriodLocked(r.app_period); });
+    if (lockedRow) {
+      const lockAt = bonusPeriodLockAt(lockedRow.app_period);
+      return res.status(403).json({
+        error: '上傳檔案包含已鎖定期間（' + lockedRow.app_period + '）的申請，無法匯入',
+        locked: true,
+        lock_at: lockAt && lockAt.toISOString(),
+      });
+    }
 
     const client = await pool.connect();
     try {
@@ -437,6 +450,7 @@ router.post('/bodyshop-bonus/match', requirePermission('feature:bonus_edit'), as
 // ══ 重置比對結果（清子列，原始列回 pending）══
 router.post('/bodyshop-bonus/reset-match', requirePermission('feature:bonus_edit'), async (req, res) => {
   const { app_period, branch } = req.body;
+  if (app_period && checkPeriodLock(app_period, res)) return;
   try {
     const conds  = [`source_app_id IS NULL`];
     const params = [];
@@ -574,6 +588,7 @@ router.patch('/bodyshop-bonus/applications/:id/rate', requirePermission('feature
       `SELECT * FROM bodyshop_bonus_applications WHERE id=$1`, [req.params.id]
     )).rows[0];
     if (!app) return res.status(404).json({ error: '找不到記錄' });
+    if (app.app_period && checkPeriodLock(app.app_period, res)) return;
 
     const rate = parseFloat(bonus_rate);
     if (isNaN(rate) || rate <= 0 || rate > 1)
@@ -607,6 +622,10 @@ router.patch('/bodyshop-bonus/applications/:id/note', requirePermission('feature
 // ══ 刪除記錄（若為原始列，子列 CASCADE 自動刪除）══
 router.delete('/bodyshop-bonus/applications/:id', requirePermission('feature:bonus_edit'), async (req, res) => {
   try {
+    // 先讀 app_period 做鎖定檢查
+    const r = await pool.query('SELECT app_period FROM bodyshop_bonus_applications WHERE id=$1', [req.params.id]);
+    const p = r.rows[0]?.app_period;
+    if (p && checkPeriodLock(p, res)) return;
     await pool.query(`DELETE FROM bodyshop_bonus_applications WHERE id=$1`, [req.params.id]);
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
