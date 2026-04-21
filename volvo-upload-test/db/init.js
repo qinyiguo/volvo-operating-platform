@@ -510,6 +510,19 @@ await client.query(`
 `);
 await client.query(`CREATE INDEX IF NOT EXISTS idx_bonus_sig_period ON bonus_signatures(period)`);
 
+// 技師工時「不計目標」清單（跨使用者共用；會影響工時表顯示與獎金工時指標）
+await client.query(`
+  CREATE TABLE IF NOT EXISTS tech_hours_excludes (
+    period     VARCHAR(6)  NOT NULL,
+    branch     VARCHAR(20) NOT NULL,
+    emp_name   VARCHAR(50) NOT NULL,
+    updated_by VARCHAR(50),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    PRIMARY KEY (period, branch, emp_name)
+  )
+`);
+await client.query(`CREATE INDEX IF NOT EXISTS idx_tech_ex_period ON tech_hours_excludes(period, branch)`);
+
     // ── 查詢效能索引 ──
 await client.query(`CREATE INDEX IF NOT EXISTS idx_repair_income_period_branch ON repair_income(period, branch)`);
 await client.query(`CREATE INDEX IF NOT EXISTS idx_tech_performance_period_branch ON tech_performance(period, branch)`);

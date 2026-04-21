@@ -2848,6 +2848,7 @@ async function loadTechHours(period,branch){
   const kpiEl=document.getElementById('techHoursKPI'),contentEl=document.getElementById('techHoursContent');
   kpiEl.innerHTML='';contentEl.innerHTML='<div class="loading"><span class="spinner"></span>載入中</div>';
   if (!Object.keys(_techGroupsCache).length) { await _techLoadAllGroups(); }
+  await _techLoadExcludes(period);
  if(!period){contentEl.innerHTML='<div class="empty">請選擇期間</div>';return;}
   try{
     const params=new URLSearchParams();params.set('period',period);if(branch)params.set('branch',branch);
@@ -5261,20 +5262,48 @@ async function _techSaveGroups(branch, groups) {
     });
   } catch(e) { console.warn('[techGroups] save failed', e); }
 }
-function _techGetExcludes(period,branch){try{const a=JSON.parse(localStorage.getItem('techExcludeV2')||'{}');return(a[period]||{})[branch]||{};}catch(e){return {};}}
-function _techSaveExclude(period,branch,empName,excluded){
-  try{
-    const a=JSON.parse(localStorage.getItem('techExcludeV2')||'{}');
-    if(!a[period])a[period]={};if(!a[period][branch])a[period][branch]={};
-    if(excluded){a[period][branch][empName]=true;}
-    else{delete a[period][branch][empName];if(!Object.keys(a[period][branch]).length)delete a[period][branch];if(!Object.keys(a[period]).length)delete a[period];}
-    localStorage.setItem('techExcludeV2',JSON.stringify(a));
-  }catch(e){}
+// ── 不計目標清單：改存資料庫（tech_hours_excludes），跨使用者共用 ──
+// 切期間時用 _techLoadExcludes 刷新 cache；讀 UI 旗標用 _techGetExcludes；
+// toggle 時用 _techToggleExclude 呼叫 PUT 並重載工時表。
+let _techExcludeCache = { period: null, data: {} };
+async function _techLoadExcludes(period) {
+  if (!period) return;
+  if (_techExcludeCache.period === period) return;
+  try {
+    const resp = await fetch('/api/tech-hours-excludes?period=' + encodeURIComponent(period));
+    const byBranch = await resp.json();
+    const data = {};
+    Object.entries(byBranch || {}).forEach(([br, names]) => { data[br] = new Set(names); });
+    _techExcludeCache = { period, data };
+  } catch (e) {
+    _techExcludeCache = { period, data: {} };
+  }
 }
-function _techToggleExclude(period,branch,empName){
-  const ex=_techGetExcludes(period,branch);
-  _techSaveExclude(period,branch,empName,!ex[empName]);
-  loadTechHours(period,document.getElementById('selBranch').value);
+function _techGetExcludes(period, branch) {
+  // 回傳 { empName: true } 維持舊 caller 簽章
+  const s = (_techExcludeCache.period === period && _techExcludeCache.data[branch]) || null;
+  if (!s) return {};
+  const out = {};
+  s.forEach(n => { out[n] = true; });
+  return out;
+}
+async function _techSaveExclude(period, branch, empName, excluded) {
+  if (_techExcludeCache.period !== period) await _techLoadExcludes(period);
+  if (!_techExcludeCache.data[branch]) _techExcludeCache.data[branch] = new Set();
+  if (excluded) _techExcludeCache.data[branch].add(empName);
+  else          _techExcludeCache.data[branch].delete(empName);
+  try {
+    await fetch('/api/tech-hours-excludes', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ period, branch, emp_name: empName, excluded: !!excluded }),
+    });
+  } catch (e) { console.warn('[techExcludes] save failed', e); }
+}
+async function _techToggleExclude(period, branch, empName) {
+  const ex = _techGetExcludes(period, branch);
+  await _techSaveExclude(period, branch, empName, !ex[empName]);
+  loadTechHours(period, document.getElementById('selBranch').value);
 }
 function openTechGroupConfig(){
   if(!_techHoursCache){alert('請先載入技師工時資料');return;}

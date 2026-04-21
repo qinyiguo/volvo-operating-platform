@@ -567,6 +567,7 @@ VCTL 商務政策指標管理（約 160 行）：
 | `bonus_signatures` | 獎金表電子簽核（每期每廠一列；存簽名 base64、簽核人、時間）|
 | `upload_approval_requests` | 鎖期後補傳的兩階段簽核申請（據點主管 → 最終核准）|
 | `wip_status_history` | WIP 狀態異動歷史（每筆 comment / ETA 改動都留檔）|
+| `tech_hours_excludes` | 技師工時「不計目標」名單（period / branch / emp_name 複合主鍵）；被列入者 `target_hours` 歸 0、獎金工時指標自動排除；跨使用者共用 |
 
 ### 帳號 / Session / 操作紀錄
 
@@ -736,7 +737,8 @@ repair_amount, labor_fee, repair_material_fee, sales_material_fee
 | `/api/bodyshop-bonus/*` | `feature:bodyshop_bonus_edit` | 鈑烤獎金申請 / 比對 / 結算 |
 | `/api/tech-capacity-config` | `feature:tech_config_edit` | 技師工時產能設定 |
 | `/api/tech-bay-config` | `feature:tech_config_edit` | 工位數設定 |
-| `/api/tech-group-config-v2` | `feature:tech_config_edit` | 技師群組設定 |
+| `/api/tech-group-config-v2` | `feature:tech_config_edit` | 技師群組設定（組別 A/B/C…）|
+| `/api/tech-hours-excludes` | `feature:tech_config_edit` | 技師工時「不計目標」名單 — PUT 單筆 toggle；GET 回傳 `{branch: [emp_name]}`；資料透明影響獎金工時指標 |
 | `/api/vctl/metrics` | `feature:bonus_metric_edit` | VCTL 指標 CRUD |
 | `/api/wip/status/*` | `feature:wip_edit` | WIP 狀態更新（帶歷史至 `wip_status_history`）|
 | `/api/notes/*` | `feature:monthly_edit` | 月報筆記 / 版面 |
@@ -851,6 +853,20 @@ parts_cost → 已為未稅
 同類型多個值 → OR（例：類別碼 93 OR 94）
 不同類型之間 → AND（例：類別碼 93 AND 功能碼 1832）
 ```
+
+### 技師工時「不計目標」清單
+
+`tech_hours_excludes` 表 + `GET/PUT /api/tech-hours-excludes`（權限 `feature:tech_config_edit`）：
+
+- 工時頁每列的「✅ 計入 / ❌ 不計」按鈕把名字寫進 DB（以前只存 localStorage，單一使用者獨立）。
+- `/api/stats/tech-hours` 每次計算時會先讀本期的 exclude 清單，命中者：
+  - `target_hours` = 0
+  - `target_excluded` = true
+  - `user_excluded` = true（前端 UI 顯示「❌ 不計」badge）
+  - `achieve_rate` = null
+- 因為 `/api/bonus/progress` 的工時型獎金指標直接讀 `tech.target_hours` 加總，**排除者會自動從獎金計算中移除**（不再出現以為排除其實還照算的陷阱）。
+- 跨使用者共用：所有人打開工時頁看到同一份 exclude 清單。
+- 存儲粒度：period / branch / emp_name。同一人在不同月份可獨立排除。
 
 ### 技師工時計算
 

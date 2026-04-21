@@ -210,6 +210,19 @@ router.get('/stats/tech-hours', async (req, res) => {
     const hourlyRates         = config.hourly_rates || { engine: hourlyRate, bodywork: 1450, paint: 1450, beauty: hourlyRate };
     const RESTORE_WAGE_EXPR   = buildRestoreWageExpr();
 
+    // ── 載入本期「不計目標」清單（跨使用者共用）──
+    // { branch: Set(emp_name) }；target_hours 被歸 0，前端顯示「不計」，獎金工時指標自動排除。
+    const excludeRes = await pool.query(
+      `SELECT branch, emp_name FROM tech_hours_excludes WHERE period=$1`,
+      [period]
+    );
+    const excludeMap = {};
+    excludeRes.rows.forEach(r => {
+      if (!excludeMap[r.branch]) excludeMap[r.branch] = new Set();
+      excludeMap[r.branch].add(r.emp_name);
+    });
+    const isExcluded = (br, name) => excludeMap[br]?.has(name);
+
 // 優先用「同月或最近的上個月」名冊
 const rosterPeriodRes = await pool.query(`
   SELECT period FROM staff_roster
@@ -409,8 +422,11 @@ actualRes = await pool.query(
             const isResigned    = t.status === '離職';
             const effectiveRate = (isResigned && !resignedCountTarget) ? 0 : rate;
             // ★ 目標工時改用員工工作天數計算
-            const targetHours   = Math.round(empWorkingDays * 8 * effectiveRate * 10) / 10;
+            let targetHours     = Math.round(empWorkingDays * 8 * effectiveRate * 10) / 10;
             const actualHours = findActualHours(t.emp_name, actualMap, matchedSet);
+            // ── 「不計目標」：DB excludes 清單命中 → target 歸 0；實績照顯 ──
+            const userExcluded = isExcluded(br, t.emp_name);
+            if (userExcluded) targetHours = 0;
             const achieveRate   = targetHours > 0 ? Math.round(actualHours / targetHours * 1000) / 10 : null;
             return {
               emp_name:        t.emp_name,
@@ -422,7 +438,8 @@ actualRes = await pool.query(
               target_hours:    targetHours,
               actual_hours:    Math.round(actualHours * 10) / 10,
               achieve_rate:    achieveRate,
-              target_excluded: isResigned && !resignedCountTarget,
+              target_excluded: (isResigned && !resignedCountTarget) || userExcluded,
+              user_excluded:   userExcluded,
               is_dms_only:     false,
             };
           }),
@@ -872,6 +889,58 @@ router.put('/tech-group-config-v2', requirePermission('feature:tech_config_edit'
       INSERT INTO app_settings (key, value) VALUES ($1, $2)
       ON CONFLICT (key) DO UPDATE SET value = $2
     `, [key, JSON.stringify(groups || {})]);
+    res.json({ ok: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── 技師「不計目標」清單（存資料庫，跨使用者共用，影響獎金工時計算）──
+// GET /api/tech-hours-excludes?period=YYYYMM        → { branch: [emp_name, ...] }
+// GET /api/tech-hours-excludes?period=YYYYMM&branch=AMA → [emp_name, ...]
+router.get('/tech-hours-excludes', async (req, res) => {
+  const { period, branch } = req.query;
+  if (!period) return res.status(400).json({ error: 'period 為必填' });
+  try {
+    if (branch) {
+      const r = await pool.query(
+        `SELECT emp_name FROM tech_hours_excludes WHERE period=$1 AND branch=$2 ORDER BY emp_name`,
+        [period, branch]
+      );
+      res.json(r.rows.map(x => x.emp_name));
+    } else {
+      const r = await pool.query(
+        `SELECT branch, emp_name FROM tech_hours_excludes WHERE period=$1 ORDER BY branch, emp_name`,
+        [period]
+      );
+      const byBranch = {};
+      r.rows.forEach(row => {
+        if (!byBranch[row.branch]) byBranch[row.branch] = [];
+        byBranch[row.branch].push(row.emp_name);
+      });
+      res.json(byBranch);
+    }
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// PUT /api/tech-hours-excludes { period, branch, emp_name, excluded:true/false }
+router.put('/tech-hours-excludes', requirePermission('feature:tech_config_edit'), async (req, res) => {
+  const { period, branch, emp_name, excluded } = req.body;
+  if (!period || !branch || !emp_name) {
+    return res.status(400).json({ error: 'period / branch / emp_name 均為必填' });
+  }
+  try {
+    if (excluded) {
+      await pool.query(`
+        INSERT INTO tech_hours_excludes (period, branch, emp_name, updated_by, updated_at)
+        VALUES ($1, $2, $3, $4, NOW())
+        ON CONFLICT (period, branch, emp_name) DO UPDATE
+          SET updated_by = $4, updated_at = NOW()
+      `, [period, branch, emp_name, req.user?.username || null]);
+    } else {
+      await pool.query(
+        `DELETE FROM tech_hours_excludes WHERE period=$1 AND branch=$2 AND emp_name=$3`,
+        [period, branch, emp_name]
+      );
+    }
     res.json({ ok: true });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
