@@ -140,6 +140,33 @@ async function computePerfActualForMetric(metric, period, branch) {
            WHERE ${c.join(' AND ')}`, p
         );
         actual = parseFloat(r.rows[0]?.v || 0);
+      } else if (metric.metric_type === 'repair_subfield') {
+        const VALID_COLS = new Set([
+          'bodywork_income','paint_income','engine_wage','parts_income',
+          'accessories_income','boutique_income','carwash_income',
+          'outsource_income','addon_income','total_untaxed','parts_cost'
+        ]);
+        const acTypes   = filters.filter(f => f.type === 'account_type').map(f => f.value);
+        const subfields = filters.filter(f => f.type === 'subfield' && VALID_COLS.has(f.value)).map(f => f.value);
+        const woMode    = filters.find(f => f.type === 'wo_mode')?.value || 'sum';
+        if (subfields.length) {
+          const p = [period, br]; let i = 3;
+          let where = `period=$1 AND branch=$2`;
+          if (acTypes.length) { where += ` AND account_type=ANY($${i++})`; p.push(acTypes); }
+          let q;
+          if (woMode === 'wo_has') {
+            const hasCond = subfields.map(c => `COALESCE(${c},0)>0`).join(' OR ');
+            q = `SELECT COALESCE(SUM(total_untaxed),0) AS v FROM repair_income WHERE ${where} AND (${hasCond})`;
+          } else if (woMode === 'wo_exclude') {
+            const excCond = subfields.map(c => `COALESCE(${c},0)=0`).join(' AND ');
+            q = `SELECT COALESCE(SUM(total_untaxed),0) AS v FROM repair_income WHERE ${where} AND (${excCond})`;
+          } else {
+            const sumExpr = subfields.map(c => `COALESCE(${c},0)`).join('+');
+            q = `SELECT COALESCE(SUM(${sumExpr}),0) AS v FROM repair_income WHERE ${where}`;
+          }
+          const r = await pool.query(q, p);
+          actual = parseFloat(r.rows[0]?.v || 0);
+        }
       }
     } catch (e) { /* ignore, treat as 0 */ }
     total += actual;

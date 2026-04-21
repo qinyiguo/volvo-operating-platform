@@ -893,18 +893,28 @@ branch_override filter → 強制指定此指標的分館實績來源
 
 **自動 fallback（不用再手動上傳去年實績）**
 
-只要**上年度 DMS 四大檔都有上傳過**，`/api/revenue-targets` 與
-`/api/performance-targets` 讀取時會自動從 `repair_income` / `tech_performance`
-/ `parts_sales` 計算上年同月的數字補進 `*_last_year` / `last_year_value`
-欄位再回傳，DB 不會寫回，隨時可被手動上傳的 Excel 覆蓋。
+只要**上年度 DMS 四大檔都有上傳過**，三個端點讀取時會自動從
+`repair_income` / `tech_performance` / `parts_sales` 計算上年同月的數字
+補進 `*_last_year` / `last_year_value` 欄位再回傳，DB 不會寫回，隨時可被
+手動上傳的 Excel 覆蓋：
+
+- `/api/revenue-targets`：補 `paid_last_year` / `bodywork_last_year` /
+  `general_last_year` / `extended_last_year`
+- `/api/performance-targets`：補 `last_year_value`
+- `/api/stats/performance`：回傳 `branches[br].last_year` 時，若
+  `performance_targets.last_year_value` 為空，動態算上年同月實績 — 這條
+  路徑讓 **2027 年新增的指標**（例如新產品零件編號）也能立即拿到 2026
+  同期數字，不需要 performance_targets 事先存在該 row
 
 實作於 `lib/revenueActual.js`：
 - `computeAllRevenues(period, branch)` → `{paid, bodywork, general, extended}`
-- `computePerfActualForMetric(metric, period, branch)` → 單一指標實績
+- `computePerfActualForMetric(metric, period, branch)` → 單一指標實績，
+  支援 `repair_income` / `parts` / `tech_wage` / `boutique` /
+  `repair_subfield` 五種 metric_type
 - `prevYearPeriod(period)` → YYYYMM 上年同月
 
-補上的欄位會帶 `_last_year_auto:true` 旗標，前端若要標示「自動推算」可用。
-節省每年額外上傳一份去年 Excel 的作業。
+補上的欄位會帶 `_last_year_auto:true` 旗標；`/stats/performance` 的回傳
+則是 `branches[br].last_year_auto:true`。前端若要標示「自動推算」可用。
 
 ### 期間鎖定（雙層）
 

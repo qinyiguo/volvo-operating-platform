@@ -29,6 +29,7 @@
 const router = require('express').Router();
 const pool   = require('../db/pool');
 const { requireAuth } = require('../lib/authMiddleware');
+const { computePerfActualForMetric, prevYearPeriod } = require('../lib/revenueActual');
 
 router.use(requireAuth);
 
@@ -546,13 +547,23 @@ router.get('/stats/performance', async (req, res) => {
 
         const t  = tMap[`${metric.id}|||${br}`] || {};
         const tv = parseFloat(t.target_value    || 0);
-        const ly = parseFloat(t.last_year_value || 0);
+        let   ly = parseFloat(t.last_year_value || 0);
+        let   ly_auto = false;
+        // 去年實績 fallback：若 performance_targets 沒存，動態用上年同月 DMS 資料算
+        // → 新增的指標（例如 2027 新建的零件規則）也能立即拿到 2026 同期實績
+        if (!ly) {
+          try {
+            const lyVal = await computePerfActualForMetric(metric, prevYearPeriod(period), br);
+            if (lyVal > 0) { ly = lyVal; ly_auto = true; }
+          } catch (e) { /* ignore */ }
+        }
         mr.branches[br] = {
           actual,
-          target:       tv || null,
-          last_year:    ly || null,
-          achieve_rate: tv > 0 ? (actual / tv * 100) : null,
-          yoy_growth:   ly > 0 ? ((actual - ly) / ly * 100) : null,
+          target:        tv || null,
+          last_year:     ly || null,
+          last_year_auto: ly_auto || undefined,
+          achieve_rate:  tv > 0 ? (actual / tv * 100) : null,
+          yoy_growth:    ly > 0 ? ((actual - ly) / ly * 100) : null,
         };
       }
       results.push(mr);
