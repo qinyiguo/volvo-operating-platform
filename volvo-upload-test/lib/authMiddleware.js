@@ -80,6 +80,7 @@ const FEATURE_PERMISSIONS = {
   'feature:sys_config_edit':     '系統設定（收入/工作天/美容工時）',
   'feature:user_manage':         '使用者管理',
   'feature:password_reset':      '重設他人密碼',
+  'feature:approve_upload_branch': '上傳簽核-據點主管',
   // ── 舊權限鍵（保留於 DB，UI 隱藏；寫入端點已改用新鍵）──
   'feature:upload':              '[舊] Excel 上傳',
   'feature:targets':             '[舊] 目標設定',
@@ -132,7 +133,20 @@ async function getUserPermissions(userId, role) {
 async function requireAuth(req, res, next) {
   // ── 同行程內部服務呼叫例外：用 shared secret 比對，不再信任 IP 判斷 ──
   const hdr = req.headers['x-internal-service'];
-  if (hdr && timingEq(String(hdr), INTERNAL_TOKEN)) return next();
+  if (hdr && timingEq(String(hdr), INTERNAL_TOKEN)) {
+    // 若另帶 x-internal-user-id → 以該使用者身分執行（讓 requirePermission / role
+    // 檢查走正常流程）。用於「簽核通過後代為執行上傳」的場景。
+    const uid = parseInt(req.headers['x-internal-user-id'] || '', 10);
+    if (uid) {
+      try {
+        const r = await pool.query(
+          `SELECT id AS user_id, username, display_name, role, branch, is_active
+             FROM users WHERE id=$1`, [uid]);
+        if (r.rows[0] && r.rows[0].is_active) req.user = r.rows[0];
+      } catch(e) {}
+    }
+    return next();
+  }
 
   const auth  = req.headers['authorization'] || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';

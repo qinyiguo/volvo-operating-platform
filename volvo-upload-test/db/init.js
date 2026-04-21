@@ -584,6 +584,11 @@ await client.query(`CREATE INDEX IF NOT EXISTS idx_business_query_period_branch 
       ['feature:bonus_edit',  'feature:export_data'],
       ['feature:targets',     'feature:export_data'],
       ['feature:user_manage', 'feature:export_audit'],
+      // 據點主管自動獲得上傳簽核（一階）權限
+      ['branch:AMA', 'feature:approve_upload_branch'],
+      ['branch:AMC', 'feature:approve_upload_branch'],
+      ['branch:AMD', 'feature:approve_upload_branch'],
+      ['branch:AME', 'feature:approve_upload_branch'],
     ];
     for (const [from, to] of MIGRATIONS) {
       await client.query(`
@@ -592,6 +597,56 @@ await client.query(`CREATE INDEX IF NOT EXISTS idx_business_query_period_branch 
         ON CONFLICT (user_id, permission_key) DO NOTHING
       `, [from, to]);
     }
+
+    // ─────────────────────────────────────────────────────────
+    // 上傳簽核申請（一般使用者想上傳已鎖定期間 → 雙階段審核）
+    // 階段：pending → branch_approved → executed | rejected | withdrawn | expired
+    // ─────────────────────────────────────────────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS upload_approval_requests (
+        id                    SERIAL PRIMARY KEY,
+        requester_id          INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        requester_username    VARCHAR(50),
+        requester_name        VARCHAR(100),
+        period                VARCHAR(6)  NOT NULL,
+        branch                VARCHAR(10),
+        upload_type           VARCHAR(30) NOT NULL,
+          -- 'dms' / 'roster' / 'perf_targets' / 'revenue_targets' /
+          -- 'revenue_targets_native' / 'bodyshop'
+        replay_endpoint       VARCHAR(100) NOT NULL,
+        file_name             VARCHAR(255),
+        file_content          BYTEA,
+        file_size             INTEGER,
+        extra_body            JSONB DEFAULT '{}',
+        reason                TEXT,
+
+        status                VARCHAR(20) NOT NULL DEFAULT 'pending',
+        branch_approver_id    INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        branch_approver_name  VARCHAR(100),
+        branch_approved_at    TIMESTAMPTZ,
+        branch_approve_note   TEXT,
+
+        super_approver_id     INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        super_approver_name   VARCHAR(100),
+        super_approved_at     TIMESTAMPTZ,
+        super_approve_note    TEXT,
+
+        rejector_id           INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        rejector_name         VARCHAR(100),
+        rejected_at           TIMESTAMPTZ,
+        reject_note           TEXT,
+
+        executed_at           TIMESTAMPTZ,
+        execute_result        JSONB,
+        execute_error         TEXT,
+
+        created_at            TIMESTAMPTZ DEFAULT NOW(),
+        expires_at            TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '7 days')
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_uar_status     ON upload_approval_requests(status, created_at DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_uar_requester  ON upload_approval_requests(requester_id, created_at DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_uar_branch     ON upload_approval_requests(branch, status)`);
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS user_sessions (

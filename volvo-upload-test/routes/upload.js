@@ -217,7 +217,14 @@ router.post('/upload', requirePermission('feature:upload_dms'), uploader.array('
 
     } catch (err) {
       console.error(`[${filename}] ❌`, err.message);
-      results.push({ filename, status: 'error', error: err.message });
+      // 期間鎖定錯誤時附帶 locked + period + branch，讓前端能直接送簽核申請
+      const entry = { filename, status: 'error', error: err.message };
+      if (/鎖定/.test(err.message) && typeof period !== 'undefined') {
+        entry.locked = true;
+        entry.period = period;
+        entry.branch = branch;
+      }
+      results.push(entry);
       try {
         await pool.query(
           `INSERT INTO upload_history (file_name,file_type,status,error_msg) VALUES ($1,'unknown','error',$2)`,
