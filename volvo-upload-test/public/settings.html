@@ -2018,6 +2018,9 @@ function resetAuditFilters() {
   loadAuditLogs(1);
 }
 function exportAuditCSV() {
+  if (window.DmsAuth && !DmsAuth.hasPermission('feature:export_audit')) {
+    alert('您沒有「操作紀錄匯出」權限，請聯絡管理員'); return;
+  }
   if (!_auditRows.length) { alert('請先查詢後再匯出'); return; }
   const headers = ['時間','使用者','帳號','角色','廠別','動作','資源','資料廠別','資料期間','IP位址','瀏覽器','狀態碼','耗時(ms)'];
   const rows = _auditRows.map(r => [
@@ -2172,28 +2175,33 @@ const ROLE_PRESETS = {
     'page:performance','page:stats','page:query','page:bonus','page:monthly',
     'branch:AMA','branch:AMC','branch:AMD','branch:AME',
     'feature:bonus_sign','feature:bonus_extra_edit','feature:wip_edit',
+    'feature:export_bonus',
   ],
   bonus_admin: [
     'page:performance','page:stats','page:bonus','page:monthly',
     'branch:AMA','branch:AMC','branch:AMD','branch:AME',
     'feature:bonus_metric_edit','feature:bonus_extra_edit','feature:bonus_sign',
     'feature:promo_bonus_edit','feature:bodyshop_bonus_edit','feature:sa_config_edit',
+    'feature:export_bonus','feature:export_data',
   ],
   data_staff: [
     'page:performance','page:stats','page:query','page:bonus',
     'branch:AMA','branch:AMC','branch:AMD','branch:AME',
     'feature:upload_dms','feature:upload_roster','feature:upload_targets','feature:upload_bodyshop',
+    'feature:export_data',
   ],
   business_admin: [
     'page:performance','page:stats','page:query','page:bonus','page:monthly',
     'branch:AMA','branch:AMC','branch:AMD','branch:AME',
     'feature:perf_metric_edit','feature:perf_target_edit','feature:revenue_target_edit',
     'feature:tech_config_edit',
+    'feature:export_data',
   ],
   sys_admin: [
     'page:performance','page:stats','page:query','page:bonus','page:monthly','page:settings',
     'branch:AMA','branch:AMC','branch:AMD','branch:AME',
     'feature:sys_config_edit','feature:monthly_edit','feature:user_manage','feature:password_reset',
+    'feature:export_audit',
   ],
   full: null,  // 特殊：全勾
 };
@@ -2270,6 +2278,10 @@ async function deleteUser(id, username) {
 // ══ 初始化 ══
 (async () => {
   await DmsAuth.init({ requiredPermission: 'page:settings' });
+  // 沒有匯出權限 → 隱藏對應按鈕
+  if (window.DmsAuth && !DmsAuth.hasPermission('feature:export_audit')) {
+    document.querySelectorAll('button[onclick*="exportAuditCSV"]').forEach(b => b.style.display = 'none');
+  }
   loadCounts();
 })();
 function initTheme(){const s=localStorage.getItem('volvo_theme')||'dark';applyTheme(s,false);}
@@ -2378,6 +2390,11 @@ initTheme();
 
             <div class="um-perm-head" style="margin-top:12px">📑 月報</div>
             <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:monthly_edit"> 月報版面/筆記</label>
+
+            <div class="um-perm-head" style="margin-top:12px">📥 資料匯出（防外洩）</div>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:export_bonus"> 獎金表匯出（Excel/PDF）</label>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:export_data"> 資料匯出（查詢/明細/WIP）</label>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:export_audit"> 操作紀錄匯出</label>
 
             <div class="um-perm-head" style="margin-top:12px">⚙️ 系統</div>
             <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:sys_config_edit"> 系統設定（收入/工作天/美容工時）</label>

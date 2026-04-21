@@ -424,10 +424,16 @@ function renderWorkingDaysBar() {
   const ALL      = ['AMA','AMC','AMD'];
   const mobile   = isMobile();
 
+  // 天數進度走的是「同一份月曆」，三廠的 working_days 本來就相同，
+  // 不能加總（那會算成 51/75 這種無意義值）。取 max 確保即使某廠
+  // 因假日設定略有差異也能選到完整天數。
   let gElapsed = 0, gTotal = 0;
   ALL.forEach(br => {
     const s = _wdSummary.find(r => r.branch === br);
-    if (s) { gElapsed += parseInt(s.auto_working_days||0); gTotal += parseInt(s.working_days||0); }
+    if (s) {
+      gElapsed = Math.max(gElapsed, parseInt(s.auto_working_days||0));
+      gTotal   = Math.max(gTotal,   parseInt(s.working_days||0));
+    }
   });
   const gMonthPct  = gTotal > 0 ? gElapsed / gTotal * 100 : null;
   const gMonthBarW = gMonthPct !== null ? Math.min(100, gMonthPct).toFixed(1) : 0;

@@ -593,6 +593,11 @@ await client.query(`CREATE INDEX IF NOT EXISTS idx_business_query_period_branch 
       ['feature:user_manage', 'feature:password_reset'],
       // 原本能編輯系統設定的 page:settings 使用者 → feature:sys_config_edit
       ['page:settings', 'feature:sys_config_edit'],
+      // ── 資料匯出權限（防外洩；預設只給原本的「編輯者 / 管理員」） ──
+      ['feature:bonus_edit',  'feature:export_bonus'],
+      ['feature:bonus_edit',  'feature:export_data'],
+      ['feature:targets',     'feature:export_data'],
+      ['feature:user_manage', 'feature:export_audit'],
     ];
     for (const [from, to] of MIGRATIONS) {
       await client.query(`
