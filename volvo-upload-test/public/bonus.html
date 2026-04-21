@@ -4480,10 +4480,10 @@ async function exportBonusPdf() {
     return escHtml(v);
   }
 
-  // 獎金彙總首頁的完整 5 簽核欄
+  // 獎金彙總首頁的完整 5 簽核欄（由左至右：董事長室 → 承辦人）
   function signRowHtmlFull() {
     return '<div class="signRow">'
-      + ['承辦人','單位主管','最高主管','總經理室','董事長室'].map(function(n){
+      + ['董事長室','總經理室','最高主管','單位主管','承辦人'].map(function(n){
         return '<div class="signBox"><div class="lbl">'+n+'</div><div class="box"></div></div>';
       }).join('')
       + '</div>';
@@ -4744,7 +4744,7 @@ async function exportBonusPdf() {
     + 'table.note thead th{background:#EDE9FE;color:#000;font-weight:700;text-align:left;padding:6px 10px;}'
     + 'table.note tbody td{background:#F5F3FF;color:#000;}'
     + 'table.note tbody td.reason{white-space:normal;line-height:1.6;}'
-    + '.signRow{margin-top:18px;display:grid;grid-template-columns:1fr 1.4fr 1fr 1.4fr 1fr;gap:6px;page-break-inside:avoid;break-inside:avoid;}'
+    + '.signRow{margin-top:18px;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;page-break-inside:avoid;break-inside:avoid;}'
     + '.signBox{border:1px solid #334155;min-height:90px;display:flex;flex-direction:column;}'
     + '.signBox .lbl{background:#F1F5F9;color:#000;text-align:center;font-weight:700;padding:5px 4px;border-bottom:1px solid #334155;font-size:11px;}'
     + '.signBox .box{flex:1;}'
@@ -5054,7 +5054,7 @@ async function exportBonusExcel() {
 
     // 簽核欄
     sPush('empty', []);
-    sPush('signHeader', ['承辦人', '單位主管', '', '最高主管', '總經理室', '', '董事長室']);
+    sPush('signHeader', ['董事長室', '總經理室', '', '最高主管', '單位主管', '', '承辦人']);
     sPush('signBlank', Array(7).fill(''));
     sPush('signBlank', Array(7).fill(''));
     sPush('signBlank', Array(7).fill(''));
@@ -5450,19 +5450,19 @@ async function _saveBeautyBranchModal() {
     <tbody>
       <tr>
         <td style="width:20%;text-align:center;padding:0 8px">
-          <div style="font-size:12px;font-weight:700;color:#000;margin-bottom:4px">承辦人</div>
-        </td>
-        <td style="width:20%;text-align:center;padding:0 8px">
-          <div style="font-size:12px;font-weight:700;color:#000;margin-bottom:4px">單位主管</div>
-        </td>
-        <td style="width:20%;text-align:center;padding:0 8px">
-          <div style="font-size:12px;font-weight:700;color:#000;margin-bottom:4px">最高主管</div>
+          <div style="font-size:12px;font-weight:700;color:#000;margin-bottom:4px">董事長室</div>
         </td>
         <td style="width:20%;text-align:center;padding:0 8px">
           <div style="font-size:12px;font-weight:700;color:#000;margin-bottom:4px">總經理室</div>
         </td>
         <td style="width:20%;text-align:center;padding:0 8px">
-          <div style="font-size:12px;font-weight:700;color:#000;margin-bottom:4px">董事長室</div>
+          <div style="font-size:12px;font-weight:700;color:#000;margin-bottom:4px">最高主管</div>
+        </td>
+        <td style="width:20%;text-align:center;padding:0 8px">
+          <div style="font-size:12px;font-weight:700;color:#000;margin-bottom:4px">單位主管</div>
+        </td>
+        <td style="width:20%;text-align:center;padding:0 8px">
+          <div style="font-size:12px;font-weight:700;color:#000;margin-bottom:4px">承辦人</div>
         </td>
       </tr>
       <tr>
