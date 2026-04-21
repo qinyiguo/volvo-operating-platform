@@ -39,7 +39,7 @@ router.use(requireAuth);
 
 // ─────────────────────────────────────────────────────────────────
 // 獎金期間鎖定（純計算；無 DB 寫入。共用 lib/bonusPeriodLock.js）
-// 規則：YYYYMM 的獎金在「次月 25 日 23:59」之後鎖定，防止規則/人員/
+// 規則：YYYYMM 的獎金在「次月第一個工作日 17:59」之後鎖定，防止規則/人員/
 //      額外獎金/主管考核/手動實績 等異動影響已送審的獎金表。
 // ─────────────────────────────────────────────────────────────────
 const { bonusPeriodLockAt, isBonusPeriodLocked, checkPeriodLock } = require('../lib/bonusPeriodLock');

@@ -3,18 +3,39 @@
  * -------------------------------------------------------------
  * 獎金期間鎖定：純計算、不寫 DB。
  *
- * 規則：期間 YYYYMM 的獎金，在「次月 25 日 23:59」後鎖定。
- *   例：202603 → 2026/04/25 23:59 後鎖定
+ * 規則：期間 YYYYMM 的獎金，在「次月第一個工作日 17:59」後鎖定。
+ *   工作日 = 非週六 / 週日 / 元旦（1/1）。春節等其他國定假日若落在
+ *   月初偶發狀況，可由 super_admin 人工覆蓋。
+ *   例：202603 → 2026/04/01（週三）17:59
+ *       202612 → 2027/01/04（週一，跳過 1/1 元旦 + 週末）17:59
  *
- * 被 routes/bonus.js、routes/managerReview.js、routes/bodyshopBonus.js 等共用。
+ * 被 routes/bonus.js、routes/managerReview.js、routes/bodyshopBonus.js
+ * 等共用。
  */
+
+function isHoliday(d) {
+  // 會落在「月初」且日期固定的國定假日：元旦、勞動節。
+  // 其他浮動假日（春節、清明等）若剛好撞上，由 super_admin 人工覆蓋。
+  const mo = d.getMonth();      // 0-indexed
+  const day = d.getDate();
+  if (mo === 0 && day === 1) return true;   // 1/1 元旦
+  if (mo === 4 && day === 1) return true;   // 5/1 勞動節
+  return false;
+}
 
 function bonusPeriodLockAt(period) {
   if (!period || !/^\d{6}$/.test(String(period))) return null;
   const y = parseInt(period.slice(0, 4));
   const m = parseInt(period.slice(4)); // 1-indexed
-  // 次月 25 日 23:59（month 參數為 0-indexed，所以次月就是 m）
-  return new Date(y, m, 25, 23, 59, 0, 0);
+  // 從次月 1 號 17:59 開始（Date month 參數 0-indexed，故 m 就是次月）
+  const d = new Date(y, m, 1, 17, 59, 0, 0);
+  // 若為週末或元旦 → 往後推到第一個工作日
+  for (let safety = 0; safety < 14; safety++) {
+    const dow = d.getDay();            // 0 Sun / 6 Sat
+    if (dow !== 0 && dow !== 6 && !isHoliday(d)) break;
+    d.setDate(d.getDate() + 1);
+  }
+  return d;
 }
 
 function isBonusPeriodLocked(period) {
