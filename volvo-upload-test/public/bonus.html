@@ -927,8 +927,8 @@ function bonusLockAtForPeriod(period) {
   if (!period || !/^\d{6}$/.test(String(period))) return null;
   var y = parseInt(period.slice(0,4));
   var m = parseInt(period.slice(4));
-  var lastDay = new Date(y, m + 1, 0).getDate();
-  return new Date(y, m, lastDay, 23, 0, 0, 0);
+  // 次月 25 日 23:59（與後端 lib/bonusPeriodLock.js 同步）
+  return new Date(y, m, 25, 23, 59, 0, 0);
 }
 async function refreshPeriodLockState() {
   _periodLocked = false; _periodLockAt = null;
