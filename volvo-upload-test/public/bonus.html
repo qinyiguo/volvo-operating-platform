@@ -927,18 +927,9 @@ function bonusLockAtForPeriod(period) {
   if (!period || !/^\d{6}$/.test(String(period))) return null;
   var y = parseInt(period.slice(0,4));
   var m = parseInt(period.slice(4));
-  // 次月第一個工作日 17:59（與後端 lib/bonusPeriodLock.js 同步）
-  // 跳過週六 / 週日 / 1/1 元旦 / 5/1 勞動節
-  var d = new Date(y, m, 1, 17, 59, 0, 0);
-  for (var safety = 0; safety < 14; safety++) {
-    var dow = d.getDay();
-    var mo  = d.getMonth();
-    var day = d.getDate();
-    var holiday = (mo === 0 && day === 1) || (mo === 4 && day === 1);
-    if (dow !== 0 && dow !== 6 && !holiday) break;
-    d.setDate(d.getDate() + 1);
-  }
-  return d;
+  // 獎金表鎖：次月 25 日 23:59（與後端 lib/bonusPeriodLock.js 同步）
+  // 上傳鎖另有其時（次月第一工作日 17:59），由後端上傳端點自行判斷。
+  return new Date(y, m, 25, 23, 59, 0, 0);
 }
 async function refreshPeriodLockState() {
   _periodLocked = false; _periodLockAt = null;
