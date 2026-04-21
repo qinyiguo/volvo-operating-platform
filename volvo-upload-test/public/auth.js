@@ -53,6 +53,8 @@
 
         // 先依權限過濾導覽列，讓使用者即使卡在無權限頁也能跳到有權限的頁
         this._filterNavByPermission(user);
+        // 在「設定」分頁標上待簽核 badge（非同步，不阻塞）
+        this._refreshApprovalBadgeOnNav();
 
         // 檢查頁面權限
         if (requiredPermission && user.role !== 'super_admin') {
@@ -78,6 +80,27 @@
         if (redirectOnFail) window.location.href = '/login.html';
         return null;
       }
+    },
+
+    // ── 取得待簽核數量並貼到 nav（僅有 page:settings 才打 API）──
+    async _refreshApprovalBadgeOnNav() {
+      try {
+        const user = window._currentUser;
+        if (!user) return;
+        const has = (k) => user.role === 'super_admin' || (user.permissions || []).includes(k);
+        if (!has('page:settings')) return;
+        // 只有可能當 approver 的人才顯示 badge
+        if (user.role !== 'super_admin' && !has('feature:approve_upload_branch')) return;
+        const r = await this.fetchWithAuth('/api/upload-requests/counts').then(r => r.json());
+        if (!r || typeof r.todo !== 'number' || r.todo <= 0) return;
+        const link = document.querySelector('.nav-link[href="/settings.html"]');
+        if (!link || link.querySelector('.apr-nav-badge')) return;
+        const dot = document.createElement('span');
+        dot.className = 'apr-nav-badge';
+        dot.textContent = r.todo;
+        dot.style.cssText = 'margin-left:4px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;padding:1px 6px;border-radius:9px;vertical-align:top';
+        link.appendChild(dot);
+      } catch(e) {}
     },
 
     // ── 頁面權限 → nav-link 對應表 ──

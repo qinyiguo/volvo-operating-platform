@@ -927,8 +927,18 @@ function bonusLockAtForPeriod(period) {
   if (!period || !/^\d{6}$/.test(String(period))) return null;
   var y = parseInt(period.slice(0,4));
   var m = parseInt(period.slice(4));
-  // 次月 25 日 23:59（與後端 lib/bonusPeriodLock.js 同步）
-  return new Date(y, m, 25, 23, 59, 0, 0);
+  // 次月第一個工作日 17:59（與後端 lib/bonusPeriodLock.js 同步）
+  // 跳過週六 / 週日 / 1/1 元旦 / 5/1 勞動節
+  var d = new Date(y, m, 1, 17, 59, 0, 0);
+  for (var safety = 0; safety < 14; safety++) {
+    var dow = d.getDay();
+    var mo  = d.getMonth();
+    var day = d.getDate();
+    var holiday = (mo === 0 && day === 1) || (mo === 4 && day === 1);
+    if (dow !== 0 && dow !== 6 && !holiday) break;
+    d.setDate(d.getDate() + 1);
+  }
+  return d;
 }
 async function refreshPeriodLockState() {
   _periodLocked = false; _periodLockAt = null;
@@ -2627,20 +2637,61 @@ function handleRosterFile(file) {
 }
 async function doUploadRoster() {
   if (!_rosterFile) return;
-const period = document.getElementById('uploadPeriodSel').value;
-    if (!period) { alert('請選擇上傳期間'); return; }
+  const period = document.getElementById('uploadPeriodSel').value;
+  if (!period) { alert('請選擇上傳期間'); return; }
   var btn=document.getElementById('btnDoUpload'); btn.disabled=true;
   document.getElementById('uploadResult').innerHTML='<span class="spinner"></span>上傳中...';
   var formData=new FormData(); formData.append('file',_rosterFile); formData.append('period',period);
   try {
-    var data=await fetch('/api/bonus/upload-roster',{method:'POST',body:formData}).then(r=>r.json());
-    if (data.error) throw new Error(data.error);
+    var res  = await fetch('/api/bonus/upload-roster',{ method:'POST', body:formData });
+    var data = await res.json();
+    // 403 + locked → 改走上傳簽核申請流程
+    if (res.status === 403 && data && data.locked) {
+      const submitted = await promptApprovalRequest({
+        upload_type: 'roster',
+        period, branch: null,
+        file: _rosterFile,
+        extras: { period },
+        lockMsg: data.error,
+      });
+      if (submitted) {
+        document.getElementById('uploadResult').innerHTML =
+          '<div style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:8px;padding:10px 14px;font-size:13px;color:#60a5fa">📬 已送出簽核申請。請等待據點主管與系統管理員核可。</div>';
+        return;
+      }
+      throw new Error(data.error || '期間已鎖定');
+    }
+    if (!res.ok || data.error) throw new Error(data.error || '上傳失敗');
     document.getElementById('uploadResult').innerHTML='<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:10px 14px;font-size:13px;color:#10b981">✅ 成功上傳 '+data.count+' 筆（'+period.slice(0,4)+'年'+parseInt(period.slice(4))+'月）</div>';
     _allDepts=[]; _rosterData=[]; _rosterLoadedPeriod='';
     await loadPeriods(); await loadRoster();
   } catch(e){
     document.getElementById('uploadResult').innerHTML='<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:10px 14px;font-size:13px;color:#ef4444">❌ '+esc(e.message)+'</div>';
   } finally { btn.disabled=false; }
+}
+
+// ══ 通用：鎖定期間 → 轉為上傳簽核申請 ══
+async function promptApprovalRequest({ upload_type, period, branch, file, extras, lockMsg }) {
+  const reason = prompt(
+    '⚠️ ' + (lockMsg || '此期間資料已鎖定（僅系統管理員可修改）') +
+    '\n\n此次上傳會轉為「簽核申請」，需先經據點主管核可，再經系統管理員核可後自動執行。\n' +
+    '請填寫申請理由（必填）：'
+  );
+  if (!reason) return false;
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_type', upload_type);
+  fd.append('period', period);
+  if (branch) fd.append('branch', branch);
+  fd.append('reason', reason);
+  for (const [k, v] of Object.entries(extras || {})) fd.append('extra_' + k, v);
+  try {
+    const r = await fetch('/api/upload-requests', { method: 'POST', body: fd });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || '提交申請失敗');
+    alert('✅ 申請已送出（編號 #' + d.request.id + '）。你可以到「系統設定 → 上傳簽核 → 我的申請」追蹤進度。');
+    return true;
+  } catch(e) { alert('❌ ' + e.message); return false; }
 }
 
 hideLock();

@@ -33,7 +33,7 @@ router.get('/', async (req, res) => {
 router.post('/', requirePermission('feature:bonus_extra_edit'), async (req, res) => {
   const { period, emp_id, amount, note } = req.body;
   if (!period || !emp_id) return res.status(400).json({ error: '缺少必要欄位' });
-  if (isBonusPeriodLocked(period)) {
+  if (req.user?.role !== 'super_admin' && isBonusPeriodLocked(period)) {
     const lockAt = bonusPeriodLockAt(period);
     return res.status(403).json({
       error: '此期間（' + period.slice(0,4) + '/' + period.slice(4) + '）獎金表已鎖定，無法修改主管考核',

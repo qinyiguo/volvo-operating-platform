@@ -16,6 +16,7 @@ const multer = require('multer');
 const XLSX   = require('xlsx');
 const pool   = require('../db/pool');
 const { requireAuth, requirePermission } = require('../lib/authMiddleware');
+const { checkPeriodLock, checkBatchPeriodLock } = require('../lib/bonusPeriodLock');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
@@ -79,6 +80,7 @@ router.get('/performance-targets', async (req, res) => {
 router.put('/performance-targets/batch', requirePermission('feature:perf_target_edit'), async (req, res) => {
   const { metric_id, period, entries } = req.body;
   if (!metric_id || !period || !Array.isArray(entries)) return res.status(400).json({ error: '參數不完整' });
+  if (checkPeriodLock(period, res, req)) return;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -160,6 +162,10 @@ router.post('/upload-performance-targets-native', requirePermission('feature:upl
 
       const totalEntries = Object.values(entriesMap).reduce((s, m) => s + Object.keys(m).length, 0);
       if (!totalEntries) return res.status(400).json({ error: '找不到有效資料列，請確認期間格式（例：202601）和據點（AMA/AMC/AMD）' });
+
+      // 檔案內任一 period 已鎖定 → 整批拒絕（super_admin 除外）
+      const flatPeriods = Object.values(entriesMap).flatMap(rm => Object.values(rm).map(e => e.period));
+      if (checkBatchPeriodLock(flatPeriods, res, req)) return;
 
       const client = await pool.connect();
       try {
@@ -252,6 +258,15 @@ router.post('/upload-performance-targets-native', requirePermission('feature:upl
     }
 
     if (!Object.keys(data).length) return res.status(400).json({ error: '找不到任何區塊資料，請確認格式（需有標題列＋月份列＋AMA/AMC/AMD資料列）' });
+
+    // 檔案內任一 period (YYYYMM) 已鎖定 → 整批拒絕（super_admin 除外）
+    const touchedPeriods = [];
+    for (const info of Object.values(data)) {
+      for (const branchMap of Object.values(info.branches)) {
+        for (const mo of Object.keys(branchMap)) touchedPeriods.push(year + String(mo).padStart(2,'0'));
+      }
+    }
+    if (checkBatchPeriodLock(touchedPeriods, res, req)) return;
 
     const client = await pool.connect();
     try {

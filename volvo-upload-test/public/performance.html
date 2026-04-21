@@ -1132,13 +1132,24 @@ async function opuDoUpload() {
   const status = document.getElementById('opuUploadStatus');
   btn.disabled = true;
   status.textContent = '上傳中…';
-  status.style.color = '#64748b';
+  status.style.color = 'var(--text-dim)';
+  const filesCopy = opuSelectedFiles.slice(); // 保留參考給後續 approval 用
   const formData = new FormData();
-  opuSelectedFiles.forEach(f => formData.append('files', f));
+  filesCopy.forEach(f => formData.append('files', f));
   try {
     const res = await fetch('/api/upload', { method: 'POST', body: formData });
     const data = await res.json();
     opuShowResults(data.results || []);
+    // 檢查鎖定失敗檔案 → 提供一鍵轉為簽核申請
+    const locked = (data.results || []).filter(r => r.status === 'error' && /鎖定/.test(r.error || ''));
+    if (locked.length) {
+      const ok = confirm(
+        `有 ${locked.length} 個檔案因期間已鎖定被拒絕。\n\n` +
+        '是否轉為「上傳簽核申請」？\n' +
+        '（需先經據點主管核可，再經系統管理員核可後自動執行。）'
+      );
+      if (ok) await opuSubmitLockedAsApproval(filesCopy, locked);
+    }
     opuSelectedFiles = [];
     document.getElementById('opuFileList').innerHTML = '';
     document.getElementById('opuFileInput').value = '';
@@ -1150,6 +1161,36 @@ async function opuDoUpload() {
   } finally {
     btn.disabled = false;
   }
+}
+
+async function opuSubmitLockedAsApproval(files, lockedResults) {
+  const reason = prompt('請填寫申請理由（所有鎖定檔案共用，必填）：');
+  if (!reason) return;
+  let ok = 0, fail = 0;
+  for (const lr of lockedResults) {
+    const file = files.find(f => f.name === lr.filename);
+    if (!file) { fail++; continue; }
+    // 從錯誤訊息抓 period（格式 "期間 2026/3 ..."），fallback 用 lr 欄位
+    let period = lr.period || null;
+    if (!period) {
+      const m = /(\d{4})\/(\d{1,2})/.exec(lr.error || '');
+      if (m) period = m[1] + String(m[2]).padStart(2, '0');
+    }
+    if (!period) { fail++; continue; }
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('upload_type', 'dms');
+    fd.append('period', period);
+    if (lr.branch) fd.append('branch', lr.branch);
+    fd.append('reason', reason);
+    try {
+      const r = await fetch('/api/upload-requests', { method: 'POST', body: fd });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || '提交失敗');
+      ok++;
+    } catch(e) { fail++; console.warn('approval submit failed:', e.message); }
+  }
+  alert(`📬 簽核申請已送出：成功 ${ok} / 失敗 ${fail}。\n請到「系統設定 → 上傳簽核」追蹤進度。`);
 }
 function opuShowResults(results) {
   document.getElementById('opuResultsCard').style.display = '';

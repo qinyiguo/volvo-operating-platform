@@ -21,6 +21,7 @@ const XLSX    = require('xlsx');
 const pool    = require('../db/pool');
 const { detectFileType, detectBranch, detectPeriod } = require('../lib/utils');
 const { requireAuth, requirePermission } = require('../lib/authMiddleware');
+const { isBonusPeriodLocked, bonusPeriodLockAt } = require('../lib/bonusPeriodLock');
 
 router.use(requireAuth);
 const {
@@ -118,6 +119,16 @@ router.post('/upload', requirePermission('feature:upload_dms'), uploader.array('
         throw new Error('無法辨識檔案類型，請確認檔名包含關鍵字（維修收入/技師績效/零件銷售/業務查詢）');
       }
 
+      // 拒絕上傳已鎖定期間的 DMS 資料（super_admin 例外）
+      if (period && req.user?.role !== 'super_admin' && isBonusPeriodLocked(period)) {
+        const lockAt = bonusPeriodLockAt(period);
+        throw new Error(
+          '期間 ' + period.slice(0,4) + '/' + period.slice(4) +
+          ' 已於 ' + (lockAt ? lockAt.toLocaleString('zh-TW') : '') +
+          ' 鎖定，無法再上傳（僅系統管理員可修改）'
+        );
+      }
+
       const sheetName = pickBestSheet(workbook, fileType);
       const sheet     = workbook.Sheets[sheetName];
       const rawRows   = parseSheetToObjects(sheet);
@@ -206,7 +217,14 @@ router.post('/upload', requirePermission('feature:upload_dms'), uploader.array('
 
     } catch (err) {
       console.error(`[${filename}] ❌`, err.message);
-      results.push({ filename, status: 'error', error: err.message });
+      // 期間鎖定錯誤時附帶 locked + period + branch，讓前端能直接送簽核申請
+      const entry = { filename, status: 'error', error: err.message };
+      if (/鎖定/.test(err.message) && typeof period !== 'undefined') {
+        entry.locked = true;
+        entry.period = period;
+        entry.branch = branch;
+      }
+      results.push(entry);
       try {
         await pool.query(
           `INSERT INTO upload_history (file_name,file_type,status,error_msg) VALUES ($1,'unknown','error',$2)`,

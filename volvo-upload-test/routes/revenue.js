@@ -23,6 +23,7 @@ const multer = require('multer');
 const XLSX   = require('xlsx');
 const pool   = require('../db/pool');
 const { requireAuth, requirePermission } = require('../lib/authMiddleware');
+const { checkPeriodLock, checkBatchPeriodLock } = require('../lib/bonusPeriodLock');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
@@ -61,6 +62,7 @@ router.get('/revenue-targets', async (req, res) => {
 router.put('/revenue-targets/batch', requirePermission('feature:revenue_target_edit'), async (req, res) => {
   const { entries } = req.body;
   if (!Array.isArray(entries) || !entries.length) return res.status(400).json({ error: '無資料' });
+  if (checkBatchPeriodLock(entries.map(e => e.period), res, req)) return;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -87,6 +89,7 @@ router.put('/revenue-targets/batch', requirePermission('feature:revenue_target_e
 router.delete('/revenue-targets', requirePermission('feature:revenue_target_edit'), async (req, res) => {
   const { branch, period } = req.query;
   if (!branch || !period) return res.status(400).json({ error: 'branch 和 period 為必填' });
+  if (checkPeriodLock(period, res, req)) return;
   try {
     await pool.query(`DELETE FROM revenue_targets WHERE branch=$1 AND period=$2`, [branch, period]);
     res.json({ ok: true });
@@ -124,6 +127,7 @@ router.post('/upload-revenue-targets', requirePermission('feature:upload_targets
       });
     }
     if (!entries.length) return res.status(400).json({ error: '找不到有效資料列，請確認欄位名稱與格式' });
+    if (checkBatchPeriodLock(entries.map(e => e.period), res, req)) return;
 
     const client = await pool.connect();
     try {
@@ -219,6 +223,7 @@ router.post('/upload-revenue-targets-native', requirePermission('feature:upload_
         debug: { detectedFields: detected, sheetName, totalRows: raw.length }
       });
     }
+    if (checkBatchPeriodLock(entries.map(e => e.period), res, req)) return;
 
     const client = await pool.connect();
     try {
@@ -273,6 +278,7 @@ router.get('/revenue-estimates', async (req, res) => {
 router.put('/revenue-estimates/batch', requirePermission('feature:revenue_target_edit'), async (req, res) => {
   const { entries } = req.body;
   if (!Array.isArray(entries) || !entries.length) return res.status(400).json({ error: '無資料' });
+  if (checkBatchPeriodLock(entries.map(e => e.period), res, req)) return;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -340,6 +346,7 @@ router.post('/revenue-estimates/weekly-submit', requirePermission('feature:reven
   const { period, entries, note } = req.body;
   if (!period || !Array.isArray(entries) || !entries.length)
     return res.status(400).json({ error: '參數不完整' });
+  if (checkPeriodLock(period, res, req)) return;
 
   const week_key   = getCurrentWeekMonday();
   const week_label = getWeekLabel(week_key);

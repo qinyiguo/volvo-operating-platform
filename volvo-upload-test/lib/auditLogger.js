@@ -56,6 +56,7 @@ const RESOURCE_LABELS = {
   '/api/query/parts_sales':         '查詢｜零件銷售',
   '/api/query/business_query':      '查詢｜業務查詢',
   '/api/upload':                    '上傳 Excel',
+  '/api/upload-requests':           '上傳簽核申請',
   '/api/users/login':               '使用者登入',
   '/api/users/logout':              '使用者登出',
   '/api/revenue-estimates/weekly-submit': '週次預估提交',

@@ -21,6 +21,7 @@
 const router = require('express').Router();
 const pool   = require('../db/pool');
 const { requireAuth, requirePermission } = require('../lib/authMiddleware');
+const { checkPeriodLock } = require('../lib/bonusPeriodLock');
 
 router.use(requireAuth);
 
@@ -93,6 +94,7 @@ router.put('/person-targets/batch', requirePermission('feature:perf_target_edit'
   const { metric_id, period, branch, entries } = req.body;
   if (!metric_id || !period || !branch || !Array.isArray(entries))
     return res.status(400).json({ error: '參數不完整' });
+  if (checkPeriodLock(period, res, req)) return;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -120,6 +122,7 @@ router.put('/person-targets/batch', requirePermission('feature:perf_target_edit'
 router.delete('/person-targets', requirePermission('feature:perf_target_edit'), async (req, res) => {
   const { metric_id, period, branch } = req.query;
   if (!metric_id || !period || !branch) return res.status(400).json({ error: '參數不完整' });
+  if (checkPeriodLock(period, res, req)) return;
   try {
     await pool.query(
       'DELETE FROM person_metric_targets WHERE metric_id=$1 AND period=$2 AND branch=$3',
@@ -326,6 +329,8 @@ router.post('/person-targets/copy-from-last-month', requirePermission('feature:p
   const { metric_id, period, branch } = req.body;
   if (!metric_id || !period || !branch)
     return res.status(400).json({ error: '參數不完整' });
+  // 複製「到」目標月；若目標月已鎖定 → 拒絕
+  if (checkPeriodLock(period, res, req)) return;
 
   // 計算上月 period
   const y = parseInt(period.slice(0, 4));
