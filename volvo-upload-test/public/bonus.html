@@ -2011,6 +2011,25 @@ function calcPromoBonus(unused1, unused2, branch, personName, jobTitle) {
       return zb!=null && zb!=='' && !isNaN(parseFloat(zb)) && rate<parseFloat(zb);
     }
 
+    // 依職務排序：數字越小職等越高。同關鍵字下，「資深」前綴上升 0.5 級。
+    function jobTitleRank(title) {
+      var t = String(title||'');
+      var levels = [
+        '董事長','總裁','執行長','總經理','副總',
+        '處長','協理','廠長','技術長',
+        '經理','副理',
+        '主任','組長','領班',
+        '顧問','專員','技師',
+        '組員','助理','工讀'
+      ];
+      var rank = 999;
+      for (var i=0;i<levels.length;i++) {
+        if (t.indexOf(levels[i]) !== -1) { rank = i; break; }
+      }
+      if (t.indexOf('資深') !== -1) rank -= 0.5;
+      return rank;
+    }
+
     function calcBonus(rate,jobTitle,tiers,roles,rule) {
       if (rate===null||!tiers||!tiers.length) return 0;
       // 未達標歸零：本指標自身歸 0 作為保險；整組連動歸 0 由呼叫端判斷
@@ -2323,7 +2342,13 @@ if (personTotal>0) deptBonusPpl++;
 deptTotalBonus+=personTotal;
 memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonus,mrBonus:personMR,extraBonus:personExtra,total:personTotal});
         }
-        memberRows.sort(function(a,b){return b.total-a.total;});
+        // 依職務排序（高 → 低）；同職務以總獎金高者在前，再以姓名備援
+        memberRows.sort(function(a,b){
+          var ra=jobTitleRank(a.person.job_title), rb=jobTitleRank(b.person.job_title);
+          if (ra!==rb) return ra-rb;
+          if (b.total!==a.total) return b.total-a.total;
+          return String(a.person.emp_name||'').localeCompare(String(b.person.emp_name||''));
+        });
 
         var thBase='text-align:left;padding:8px 10px;background:#090f1a;color:var(--text-dimmer);font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;white-space:nowrap;border-right:1px solid #1a2535;';
 
