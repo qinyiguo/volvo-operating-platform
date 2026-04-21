@@ -14,8 +14,8 @@
  * Bootstrap:
  *   第一次啟動且 users 表為空時，建立 admin 超管帳號。
  *   密碼優先讀 INITIAL_ADMIN_PASSWORD；沒設則隨機產生一次並印到 stdout。
- *   settings_password 同理（INITIAL_SETTINGS_PASSWORD）。
- *   兩個密碼都以 pbkdf2$salt$hash 儲存，不落明文。
+ *   密碼以 pbkdf2$salt$hash 儲存，不落明文。
+ *   （舊共用「管理員密碼」已移除，改由 users 表管理各自帳密）
  */
 const pool = require('./pool');
 
@@ -136,23 +136,9 @@ const initDatabase = async () => {
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS app_settings (key VARCHAR(100) PRIMARY KEY, value TEXT NOT NULL)`);
-    {
-      const _exists = await client.query(`SELECT 1 FROM app_settings WHERE key='settings_password'`);
-      if (!_exists.rows.length) {
-        const _cr   = require('crypto');
-        const _env  = process.env.INITIAL_SETTINGS_PASSWORD;
-        const _pwd  = _env || _cr.randomBytes(9).toString('base64url');
-        const _salt = _cr.randomBytes(16).toString('hex');
-        const _hash = _cr.pbkdf2Sync(_pwd, _salt, 100000, 32, 'sha256').toString('hex');
-        const _stored = `pbkdf2$${_salt}$${_hash}`;
-        await client.query(`INSERT INTO app_settings (key, value) VALUES ('settings_password', $1)`, [_stored]);
-        if (_env) {
-          console.log('[initDB] settings_password 已依 INITIAL_SETTINGS_PASSWORD 初始化（已 hash）');
-        } else {
-          console.log(`[initDB] ⚠️  已產生初始 settings_password: ${_pwd}（請立即變更，此訊息僅顯示一次）`);
-        }
-      }
-    }
+    // 舊版共用「管理員密碼」已移除；保留 app_settings.settings_password 資料列
+    // 以避免 rollback 時 /api/auth/settings 暫時不可用。新系統使用
+    // users 表 + /api/users/:id/password 管理各人密碼。
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS income_config (
