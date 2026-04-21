@@ -2096,7 +2096,9 @@ function openAddUserModal() {
   document.getElementById('umPwNote').textContent = '（必填）';
   document.getElementById('umRole').value = 'user';
   document.getElementById('umBranch').value = '';
+  renderPermTabs();
   document.querySelectorAll('[name=perm]').forEach(c => c.checked = false);
+  _updatePermTabCounts();
   document.getElementById('umMsg').textContent = '';
   onRoleChange();
   const me = window._currentUser;
@@ -2122,8 +2124,11 @@ function openEditUserModal(user) {
   document.getElementById('umRole').value = user.role;
   document.getElementById('umBranch').value = user.branch || '';
   document.getElementById('umMsg').textContent = '';
+  // 先渲染 Tab（checkbox 建立完才能接後續 check）
+  renderPermTabs();
   const perms = user.permissions || [];
   document.querySelectorAll('[name=perm]').forEach(c => { c.checked = perms.includes(c.value); });
+  _updatePermTabCounts();
   onRoleChange();
   document.getElementById('userModal').style.display = 'flex';
 }
@@ -2183,10 +2188,153 @@ function applyRolePreset(key) {
   const boxes = document.querySelectorAll('#umPermSection [name=perm]');
   if (key === 'full') {
     boxes.forEach(b => b.checked = true);
-    return;
+  } else {
+    const allow = new Set(ROLE_PRESETS[key] || []);
+    boxes.forEach(b => b.checked = allow.has(b.value));
   }
-  const allow = new Set(ROLE_PRESETS[key] || []);
-  boxes.forEach(b => b.checked = allow.has(b.value));
+  _updatePermTabCounts();
+}
+
+// ═══ 權限編輯分頁（依頁面分 Tab）═══
+// 每個 Tab 只放和「該頁面」真正相關的權限。checkbox 始終保留在 DOM，
+// 切 Tab 只改顯示；儲存時仍然透過 document.querySelectorAll('[name=perm]:checked') 一次收齊。
+const PERM_TABS = [
+  {
+    id: 'perf', icon: '🎯', label: '業績指標',
+    intro: '業績指標頁（/performance.html）：四大營收達成率、集團合計、業績預估、VCTL 商務政策指標。',
+    items: [
+      { v: 'page:performance',         l: '檢視「業績指標」頁面' },
+      { v: 'feature:perf_metric_edit', l: '業績指標定義' },
+      { v: 'feature:perf_target_edit', l: '業績 / 個人目標' },
+      { v: 'feature:revenue_target_edit', l: '營收目標 / 週次預估' },
+      { v: 'feature:upload_targets',   l: '業績 / 營收目標 Excel 上傳' },
+    ],
+  },
+  {
+    id: 'stats', icon: '📊', label: '各廠明細',
+    intro: '各廠明細頁（/stats.html）：維修收入、SA 銷售矩陣、零件、精品配件、技師工時、施工周轉率、WIP 等。',
+    items: [
+      { v: 'page:stats',                l: '檢視「各廠明細」頁面' },
+      { v: 'feature:upload_dms',        l: 'DMS 四大檔上傳（維修收入 / 技師績效 / 零件銷售 / 業務查詢）' },
+      { v: 'feature:tech_config_edit',  l: '產能 / 工位 / 技師組別 / 工資代碼' },
+      { v: 'feature:wip_edit',          l: 'WIP 工單狀態（等料 / 施工中 / 可結帳…）' },
+      { v: 'feature:sa_config_edit',    l: 'SA 指標銷售配置' },
+    ],
+  },
+  {
+    id: 'query', icon: '🔍', label: '資料查詢',
+    intro: '資料查詢頁（/query.html）：四大原始資料表的全文搜尋、排序、CSV 匯出。',
+    items: [
+      { v: 'page:query',         l: '檢視「資料查詢」頁面' },
+      { v: 'feature:export_data', l: '資料匯出（查詢 / 明細 / WIP / 月報圖）' },
+    ],
+  },
+  {
+    id: 'bonus', icon: '💰', label: '獎金表',
+    intro: '獎金表頁（/bonus.html）：人員名冊、獎金指標定義、獎金進度、促銷 / 鈑烤 / 主管考核、電子簽核。',
+    items: [
+      { v: 'page:bonus',                  l: '檢視「獎金表」頁面' },
+      { v: 'feature:upload_roster',       l: '人員名冊上傳（不受上傳鎖限制）' },
+      { v: 'feature:bonus_metric_edit',   l: '獎金指標 / 目標 / 權重' },
+      { v: 'feature:bonus_extra_edit',    l: '額外獎金 / 主管考核' },
+      { v: 'feature:bonus_sign',          l: '獎金電子簽核（檢查人）' },
+      { v: 'feature:promo_bonus_edit',    l: '促銷獎金規則' },
+      { v: 'feature:bodyshop_bonus_edit', l: '業務鈑烤獎金設定 / 比對' },
+      { v: 'feature:upload_bodyshop',     l: '業務鈑烤申請 Excel 上傳' },
+      { v: 'feature:export_bonus',        l: '獎金表匯出（Excel / PDF / HTML）' },
+    ],
+  },
+  {
+    id: 'monthly', icon: '📋', label: '月報',
+    intro: '月報頁（/monthly_report.html）：月度報表彙整、storyboard、notes canvas。',
+    items: [
+      { v: 'page:monthly',         l: '檢視「月報」頁面' },
+      { v: 'feature:monthly_edit', l: '月報版面 / 筆記 / 圖表位置' },
+    ],
+  },
+  {
+    id: 'approvals', icon: '✍️', label: '簽核',
+    intro: '上傳簽核頁（/approvals.html）：鎖期後補傳的兩階段核准流程。',
+    items: [
+      { v: 'feature:approve_upload_branch', l: '上傳簽核（據點主管階段）' },
+    ],
+  },
+  {
+    id: 'settings', icon: '⚙️', label: '設定',
+    intro: '系統設定頁（/settings.html）：使用者管理、工作天、外賣收入類別、美容工時代碼、操作紀錄。',
+    items: [
+      { v: 'page:settings',         l: '檢視「設定」頁面' },
+      { v: 'feature:sys_config_edit', l: '系統設定（收入 / 工作天 / 美容工時）' },
+      { v: 'feature:user_manage',    l: '使用者管理（新增 / 編輯 / 停用帳號）' },
+      { v: 'feature:password_reset', l: '重設他人密碼' },
+      { v: 'feature:export_audit',   l: '操作紀錄匯出' },
+    ],
+  },
+  {
+    id: 'branches', icon: '🏭', label: '廠別存取',
+    intro: '決定使用者在各頁面能看見哪幾個據點的資料。留空 = 可看全廠；勾選限定只能看指定廠。',
+    items: [
+      { v: 'branch:AMA', l: 'AMA 內湖廠' },
+      { v: 'branch:AMC', l: 'AMC 仁愛廠' },
+      { v: 'branch:AMD', l: 'AMD 士林廠' },
+      { v: 'branch:AME', l: 'AME 美容 + 鈑烤（聯合服務中心）' },
+    ],
+  },
+];
+
+function _escPermHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderPermTabs(activeTabId) {
+  const tabs = document.getElementById('umPermTabs');
+  const body = document.getElementById('umPermBody');
+  if (!tabs || !body) return;
+  const active = activeTabId || tabs.dataset.active || PERM_TABS[0].id;
+
+  tabs.innerHTML = PERM_TABS.map(t =>
+    `<button type="button" class="um-tab-btn${t.id===active?' active':''}"
+       data-tab="${t.id}" onclick="switchPermTab('${t.id}')">
+       ${t.icon} ${t.label}<span class="badge-count" id="umTabCount-${t.id}">0</span>
+     </button>`
+  ).join('');
+  tabs.dataset.active = active;
+
+  body.innerHTML = PERM_TABS.map(t =>
+    `<div class="um-tab-panel${t.id===active?' active':''}" data-tab="${t.id}">
+       ${t.intro ? `<div class="tab-intro">${_escPermHtml(t.intro)}</div>` : ''}
+       ${t.items.map(i =>
+         `<label class="um-perm-row">
+            <input type="checkbox" name="perm" value="${i.v}" onchange="_updatePermTabCounts()">
+            <span>${_escPermHtml(i.l)}<span class="perm-desc">${i.v}</span></span>
+          </label>`
+       ).join('')}
+     </div>`
+  ).join('');
+}
+
+function switchPermTab(tabId) {
+  const tabs = document.getElementById('umPermTabs');
+  if (!tabs) return;
+  tabs.dataset.active = tabId;
+  document.querySelectorAll('#umPermTabs .um-tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tabId);
+  });
+  document.querySelectorAll('#umPermBody .um-tab-panel').forEach(p => {
+    p.classList.toggle('active', p.dataset.tab === tabId);
+  });
+}
+
+function _updatePermTabCounts() {
+  PERM_TABS.forEach(t => {
+    const el = document.getElementById(`umTabCount-${t.id}`);
+    if (!el) return;
+    const values = new Set(t.items.map(i => i.v));
+    const n = [...document.querySelectorAll('#umPermBody [name=perm]:checked')]
+      .filter(c => values.has(c.value)).length;
+    el.textContent = n;
+    el.style.display = n > 0 ? '' : 'none';
+  });
 }
 
 async function saveUser() {
@@ -2319,62 +2467,9 @@ initTheme();
           </select>
           <span style="font-size:11px;color:var(--text-dim)">（選完可再手動調整）</span>
         </div>
-        <!-- 分組權限 -->
-        <div class="um-perm-grid">
-          <div class="um-perm-col">
-            <div class="um-perm-head">📄 頁面檢視</div>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="page:performance"> 業績指標</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="page:stats"> 各廠明細</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="page:query"> 資料查詢</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="page:bonus"> 獎金表</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="page:monthly"> 月報</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="page:settings"> 系統設定</label>
-            <div class="um-perm-head" style="margin-top:12px">🏭 廠別存取</div>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="branch:AMA"> AMA 內湖廠</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="branch:AMC"> AMC 仁愛廠</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="branch:AMD"> AMD 士林廠</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="branch:AME"> AME 美容＋鈑烤</label>
-          </div>
-          <div class="um-perm-col">
-            <div class="um-perm-head">📤 上傳功能</div>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:upload_dms"> DMS 四大檔上傳</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:upload_roster"> 人員名冊上傳</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:upload_targets"> 業績/營收目標上傳</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:upload_bodyshop"> 業務鈑烤申請上傳</label>
-
-            <div class="um-perm-head" style="margin-top:12px">📊 業績與營收</div>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:perf_metric_edit"> 業績指標定義</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:perf_target_edit"> 業績/個人目標</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:revenue_target_edit"> 營收目標/週次預估</label>
-
-            <div class="um-perm-head" style="margin-top:12px">🏭 各廠設定</div>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:tech_config_edit"> 產能/工位/技師/工資代碼</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:wip_edit"> WIP 工單狀態</label>
-          </div>
-          <div class="um-perm-col">
-            <div class="um-perm-head">💰 獎金管理</div>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:bonus_metric_edit"> 獎金指標/目標/權重</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:bonus_extra_edit"> 額外獎金/主管考核</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:bonus_sign"> 獎金簽核</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:promo_bonus_edit"> 促銷獎金規則</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:bodyshop_bonus_edit"> 業務鈑烤獎金</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:sa_config_edit"> SA 指標銷售配置</label>
-
-            <div class="um-perm-head" style="margin-top:12px">📑 月報</div>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:monthly_edit"> 月報版面/筆記</label>
-
-            <div class="um-perm-head" style="margin-top:12px">📥 資料匯出（防外洩）</div>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:export_bonus"> 獎金表匯出（Excel/PDF）</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:export_data"> 資料匯出（查詢/明細/WIP）</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:export_audit"> 操作紀錄匯出</label>
-
-            <div class="um-perm-head" style="margin-top:12px">⚙️ 系統</div>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:sys_config_edit"> 系統設定（收入/工作天/美容工時）</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:user_manage"> 使用者管理</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:password_reset"> 重設他人密碼</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:approve_upload_branch"> 上傳簽核（據點主管）</label>
-          </div>
-        </div>
+        <!-- 以「每個頁面」為主的 Tab 書籤。切換分頁不會改變勾選狀態（checkbox 始終在 DOM 內），儲存時會一次收齊所有 [name=perm]:checked。 -->
+        <div class="um-tab-bar" id="umPermTabs" role="tablist"></div>
+        <div class="um-tab-body" id="umPermBody"></div>
       </div>
       <div id="umMsg" style="font-size:13px;min-height:20px;margin-bottom:8px"></div>
       <div style="display:flex;gap:8px;justify-content:flex-end">
@@ -2386,33 +2481,56 @@ initTheme();
 </div>
 
 <style>
-.um-perm-row { display:flex;align-items:center;gap:7px;padding:4px 0;font-size:13px;color:var(--text-muted);cursor:pointer; }
+.um-perm-row { display:flex;align-items:flex-start;gap:8px;padding:6px 0;font-size:13px;color:var(--text-muted);cursor:pointer;line-height:1.5; }
 .um-perm-row:hover { color:#e2e8f0; }
-.um-perm-row input { accent-color:#3b82f6;cursor:pointer; }
-.um-perm-grid {
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:14px;
-  margin-bottom:14px;
-}
-.um-perm-col {
-  background:#0f172a;
-  border:1px solid #1e293b;
-  border-radius:8px;
-  padding:10px 12px;
-}
+.um-perm-row input { accent-color:#3b82f6;cursor:pointer;margin-top:3px;flex-shrink:0; }
+.um-perm-row .perm-desc { display:block;font-size:11px;color:var(--text-dimmer);font-weight:400;margin-top:2px; }
 .um-perm-head {
   font-size:11px;
   color:var(--text-dimmer);
   font-weight:700;
   letter-spacing:.5px;
-  margin-bottom:5px;
+  margin: 8px 0 4px;
+  text-transform: uppercase;
 }
-@media (max-width: 900px) {
-  .um-perm-grid { grid-template-columns: 1fr 1fr; }
+.um-perm-head:first-child { margin-top: 0; }
+
+/* ── 以頁面為主的 Tab bar ── */
+.um-tab-bar {
+  display:flex;flex-wrap:wrap;gap:4px;
+  border-bottom:1px solid #2d3f56;margin-bottom:14px;padding-bottom:0;
+}
+.um-tab-btn {
+  border:none;background:transparent;color:var(--text-dim);
+  padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+  transition: color .15s, border-color .15s, background .15s;
+  border-radius:6px 6px 0 0;
+  white-space:nowrap;
+}
+.um-tab-btn:hover { color:#e2e8f0;background:rgba(59,130,246,.08); }
+.um-tab-btn.active {
+  color:#60a5fa;border-bottom-color:#3b82f6;background:rgba(59,130,246,.1);
+}
+.um-tab-btn .badge-count {
+  display:inline-block;margin-left:6px;min-width:18px;padding:1px 6px;
+  border-radius:10px;background:rgba(16,185,129,.2);color:#10b981;
+  font-size:10px;font-weight:800;
+}
+.um-tab-btn.active .badge-count { background:rgba(59,130,246,.25);color:#60a5fa; }
+.um-tab-body {
+  background:#0f172a;border:1px solid #1e293b;border-radius:8px;
+  padding:14px 16px;min-height:180px;
+}
+.um-tab-panel { display:none; }
+.um-tab-panel.active { display:block; }
+.um-tab-panel .tab-intro {
+  font-size:11px;color:var(--text-dim);margin-bottom:10px;line-height:1.6;
+  padding:7px 10px;background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.18);border-radius:6px;
 }
 @media (max-width: 560px) {
-  .um-perm-grid { grid-template-columns: 1fr; }
+  .um-tab-btn { padding:6px 10px;font-size:12px; }
+  .um-tab-body { padding:12px 14px; }
 }
 </style>
 </body>
