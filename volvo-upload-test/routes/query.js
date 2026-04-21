@@ -216,7 +216,9 @@ router.get('/periods', async (req, res) => {
     const dbPeriods = new Set(r.rows.map(r => r.period));
     const now = new Date();
     const extraPeriods = new Set();
-    for (let y = now.getFullYear(); y >= now.getFullYear() - 1; y--) {
+    // 涵蓋 next year + this year + last year，讓使用者能提前選隔年月份做規劃
+    // （例如 12 月先把隔年 1 月目標填好）
+    for (let y = now.getFullYear() + 1; y >= now.getFullYear() - 1; y--) {
       for (let m = 12; m >= 1; m--) {
         extraPeriods.add(`${y}${String(m).padStart(2,'0')}`);
       }
