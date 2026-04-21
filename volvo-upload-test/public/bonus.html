@@ -327,14 +327,13 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
 <!-- 指標 Modal -->
 <div class="modal-bd" id="metricModal">
   <div class="modal-win">
-    <div class="modal-head"><div class="modal-title" id="metricModalTitle">新增指標</div><button class="modal-close" onclick="closeModal('metricModal')">×</button></div>
+    <div class="modal-head"><div class="modal-title" id="metricModalTitle">新增獎金規則</div><button class="modal-close" onclick="closeModal('metricModal')">×</button></div>
     <div class="modal-body">
       <div class="form-group">
         <label>指標名稱 <span style="color:#ef4444">*</span></label>
         <input type="text" id="mName" class="form-input" placeholder="例：AMA有費營收達成率-廠主管">
       </div>
-    <div class="form-group"><label>說明</label><input type="text" id="mDesc" class="form-input" placeholder="（選填）"></div>
-    
+
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div class="form-group">
           <label>目標範圍</label>
@@ -495,16 +494,10 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
   </div>
 </div>
 
-        <input type="text" id="mRuleNote" class="form-input" placeholder="例：需同時達成服務滿意度 ≥ 90 分">
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="form-group"><label>單位（留空自動）</label><input type="text" id="mUnit" class="form-input" placeholder="元 / 台 / 件 / K"></div>
-        <div class="form-group"><label>排列順序</label><input type="number" id="mOrder" class="form-input" value="0" min="0"></div>
-      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('metricModal')">取消</button>
-      <button class="btn btn-primary" id="btnSaveMetric" onclick="saveMetric()">儲存指標</button>
+      <button class="btn btn-primary" id="btnSaveMetric" onclick="saveMetric()">儲存</button>
     </div>
   </div>
 </div>
@@ -1704,16 +1697,12 @@ function _buildPromoConfigSelect() {
 
 async function openMetricModal(id) {
   _editingMetricId=id||null;
-  document.getElementById('metricModalTitle').textContent=id?'編輯指標':'新增指標';
+  document.getElementById('metricModalTitle').textContent=id?'編輯獎金規則':'新增獎金規則';
   const m=_metrics.find(x=>x.id===id)||{};
   document.getElementById('mName').value=m.metric_name||'';
-  document.getElementById('mDesc').value=m.description||'';
-  document.getElementById('mUnit').value=m.unit||'';
-  document.getElementById('mOrder').value=m.sort_order||0;
   document.getElementById('mScope').value=m.scope_type||'person';
   document.getElementById('mSource').value=m.metric_source||'manual';
   const rule=m.bonus_rule||{};
-  document.getElementById('mRuleNote').value=rule.note||'';
   _tierRoles=[...(rule.roles||[])];
   _tiers=(rule.tiers||[]).map(t=>({...t}));
   // 未達標歸零：載入 zero_below_rate
@@ -1801,15 +1790,16 @@ if (src!=='manual'&&src!=='performance'&&src!=='revenue') {
   // 整理促銷獎金（讀取最新 per_qty、bonus 值）
     const bonus_rule={
       roles:   [..._tierRoles],
-      tiers:   tiersData,
-      note:    document.getElementById('mRuleNote').value.trim()
+      tiers:   tiersData
     };
     // 未達標歸零
     if (document.getElementById('mZeroBelowChk')?.checked) {
       const zbVal=parseFloat(document.getElementById('mZeroBelowRate').value);
       if (!isNaN(zbVal)) bonus_rule.zero_below_rate=zbVal;
     }
-  const payload={ metric_name, description:document.getElementById('mDesc').value.trim(), scope_type:document.getElementById('mScope').value, metric_source:src, stat_field:document.getElementById('mStatField')?.value||'amount', unit:document.getElementById('mUnit').value.trim(), sort_order:parseInt(document.getElementById('mOrder').value)||0, filters, bonus_rule, target_dept_codes };
+  // 編輯時保留原本的 description / unit / sort_order（已從 UI 移除編輯入口）
+  const existing=_editingMetricId?(_metrics.find(x=>x.id===_editingMetricId)||{}):{};
+  const payload={ metric_name, description:existing.description||'', scope_type:document.getElementById('mScope').value, metric_source:src, stat_field:document.getElementById('mStatField')?.value||'amount', unit:existing.unit||'', sort_order:existing.sort_order||0, filters, bonus_rule, target_dept_codes };
   const btn=document.getElementById('btnSaveMetric'); btn.disabled=true;
   // ★ 儲存捲軸位置
   const scrollY=window.scrollY;
@@ -2378,7 +2368,7 @@ memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonu
               return '<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:6px;padding:3px 8px">'
                 +'<span style="font-size:10px;color:#60a5fa;font-weight:700">'+meta7.metric.metric_name+'</span>'
                 +(meta7.autoRate!==null?'<span style="font-size:10px;color:'+rc7+';font-weight:700">'+meta7.autoRate.toFixed(0)+'%</span>':'')
-                +'<button onclick="event.stopPropagation();openMetricModal('+mId7+')" title="編輯指標" style="background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.25);padding:1px 5px;border-radius:3px;font-size:10px;cursor:pointer">✏️</button>'
+                +'<button onclick="event.stopPropagation();openMetricModal('+mId7+')" title="編輯獎金規則" style="background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.25);padding:1px 5px;border-radius:3px;font-size:10px;cursor:pointer">✏️</button>'
                 +'<button onclick="event.stopPropagation();openActualOverrideModal('+mId7+',\''+meta7.metric.metric_name.replace(/\'/g,"\\\'")+'\',\''+(_period||'')+'\','+(meta7.metric.metric_source==='manual'?'true':'false')+'\',\''+meta7.metric.metric_source+'\',\''+(meta7.effectiveBranch||'')+'\','+(meta7.actual!=null?meta7.actual:'null')+')" title="手動填入目標/實績" style="background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3);padding:1px 5px;border-radius:3px;font-size:10px;cursor:pointer">📝</button>'            
                 +'<button onclick="event.stopPropagation();deleteMetric('+mId7+',\''+safeN7+'\')" title="刪除指標" style="background:rgba(239,68,68,.15);color:#ef4444;border:none;padding:1px 5px;border-radius:3px;font-size:10px;cursor:pointer">🗑</button>'
               +'</span>';
@@ -2442,7 +2432,7 @@ memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonu
             +(meta4.useAuto&&meta4.autoRate!==null?'<div style="font-size:10px;color:var(--text-dim);margin-bottom:2px">⚡ '
             +(meta4.metric.metric_source==='tech_hours'?(meta4.actual!==null?Math.round(meta4.actual)+' 小時':'—'):fv4(meta4.actual))+' <span style="color:'+rc4+';font-weight:700">'+meta4.autoRate.toFixed(1)+'%</span></div>':(meta4.useAuto?'<div style="font-size:9px;color:#f59e0b;margin-bottom:2px">📝 待填入實績</div>':''))
             +(tp4?'<div style="font-size:10px;color:#f59e0b;font-weight:800;margin-bottom:2px">池 '+tp4.pool.toLocaleString()+' 元</div>':'')
-            +'<button onclick="event.stopPropagation();openMetricModal('+mId4+')" style="background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.25);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">✏️ 編輯指標</button>'
+            +'<button onclick="event.stopPropagation();openMetricModal('+mId4+')" style="background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.25);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">✏️ 編輯獎金規則</button>'
              +'<button onclick="event.stopPropagation();openActualOverrideModal('+mId4+',\''+meta4.metric.metric_name.replace(/\'/g,"\\\'")+'\',\''+(_period||'')+'\','+(meta4.metric.metric_source==='manual'?'true':'false')+',\''+meta4.metric.metric_source+'\',\''+(meta4.effectiveBranch||'')+'\','+(meta4.actual!=null?meta4.actual:'null')+')" title="手動填入目標/實績" style="background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;margin-left:4px">📝</button>'
             +'</th>';
         }
