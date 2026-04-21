@@ -216,6 +216,7 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
 </div>
 
 <div class="container">
+  <div id="periodLockBannerHost"></div>
   <div id="tab-roster">
     <div id="rosterSummaryCards" class="summary-cards"></div>
     <div id="rosterAlerts"></div>
@@ -831,7 +832,7 @@ if (me && me.branch) {
 
   await loadPeriods();
   await loadPerfMetricsList();
-  await Promise.all([loadRoster(), loadMetrics(), loadPromoConfigs()]);
+  await Promise.all([loadRoster(), loadMetrics(), loadPromoConfigs(), refreshPeriodLockState()]);
 }
 
 
@@ -892,7 +893,12 @@ async function loadPeriods() {
     upSel.innerHTML='<option value="">選擇期間...</option>'+allMonths.map(p=>'<option value="'+p+'" '+(p===cur?'selected':'')+'>'+p.slice(0,4)+'年'+parseInt(p.slice(4))+'月</option>').join('');
   } catch(e){}
 }
-function onPeriodChange() { _period=document.getElementById('selPeriod').value; _actualPeriod=''; }
+function onPeriodChange() {
+  _period=document.getElementById('selPeriod').value;
+  _actualPeriod='';
+  // 切換期間時即時更新鎖定提醒（不必等使用者按查詢）
+  refreshPeriodLockState();
+}
 
 async function loadPerfMetricsList() {
   try {
@@ -948,8 +954,13 @@ function renderPeriodLockBanner() {
     holder = document.createElement('div');
     holder.id = 'periodLockBanner';
     holder.style.cssText = 'margin:12px 0;padding:10px 14px;border-radius:8px;font-size:12px;display:flex;align-items:center;gap:10px';
-    var tabProgress = document.getElementById('tab-progress');
-    if (tabProgress) tabProgress.insertBefore(holder, tabProgress.firstChild);
+    // 放在所有 tab 之上，讓 人員名單 / 獎金名單 / 業務鈑烤 任一分頁都看得到
+    var host = document.getElementById('periodLockBannerHost');
+    if (host) host.appendChild(holder);
+    else {
+      var tabProgress = document.getElementById('tab-progress');
+      if (tabProgress) tabProgress.insertBefore(holder, tabProgress.firstChild);
+    }
   }
   if (_periodLocked) {
     holder.style.background = 'rgba(239,68,68,.1)';
