@@ -16,7 +16,7 @@ const multer = require('multer');
 const XLSX   = require('xlsx');
 const pool   = require('../db/pool');
 const { requireAuth, requirePermission } = require('../lib/authMiddleware');
-const { checkPeriodLock, checkBatchPeriodLock } = require('../lib/bonusPeriodLock');
+const { checkPeriodLock, checkBatchPeriodLock, checkBatchUploadPeriodLock } = require('../lib/bonusPeriodLock');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
@@ -163,9 +163,9 @@ router.post('/upload-performance-targets-native', requirePermission('feature:upl
       const totalEntries = Object.values(entriesMap).reduce((s, m) => s + Object.keys(m).length, 0);
       if (!totalEntries) return res.status(400).json({ error: '找不到有效資料列，請確認期間格式（例：202601）和據點（AMA/AMC/AMD）' });
 
-      // 檔案內任一 period 已鎖定 → 整批拒絕（super_admin 除外）
+      // Excel 匯入屬原始資料 → 走上傳鎖（次月第一工作日 17:59）
       const flatPeriods = Object.values(entriesMap).flatMap(rm => Object.values(rm).map(e => e.period));
-      if (checkBatchPeriodLock(flatPeriods, res, req)) return;
+      if (checkBatchUploadPeriodLock(flatPeriods, res, req)) return;
 
       const client = await pool.connect();
       try {
@@ -266,7 +266,8 @@ router.post('/upload-performance-targets-native', requirePermission('feature:upl
         for (const mo of Object.keys(branchMap)) touchedPeriods.push(year + String(mo).padStart(2,'0'));
       }
     }
-    if (checkBatchPeriodLock(touchedPeriods, res, req)) return;
+    // 業績目標原生格式屬原始資料 → 走上傳鎖
+    if (checkBatchUploadPeriodLock(touchedPeriods, res, req)) return;
 
     const client = await pool.connect();
     try {

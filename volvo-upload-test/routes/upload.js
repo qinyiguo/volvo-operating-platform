@@ -21,7 +21,7 @@ const XLSX    = require('xlsx');
 const pool    = require('../db/pool');
 const { detectFileType, detectBranch, detectPeriod } = require('../lib/utils');
 const { requireAuth, requirePermission } = require('../lib/authMiddleware');
-const { isBonusPeriodLocked, bonusPeriodLockAt } = require('../lib/bonusPeriodLock');
+const { isUploadPeriodLocked, uploadPeriodLockAt } = require('../lib/bonusPeriodLock');
 
 router.use(requireAuth);
 const {
@@ -120,11 +120,12 @@ router.post('/upload', requirePermission('feature:upload_dms'), uploader.array('
       }
 
       // 拒絕上傳已鎖定期間的 DMS 資料（super_admin 例外）
-      if (period && req.user?.role !== 'super_admin' && isBonusPeriodLocked(period)) {
-        const lockAt = bonusPeriodLockAt(period);
+      // 上傳鎖 = 次月第一個工作日 17:59（給獎金計算一個穩定的原始資料基礎）
+      if (period && req.user?.role !== 'super_admin' && isUploadPeriodLocked(period)) {
+        const lockAt = uploadPeriodLockAt(period);
         throw new Error(
           '期間 ' + period.slice(0,4) + '/' + period.slice(4) +
-          ' 已於 ' + (lockAt ? lockAt.toLocaleString('zh-TW') : '') +
+          ' 原始資料已於 ' + (lockAt ? lockAt.toLocaleString('zh-TW') : '') +
           ' 鎖定，無法再上傳（僅系統管理員可修改）'
         );
       }

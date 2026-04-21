@@ -23,7 +23,7 @@ const multer = require('multer');
 const XLSX   = require('xlsx');
 const pool   = require('../db/pool');
 const { requireAuth, requirePermission } = require('../lib/authMiddleware');
-const { checkPeriodLock, checkBatchPeriodLock } = require('../lib/bonusPeriodLock');
+const { checkPeriodLock, checkBatchPeriodLock, checkBatchUploadPeriodLock } = require('../lib/bonusPeriodLock');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
@@ -127,7 +127,8 @@ router.post('/upload-revenue-targets', requirePermission('feature:upload_targets
       });
     }
     if (!entries.length) return res.status(400).json({ error: '找不到有效資料列，請確認欄位名稱與格式' });
-    if (checkBatchPeriodLock(entries.map(e => e.period), res, req)) return;
+    // Excel 匯入屬原始資料 → 走上傳鎖
+    if (checkBatchUploadPeriodLock(entries.map(e => e.period), res, req)) return;
 
     const client = await pool.connect();
     try {
@@ -223,7 +224,8 @@ router.post('/upload-revenue-targets-native', requirePermission('feature:upload_
         debug: { detectedFields: detected, sheetName, totalRows: raw.length }
       });
     }
-    if (checkBatchPeriodLock(entries.map(e => e.period), res, req)) return;
+    // 原生格式 Excel 匯入屬原始資料 → 走上傳鎖
+    if (checkBatchUploadPeriodLock(entries.map(e => e.period), res, req)) return;
 
     const client = await pool.connect();
     try {

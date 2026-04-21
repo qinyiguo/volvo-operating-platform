@@ -206,16 +206,17 @@ router.post('/bodyshop-bonus/upload', requirePermission('feature:upload_bodyshop
   try {
     const rows = parseFormExcel(req.file.buffer);
     if (!rows.length) return res.status(400).json({ error: '找不到有效資料' });
-    // 鎖定檢查：任一列屬於已鎖定期間即拒絕整批（super_admin 例外）
-    const { isBonusPeriodLocked, bonusPeriodLockAt } = require('../lib/bonusPeriodLock');
+    // 鎖定檢查：鈑烤申請屬於原始資料 → 走上傳鎖（次月第一工作日 17:59）
+    const { isUploadPeriodLocked, uploadPeriodLockAt } = require('../lib/bonusPeriodLock');
     const lockedRow = req.user?.role === 'super_admin' ? null
-      : rows.find(function(r){ return r.app_period && isBonusPeriodLocked(r.app_period); });
+      : rows.find(function(r){ return r.app_period && isUploadPeriodLocked(r.app_period); });
     if (lockedRow) {
-      const lockAt = bonusPeriodLockAt(lockedRow.app_period);
+      const lockAt = uploadPeriodLockAt(lockedRow.app_period);
       return res.status(403).json({
         error: '上傳檔案包含已鎖定期間（' + lockedRow.app_period + '）的申請，無法匯入',
         locked: true,
         lock_at: lockAt && lockAt.toISOString(),
+        lock_type: 'upload',
       });
     }
 
