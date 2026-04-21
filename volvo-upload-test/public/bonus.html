@@ -2011,23 +2011,27 @@ function calcPromoBonus(unused1, unused2, branch, personName, jobTitle) {
       return zb!=null && zb!=='' && !isNaN(parseFloat(zb)) && rate<parseFloat(zb);
     }
 
-    // 依職務排序：數字越小職等越高。同關鍵字下，「資深」前綴上升 0.5 級。
+    // 依職務排序：數字越小職等越高。
+    // 清單由高到低；「資深X」必須排在「X」之前才會先被匹配到。
     function jobTitleRank(title) {
       var t = String(title||'');
       var levels = [
         '董事長','總裁','執行長','總經理','副總',
-        '處長','協理','廠長','技術長',
-        '經理','副理',
-        '主任','組長','領班',
-        '顧問','專員','技師',
+        '處長','資深協理','協理','廠長',
+        '資深經理','技術長','經理',
+        '資深副理','副理',
+        '資深主任','主任','組長','領班',
+        '資深顧問','顧問',
+        '資深專員','專員',
+        '資深技師','技師',
         '組員','助理','工讀'
       ];
-      var rank = 999;
       for (var i=0;i<levels.length;i++) {
-        if (t.indexOf(levels[i]) !== -1) { rank = i; break; }
+        if (t.indexOf(levels[i]) !== -1) return i;
       }
-      if (t.indexOf('資深') !== -1) rank -= 0.5;
-      return rank;
+      // 未列出但帶「資深」前綴：視為略高於未列出的一般職稱
+      if (t.indexOf('資深') !== -1) return 900;
+      return 999;
     }
 
     function calcBonus(rate,jobTitle,tiers,roles,rule) {
