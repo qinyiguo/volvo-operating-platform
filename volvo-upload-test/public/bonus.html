@@ -837,7 +837,7 @@ if (me && me.branch) {
 
 
 // ══ State ══
-let _period='', _actualPeriod='', _rosterPeriods=[], _metrics=[], _editingMetricId=null, _rosterData=[];
+let _period='', _rosterPeriods=[], _metrics=[], _editingMetricId=null, _rosterData=[];
 let _rosterLoadedPeriod='';
 let _tierRoles=[], _tiers=[], _allDepts=[], _perfMetricsList=[];
 
@@ -895,7 +895,6 @@ async function loadPeriods() {
 }
 function onPeriodChange() {
   _period=document.getElementById('selPeriod').value;
-  _actualPeriod='';
   // 切換期間時即時更新鎖定提醒（不必等使用者按查詢）
   refreshPeriodLockState();
 }
@@ -912,7 +911,7 @@ async function loadPerfMetricsList() {
 async function doLoad() {
   _period=document.getElementById('selPeriod').value;
   if (!_period){ alert('請先選擇期間'); return; }
-  _actualPeriod=''; _rosterData=[]; _rosterLoadedPeriod='';
+  _rosterData=[]; _rosterLoadedPeriod='';
   document.getElementById('lastUpdate').textContent='更新中...';
   await Promise.all([loadRoster(), loadMetrics(), refreshPeriodLockState()]);
   const progressTab=document.getElementById('tab-progress');
@@ -1754,31 +1753,12 @@ async function openNewMetricForDept(deptCode, deptName, factory, autoBranch) {
 // ══ 獎金進度 ══
 async function loadProgress() {
   const el=document.getElementById('progressContent');
-  if (!_actualPeriod) {
-    const now=new Date();
-    _actualPeriod=now.getMonth()===0?`${now.getFullYear()-1}12`:`${now.getFullYear()}${String(now.getMonth()).padStart(2,'0')}`;
-  }
-
-  const periodOptions=(()=>{
-    const now=new Date(), all=new Set([..._rosterPeriods]);
-    for(let i=0;i<24;i++){ const d=new Date(now.getFullYear(),now.getMonth()-i,1); all.add(`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}`); }
-    return [...all].sort().reverse();
-  })();
-
+  // 單一期間來源 = 上方 filter bar 的 期間（_period）。不再有 _period 覆蓋。
   el.innerHTML=`
-    <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:10px;padding:12px 18px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-      <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:12px;color:var(--text-dim);font-weight:600;white-space:nowrap">👥 名冊</span>
-        <span style="font-size:12px;font-weight:700;color:var(--text-muted);background:#0f172a;padding:3px 10px;border-radius:5px" id="rosterPeriodLabel">載入中...</span>
-      </div>
-      <span style="color:#374151;font-size:14px">｜</span>
-      <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:200px">
-        <span style="font-size:12px;color:var(--text-dim);font-weight:600;white-space:nowrap">📊 實績期間</span>
-        <select id="actualPeriodSel" style="background:#0f172a;border:1px solid #3b82f6;color:#60a5fa;padding:6px 12px;border-radius:6px;font-size:13px;font-weight:700;outline:none;cursor:pointer;flex:1;min-width:0">
-          ${periodOptions.map(p=>'<option value="'+p+'" '+(p===_actualPeriod?'selected':'')+'>'+p.slice(0,4)+'年'+parseInt(p.slice(4))+'月</option>').join('')}
-        </select>
-        <button onclick="applyActualPeriod()" style="background:#3b82f6;color:#fff;border:none;padding:6px 16px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">套用</button>
-      </div>
+    <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:10px;padding:10px 18px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span style="font-size:12px;color:var(--text-dim);font-weight:600;white-space:nowrap">👥 人員名冊</span>
+      <span style="font-size:12px;font-weight:700;color:var(--text-muted);background:#0f172a;padding:3px 10px;border-radius:5px" id="rosterPeriodLabel">載入中...</span>
+      <span style="font-size:11px;color:var(--text-dimmer)">（期間切換請用上方「期間」下拉 + 查詢）</span>
     </div>
     <div id="progressInner"><div class="loading"><span class="spinner"></span>計算中</div></div>`;
 
@@ -1794,19 +1774,11 @@ function toggleBonusMgmt() {
   if (arrow) arrow.style.transform=open?'rotate(0deg)':'rotate(90deg)';
 }
 
-async function applyActualPeriod() {
-  const sel=document.getElementById('actualPeriodSel');
-  if (sel) _actualPeriod=sel.value;
-  const inner=document.getElementById('progressInner');
-  if (inner) inner.innerHTML='<div class="loading"><span class="spinner"></span>計算中</div>';
-  await renderProgressContent();
-}
-
 // ══ ★ renderProgressContent：每部門獨立過濾指標 + auto指標自動套用所有人 ══
 async function renderProgressContent() {
   var el=document.getElementById('progressInner');
   if (!el) return;
-  var actLabel=_actualPeriod.slice(0,4)+'年'+parseInt(_actualPeriod.slice(4))+'月';
+  var actLabel=_period.slice(0,4)+'年'+parseInt(_period.slice(4))+'月';
 
   try {
     var factory=document.getElementById('selFactory').value;
@@ -1845,7 +1817,7 @@ async function renderProgressContent() {
 // ── 獨立促銷獎金結果 ──
       var _promoApiResults = { configs:[], resultsByConfig:{} };
       try {
-        var promoQs = 'period=' + _actualPeriod;
+        var promoQs = 'period=' + _period;
         if (factory && ['AMA','AMC','AMD'].indexOf(factory) >= 0) promoQs += '&branch=' + factory;
         _promoApiResults = await fetch('/api/promo-bonus/results?' + promoQs).then(function(r){return r.json();});
       } catch(e) {}
@@ -1853,13 +1825,13 @@ async function renderProgressContent() {
       // ── 載入主管考核 ──
       _managerReviewMap = {};
       try {
-        var mrRows = await fetch('/api/manager-review?period='+_actualPeriod).then(function(r){return r.json();});
+        var mrRows = await fetch('/api/manager-review?period='+_period).then(function(r){return r.json();});
         mrRows.forEach(function(r){ _managerReviewMap[r.emp_id] = { amount: parseInt(r.amount)||0, note: r.note||'' }; });
       } catch(e) {}
     await loadExtraBonus();
     await loadBeautyBranches();
     try {
-        var params=new URLSearchParams({period:_actualPeriod,data_period:_actualPeriod});
+        var params=new URLSearchParams({period:_period,data_period:_period});
         if (factory) params.set('factory',factory);
         var data=await fetch('/api/bonus/progress?'+params).then(function(r){return r.json();});
       if (!data.error&&data.results&&data.results.length) {
@@ -2032,7 +2004,7 @@ function calcPromoBonus(unused1, unused2, branch, personName, jobTitle) {
     try {
       var allDeptsForConflict = _allDepts.length
         ? _allDepts
-        : await fetch('/api/bonus/departments?period=' + (_rosterPeriods[0]||_actualPeriod)).then(function(r){return r.json();});
+        : await fetch('/api/bonus/departments?period=' + (_rosterPeriods[0]||_period)).then(function(r){return r.json();});
       var _seenDeptFactory = {};
       allDeptsForConflict.forEach(function(d){
         var dk = d.dept_code || '—';
@@ -2221,7 +2193,7 @@ memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonu
                 +'<span style="font-size:10px;color:#60a5fa;font-weight:700">'+meta7.metric.metric_name+'</span>'
                 +(meta7.autoRate!==null?'<span style="font-size:10px;color:'+rc7+';font-weight:700">'+meta7.autoRate.toFixed(0)+'%</span>':'')
                 +'<button onclick="event.stopPropagation();openMetricModal('+mId7+')" title="編輯指標" style="background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.25);padding:1px 5px;border-radius:3px;font-size:10px;cursor:pointer">✏️</button>'
-                +'<button onclick="event.stopPropagation();openActualOverrideModal('+mId7+',\''+meta7.metric.metric_name.replace(/\'/g,"\\\'")+'\',\''+(_actualPeriod||'')+'\','+(meta7.metric.metric_source==='manual'?'true':'false')+'\',\''+meta7.metric.metric_source+'\',\''+(meta7.effectiveBranch||'')+'\','+(meta7.actual!=null?meta7.actual:'null')+')" title="手動填入目標/實績" style="background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3);padding:1px 5px;border-radius:3px;font-size:10px;cursor:pointer">📝</button>'            
+                +'<button onclick="event.stopPropagation();openActualOverrideModal('+mId7+',\''+meta7.metric.metric_name.replace(/\'/g,"\\\'")+'\',\''+(_period||'')+'\','+(meta7.metric.metric_source==='manual'?'true':'false')+'\',\''+meta7.metric.metric_source+'\',\''+(meta7.effectiveBranch||'')+'\','+(meta7.actual!=null?meta7.actual:'null')+')" title="手動填入目標/實績" style="background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3);padding:1px 5px;border-radius:3px;font-size:10px;cursor:pointer">📝</button>'            
                 +'<button onclick="event.stopPropagation();deleteMetric('+mId7+',\''+safeN7+'\')" title="刪除指標" style="background:rgba(239,68,68,.15);color:#ef4444;border:none;padding:1px 5px;border-radius:3px;font-size:10px;cursor:pointer">🗑</button>'
               +'</span>';
             }).join('')
@@ -2285,7 +2257,7 @@ memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonu
             +(meta4.metric.metric_source==='tech_hours'?(meta4.actual!==null?Math.round(meta4.actual)+' 小時':'—'):fv4(meta4.actual))+' <span style="color:'+rc4+';font-weight:700">'+meta4.autoRate.toFixed(1)+'%</span></div>':(meta4.useAuto?'<div style="font-size:9px;color:#f59e0b;margin-bottom:2px">📝 待填入實績</div>':''))
             +(tp4?'<div style="font-size:10px;color:#f59e0b;font-weight:800;margin-bottom:2px">池 '+tp4.pool.toLocaleString()+' 元</div>':'')
             +'<button onclick="event.stopPropagation();openMetricModal('+mId4+')" style="background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.25);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">✏️ 編輯指標</button>'
-             +'<button onclick="event.stopPropagation();openActualOverrideModal('+mId4+',\''+meta4.metric.metric_name.replace(/\'/g,"\\\'")+'\',\''+(_actualPeriod||'')+'\','+(meta4.metric.metric_source==='manual'?'true':'false')+',\''+meta4.metric.metric_source+'\',\''+(meta4.effectiveBranch||'')+'\','+(meta4.actual!=null?meta4.actual:'null')+')" title="手動填入目標/實績" style="background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;margin-left:4px">📝</button>'
+             +'<button onclick="event.stopPropagation();openActualOverrideModal('+mId4+',\''+meta4.metric.metric_name.replace(/\'/g,"\\\'")+'\',\''+(_period||'')+'\','+(meta4.metric.metric_source==='manual'?'true':'false')+',\''+meta4.metric.metric_source+'\',\''+(meta4.effectiveBranch||'')+'\','+(meta4.actual!=null?meta4.actual:'null')+')" title="手動填入目標/實績" style="background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;margin-left:4px">📝</button>'
             +'</th>';
         }
 
@@ -2696,7 +2668,7 @@ var _beautyBranchMap = {}; // { emp_id: 'AMA'|'AMC'|'AMD' }
 let _managerReviewMap = {}; // { emp_id: { amount, note } }
   async function loadExtraBonus() {
   try {
-    var rows = await fetch('/api/bonus/extra-bonuses?period=' + _actualPeriod).then(r=>r.json());
+    var rows = await fetch('/api/bonus/extra-bonuses?period=' + _period).then(r=>r.json());
     _extraBonusList = rows || [];
     _extraBonusMap = {};
     _extraBonusList.forEach(function(r){
@@ -2706,7 +2678,7 @@ let _managerReviewMap = {}; // { emp_id: { amount, note } }
 }
 async function loadBeautyBranches() {
   try {
-    _beautyBranchMap = await fetch('/api/bonus/beauty-branches?period=' + _actualPeriod).then(r=>r.json());
+    _beautyBranchMap = await fetch('/api/bonus/beauty-branches?period=' + _period).then(r=>r.json());
   } catch(e) { _beautyBranchMap = {}; }
 }
 let _promoCfgs = [];
@@ -3259,7 +3231,7 @@ if (!_managerReviewMap[empId]) _managerReviewMap[empId] = {};
     promises.push(fetch('/api/manager-review', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ emp_id:empId, period:_actualPeriod, amount:val, note:note })
+      body: JSON.stringify({ emp_id:empId, period:_period, amount:val, note:note })
     }));
   });
 await Promise.all(promises);
@@ -4144,7 +4116,7 @@ async function saveExtraBonus() {
   try {
     var r = await fetch('/api/bonus/extra-bonuses', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({period:_actualPeriod, emp_id, emp_name, branch, dept_code, amount, reason})
+      body: JSON.stringify({period:_period, emp_id, emp_name, branch, dept_code, amount, reason})
     }).then(r=>r.json());
     if (r.error) throw new Error(r.error);
     document.getElementById('ebAmount').value='';
@@ -5156,7 +5128,7 @@ async function _saveBeautyBranchModal() {
   try {
     await fetch('/api/bonus/beauty-branches', {
       method:'PUT', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({period:_actualPeriod, assignments:_beautyBranchMap})
+      body: JSON.stringify({period:_period, assignments:_beautyBranchMap})
     });
   } catch(e) {}
   document.getElementById('beautyBranchBg').remove();
