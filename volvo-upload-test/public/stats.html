@@ -2823,6 +2823,9 @@ window._saveWipStatus=async function(workOrder,branch){
 };
 
 function exportWipModalCSV(){
+  if (window.DmsAuth && !DmsAuth.hasPermission('feature:export_data')) {
+    alert('您沒有「資料匯出」權限，請聯絡管理員'); return;
+  }
   if(!_wipData)return;
   const{filterType,filterVal}=_wipModal;
   let filtered=_wipData.rows;
@@ -4979,6 +4982,9 @@ async function _ppCopyLastMonth(dKey) {
  
  // ══ 個人業績 Excel 匯出 ══
 async function exportPersonPerfExcel(targetBranch) {
+  if (window.DmsAuth && !DmsAuth.hasPermission('feature:export_data')) {
+    alert('您沒有「資料匯出」權限，請聯絡管理員'); return;
+  }
   if (!Object.keys(_ppDeptData).length) {
     alert('請先查詢個人業績資料');
     return;
@@ -5123,6 +5129,11 @@ initTheme();
 // ══ Init ══
 document.addEventListener('DOMContentLoaded', async () => {
   await DmsAuth.init({ requiredPermission: 'page:stats' });
+  // 沒有資料匯出權限 → 隱藏所有匯出按鈕
+  if (!DmsAuth.hasPermission('feature:export_data')) {
+    document.querySelectorAll('button[onclick*="exportPersonPerfExcel"], button[onclick*="exportWipModalCSV"]')
+      .forEach(b => b.style.display = 'none');
+  }
   await loadPeriods();
   switchTab('repair');
   await loadAll();

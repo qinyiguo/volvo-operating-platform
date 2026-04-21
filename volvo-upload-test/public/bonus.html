@@ -785,6 +785,11 @@ function esc(s) {
 async function hideLock() {
   await DmsAuth.init({ requiredPermission: 'page:bonus' });
 
+  // 沒有匯出權限 → 隱藏匯出按鈕
+  if (!DmsAuth.hasPermission('feature:export_bonus')) {
+    document.querySelectorAll('button[onclick*="openExportChooser"]').forEach(b => b.style.display = 'none');
+  }
+
   // ★ 根據使用者廠別權限鎖定廠別選單
   const me = window._currentUser;
 if (me && me.branch) {
@@ -4217,6 +4222,11 @@ function renderEbList(filterFc, filterDkey) {
 
   // ══ 匯出 — 格式選擇器 ══
 function openExportChooser() {
+  // 權限檢查（防止資料外洩）
+  if (window.DmsAuth && !DmsAuth.hasPermission('feature:export_bonus')) {
+    alert('您沒有「獎金表匯出」權限，請聯絡管理員');
+    return;
+  }
   // 必須在 獎金名單 分頁、且有資料才能匯出
   var tabProgress = document.getElementById('tab-progress');
   if (!tabProgress || tabProgress.style.display === 'none') {

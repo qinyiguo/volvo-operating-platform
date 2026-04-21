@@ -856,6 +856,9 @@ function renderSummary(tbl, rows){
 
 // ═══ Export CSV ═══
 function doExport(){
+  if (window.DmsAuth && !DmsAuth.hasPermission('feature:export_data')) {
+    alert('您沒有「資料匯出」權限，請聯絡管理員'); return;
+  }
   const tbl = _getTable();
   const def = TABLE_DEFS[tbl];
   const visibleCols = def.cols.filter(c => !_hiddenCols.has(c.key));
@@ -897,6 +900,10 @@ document.getElementById('txtSearchMobile').addEventListener('input', function(){
 // ═══ Init ═══
 (async()=>{
   await DmsAuth.init({ requiredPermission: 'page:query' });
+  // 沒有資料匯出權限 → 隱藏匯出按鈕
+  if (!DmsAuth.hasPermission('feature:export_data')) {
+    document.querySelectorAll('button[onclick*="doExport"]').forEach(b => b.style.display = 'none');
+  }
   await loadPeriods();
   const tbl = document.getElementById('selTable').value;
   _hiddenCols = new Set(TABLE_DEFS[tbl].defaultHidden);

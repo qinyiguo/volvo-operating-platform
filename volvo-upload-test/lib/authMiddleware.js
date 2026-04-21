@@ -72,6 +72,10 @@ const FEATURE_PERMISSIONS = {
   'feature:sa_config_edit':      'SA 指標銷售配置',
   // 月報
   'feature:monthly_edit':        '月報版面/筆記',
+  // 資料匯出（防止資料外洩，與檢視權分離）
+  'feature:export_bonus':        '獎金表匯出（Excel/PDF）',
+  'feature:export_data':         '資料匯出（查詢/明細/WIP/月報圖）',
+  'feature:export_audit':        '操作紀錄匯出',
   // 系統
   'feature:sys_config_edit':     '系統設定（收入/工作天/美容工時）',
   'feature:user_manage':         '使用者管理',

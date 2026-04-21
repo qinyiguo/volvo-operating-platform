@@ -2003,6 +2003,9 @@ const DL_WRAP_MAP={
   'c_ext':'dl-wrap-ext','c_cars':'dl-wrap-cars','c_rpv':'dl-wrap-rpv','cWipBar':'dl-wrap-wip',
 };
 async function dlChart(id,name){
+  if (window.DmsAuth && !DmsAuth.hasPermission('feature:export_data')) {
+    alert('您沒有「資料匯出」權限，請聯絡管理員'); return;
+  }
   const c=document.getElementById(id);if(!c)return;
   const wrapId=DL_WRAP_MAP[id];
   const target=wrapId?document.getElementById(wrapId):null;
@@ -2703,6 +2706,10 @@ async function saveAll(){
 
 (async () => {
   await DmsAuth.init({ requiredPermission: 'page:monthly' });
+  // 沒有資料匯出權限 → 隱藏所有圖表下載按鈕
+  if (window.DmsAuth && !DmsAuth.hasPermission('feature:export_data')) {
+    document.querySelectorAll('.dlBtn, .dlBtnI').forEach(b => b.style.display = 'none');
+  }
   init();
 })();
 </script>
