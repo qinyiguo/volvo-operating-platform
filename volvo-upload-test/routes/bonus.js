@@ -42,7 +42,7 @@ router.use(requireAuth);
 // 規則：獎金表在「次月 25 日 23:59」之後鎖定，防止規則/人員/
 //      額外獎金/主管考核/手動實績 等異動影響已送審的獎金表。
 // ─────────────────────────────────────────────────────────────────
-const { bonusPeriodLockAt, isBonusPeriodLocked, checkPeriodLock, checkUploadPeriodLock } = require('../lib/bonusPeriodLock');
+const { bonusPeriodLockAt, isBonusPeriodLocked, checkPeriodLock } = require('../lib/bonusPeriodLock');
 
 // 公開 API：讓前端查詢某期間是否已鎖定
 router.get('/bonus/period-lock-status', (req, res) => {
@@ -273,8 +273,8 @@ router.post('/bonus/upload-roster', requirePermission('feature:upload_roster'), 
   if (!req.file) return res.status(400).json({ error: '請選擇檔案' });
   const period = String(req.body.period || '').trim();
   if (!period.match(/^\d{6}$/)) return res.status(400).json({ error: '請指定期間（YYYYMM）' });
-  // 人員名冊屬於原始資料 → 走上傳鎖（次月第一工作日 17:59）
-  if (checkUploadPeriodLock(period, res, req)) return;
+  // 人員名冊不走鎖定：HR 月初對帳後才能產出，需要彈性補傳 / 修正離職日期。
+  // 若之後要改為鎖定，再呼叫 checkUploadPeriodLock(period, res, req)。
   try {
     const rows = parseRosterExcel(req.file.buffer);
     if (!rows.length) return res.status(400).json({ error: '找不到有效資料列' });
