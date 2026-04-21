@@ -567,7 +567,7 @@ VCTL 商務政策指標管理（約 160 行）：
 | `bonus_signatures` | 獎金表電子簽核（每期每廠一列；存簽名 base64、簽核人、時間）|
 | `upload_approval_requests` | 鎖期後補傳的兩階段簽核申請（據點主管 → 最終核准）|
 | `wip_status_history` | WIP 狀態異動歷史（每筆 comment / ETA 改動都留檔）|
-| `tech_hours_excludes` | 技師工時「不計目標」名單（period / branch / emp_name 複合主鍵）；被列入者 `target_hours` 歸 0、獎金工時指標自動排除；跨使用者共用 |
+| `tech_hours_excludes` | 技師「不計目標 / 不算人數」名單（period / branch / emp_name 複合主鍵）；被列入者 `target_hours` 歸 0、周轉率分母扣除、獎金工時指標自動排除；跨使用者共用，由工時表或周轉率頁的按鈕切換 |
 
 ### 帳號 / Session / 操作紀錄
 
@@ -686,7 +686,7 @@ repair_amount, labor_fee, repair_material_fee, sales_material_fee
 | `/api/stats/wip` | WIP 未結工單 |
 | `/api/stats/tech-hours` | 技師工時目標 vs 實際 |
 | `/api/stats/tech-hours-raw` | 技師折扣工時明細 |
-| `/api/stats/tech-turnover` | 施工周轉率（引電＋集團鈑烤）|
+| `/api/stats/tech-turnover` | 施工周轉率（引電＋集團鈑烤）；tech_names 帶 `excluded` 旗標，tech_count 分母已扣除 |
 | `/api/stats/person-performance` | 個人業績達成率 |
 | `/api/stats/vctl` | VCTL 商務政策指標實績 |
 
@@ -698,7 +698,7 @@ repair_amount, labor_fee, repair_material_fee, sales_material_fee
 | `/api/query/tech_performance` | 技師績效明細 |
 | `/api/query/parts_sales` | 零件銷售明細 |
 | `/api/query/business_query` | 業務查詢明細 |
-| `/api/periods` | 取得所有有效期間清單（含補全近兩年月份）|
+| `/api/periods` | 取得所有有效期間清單（DB 裡有資料的所有月份 ∪ 下一年 + 今年 + 去年；供前端期間下拉使用，年末可先選隔年月份做規劃）|
 
 ### 設定 API
 
@@ -738,7 +738,7 @@ repair_amount, labor_fee, repair_material_fee, sales_material_fee
 | `/api/tech-capacity-config` | `feature:tech_config_edit` | 技師工時產能設定 |
 | `/api/tech-bay-config` | `feature:tech_config_edit` | 工位數設定 |
 | `/api/tech-group-config-v2` | `feature:tech_config_edit` | 技師群組設定（組別 A/B/C…）|
-| `/api/tech-hours-excludes` | `feature:tech_config_edit` | 技師工時「不計目標」名單 — PUT 單筆 toggle；GET 回傳 `{branch: [emp_name]}`；資料透明影響獎金工時指標 |
+| `/api/tech-hours-excludes` | `feature:tech_config_edit` | 技師「不計目標 / 不算人數」名單 — PUT 單筆 toggle；GET 回傳 `{branch: [emp_name]}`；**同時**影響工時表、周轉率分母、獎金工時指標三處計算 |
 | `/api/vctl/metrics` | `feature:bonus_metric_edit` | VCTL 指標 CRUD |
 | `/api/wip/status/*` | `feature:wip_edit` | WIP 狀態更新（帶歷史至 `wip_status_history`）|
 | `/api/notes/*` | `feature:monthly_edit` | 月報筆記 / 版面 |
@@ -854,19 +854,24 @@ parts_cost → 已為未稅
 不同類型之間 → AND（例：類別碼 93 AND 功能碼 1832）
 ```
 
-### 技師工時「不計目標」清單
+### 技師「不計目標 / 不算人數」清單（共用）
 
-`tech_hours_excludes` 表 + `GET/PUT /api/tech-hours-excludes`（權限 `feature:tech_config_edit`）：
+`tech_hours_excludes` 表 + `GET/PUT /api/tech-hours-excludes`（權限 `feature:tech_config_edit`）是系統中**唯一**的「此期該技師不納入計算基準」設定，四處連動：
 
-- 工時頁每列的「✅ 計入 / ❌ 不計」按鈕把名字寫進 DB（以前只存 localStorage，單一使用者獨立）。
-- `/api/stats/tech-hours` 每次計算時會先讀本期的 exclude 清單，命中者：
-  - `target_hours` = 0
-  - `target_excluded` = true
-  - `user_excluded` = true（前端 UI 顯示「❌ 不計」badge）
-  - `achieve_rate` = null
-- 因為 `/api/bonus/progress` 的工時型獎金指標直接讀 `tech.target_hours` 加總，**排除者會自動從獎金計算中移除**（不再出現以為排除其實還照算的陷阱）。
-- 跨使用者共用：所有人打開工時頁看到同一份 exclude 清單。
-- 存儲粒度：period / branch / emp_name。同一人在不同月份可獨立排除。
+| 模組 | 讀取時的行為 |
+|---|---|
+| `/api/stats/tech-hours` | 命中者 `target_hours=0`、`target_excluded=true`、`user_excluded=true`、`achieve_rate=null`；部門 / 組別小計自動少算這份目標 |
+| `/api/stats/tech-turnover` | 引電與集團鈑烤 tech 清單都附上 `excluded:true`；`tech_count` 分母只算未排除者，周轉率即時重算 |
+| `/api/bonus/progress`（工時型指標） | 直接讀 `tech.target_hours` 加總 → 由於已被 tech-hours 歸 0，**獎金工時指標自動排除** |
+| `/api/stats/tech-hours-raw` | 不影響（原始 DMS 明細不受排除影響）|
+
+**設定入口**：
+- `stats.html` 工時表每列「✅ 計入 / ❌ 不計」按鈕（以前只存 localStorage，已遷移至 DB）
+- `stats.html` 周轉率頁的技師姓名按鈕（04-21 新增），共用同一份清單
+
+**存儲粒度**：period / branch / emp_name。同一人在不同月份或不同 branch 可獨立排除。鈑烤技師 branch 用 `'鈑烤'`；引電用 `AMA / AMC / AMD`。
+
+**跨使用者共用**：所有人看到同一份清單，避免不同瀏覽器看到不同分母的陷阱。修改需 `feature:tech_config_edit`。
 
 ### 技師工時計算
 
@@ -884,6 +889,8 @@ parts_cost → 已為未稅
 集團鈑烤 = 全廠鈑噴＋事故保險台次 ÷ 鈑烤廠鈑金+烤漆技師（含領班）÷ 已過工作天
 工位承接率 = 台次 ÷ 工位數 ÷ 已過工作天
 ```
+
+分母可微調：周轉率頁的技師姓名按鈕可切換「是否納入分母」，資料寫入 `tech_hours_excludes`（同工時表「不計目標」），因此一個動作同時影響周轉率、工時達成率、獎金工時指標（見「技師『不計目標 / 不算人數』清單」一節）。
 
 ### WIP 未結工單定義
 
