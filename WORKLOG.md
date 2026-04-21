@@ -1,6 +1,6 @@
 # 工作日誌
 
-> 期間：2026-04-18 ~ 2026-04-20
+> 期間：2026-04-18 ~ 2026-04-21
 > 彙整方式：依 commit message 末尾的 `session_xxx` 反推 session，配合時間排序。
 
 ---
@@ -124,6 +124,47 @@
 
 ---
 
+## Session `claude/fix-bonus-reset-logic-tOTi4`（2026-04-21，bonus 表 UX / 邏輯精修）
+
+分支：`claude/fix-bonus-reset-logic-tOTi4`（8 commits）。全部在 `public/bonus.html`，最後一筆延伸到 `routes/bonus.js` + `db/init.js`。
+
+### 獎金計算 — 未達標歸零連動（4112e9c）
+- `calcBonus` 抽出 `isZeroBelowTriggered()` helper
+- 廠別總計迴圈與部門級 per-person 迴圈在加總前先掃描各指標，偵測任一觸發即 `zeroOutAll=true`，整組績效獎金歸 0（原本只歸零「觸發的那一項」，旁邊的績效獎金仍照領）
+- 團體制 `scope='dept'` 獎金池也納入：任一 dept-scope 指標觸發 → 所有池歸 0，池徽章與分配一致
+- 額外獎金 / 促銷獎金 / 主管考核 不受影響；「未達標歸零」提示文字同步更新
+
+### 獎金名單 — 排序改依職等（84d1607, d45604b, 1899e7a）
+- `memberRows.sort` 由 `total desc` 改成：職務排名 → 總獎金 desc → 姓名
+- 新增 `jobTitleRank(title)` keyword 清單：董事長 → 總經理 → 副總 → 處長 → 資深協理 → 協理 → 廠長 → 資深經理 → 技術長 → 經理 → 副理 …
+- 技術長位置微調：原本在資深經理之上 → 改放在資深經理下方、一般經理之上
+- 技師類細化：資深技師 / L4 → L3 → L2 → L1 → L0 技師 / 高級美容技師 / 美容技師 / 洗車美容 / 實習生；較具體的關鍵字排在「技師」之前避免被泛用詞搶匹配
+
+### 匯出版型 — 簽核欄修整（d87b155）
+- HTML 獎金彙總頁、Excel 彙總頁、頁面列印區：由左至右統一改為 **董事長室 → 總經理室 → 最高主管 → 單位主管 → 承辦人**
+- `.signRow` CSS 格線由 `1fr 1.4fr 1fr 1.4fr 1fr` → `repeat(5,1fr)`，五格等寬（原本單位主管 / 總經理室寬 40%）
+
+### 廠別排序（9511c84）
+- `FACTORY_ORDER` / `ORDER` / `FC_ORDER` 三個常數統一：`AMA → AMD → AMC` → **`AMA → AMC → AMD`**
+- 人員名單、獎金名單、部門分群渲染皆套用
+
+### 獎金規則 Modal 精簡（4290650）
+- 標題：新增指標 → **新增獎金規則**；儲存指標 → **儲存**
+- 移除：「說明」、「規則說明」（含遺留的孤兒 `</div>`）、「單位」、「排列順序」
+- 主頁上「編輯指標」按鈕 tooltip 同步改名
+- 編輯現有規則時，`description / unit / sort_order` 保留原值送回後端，不會被清空
+
+### 留職復職日 + 當月濾選（13f0a52）
+- Schema：`staff_roster` 新增 `reinstated_date DATE`（附 `ALTER TABLE IF NOT EXISTS` 升級既有 DB）
+- Excel 解析：讀 `留職復職日` header（使用者慣例為 CW 欄位），UPSERT 一併寫入
+- `activeFilter` 規則改寫：留職停薪者只在「`unpaid_leave_date` 在當月」或「`reinstated_date` 在當月」時留在獎金表名單；`f.param` → `f.params`（2 參數），4 個呼叫端同步更新
+- `/bonus/roster-summary` 的 `unpaidLeave` 清單套用相同規則，附帶 `reinstated_date` 回傳
+- UI：新進卡片顯示到職日（藍）；留職停薪卡片顯示「停薪 YYYY-MM-DD」（黃）+「復職 YYYY-MM-DD」（綠）
+- 效果：3/21 留職停薪 → 3 月有、4 月沒有；4/10 復職 → 4 月重新出現
+
+---
+
 ## 統計
 - 3 天合計 53 個可見 non-merge commit（04-18 資安強化之 PR #1–#7 已 squash，本數未列入）
-- 主軸：**全站資安強化**（04-18 當日公告）、**獎金表電子簽核 + 匯出版型**、**月報 Executive 模式**、**手機響應式**、**Light Mode 補洞**、**權限分級（獎金指標設定 vs 獎金簽核）**
+- 加上 04-21 session 的 8 個 commit，本週期可見 non-merge commit 共 61 個
+- 主軸：**全站資安強化**（04-18 當日公告）、**獎金表電子簽核 + 匯出版型**、**月報 Executive 模式**、**手機響應式**、**Light Mode 補洞**、**權限分級（獎金指標設定 vs 獎金簽核）**、**獎金表 UX / 計算邏輯收尾**（04-21）
