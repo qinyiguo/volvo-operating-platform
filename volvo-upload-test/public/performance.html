@@ -28,16 +28,16 @@
   .nav { background: #1e293b; border-bottom: 1px solid #2d3f56; padding: 0 24px; display: flex; align-items: center; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .nav::-webkit-scrollbar { display: none; }
   .nav-brand { font-size: 15px; font-weight: 700; color: #fff; padding: 16px 0; margin-right: 24px; white-space: nowrap; flex-shrink: 0; }
-  .nav-link { padding: 16px 16px; color: #64748b; font-size: 13px; font-weight: 600; text-decoration: none; border-bottom: 2px solid transparent; white-space: nowrap; flex-shrink: 0; }
+  .nav-link { padding: 16px 16px; color: var(--text-dim); font-size: 13px; font-weight: 600; text-decoration: none; border-bottom: 2px solid transparent; white-space: nowrap; flex-shrink: 0; }
   .nav-link:hover { color: #e2e8f0; }
   .nav-link.active { color: #3b82f6; border-bottom-color: #3b82f6; }
   .header-body { padding: 10px 24px 8px; }
   .filter-bar { display: flex; gap: 10px; align-items: center; background: #1e293b; border: 1px solid #2d3f56; border-radius: 10px; padding: 10px 16px; margin-bottom: 10px; flex-wrap: wrap; }
-  .filter-bar label { font-size: 12px; color: #64748b; font-weight: 600; }
+  .filter-bar label { font-size: 12px; color: var(--text-dim); font-weight: 600; }
   .branch-select { background: #0f172a; border: 1px solid #2d3f56; color: #e2e8f0; padding: 7px 10px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; outline: none; transition: border-color .15s; }
   .branch-select:hover, .branch-select:focus { border-color: #3b82f6; }
   .tab-bar-wrap { display: flex; gap: 0; background: #0f172a; border: 1px solid #2d3f56; border-radius: 10px; padding: 4px; width: fit-content; }
-  .tab-btn { padding: 8px 20px; border: none; border-radius: 7px; font-size: 13px; font-weight: 700; cursor: pointer; background: transparent; color: #64748b; transition: all .15s; white-space: nowrap; }
+  .tab-btn { padding: 8px 20px; border: none; border-radius: 7px; font-size: 13px; font-weight: 700; cursor: pointer; background: transparent; color: var(--text-dim); transition: all .15s; white-space: nowrap; }
   .tab-btn.active { background: #3b82f6; color: #fff; }
   .tab-btn:hover:not(.active) { color: #e2e8f0; }
   .container { padding: 16px 24px 24px; max-width: 1400px; margin: 0 auto; }
@@ -46,10 +46,10 @@
   .btn-primary:hover { background: #2563eb; }
   .card { background: #1a2332; border: 1px solid #2d3f56; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
   .card-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .card-title-note { font-size: 11px; font-weight: 400; color: #64748b; margin-left: auto; }
+  .card-title-note { font-size: 11px; font-weight: 400; color: var(--text-dim); margin-left: auto; }
   .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
   .badge-blue { background: rgba(59,130,246,.15); color: #3b82f6; }
-  .loading { text-align: center; padding: 48px; color: #64748b; }
+  .loading { text-align: center; padding: 48px; color: var(--text-dim); }
   .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #2d3f56; border-top-color: #3b82f6; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 8px; vertical-align: middle; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .perf-block { border: 1px solid #2d3f56; border-radius: 10px; margin-bottom: 14px; overflow: hidden; }
@@ -57,7 +57,7 @@
   .perf-block-body { display: grid; }
   .perf-cell { padding: 16px 20px; }
   .achieve-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; background: rgba(15,23,42,.9); border: 1px solid #2d3f56; border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; }
-  .achieve-bar-label { font-size: 11px; color: #475569; font-weight: 700; letter-spacing: .05em; white-space: nowrap; }
+  .achieve-bar-label { font-size: 11px; color: var(--text-dimmer); font-weight: 700; letter-spacing: .05em; white-space: nowrap; }
   .achieve-chip { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,.03); border: 1px solid #2d3f56; border-radius: 8px; padding: 8px 14px; }
   .full-badge { font-size: 10px; padding: 2px 7px; border-radius: 10px; background: rgba(16,185,129,.15); color: #10b981; white-space: nowrap; }
   /* Period selector */
@@ -65,9 +65,9 @@
   .period-btn { display: flex; align-items: center; gap: 8px; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: 7px 12px 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .15s; user-select: none; min-width: 148px; justify-content: space-between; outline: none; }
   .period-btn:hover { border-color: #3b82f6; background: #141f33; }
   .period-btn.open { border-color: #3b82f6; background: #141f33; }
-  .period-btn .pb-year { font-size: 11px; font-weight: 600; color: #64748b; margin-right: 2px; }
+  .period-btn .pb-year { font-size: 11px; font-weight: 600; color: var(--text-dim); margin-right: 2px; }
   .period-btn .pb-month { font-size: 15px; font-weight: 800; color: #e2e8f0; }
-  .period-btn .pb-arrow { font-size: 9px; color: #475569; transition: transform .2s; line-height: 1; margin-left: 4px; }
+  .period-btn .pb-arrow { font-size: 9px; color: var(--text-dimmer); transition: transform .2s; line-height: 1; margin-left: 4px; }
   .period-btn.open .pb-arrow { transform: rotate(180deg); color: #3b82f6; }
   .period-dropdown { position: absolute; top: calc(100% + 6px); left: 0; background: #1a2740; border: 1px solid #334155; border-radius: 12px; box-shadow: 0 16px 48px rgba(0,0,0,.8); z-index: 9999; width: 260px; overflow: hidden; display: none; flex-direction: column; }
   .period-dropdown.open { display: flex; }
@@ -85,10 +85,10 @@
   .period-dd-mo.selected { background: rgba(59,130,246,.18); border-color: #3b82f6; }
   .period-dd-mo.current-month { border-color: rgba(16,185,129,.4); }
   .period-dd-mo.current-month:not(.selected) { background: rgba(16,185,129,.06); }
-  .period-dd-mo .mo-num { font-size: 15px; font-weight: 800; color: #94a3b8; line-height: 1; }
+  .period-dd-mo .mo-num { font-size: 15px; font-weight: 800; color: var(--text-muted); line-height: 1; }
   .period-dd-mo.selected .mo-num { color: #3b82f6; }
   .period-dd-mo.current-month:not(.selected) .mo-num { color: #10b981; }
-  .period-dd-mo .mo-label { font-size: 10px; color: #475569; margin-top: 2px; }
+  .period-dd-mo .mo-label { font-size: 10px; color: var(--text-dimmer); margin-top: 2px; }
   .period-dd-mo.selected .mo-label { color: #6aa3f8; }
   .period-dd-mo .mo-dot { width: 4px; height: 4px; border-radius: 50%; background: transparent; margin-top: 3px; }
   .period-dd-mo.has-data .mo-dot { background: #10b981; }
@@ -100,7 +100,7 @@
   .wd-fill  { height: 7px; border-radius: 4px; transition: width .5s; }
   .wd-rev-marker { position: absolute; top: -3px; width: 2px; height: 13px; background: rgba(255,255,255,.55); border-radius: 1px; transition: left .5s; pointer-events: none; }
   .wd-status { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
-  .wd-legend { width: 100%; display: flex; gap: 14px; align-items: center; font-size: 11px; color: #475569; padding: 4px 2px 0; flex-wrap: wrap; }
+  .wd-legend { width: 100%; display: flex; gap: 14px; align-items: center; font-size: 11px; color: var(--text-dimmer); padding: 4px 2px 0; flex-wrap: wrap; }
 
   /* ══════════════ MOBILE RESPONSIVE ══════════════ */
   @media (max-width: 768px) {
@@ -198,13 +198,13 @@
   /* ═══ 營運 Excel 上傳（移自 settings.html，scoped with .opu- prefix） ═══ */
   .opu-btn{background:#10b981;color:#fff;}
   .opu-btn:hover{background:#059669;}
-  .opu-hint{background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:11px 14px;font-size:12px;color:#94a3b8;line-height:1.8;margin-bottom:14px;}
+  .opu-hint{background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:11px 14px;font-size:12px;color:var(--text-muted);line-height:1.8;margin-bottom:14px;}
   .opu-hint strong{color:#e2e8f0;}
   .opu-hint code{background:#0f172a;padding:1px 5px;border-radius:3px;color:#60a5fa;font-size:11px;}
   .opu-zone{border:2px dashed #2d3f56;border-radius:8px;padding:36px;text-align:center;cursor:pointer;transition:all .2s;}
   .opu-zone:hover,.opu-zone.drag{border-color:#3b82f6;background:rgba(59,130,246,.05);}
   .opu-zone .icon{font-size:36px;margin-bottom:8px;}
-  .opu-zone p{color:#64748b;font-size:12px;margin-top:4px;}
+  .opu-zone p{color:var(--text-dim);font-size:12px;margin-top:4px;}
   .opu-zone input[type=file]{display:none;}
   .opu-file-item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #2d3f56;font-size:13px;}
   .opu-result-item{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #2d3f56;font-size:13px;gap:8px;}
@@ -214,7 +214,7 @@
   .opu-badge-b{background:rgba(59,130,246,.15);color:#3b82f6;}
   .opu-tbl{width:100%;border-collapse:collapse;font-size:12px;}
   .opu-tbl th,.opu-tbl td{padding:8px 10px;border-bottom:1px solid #2d3f56;text-align:left;}
-  .opu-tbl th{background:#0f172a;color:#94a3b8;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;}
+  .opu-tbl th{background:#0f172a;color:var(--text-muted);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;}
   .opu-tbl td{color:#e2e8f0;}
   .opu-tbl td.num,.opu-tbl th.num{text-align:right;}
   .opu-card{background:#0f172a;border:1px solid #2d3f56;border-radius:10px;padding:14px 16px;margin-bottom:12px;}
@@ -247,7 +247,7 @@
         <option value="AMD">AMD</option>
       </select>
       <button class="btn btn-primary" onclick="doLoad()">查詢</button>
-      <span id="lastUpdate" style="margin-left:auto;font-size:11px;color:#64748b;white-space:nowrap"></span>
+      <span id="lastUpdate" style="margin-left:auto;font-size:11px;color:var(--text-dim);white-space:nowrap"></span>
       <button class="btn opu-btn" onclick="openOpUploadModal()" style="font-size:12px;padding:7px 14px;white-space:nowrap" title="上傳 DMS 匯出的四種 Excel 報表至資料庫">&#128202; 營運 Excel 上傳</button>
       <button class="btn btn-secondary" onclick="openEstimateModal()" style="font-size:12px;padding:7px 14px;white-space:nowrap">✏️ 業績預估</button>
     </div>
@@ -276,10 +276,10 @@
       <div class="card-title">
         🎯 各指標業績進度
         <span id="perfPeriodLabel" class="card-title-note"></span>
-        <a href="/settings.html" style="font-size:12px;color:#64748b;text-decoration:none;padding:4px 8px;border:1px solid #2d3f56;border-radius:5px;background:#1e293b;margin-left:auto">⚙️ 設定指標</a>
+        <a href="/settings.html" style="font-size:12px;color:var(--text-dim);text-decoration:none;padding:4px 8px;border:1px solid #2d3f56;border-radius:5px;background:#1e293b;margin-left:auto">⚙️ 設定指標</a>
       </div>
       <div id="branchAchieveBar" class="achieve-bar" style="display:none"></div>
-      <div id="perfNoConfig" style="display:none;padding:48px;text-align:center;color:#64748b">
+      <div id="perfNoConfig" style="display:none;padding:48px;text-align:center;color:var(--text-dim)">
         尚未建立業績指標，請前往 <a href="/settings.html" style="color:#3b82f6">⚙️ 設定 → 業績目標</a> 新增追蹤項目
       </div>
       <div id="perfDetail"></div>
@@ -295,13 +295,13 @@
         <span id="vctlPeriodLabel" class="card-title-note"></span>
       </div>
       <div id="vctlResults">
-        <div class="empty" style="padding:32px;color:#64748b">尚未設定任何指標，請在下方「指標設定」中新增</div>
+        <div class="empty" style="padding:32px;color:var(--text-dim)">尚未設定任何指標，請在下方「指標設定」中新增</div>
       </div>
     </div>
     <div class="card">
       <div class="card-title" style="cursor:pointer;user-select:none" onclick="toggleVCTLConfig()">
         ⚙️ 指標設定管理
-        <span id="vctlConfigArrow" style="font-size:11px;color:#64748b;margin-left:6px;transition:transform .2s;display:inline-block">▶</span>
+        <span id="vctlConfigArrow" style="font-size:11px;color:var(--text-dim);margin-left:6px;transition:transform .2s;display:inline-block">▶</span>
         <button onclick="event.stopPropagation();openVCTLModal(null)"
           style="margin-left:auto;padding:5px 14px;background:#3b82f6;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">
           ＋ 新增指標
@@ -309,7 +309,7 @@
       </div>
       <div id="vctlConfigBody" style="display:none;margin-top:4px">
         <div id="vctlMetricList">
-          <div style="color:#64748b;font-size:13px;padding:8px 0"><span class="spinner"></span>載入中</div>
+          <div style="color:var(--text-dim);font-size:13px;padding:8px 0"><span class="spinner"></span>載入中</div>
         </div>
       </div>
     </div>
@@ -344,7 +344,7 @@ function renderPeriodSelector(filterQ) {
   _allPeriods.forEach(p => { const yr=p.slice(0,4); if(!groups[yr])groups[yr]=[]; groups[yr].push(p); });
   const btnContent = _currentPeriod
     ? `<span class="pb-year">${_currentPeriod.slice(0,4)}</span><span class="pb-month">${parseInt(_currentPeriod.slice(4))}月</span>`
-    : `<span class="pb-month" style="color:#64748b">全部期間</span>`;
+    : `<span class="pb-month" style="color:var(--text-dim)">全部期間</span>`;
   function fmtP(p){return`${p.slice(0,4)}年${p.slice(4)}月`;}
   let listHtml='';
   Object.keys(groups).sort((a,b)=>b-a).forEach(yr=>{
@@ -364,7 +364,7 @@ function renderPeriodSelector(filterQ) {
     <button class="period-btn" id="ps-btn" type="button" onclick="togglePeriodDD(event)">${btnContent}<span class="pb-arrow">▼</span></button>
     <div class="period-dropdown" id="ps-dd">
       <div class="period-dd-header">
-        <div class="period-dd-year-label" style="padding:0 0 6px;font-size:11px;color:#475569">選擇期間</div>
+        <div class="period-dd-year-label" style="padding:0 0 6px;font-size:11px;color:var(--text-dimmer)">選擇期間</div>
         <div class="period-dd-search"><input type="text" placeholder="🔍 搜尋 例：2026年03月" id="ps-search" oninput="filterPeriodDD(this.value)" onclick="event.stopPropagation()"></div>
       </div>
       <div class="period-dd-list" id="ps-list">${listHtml}</div>
@@ -372,7 +372,7 @@ function renderPeriodSelector(filterQ) {
 }
 
 window.togglePeriodDD=function(e){e.stopPropagation();const btn=document.getElementById('ps-btn'),dd=document.getElementById('ps-dd');if(!btn||!dd)return;const isOpen=dd.classList.contains('open');closeAllPD();if(!isOpen){btn.classList.add('open');dd.classList.add('open');setTimeout(()=>document.getElementById('ps-search')?.focus(),50);}};
-window.filterPeriodDD=function(q){const now=new Date(),thisMonth=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}`;function fmtP(p){return`${p.slice(0,4)}年${p.slice(4)}月`;}const groups={};_allPeriods.filter(p=>!q||fmtP(p).includes(q)||p.includes(q.replace(/[^0-9]/g,''))).forEach(p=>{const yr=p.slice(0,4);if(!groups[yr])groups[yr]=[];groups[yr].push(p);});let listHtml='';if(!Object.keys(groups).length){listHtml='<div style="padding:20px;text-align:center;color:#475569;font-size:12px">無符合期間</div>';}else{Object.keys(groups).sort((a,b)=>b-a).forEach(yr=>{const months=groups[yr];listHtml+=`<div class="period-dd-year-label">${yr}</div><div class="period-dd-months">`;for(let mo=12;mo>=1;mo--){const p=yr+String(mo).padStart(2,'0');if(!months.includes(p))continue;const isSel=p===_currentPeriod,isCur=p===thisMonth;listHtml+=`<div class="period-dd-mo ${isSel?'selected':''} ${isCur?'current-month':''} has-data" onclick="selectPeriod('${p}')"><span class="mo-num">${mo}</span><span class="mo-label">月</span><span class="mo-dot"></span></div>`;}listHtml+=`</div>`;});}const el=document.getElementById('ps-list');if(el)el.innerHTML=listHtml;};
+window.filterPeriodDD=function(q){const now=new Date(),thisMonth=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}`;function fmtP(p){return`${p.slice(0,4)}年${p.slice(4)}月`;}const groups={};_allPeriods.filter(p=>!q||fmtP(p).includes(q)||p.includes(q.replace(/[^0-9]/g,''))).forEach(p=>{const yr=p.slice(0,4);if(!groups[yr])groups[yr]=[];groups[yr].push(p);});let listHtml='';if(!Object.keys(groups).length){listHtml='<div style="padding:20px;text-align:center;color:var(--text-dimmer);font-size:12px">無符合期間</div>';}else{Object.keys(groups).sort((a,b)=>b-a).forEach(yr=>{const months=groups[yr];listHtml+=`<div class="period-dd-year-label">${yr}</div><div class="period-dd-months">`;for(let mo=12;mo>=1;mo--){const p=yr+String(mo).padStart(2,'0');if(!months.includes(p))continue;const isSel=p===_currentPeriod,isCur=p===thisMonth;listHtml+=`<div class="period-dd-mo ${isSel?'selected':''} ${isCur?'current-month':''} has-data" onclick="selectPeriod('${p}')"><span class="mo-num">${mo}</span><span class="mo-label">月</span><span class="mo-dot"></span></div>`;}listHtml+=`</div>`;});}const el=document.getElementById('ps-list');if(el)el.innerHTML=listHtml;};
 window.selectPeriod=function(val){_currentPeriod=val;closeAllPD();renderPeriodSelector('');};
 window.closeAllPD=function(){document.querySelectorAll('.period-btn.open').forEach(b=>b.classList.remove('open'));document.querySelectorAll('.period-dropdown.open').forEach(d=>d.classList.remove('open'));};
 document.addEventListener('click',closeAllPD);
@@ -485,8 +485,8 @@ function renderWorkingDaysBar() {
       </div>
       <div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-          <span style="font-size:10px;color:#64748b">📅 天數進度</span>
-          <span style="font-size:11px;font-weight:800;color:${fillColor}">${wdPct.toFixed(0)}% <span style="font-size:10px;color:#475569;font-weight:400">${elapsed}/${total>0?total:'?'}天</span></span>
+          <span style="font-size:10px;color:var(--text-dim)">📅 天數進度</span>
+          <span style="font-size:11px;font-weight:800;color:${fillColor}">${wdPct.toFixed(0)}% <span style="font-size:10px;color:var(--text-dimmer);font-weight:400">${elapsed}/${total>0?total:'?'}天</span></span>
         </div>
         <div class="wd-track">
           <div class="wd-fill" style="width:${wdPct.toFixed(1)}%;background:${fillColor}"></div>
@@ -495,13 +495,13 @@ function renderWorkingDaysBar() {
       </div>
       ${revRate !== null ? `<div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-          <span style="font-size:10px;color:#64748b">🔶 有費達成</span>
+          <span style="font-size:10px;color:var(--text-dim)">🔶 有費達成</span>
           <span style="font-size:11px;font-weight:800;color:${revCol}">${revRate.toFixed(0)}%</span>
         </div>
         <div class="wd-track">
           <div class="wd-fill" style="width:${revBarW}%;background:${revCol}"></div>
         </div>
-      </div>` : '<div style="font-size:10px;color:#475569">有費達成：未設目標</div>'}
+      </div>` : '<div style="font-size:10px;color:var(--text-dimmer)">有費達成：未設目標</div>'}
     </div>`;
   }).join('');
 
@@ -571,24 +571,24 @@ function renderWorkingDaysBar() {
       <!-- 敘事標題 -->
       <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px">
         <span style="font-size:22px;font-weight:900;color:${headlineCol};line-height:1">${statusIcon} ${statusText}${gDelta !== null ? ` <span style="font-size:16px">${gDelta >= 0 ? '+' : ''}${gDelta.toFixed(1)}pp</span>` : ''}</span>
-        <span style="font-size:11px;color:#64748b">AMA + AMC + AMD 加權合計</span>
+        <span style="font-size:11px;color:var(--text-dim)">AMA + AMC + AMD 加權合計</span>
       </div>
       <!-- 三個關鍵數字,水平排列 -->
       <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:12px">
         <div>
-          <div style="font-size:10px;color:#64748b;font-weight:700">📅 天數進度</div>
+          <div style="font-size:10px;color:var(--text-dim);font-weight:700">📅 天數進度</div>
           <div style="font-size:20px;font-weight:900;color:${gFillCol};line-height:1.2">${wdPctStr}%</div>
-          <div style="font-size:10px;color:#475569">${gElapsed}/${gTotal > 0 ? gTotal : '?'} 天</div>
+          <div style="font-size:10px;color:var(--text-dimmer)">${gElapsed}/${gTotal > 0 ? gTotal : '?'} 天</div>
         </div>
         <div>
-          <div style="font-size:10px;color:#64748b;font-weight:700">🔶 有費達成</div>
+          <div style="font-size:10px;color:var(--text-dim);font-weight:700">🔶 有費達成</div>
           <div style="font-size:20px;font-weight:900;color:${gRevCol};line-height:1.2">${revPctStr}%</div>
-          <div style="font-size:10px;color:#475569">${fmtK(gActual)} / ${gTarget > 0 ? fmtK(gTarget) : '—'}</div>
+          <div style="font-size:10px;color:var(--text-dimmer)">${fmtK(gActual)} / ${gTarget > 0 ? fmtK(gTarget) : '—'}</div>
         </div>
         <div>
-          <div style="font-size:10px;color:#64748b;font-weight:700">📊 預估達成</div>
+          <div style="font-size:10px;color:var(--text-dim);font-weight:700">📊 預估達成</div>
           <div style="font-size:20px;font-weight:900;color:${gEstCol};line-height:1.2">${estPctStr}%</div>
-          <div style="font-size:10px;color:#475569">預估 ${gEst > 0 ? fmtK(gEst) : '—'}</div>
+          <div style="font-size:10px;color:var(--text-dimmer)">預估 ${gEst > 0 ? fmtK(gEst) : '—'}</div>
         </div>
       </div>
       <!-- 疊合進度條:灰底軌 + 有費實色 + 天數進度 marker -->
@@ -598,7 +598,7 @@ function renderWorkingDaysBar() {
           ${estPctBar !== null ? `<div style="position:absolute;top:0;left:${estPctBar}%;width:2px;height:10px;background:${gEstCol};opacity:.9" title="預估 ${estPctStr}%"></div>` : ''}
           <div style="position:absolute;top:-2px;left:${wdPctBar}%;width:3px;height:14px;background:#fff;border-radius:2px" title="天數進度 ${wdPctStr}%"></div>
         </div>
-        <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:#64748b">
+        <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:var(--text-dim)">
           <span>0%</span>
           <span style="color:#fff">⬆ 當前時間點 ${wdPctStr}%</span>
           <span>100% 目標</span>
@@ -726,20 +726,20 @@ async function loadRevenueKPI(period,branch){
             <div style="flex:1;background:#0f172a;border-radius:3px;height:3px"><div style="width:${ebw}%;height:3px;border-radius:3px;background:repeating-linear-gradient(90deg,${ec} 0,${ec} 4px,transparent 4px,transparent 7px)"></div></div>
             <span style="font-size:11px;font-weight:700;color:${ec};white-space:nowrap">預 ${er!==null?er.toFixed(1)+'%':'—'}</span>
           </div>`:''}
-          <div style="display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:12px;color:#64748b;align-items:center">
-            <span>目標</span><span style="text-align:right;color:#94a3b8;font-weight:700">${sTgt>0?fmtK(sTgt):'未設定'}</span>
+          <div style="display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:12px;color:var(--text-dim);align-items:center">
+            <span>目標</span><span style="text-align:right;color:var(--text-muted);font-weight:700">${sTgt>0?fmtK(sTgt):'未設定'}</span>
             ${sEst>0?`<span style="color:${ec}">預估</span><span style="text-align:right;color:${ec};font-weight:700">${fmtK(sEst)}</span>`:''}
-            <span>去年同月</span><span style="text-align:right"><span style="color:#94a3b8;font-weight:600">${sLY>0?fmtK(sLY):'—'}</span>${yoy!==null?`<span style="color:${yoy>=0?'#10b981':'#ef4444'};margin-left:5px">${yoy>=0?'▲':'▼'}${Math.abs(yoy).toFixed(1)}%</span>`:''}</span>
+            <span>去年同月</span><span style="text-align:right"><span style="color:var(--text-muted);font-weight:600">${sLY>0?fmtK(sLY):'—'}</span>${yoy!==null?`<span style="color:${yoy>=0?'#10b981':'#ef4444'};margin-left:5px">${yoy>=0?'▲':'▼'}${Math.abs(yoy).toFixed(1)}%</span>`:''}</span>
           </div></div>`;
       }).join('');
       return`<div style="background:#1a2332;border:2px solid ${color}44;border-radius:12px;overflow:hidden">
         <div style="background:linear-gradient(135deg,${color}18,${color}08);border-bottom:1px solid ${color}33;padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <span style="font-size:13px;font-weight:800;color:${color}">集團有費合計</span>
-            <span style="font-size:11px;color:#475569">一般(含自費鈑烤)＋保險鈑烤＋延保</span>
+            <span style="font-size:11px;color:var(--text-dimmer)">一般(含自費鈑烤)＋保險鈑烤＋延保</span>
           </div>
           <div style="display:flex;align-items:center;gap:12px;margin-left:auto;flex-wrap:wrap">
-            <div><div style="font-size:11px;color:#64748b;margin-bottom:2px">集團總計</div><div style="font-size:26px;font-weight:900;color:#fff;line-height:1">${fmtK(gActual)}</div></div>
+            <div><div style="font-size:11px;color:var(--text-dim);margin-bottom:2px">集團總計</div><div style="font-size:26px;font-weight:900;color:#fff;line-height:1">${fmtK(gActual)}</div></div>
             <div style="display:flex;flex-direction:column;gap:4px;min-width:140px">
               <div style="display:flex;align-items:center;gap:6px">
                 <div style="flex:1;background:#0f172a;border-radius:3px;height:6px"><div style="width:${barW}%;height:6px;background:${rCol};border-radius:3px;transition:width .5s"></div></div>
@@ -750,10 +750,10 @@ async function loadRevenueKPI(period,branch){
                 <span style="font-size:11px;font-weight:700;color:${eCol};white-space:nowrap;min-width:48px;text-align:right">預 ${estRate!==null?estRate.toFixed(1)+'%':'—'}</span>
               </div>`:''}
             </div>
-            <div style="display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12px;color:#64748b">
-              <span>目標</span><span style="color:#94a3b8;font-weight:700">${gTarget>0?fmtK(gTarget):'未設定'}</span>
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12px;color:var(--text-dim)">
+              <span>目標</span><span style="color:var(--text-muted);font-weight:700">${gTarget>0?fmtK(gTarget):'未設定'}</span>
               ${gEst>0?`<span style="color:${eCol}">預估</span><span style="color:${eCol};font-weight:700">${fmtK(gEst)}</span>`:''}
-              <span>去年同月</span><span><span style="color:#94a3b8;font-weight:600">${gLY>0?fmtK(gLY):'—'}</span>${yoy!==null?`<span style="color:${yoy>=0?'#10b981':'#ef4444'};margin-left:4px">${yoy>=0?'▲':'▼'}${Math.abs(yoy).toFixed(1)}%</span>`:''}</span>
+              <span>去年同月</span><span><span style="color:var(--text-muted);font-weight:600">${gLY>0?fmtK(gLY):'—'}</span>${yoy!==null?`<span style="color:${yoy>=0?'#10b981':'#ef4444'};margin-left:4px">${yoy>=0?'▲':'▼'}${Math.abs(yoy).toFixed(1)}%</span>`:''}</span>
             </div>
           </div>
         </div>
@@ -767,7 +767,7 @@ async function loadRevenueKPI(period,branch){
       let card=`<div style="background:#1a2332;border:1px solid #2d3f56;border-radius:12px;overflow:hidden">
         <div style="padding:12px 18px 10px;border-bottom:1px solid #2d3f56;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span style="font-size:14px;font-weight:800;color:${m.color}">${m.label}</span>
-          ${fullWidth?`<span style="font-size:11px;color:#475569;margin-left:4px">一般(含自費鈑烤)＋保險鈑烤＋延保</span>`:''}
+          ${fullWidth?`<span style="font-size:11px;color:var(--text-dimmer);margin-left:4px">一般(含自費鈑烤)＋保險鈑烤＋延保</span>`:''}
         </div>
         <div class="rev-branch-grid" style="display:grid;grid-template-columns:repeat(${BRANCHES.length},1fr)">`;
       BRANCHES.forEach((br,bi)=>{
@@ -814,11 +814,11 @@ async function loadRevenueKPI(period,branch){
             <div style="flex:1;background:#0f172a;border-radius:3px;height:3px"><div style="width:${estBarW}%;height:3px;background:${eCol};border-radius:3px;opacity:.7;background:repeating-linear-gradient(90deg,${eCol} 0,${eCol} 4px,transparent 4px,transparent 7px)"></div></div>
             <span style="font-size:11px;font-weight:700;color:${eCol};white-space:nowrap">預 ${estRate!==null?estRate.toFixed(1)+'%':'—'}</span>
           </div>`:''}
-          <div style="display:grid;grid-template-columns:auto 1fr;gap:2px 8px;font-size:11px;color:#64748b;align-items:center">
-            <span>目標</span><span style="text-align:right;color:#94a3b8;font-weight:600">${target>0?fmtK(target):'未設定'}</span>
+          <div style="display:grid;grid-template-columns:auto 1fr;gap:2px 8px;font-size:11px;color:var(--text-dim);align-items:center">
+            <span>目標</span><span style="text-align:right;color:var(--text-muted);font-weight:600">${target>0?fmtK(target):'未設定'}</span>
             ${est>0?`<span style="color:${eCol}">預估</span><span style="text-align:right;color:${eCol};font-weight:700">${fmtK(est)}</span>`:''}
             <span>去年同月</span><span style="text-align:right">
-              <span style="color:#94a3b8;font-weight:600">${ly>0?fmtK(ly):'—'}</span>
+              <span style="color:var(--text-muted);font-weight:600">${ly>0?fmtK(ly):'—'}</span>
               ${yoy!==null?`<span style="color:${yoy>=0?'#10b981':'#ef4444'};margin-left:4px">${yoy>=0?'▲':'▼'}${Math.abs(yoy).toFixed(1)}%</span>`:''}
             </span>
           </div></div>`;
@@ -884,11 +884,11 @@ async function loadRevenueKPI(period,branch){
             <div style="background:#0f172a;border-radius:2px;height:4px;margin-bottom:6px">
               <div style="width:${barW}%;height:4px;border-radius:2px;background:${rCol}"></div>
             </div>
-            <div style="display:flex;justify-content:space-between;gap:10px;font-size:10px;color:#64748b;line-height:1.5;white-space:nowrap">
+            <div style="display:flex;justify-content:space-between;gap:10px;font-size:10px;color:var(--text-dim);line-height:1.5;white-space:nowrap">
               <span>目 ${m.target>0?fmtK(m.target):'—'}</span>
               ${m.est>0?`<span style="color:${eCol};font-weight:600">預 ${fmtK(m.est)}</span>`:'<span>—</span>'}
             </div>
-            <div style="font-size:10px;color:#64748b;line-height:1.5;white-space:nowrap">
+            <div style="font-size:10px;color:var(--text-dim);line-height:1.5;white-space:nowrap">
               ${m.ly>0?`vs 去年 ${fmtK(m.ly)}`:'去年 —'}
               ${m.yoy!==null?`<span style="color:${yCol};font-weight:700;margin-left:6px">${m.yoy>=0?'▲':'▼'}${Math.abs(m.yoy).toFixed(1)}%</span>`:''}
             </div>
@@ -907,13 +907,13 @@ async function loadRevenueKPI(period,branch){
       <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:12px;overflow:hidden">
         <div style="padding:12px 18px 10px;border-bottom:1px solid #2d3f56;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
           <span style="font-size:14px;font-weight:800;color:#e2e8f0">📊 各類營收 × 各廠</span>
-          <span style="font-size:11px;color:#475569">▲▼ = 預估完整月 vs 去年同月（apples-to-apples）</span>
+          <span style="font-size:11px;color:var(--text-dimmer)">▲▼ = 預估完整月 vs 去年同月（apples-to-apples）</span>
         </div>
         <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
           <table style="width:100%;border-collapse:separate;border-spacing:0;font-size:12px">
             <thead>
               <tr>
-                <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748b;background:#0f172a;border-bottom:1px solid #2d3f56;border-right:1px solid #2d3f56">類別</th>
+                <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--text-dim);background:#0f172a;border-bottom:1px solid #2d3f56;border-right:1px solid #2d3f56">類別</th>
                 ${headerCells}
               </tr>
             </thead>
@@ -931,7 +931,7 @@ async function loadRevenueKPI(period,branch){
 // ══════════════════════════════════════════════
 async function loadIncomeBreakdown(period,branch){
   const el=document.getElementById('perfBreakdown'),lblEl=document.getElementById('perfBreakdownPeriod');
-  if(!period){el.innerHTML='<div style="color:#64748b;font-size:13px">請選擇期間後按查詢</div>';return;}
+  if(!period){el.innerHTML='<div style="color:var(--text-dim);font-size:13px">請選擇期間後按查詢</div>';return;}
   el.innerHTML='<div class="loading"><span class="spinner"></span>載入中</div>';
   try{
     const params=new URLSearchParams({period});if(branch)params.set('branch',branch);
@@ -956,12 +956,12 @@ async function loadIncomeBreakdown(period,branch){
       {key:'all_total',label:'📌 全部營收',indent:0,color:'#e2e8f0',bold:true,border:true,note:'有費＋無費'},
     ];
     let html=`<table style="width:100%;border-collapse:collapse;font-size:13px;min-width:420px"><thead><tr>
-      <th style="text-align:left;padding:10px 12px;background:#0f172a;color:#64748b;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;min-width:180px">收入項目</th>`;
+      <th style="text-align:left;padding:10px 12px;background:#0f172a;color:var(--text-dim);font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;min-width:180px">收入項目</th>`;
     BRANCHES.forEach(br=>{html+=`<th style="text-align:right;padding:10px 12px;background:#0f172a;color:${brColors[br]||'#94a3b8'};font-size:13px;font-weight:800;border-bottom:1px solid #2d3f56;min-width:100px">${br}</th>`;});
-    if(BRANCHES.length>1)html+=`<th style="text-align:right;padding:10px 12px;background:#0f172a;color:#94a3b8;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;min-width:100px;border-left:1px solid #374151">合計</th>`;
+    if(BRANCHES.length>1)html+=`<th style="text-align:right;padding:10px 12px;background:#0f172a;color:var(--text-muted);font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;min-width:100px;border-left:1px solid #374151">合計</th>`;
     html+=`</tr></thead><tbody>`;
     const allOD=[];BRANCHES.forEach(br=>(bdata[br]?.other_detail||[]).forEach(od=>{if(!allOD.find(x=>x.account_type===od.account_type))allOD.push(od);}));
-    const odHtml=allOD.map(od=>{let r=`<tr><td style="padding:6px 12px 6px 28px;border-bottom:1px solid rgba(45,63,86,.2)"><span style="font-size:12px;color:#475569">${od.account_type}</span></td>`;BRANCHES.forEach(br=>{const m=(bdata[br]?.other_detail||[]).find(x=>x.account_type===od.account_type);r+=`<td style="text-align:right;padding:6px 12px;border-bottom:1px solid rgba(45,63,86,.2);font-size:12px;color:#475569">${m?.total>0?fmtK(m.total):'—'}</td>`;});if(BRANCHES.length>1)r+=`<td style="border-bottom:1px solid rgba(45,63,86,.2);border-left:1px solid #374151"></td>`;return r+`</tr>`;}).join('');
+    const odHtml=allOD.map(od=>{let r=`<tr><td style="padding:6px 12px 6px 28px;border-bottom:1px solid rgba(45,63,86,.2)"><span style="font-size:12px;color:var(--text-dimmer)">${od.account_type}</span></td>`;BRANCHES.forEach(br=>{const m=(bdata[br]?.other_detail||[]).find(x=>x.account_type===od.account_type);r+=`<td style="text-align:right;padding:6px 12px;border-bottom:1px solid rgba(45,63,86,.2);font-size:12px;color:var(--text-dimmer)">${m?.total>0?fmtK(m.total):'—'}</td>`;});if(BRANCHES.length>1)r+=`<td style="border-bottom:1px solid rgba(45,63,86,.2);border-left:1px solid #374151"></td>`;return r+`</tr>`;}).join('');
     ROWS.forEach(row=>{
       const bg=row.bold?'rgba(255,255,255,.03)':'transparent',bt=row.border?'border-top:2px solid #374151;':'';
       if(row.key==='other_total')html+=odHtml;
@@ -969,13 +969,13 @@ async function loadIncomeBreakdown(period,branch){
         <div style="display:flex;align-items:center;gap:6px;padding-left:${row.indent?16:0}px">
           ${row.indent?'<div style="width:3px;height:12px;background:#2d3f56;border-radius:2px;flex-shrink:0"></div>':''}
           <span style="font-size:${row.bold?13:12}px;font-weight:${row.bold?800:600};color:${row.color||'#e2e8f0'}">${row.label}</span>
-          ${row.note?`<span style="font-size:10px;color:#475569">${row.note}</span>`:''}
+          ${row.note?`<span style="font-size:10px;color:var(--text-dimmer)">${row.note}</span>`:''}
         </div></td>`;
       BRANCHES.forEach(br=>{const v=bdata[br]?.[row.key]||0;html+=`<td style="text-align:right;padding:9px 12px;border-bottom:1px solid rgba(45,63,86,.3);${bt}font-variant-numeric:tabular-nums"><span style="font-size:${row.bold?14:12}px;font-weight:${row.bold?800:600};color:${row.color||'#e2e8f0'}">${fmtK(v)}</span></td>`;});
       if(BRANCHES.length>1){const total=tot(row.key);html+=`<td style="text-align:right;padding:9px 12px;border-bottom:1px solid rgba(45,63,86,.3);${bt}font-variant-numeric:tabular-nums;background:rgba(255,255,255,.02);border-left:1px solid #374151"><span style="font-size:${row.bold?14:12}px;font-weight:${row.bold?800:600};color:${row.color||'#94a3b8'}">${fmtK(total)}</span></td>`;}
       html+=`</tr>`;
     });
-    html+=`</tbody></table><div style="font-size:11px;color:#475569;margin-top:10px;line-height:2">💡 金額單位：千元（K）｜未稅</div>`;
+    html+=`</tbody></table><div style="font-size:11px;color:var(--text-dimmer);margin-top:10px;line-height:2">💡 金額單位：千元（K）｜未稅</div>`;
     el.innerHTML=html;
   }catch(e){el.innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;}
 }
@@ -1011,7 +1011,7 @@ async function loadPerformance(period,branch){
       return`<div class="achieve-chip" style="border-color:${aCol}33">
         <span style="font-size:12px;font-weight:800;color:${col}">${br}</span>
         <span style="font-size:20px;font-weight:800;color:${aCol};line-height:1">${s.achieved}</span>
-        <span style="font-size:12px;color:#475569">/ ${s.total}</span>
+        <span style="font-size:12px;color:var(--text-dimmer)">/ ${s.total}</span>
         <div style="display:flex;flex-direction:column;gap:3px">
           <div style="width:40px;background:#0f172a;border-radius:3px;height:4px"><div style="width:${pct}%;height:4px;border-radius:3px;background:${aCol};transition:width .4s"></div></div>
           <span style="font-size:10px;font-weight:700;color:${aCol}">${pct}%</span>
@@ -1031,8 +1031,8 @@ async function loadPerformance(period,branch){
         <div class="perf-block-header">
           <span style="font-size:14px;font-weight:800;color:#e2e8f0">${metric.metric_name}</span>
           <span class="badge badge-blue" style="font-size:11px">${TYPE_LABEL[metric.metric_type]||metric.metric_type}</span>
-          ${metric.description?`<span style="font-size:12px;color:#64748b">${metric.description}</span>`:''}
-          <span style="font-size:11px;color:#475569;margin-left:auto">單位：${unit}</span>
+          ${metric.description?`<span style="font-size:12px;color:var(--text-dim)">${metric.description}</span>`:''}
+          <span style="font-size:11px;color:var(--text-dimmer);margin-left:auto">單位：${unit}</span>
         </div>
         <div class="perf-block-body" style="grid-template-columns:repeat(${BRANCHES.length},1fr)">`;
       BRANCHES.forEach((br,bi)=>{
@@ -1047,10 +1047,10 @@ async function loadPerformance(period,branch){
             <div style="flex:1;background:#0f172a;border-radius:3px;height:5px;min-width:40px"><div style="width:${barW}%;height:5px;background:${rCol};border-radius:3px"></div></div>
             <span style="font-size:13px;font-weight:800;color:${rCol};white-space:nowrap">${rate!==null?rate.toFixed(1)+'%':'無目標'}</span>
           </div>
-          <div style="font-size:11px;color:#64748b;line-height:2">
-            <div style="display:flex;justify-content:space-between"><span>目標</span><span style="color:#94a3b8;font-weight:600">${fmtV(d.target)}</span></div>
+          <div style="font-size:11px;color:var(--text-dim);line-height:2">
+            <div style="display:flex;justify-content:space-between"><span>目標</span><span style="color:var(--text-muted);font-weight:600">${fmtV(d.target)}</span></div>
             <div style="display:flex;justify-content:space-between;align-items:center"><span>去年同月</span>
-              <span><span style="color:#94a3b8;font-weight:600">${fmtV(d.last_year)}</span>
+              <span><span style="color:var(--text-muted);font-weight:600">${fmtV(d.last_year)}</span>
               ${yoy!==null?`<span style="color:${yoy>=0?'#10b981':'#ef4444'};margin-left:5px;font-size:11px">${yoy>=0?'▲':'▼'}${Math.abs(yoy).toFixed(1)}%</span>`:''}</span>
             </div>
           </div>
@@ -1058,7 +1058,7 @@ async function loadPerformance(period,branch){
       });
       html+=`</div></div>`;
     });
-    detailEl.innerHTML=html||'<div style="padding:48px;text-align:center;color:#64748b">此期間無業績資料</div>';
+    detailEl.innerHTML=html||'<div style="padding:48px;text-align:center;color:var(--text-dim)">此期間無業績資料</div>';
     const lbl=document.getElementById('perfPeriodLabel');
     if(lbl&&period)lbl.textContent=`${period.slice(0,4)}年${period.slice(4)}月`;
   }catch(e){detailEl.innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;}
@@ -1123,7 +1123,7 @@ function opuHandleFiles(files) {
   opuSelectedFiles = Array.from(files).filter(f => f.name.match(/\.xlsx?$/i)).slice(0, 8);
   const list = document.getElementById('opuFileList');
   if (!opuSelectedFiles.length) { list.innerHTML = ''; document.getElementById('opuBtnUpload').disabled = true; return; }
-  list.innerHTML = opuSelectedFiles.map(f => `<div class="opu-file-item"><span>📄 ${f.name}</span><span style="color:#64748b">${(f.size/1024).toFixed(0)} KB</span></div>`).join('');
+  list.innerHTML = opuSelectedFiles.map(f => `<div class="opu-file-item"><span>📄 ${f.name}</span><span style="color:var(--text-dim)">${(f.size/1024).toFixed(0)} KB</span></div>`).join('');
   document.getElementById('opuBtnUpload').disabled = false;
 }
 async function opuDoUpload() {
@@ -1157,7 +1157,7 @@ function opuShowResults(results) {
     `<div class="opu-result-item"><span style="font-weight:600">${r.filename}</span>
       <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">${
         r.status === 'success'
-          ? `<span class="opu-badge opu-badge-g">成功</span><span style="color:#64748b;font-size:12px">${r.fileType||'-'}/${r.branch||'-'}/${r.period||'-'}/${r.rowCount||0}筆</span>`
+          ? `<span class="opu-badge opu-badge-g">成功</span><span style="color:var(--text-dim);font-size:12px">${r.fileType||'-'}/${r.branch||'-'}/${r.period||'-'}/${r.rowCount||0}筆</span>`
           : `<span class="opu-badge opu-badge-r">失敗</span><span style="color:#ef4444;font-size:12px">${r.error||''}</span>`
       }</div></div>`
   ).join('');
@@ -1165,17 +1165,17 @@ function opuShowResults(results) {
 async function opuLoadHistory() {
   const tbody = document.getElementById('opuHistoryBody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="7" style="color:#64748b;padding:16px;text-align:center"><span class="spinner"></span> 載入中</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="7" style="color:var(--text-dim);padding:16px;text-align:center"><span class="spinner"></span> 載入中</td></tr>';
   try {
     const res = await fetch('/api/history');
     const data = await res.json();
     if (!Array.isArray(data) || !data.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="color:#64748b;padding:16px;text-align:center">尚無紀錄</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="color:var(--text-dim);padding:16px;text-align:center">尚無紀錄</td></tr>';
       return;
     }
     tbody.innerHTML = data.map(h =>
       `<tr>
-        <td style="font-size:11px;color:#94a3b8;white-space:nowrap">${new Date(h.created_at).toLocaleString('zh-TW')}</td>
+        <td style="font-size:11px;color:var(--text-muted);white-space:nowrap">${new Date(h.created_at).toLocaleString('zh-TW')}</td>
         <td style="font-size:12px">${h.file_name||''}</td>
         <td><span class="opu-badge opu-badge-b">${h.file_type||'-'}</span></td>
         <td>${h.branch||'-'}</td>
@@ -1205,9 +1205,9 @@ function switchEstTab(tab) {
 
 async function loadEstimateModalData(period) {
   document.getElementById('estTabContent-input').innerHTML =
-    '<div style="padding:32px;text-align:center;color:#64748b"><span class="spinner"></span>載入中</div>';
+    '<div style="padding:32px;text-align:center;color:var(--text-dim)"><span class="spinner"></span>載入中</div>';
   document.getElementById('estTabContent-history').innerHTML =
-    '<div style="padding:32px;text-align:center;color:#64748b"><span class="spinner"></span>載入中</div>';
+    '<div style="padding:32px;text-align:center;color:var(--text-dim)"><span class="spinner"></span>載入中</div>';
   try {
     const [weekStatus, history] = await Promise.all([
       fetch('/api/revenue-estimates/week-status?period='+period).then(r=>r.json()),
@@ -1248,21 +1248,21 @@ const history = _estModalData.history || [];
     if (brHist.length) lastSub[br] = brHist[0];
   });
  
-  let html = '<div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#94a3b8;margin-bottom:16px;line-height:1.9">'
+  let html = '<div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text-muted);margin-bottom:16px;line-height:1.9">'
     +'📅 本週：<strong style="color:#e2e8f0">'+ws.week_label+'</strong>（週一 '+ws.week_key+'）<br>'
     +'💡 每自然週（週一～週日）可提交一次預估，提交後本週鎖定，下週可提交新版本。'
     +'</div>'
     +'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px;min-width:560px">'
     +'<thead><tr>'
-    +'<th style="padding:9px 12px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:left">據點</th>'
+    +'<th style="padding:9px 12px;background:#0f172a;color:var(--text-dim);font-size:11px;border-bottom:1px solid #2d3f56;text-align:left">據點</th>'
     +KEYS.map(function(k){
       const isAuto = k.key==='paid';
       return '<th style="padding:9px 12px;background:#0f172a;color:'+k.col+';font-size:11px;font-weight:800;border-bottom:1px solid #2d3f56;text-align:right">'
         +k.label+' (K)'
-        +(isAuto?'<div style="font-size:9px;color:#475569;font-weight:400;margin-top:2px">一般+鈑烤+延保</div>':'')
+        +(isAuto?'<div style="font-size:9px;color:var(--text-dimmer);font-weight:400;margin-top:2px">一般+鈑烤+延保</div>':'')
         +'</th>';
     }).join('')
-    +'<th style="padding:9px 12px;background:#0f172a;color:#64748b;font-size:11px;border-bottom:1px solid #2d3f56;text-align:center;min-width:90px">狀態</th>'
+    +'<th style="padding:9px 12px;background:#0f172a;color:var(--text-dim);font-size:11px;border-bottom:1px solid #2d3f56;text-align:center;min-width:90px">狀態</th>'
     +'</tr></thead><tbody>';
  
   BRANCHES.forEach(function(br) {
@@ -1295,7 +1295,7 @@ const history = _estModalData.history || [];
           : '';
         // 若有預填，加上淡色標示
         const prevHint = (!isPaid && prevRaw > 0)
-          ? '<div style="font-size:9px;color:#475569;text-align:right;margin-top:1px">↑ 上週 '+prevRaw+'K</div>'
+          ? '<div style="font-size:9px;color:var(--text-dimmer);text-align:right;margin-top:1px">↑ 上週 '+prevRaw+'K</div>'
           : '';
         html += '<td style="padding:7px 8px;border-bottom:1px solid rgba(45,63,86,.3)'+(isPaid?';background:rgba(249,115,22,.04)':'')+'">'
           +'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:0">'
@@ -1307,7 +1307,7 @@ const history = _estModalData.history || [];
             : 'oninput="_estAutoCalcPaid(\''+br+'\')" '
           )
           +'onfocus="this.style.borderColor=\''+k.col+'\'" onblur="this.style.borderColor=\''+inputBorder+'\'">'
-          +'<span style="font-size:10px;color:#475569">K</span></div>'
+          +'<span style="font-size:10px;color:var(--text-dimmer)">K</span></div>'
           +autoTag
           +prevHint
           +'</div></td>';
@@ -1320,13 +1320,13 @@ const history = _estModalData.history || [];
       html += '<td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center">'
         +'<div style="display:inline-flex;flex-direction:column;align-items:center;gap:3px">'
         +'<span style="background:rgba(16,185,129,.15);color:#10b981;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700">✅ 已提交</span>'
-        +'<span style="font-size:10px;color:#475569">'+ts+'</span></div></td>';
+        +'<span style="font-size:10px;color:var(--text-dimmer)">'+ts+'</span></div></td>';
 } else {
       const hasLast = prev && (prev.paid_estimate || prev.general_estimate);
       html += '<td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center">'
         +'<div style="display:inline-flex;flex-direction:column;align-items:center;gap:4px">'
         +'<span style="background:rgba(245,158,11,.1);color:#f59e0b;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700">⏳ 待提交</span>'
-        +(hasLast?'<span style="font-size:9px;color:#475569">已預填上週值</span>':'')
+        +(hasLast?'<span style="font-size:9px;color:var(--text-dimmer)">已預填上週值</span>':'')
         +'<button id="btnSubmitBranch-'+br+'" onclick="submitBranchEstimate(\''+br+'\')" '
         +'style="padding:4px 12px;background:#3b82f6;color:#fff;border:none;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;margin-top:2px">🚀 提交</button>'
         +'</div></td>';
@@ -1424,7 +1424,7 @@ function renderEstHistoryTab(history) {
   displayWeeks.sort(function(a,b){ return b.week_key.localeCompare(a.week_key); });
  
   if (!displayWeeks.length) {
-    el.innerHTML = '<div style="padding:40px;text-align:center;color:#64748b">📭 此期間尚無資料</div>';
+    el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-dim)">📭 此期間尚無資料</div>';
     return;
   }
  
@@ -1433,7 +1433,7 @@ function renderEstHistoryTab(history) {
   const fmtKH = function(v){ return v ? Math.round(parseFloat(v)/1000).toLocaleString() : '—'; };
   const fmtTs = function(v){ return new Date(v).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}); };
  
-  const TH  = 'padding:8px 12px;background:#0c1524;color:#475569;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;white-space:nowrap;';
+  const TH  = 'padding:8px 12px;background:#0c1524;color:var(--text-dimmer);font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;white-space:nowrap;';
   const THR = TH+'text-align:right;';
  
   // 判斷是否為「本週」
@@ -1456,7 +1456,7 @@ function renderEstHistoryTab(history) {
                       : allSubmitted ? 'rgba(16,185,129,.3)' : '#2d3f56';
     const weekLabel   = (weekMap[week.week_key]?.week_label || week.week_label);
     const statusBadge = isEmpty
-      ? '<span style="margin-left:auto;font-size:11px;background:rgba(100,116,139,.1);color:#475569;padding:2px 8px;border-radius:5px;font-weight:700">— 未提交</span>'
+      ? '<span style="margin-left:auto;font-size:11px;background:rgba(100,116,139,.1);color:var(--text-dimmer);padding:2px 8px;border-radius:5px;font-weight:700">— 未提交</span>'
       : allSubmitted
         ? '<span style="margin-left:auto;font-size:11px;background:rgba(16,185,129,.15);color:#10b981;padding:2px 8px;border-radius:5px;font-weight:700">✅ 三站已提交</span>'
         : '<span style="margin-left:auto;font-size:11px;background:rgba(245,158,11,.1);color:#f59e0b;padding:2px 8px;border-radius:5px;font-weight:700">⚠️ 部分未提交</span>';
@@ -1480,7 +1480,7 @@ function renderEstHistoryTab(history) {
         +'<th style="'+THR+'color:#3b82f6">一般 K</th>'
         +'<th style="'+THR+'color:#8b5cf6">鈑烤 K</th>'
         +'<th style="'+THR+'color:#10b981">延保 K</th>'
-        +'<th style="'+TH+'text-align:center;color:#64748b">提交時間</th>'
+        +'<th style="'+TH+'text-align:center;color:var(--text-dim)">提交時間</th>'
         +'</tr></thead><tbody>';
       BRANCHES.forEach(function(br,bi){
         const col = brColors[br];
@@ -1500,7 +1500,7 @@ function renderEstHistoryTab(history) {
         +'<th style="'+THR+'color:#3b82f6">一般 K</th>'
         +'<th style="'+THR+'color:#8b5cf6">鈑烤 K</th>'
         +'<th style="'+THR+'color:#10b981">延保 K</th>'
-        +'<th style="'+TH+'text-align:center;color:#64748b">提交時間</th>'
+        +'<th style="'+TH+'text-align:center;color:var(--text-dim)">提交時間</th>'
         +'</tr></thead><tbody>';
       BRANCHES.forEach(function(br,bi){
         const sub = week.branches[br];
@@ -1515,7 +1515,7 @@ function renderEstHistoryTab(history) {
             +'<td style="'+TDR+'color:#3b82f6">'+fmtKH(sub.general_estimate)+'</td>'
             +'<td style="'+TDR+'color:#8b5cf6">'+fmtKH(sub.bodywork_estimate)+'</td>'
             +'<td style="'+TDR+'color:#10b981">'+fmtKH(sub.extended_estimate)+'</td>'
-            +'<td style="'+TD+'text-align:center;color:#475569;font-size:11px">'+fmtTs(sub.submitted_at)+'</td>';
+            +'<td style="'+TD+'text-align:center;color:var(--text-dimmer);font-size:11px">'+fmtTs(sub.submitted_at)+'</td>';
         } else {
           html += '<td colspan="5" style="'+TD+'text-align:center;color:#334155;font-size:11px">— 未提交 —</td>';
         }
@@ -1625,11 +1625,11 @@ document.addEventListener('keydown', function(e) {
     <div style="display:flex;align-items:flex-start;gap:12px;padding:16px 20px;border-bottom:1px solid #2d3f56;flex-shrink:0">
       <div style="flex:1">
         <div style="font-size:15px;font-weight:800;color:#fff">&#128202; 營運 Excel 上傳</div>
-        <div style="font-size:12px;color:#64748b;margin-top:3px">將 DMS 匯出的四種報表上傳至資料庫</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-top:3px">將 DMS 匯出的四種報表上傳至資料庫</div>
       </div>
       <button onclick="closeOpUploadModal()"
         style="width:30px;height:30px;border-radius:7px;border:1px solid #2d3f56;
-               background:#0f172a;color:#64748b;font-size:18px;line-height:1;cursor:pointer;
+               background:#0f172a;color:var(--text-dim);font-size:18px;line-height:1;cursor:pointer;
                display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
     </div>
     <div style="padding:18px 20px;overflow-y:auto;flex:1">
@@ -1651,7 +1651,7 @@ document.addEventListener('keydown', function(e) {
         <div id="opuFileList" style="margin-top:10px"></div>
         <div style="margin-top:14px;display:flex;gap:8px;align-items:center">
           <button class="btn btn-primary" id="opuBtnUpload" disabled onclick="opuDoUpload()">上傳</button>
-          <span id="opuUploadStatus" style="font-size:13px;color:#64748b"></span>
+          <span id="opuUploadStatus" style="font-size:13px;color:var(--text-dim)"></span>
         </div>
       </div>
       <div class="opu-card" id="opuResultsCard" style="display:none">
@@ -1667,7 +1667,7 @@ document.addEventListener('keydown', function(e) {
         <div style="overflow-x:auto;max-height:320px">
           <table class="opu-tbl">
             <thead><tr><th>時間</th><th>檔案</th><th>類型</th><th>據點</th><th>期間</th><th class="num">筆數</th><th>狀態</th></tr></thead>
-            <tbody id="opuHistoryBody"><tr><td colspan="7" style="color:#64748b;padding:16px;text-align:center">尚未載入</td></tr></tbody>
+            <tbody id="opuHistoryBody"><tr><td colspan="7" style="color:var(--text-dim);padding:16px;text-align:center">尚未載入</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1685,11 +1685,11 @@ document.addEventListener('keydown', function(e) {
     <div style="display:flex;align-items:flex-start;gap:12px;padding:16px 20px 0;flex-shrink:0">
       <div style="flex:1">
         <div style="font-size:15px;font-weight:800;color:#fff">✏️ 業績預估設定</div>
-        <div style="font-size:12px;color:#64748b;margin-top:3px" id="estModalPeriod"></div>
+        <div style="font-size:12px;color:var(--text-dim);margin-top:3px" id="estModalPeriod"></div>
       </div>
       <button onclick="closeEstimateModal()"
         style="width:30px;height:30px;border-radius:7px;border:1px solid #2d3f56;
-               background:#0f172a;color:#64748b;font-size:18px;line-height:1;cursor:pointer;
+               background:#0f172a;color:var(--text-dim);font-size:18px;line-height:1;cursor:pointer;
                display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">×</button>
     </div>
     <div style="display:flex;padding:12px 20px 0;flex-shrink:0">
@@ -1698,14 +1698,14 @@ document.addEventListener('keydown', function(e) {
                cursor:pointer;background:#3b82f6;color:#fff;border-bottom:2px solid #3b82f6">本週預估</button>
       <button id="estTab-history" onclick="switchEstTab('history')"
         style="padding:8px 22px;border:none;border-radius:7px 7px 0 0;font-size:13px;font-weight:600;
-               cursor:pointer;background:transparent;color:#64748b;border-bottom:2px solid transparent">歷史紀錄</button>
+               cursor:pointer;background:transparent;color:var(--text-dim);border-bottom:2px solid transparent">歷史紀錄</button>
     </div>
     <div style="height:2px;background:#2d3f56;flex-shrink:0"></div>
     <div id="estTabContent-input" style="padding:18px 20px;overflow-y:auto;flex:1;max-height:65vh">
-      <div style="padding:32px;text-align:center;color:#64748b"><span class="spinner"></span>載入中</div>
+      <div style="padding:32px;text-align:center;color:var(--text-dim)"><span class="spinner"></span>載入中</div>
     </div>
     <div id="estTabContent-history" style="display:none;padding:18px 20px;overflow-y:auto;flex:1;max-height:65vh">
-      <div style="padding:32px;text-align:center;color:#64748b"><span class="spinner"></span>載入中</div>
+      <div style="padding:32px;text-align:center;color:var(--text-dim)"><span class="spinner"></span>載入中</div>
     </div>
     <div id="estModalFooter"
       style="padding:12px 20px 16px;border-top:1px solid #2d3f56;display:flex;gap:8px;
@@ -1747,14 +1747,14 @@ async function loadVCTL(period,branch){
 }
 function _renderVCTLMetricList(){
   var el=document.getElementById('vctlMetricList');if(!el)return;
-  if(!_vctlMetrics.length){el.innerHTML='<div style="color:#475569;font-size:13px;padding:8px 0">尚無指標設定</div>';return;}
+  if(!_vctlMetrics.length){el.innerHTML='<div style="color:var(--text-dimmer);font-size:13px;padding:8px 0">尚無指標設定</div>';return;}
   var SL={parts:'🔩 零件',accessories:'📦 配件',boutique:'💎 精品',wage:'🔧 工資'};
   var CL={amount:'實際售價',cost:'成本',qty:'數量',count:'筆數',hours:'標準工時'};
   el.innerHTML=_vctlMetrics.map(function(m){
     var acs=(m.account_types||[]).join('/')||'全部';
     return '<div style="display:flex;align-items:center;gap:10px;background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:10px 14px;margin-bottom:7px">'
       +'<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13px;color:#e2e8f0">'+m.metric_name+'</div>'
-      +(m.description?'<div style="font-size:11px;color:#64748b;margin-top:2px">'+m.description+'</div>':'')
+      +(m.description?'<div style="font-size:11px;color:var(--text-dim);margin-top:2px">'+m.description+'</div>':'')
       +'<div style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap">'
       +'<span style="font-size:10px;background:rgba(59,130,246,.15);color:#3b82f6;padding:1px 7px;border-radius:4px">'+(SL[m.source_type]||m.source_type)+'</span>'
       +'<span style="font-size:10px;background:rgba(16,185,129,.15);color:#10b981;padding:1px 7px;border-radius:4px">'+(CL[m.calc_method]||m.calc_method)+'</span>'
@@ -1777,11 +1777,11 @@ function _renderVCTLResults(branch){
   var fmtK=function(v){var n=parseFloat(v||0);if(!n)return'—';return n>=1000?Math.round(n/1000).toLocaleString()+'K':Math.round(n).toLocaleString();};
   var fmtV=function(v,c){var n=parseFloat(v||0);if(!n)return'—';if(c==='qty'||c==='count')return n.toLocaleString(undefined,{maximumFractionDigits:1});if(c==='hours')return n.toFixed(1)+'H';return n>=1000?Math.round(n/1000).toLocaleString()+'K':Math.round(n).toLocaleString();};
   var metricMap={};_vctlResults.forEach(function(r){metricMap[r.metric_id]=r;});
-  var TH='padding:10px 12px;background:#0f172a;font-size:11px;font-weight:700;color:#64748b;border-bottom:1px solid #2d3f56;white-space:nowrap;';
+  var TH='padding:10px 12px;background:#0f172a;font-size:11px;font-weight:700;color:var(--text-dim);border-bottom:1px solid #2d3f56;white-space:nowrap;';
   var hasMulti=BRANCHES.length>1;
   var html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px;min-width:500px"><thead><tr>'
     +'<th style="'+TH+'text-align:left;min-width:160px">指標名稱</th>';
-  BRANCHES.forEach(function(br){html+='<th style="'+TH+'text-align:center;color:'+BC[br]+'">'+br+'<div style="font-size:9px;font-weight:400;color:#475569;margin-top:1px">售價 / 成本</div></th>';});
+  BRANCHES.forEach(function(br){html+='<th style="'+TH+'text-align:center;color:'+BC[br]+'">'+br+'<div style="font-size:9px;font-weight:400;color:var(--text-dimmer);margin-top:1px">售價 / 成本</div></th>';});
   if(hasMulti)html+='<th style="'+TH+'text-align:right;border-left:1px solid #374151;min-width:90px">集團合計</th>';
   html+='</tr></thead><tbody>';
   _vctlMetrics.forEach(function(m,mi){
@@ -1798,7 +1798,7 @@ function _renderVCTLResults(branch){
       var col=BC[br];var hasV=parseFloat(pRaw||0)>0;
       var cell='<td style="'+TD+'text-align:center"><div style="font-size:16px;font-weight:900;color:'+(hasV?col:'#334155')+'">'+(hasV?fmtV(pRaw,m.calc_method):'—')+'</div>';
       if(showCost&&(d.amount>0||d.cost>0)){
-        cell+='<div style="font-size:10px;color:#475569;margin-top:3px">售 '+fmtV(d.amount,'amount')+' / 成 '+fmtK(d.cost)+'</div>';
+        cell+='<div style="font-size:10px;color:var(--text-dimmer);margin-top:3px">售 '+fmtV(d.amount,'amount')+' / 成 '+fmtK(d.cost)+'</div>';
         var margin=d.amount>0?((d.amount-d.cost)/d.amount*100):null;
         if(margin!==null)cell+='<div style="font-size:10px;color:'+(margin>=30?'#10b981':margin>=15?'#f59e0b':'#ef4444')+';font-weight:700">毛利 '+margin.toFixed(1)+'%</div>';
       }
@@ -1806,10 +1806,10 @@ function _renderVCTLResults(branch){
       return cell+'</td>';
     }).join('');
     html+='<tr><td style="'+TD+'"><div style="font-weight:700;color:#e2e8f0;font-size:13px">'+m.metric_name+'</div>'
-      +'<div style="font-size:10px;color:#475569;margin-top:2px">'+(SL[m.source_type]||m.source_type)+' → '+(CL[m.calc_method]||m.calc_method)+((m.account_types||[]).length?' | '+(m.account_types||[]).join('/'):'')+'</div></td>'
+      +'<div style="font-size:10px;color:var(--text-dimmer);margin-top:2px">'+(SL[m.source_type]||m.source_type)+' → '+(CL[m.calc_method]||m.calc_method)+((m.account_types||[]).length?' | '+(m.account_types||[]).join('/'):'')+'</div></td>'
       +cells+(hasMulti?'<td style="'+TD+'text-align:right;border-left:1px solid #374151;font-weight:900;font-size:15px;color:'+(groupTotal>0?'#10b981':'#334155')+'">'+fmtV(groupTotal,m.calc_method)+'</td>':'')+'</tr>';
   });
-  html+='</tbody></table></div><div style="font-size:11px;color:#475569;margin-top:8px;padding:0 2px">💡 售價 / 成本均為未稅；工資來源顯示工資金額(K) 與標準工時(H)</div>';
+  html+='</tbody></table></div><div style="font-size:11px;color:var(--text-dimmer);margin-top:8px;padding:0 2px">💡 售價 / 成本均為未稅；工資來源顯示工資金額(K) 與標準工時(H)</div>';
   el.innerHTML=html;
 }
 function openVCTLModal(id){
@@ -1882,7 +1882,7 @@ function toggleVCTLCatalogChip(el,col){
 }
 function _renderVCTLFilterList(){
   var el=document.getElementById('vctlFilterList');if(!el)return;
-  if(!_vctlEditingFilters.length){el.innerHTML='<div style="color:#64748b;font-size:12px;padding:3px 0">尚未新增篩選條件</div>';return;}
+  if(!_vctlEditingFilters.length){el.innerHTML='<div style="color:var(--text-dim);font-size:12px;padding:3px 0">尚未新增篩選條件</div>';return;}
   var TL={category_code:'類別碼',function_code:'功能碼',part_number:'零件編號',work_code:'工資代碼',part_type:'Paycode'};
   var TC={category_code:'#3b82f6',function_code:'#8b5cf6',part_number:'#10b981',work_code:'#f59e0b',part_type:'#f97316'};
   el.innerHTML=_vctlEditingFilters.map(function(f,i){
@@ -1890,7 +1890,7 @@ function _renderVCTLFilterList(){
     return '<div style="display:flex;align-items:center;gap:8px;background:#1e293b;border:1px solid #2d3f56;border-radius:7px;padding:6px 12px;margin-bottom:5px">'
       +'<span style="font-size:11px;background:'+col+'22;color:'+col+';padding:1px 7px;border-radius:4px;white-space:nowrap">'+(TL[f.type]||f.type)+'</span>'
       +'<span style="flex:1;font-size:12px;font-weight:600;color:#e2e8f0">'+f.value+'</span>'
-      +'<button onclick="_vctlRemoveFilter('+i+')" style="background:none;border:none;color:#475569;cursor:pointer;font-size:18px;padding:0;line-height:1">×</button></div>';
+      +'<button onclick="_vctlRemoveFilter('+i+')" style="background:none;border:none;color:var(--text-dimmer);cursor:pointer;font-size:18px;padding:0;line-height:1">×</button></div>';
   }).join('');
 }
 function _vctlRemoveFilter(i){_vctlEditingFilters.splice(i,1);_renderVCTLFilterList();}
@@ -1947,22 +1947,22 @@ document.addEventListener('keydown',function(e){
               width:100%;max-width:700px;box-shadow:0 24px 64px rgba(0,0,0,.88);margin:auto">
     <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #2d3f56">
       <div id="vctlModalTitle" style="font-size:15px;font-weight:800;color:#fff;flex:1">新增 VCTL 指標</div>
-      <button onclick="closeVCTLModal()" style="width:30px;height:30px;border-radius:7px;border:1px solid #2d3f56;background:#0f172a;color:#64748b;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
+      <button onclick="closeVCTLModal()" style="width:30px;height:30px;border-radius:7px;border:1px solid #2d3f56;background:#0f172a;color:var(--text-dim);font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
     </div>
     <div style="padding:18px 20px;overflow-y:auto;max-height:72vh">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
         <div>
-          <label style="display:block;font-size:12px;color:#64748b;font-weight:600;margin-bottom:5px">指標名稱 <span style="color:#ef4444">*</span></label>
+          <label style="display:block;font-size:12px;color:var(--text-dim);font-weight:600;margin-bottom:5px">指標名稱 <span style="color:#ef4444">*</span></label>
           <input type="text" id="vctlMName" placeholder="例：精品銷售額" style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:8px 12px;border-radius:6px;font-size:13px;outline:none">
         </div>
         <div>
-          <label style="display:block;font-size:12px;color:#64748b;font-weight:600;margin-bottom:5px">說明（選填）</label>
+          <label style="display:block;font-size:12px;color:var(--text-dim);font-weight:600;margin-bottom:5px">說明（選填）</label>
           <input type="text" id="vctlMDesc" placeholder="例：含型錄零件精品" style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:8px 12px;border-radius:6px;font-size:13px;outline:none">
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 80px;gap:10px;margin-bottom:16px">
         <div>
-          <label style="display:block;font-size:12px;color:#64748b;font-weight:600;margin-bottom:5px">資料來源</label>
+          <label style="display:block;font-size:12px;color:var(--text-dim);font-weight:600;margin-bottom:5px">資料來源</label>
           <select id="vctlMSource" onchange="onVCTLSourceChange()" style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:8px 10px;border-radius:6px;font-size:13px;outline:none">
             <option value="parts">🔩 零件（parts_sales）</option>
             <option value="accessories">📦 配件（parts_catalog 配件）</option>
@@ -1971,7 +1971,7 @@ document.addEventListener('keydown',function(e){
           </select>
         </div>
         <div>
-          <label style="display:block;font-size:12px;color:#64748b;font-weight:600;margin-bottom:5px">計算方式</label>
+          <label style="display:block;font-size:12px;color:var(--text-dim);font-weight:600;margin-bottom:5px">計算方式</label>
           <select id="vctlMCalc" style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:8px 10px;border-radius:6px;font-size:13px;outline:none">
             <option value="amount">💰 實際售價（元）</option>
             <option value="cost">📉 成本（元）</option>
@@ -1980,24 +1980,24 @@ document.addEventListener('keydown',function(e){
           </select>
         </div>
         <div>
-          <label style="display:block;font-size:12px;color:#64748b;font-weight:600;margin-bottom:5px">排序</label>
+          <label style="display:block;font-size:12px;color:var(--text-dim);font-weight:600;margin-bottom:5px">排序</label>
           <input type="number" id="vctlMOrder" value="0" min="0" style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:8px;border-radius:6px;font-size:13px;outline:none;text-align:center">
         </div>
       </div>
       <div style="margin-bottom:16px">
-        <label id="vctlATLabel" style="display:block;font-size:12px;color:#64748b;font-weight:600;margin-bottom:7px">Paycode 篩選（part_type，留空=全部）</label>
+        <label id="vctlATLabel" style="display:block;font-size:12px;color:var(--text-dim);font-weight:600;margin-bottom:7px">Paycode 篩選（part_type，留空=全部）</label>
         <div id="vctlAccountChips" style="display:flex;flex-wrap:wrap;gap:3px;background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:10px 12px;min-height:44px"></div>
       </div>
      <div id="vctlCatalogTypeWrap" style="margin-bottom:16px;display:none">
-        <label style="display:block;font-size:12px;color:#64748b;font-weight:600;margin-bottom:7px">
+        <label style="display:block;font-size:12px;color:var(--text-dim);font-weight:600;margin-bottom:7px">
           零件類別篩選（parts_catalog.part_type）
-          <span style="font-size:10px;color:#475569;font-weight:400;margin-left:6px">與型錄比對後依類別過濾，留空=全部</span>
+          <span style="font-size:10px;color:var(--text-dimmer);font-weight:400;margin-left:6px">與型錄比對後依類別過濾，留空=全部</span>
         </label>
         <div id="vctlCatalogChips" style="display:flex;flex-wrap:wrap;gap:3px;background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:10px 12px;min-height:44px"></div>
       </div>
       <div style="margin-bottom:6px">
-        <label style="display:block;font-size:12px;color:#64748b;font-weight:600;margin-bottom:3px">篩選條件</label>
-        <div id="vctlFilterHint" style="font-size:11px;color:#475569;margin-bottom:8px">類別碼/功能碼/零件編號 篩選條件（AND 邏輯）</div>
+        <label style="display:block;font-size:12px;color:var(--text-dim);font-weight:600;margin-bottom:3px">篩選條件</label>
+        <div id="vctlFilterHint" style="font-size:11px;color:var(--text-dimmer);margin-bottom:8px">類別碼/功能碼/零件編號 篩選條件（AND 邏輯）</div>
         <div id="vctlFilterList" style="margin-bottom:8px"></div>
         <div style="display:flex;gap:8px;align-items:stretch;flex-wrap:wrap">
           <div id="vctlFTypeWrap">

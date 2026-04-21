@@ -33,15 +33,15 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
 .nav { background: #1e293b; border-bottom: 1px solid #2d3f56; padding: 0 24px; display: flex; align-items: center; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .nav::-webkit-scrollbar { display: none; }
 .nav-brand { font-size: 15px; font-weight: 700; color: #fff; padding: 16px 0; margin-right: 24px; white-space: nowrap; flex-shrink: 0; }
-.nav-link { padding: 16px 14px; color: #64748b; font-size: 13px; font-weight: 600; text-decoration: none; border-bottom: 2px solid transparent; white-space: nowrap; flex-shrink: 0; }
+.nav-link { padding: 16px 14px; color: var(--text-dim); font-size: 13px; font-weight: 600; text-decoration: none; border-bottom: 2px solid transparent; white-space: nowrap; flex-shrink: 0; }
 .nav-link:hover { color: #e2e8f0; }
 .nav-link.active { color: #3b82f6; border-bottom-color: #3b82f6; }
 .header-inner { padding: 10px 24px 0; }
 .filter-bar { display: flex; gap: 8px; align-items: center; background: #1e293b; border: 1px solid #2d3f56; border-radius: 10px; padding: 10px 16px; margin-bottom: 8px; flex-wrap: wrap; }
-.filter-bar label { font-size: 12px; color: #64748b; font-weight: 600; }
+.filter-bar label { font-size: 12px; color: var(--text-dim); font-weight: 600; }
 .sel { background: #0f172a; border: 1px solid #2d3f56; color: #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 13px; outline: none; }
 .tab-bar { display: flex; gap: 0; background: #0f172a; border: 1px solid #2d3f56; border-radius: 10px; padding: 4px; width: fit-content; margin-bottom: 10px; }
-.tab-btn { padding: 8px 20px; border: none; border-radius: 7px; font-size: 13px; font-weight: 700; cursor: pointer; background: transparent; color: #64748b; transition: all .15s; white-space: nowrap; }
+.tab-btn { padding: 8px 20px; border: none; border-radius: 7px; font-size: 13px; font-weight: 700; cursor: pointer; background: transparent; color: var(--text-dim); transition: all .15s; white-space: nowrap; }
 .tab-btn.active { background: #3b82f6; color: #fff; }
 .tab-btn:hover:not(.active) { color: #e2e8f0; }
 .container { padding: 14px 24px 40px; max-width: 1500px; margin: 0 auto; }
@@ -58,24 +58,24 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
 .badge-red    { background: rgba(239,68,68,.15); color: #ef4444; }
 .badge-yellow { background: rgba(245,158,11,.15); color: #f59e0b; }
 .badge-blue   { background: rgba(59,130,246,.15); color: #3b82f6; }
-.badge-gray   { background: rgba(100,116,139,.15); color: #94a3b8; }
+.badge-gray   { background: rgba(100,116,139,.15); color: var(--text-muted); }
 .badge-purple { background: rgba(139,92,246,.15); color: #8b5cf6; }
-.loading { text-align: center; padding: 40px; color: #64748b; }
+.loading { text-align: center; padding: 40px; color: var(--text-dim); }
 .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #2d3f56; border-top-color: #3b82f6; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 6px; vertical-align: middle; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.empty { text-align: center; padding: 40px; color: #64748b; }
+.empty { text-align: center; padding: 40px; color: var(--text-dim); }
 .factory-section { border: 1px solid #2d3f56; border-radius: 12px; overflow: hidden; margin-bottom: 14px; }
 .factory-header { background: linear-gradient(135deg,rgba(59,130,246,.12),rgba(59,130,246,.04)); padding: 14px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
 .factory-header:hover { background: rgba(59,130,246,.15); }
 .factory-body { display: none; }
 .factory-body.open { display: block; }
 .dept-section { border-top: 1px solid #2d3f56; }
-.dept-header { background: #131f2e; padding: 10px 20px 10px 36px; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #94a3b8; cursor: pointer; user-select: none; }
+.dept-header { background: #131f2e; padding: 10px 20px 10px 36px; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--text-muted); cursor: pointer; user-select: none; }
 .dept-header:hover { background: rgba(255,255,255,.03); }
 .dept-body { display: none; }
 .dept-body.open { display: block; }
 .emp-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.emp-table th { background: #0c1524; color: #475569; font-size: 11px; font-weight: 700; padding: 8px 12px; border-bottom: 1px solid #2d3f56; white-space: nowrap; text-align: left; }
+.emp-table th { background: #0c1524; color: var(--text-dimmer); font-size: 11px; font-weight: 700; padding: 8px 12px; border-bottom: 1px solid #2d3f56; white-space: nowrap; text-align: left; }
 .emp-table td { padding: 8px 12px; border-bottom: 1px solid rgba(45,63,86,.3); vertical-align: middle; }
 .emp-table tr:hover td { background: rgba(37,51,71,.4); }
 .emp-row-resign td { opacity: .65; }
@@ -90,30 +90,30 @@ body { font-family: -apple-system, 'Microsoft JhengHei', sans-serif; background:
 .modal-win { background: #1a2740; border: 1px solid #2d4060; border-radius: 14px; width: 100%; max-width: 720px; display: flex; flex-direction: column; box-shadow: 0 24px 64px rgba(0,0,0,.8); margin: auto; }
 .modal-head { display: flex; align-items: center; gap: 10px; padding: 16px 20px 12px; border-bottom: 1px solid #2d3f56; flex-shrink: 0; position: sticky; top: 0; background: #1a2740; border-radius: 14px 14px 0 0; z-index: 2; }
 .modal-title { font-size: 15px; font-weight: 800; flex: 1; }
-.modal-close { width: 28px; height: 28px; border-radius: 7px; border: 1px solid #2d3f56; background: #0f172a; color: #64748b; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.modal-close { width: 28px; height: 28px; border-radius: 7px; border: 1px solid #2d3f56; background: #0f172a; color: var(--text-dim); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .modal-close:hover { background: rgba(239,68,68,.15); color: #ef4444; }
 .modal-body { padding: 18px 20px; flex: 1; }
 .modal-footer { padding: 12px 20px 16px; border-top: 1px solid #2d3f56; display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0; position: sticky; bottom: 0; background: #1a2740; border-radius: 0 0 14px 14px; }
 .form-group { margin-bottom: 14px; }
-.form-group label { display: block; font-size: 12px; color: #64748b; font-weight: 600; margin-bottom: 5px; }
+.form-group label { display: block; font-size: 12px; color: var(--text-dim); font-weight: 600; margin-bottom: 5px; }
 .form-input { width: 100%; background: #0f172a; border: 1px solid #2d3f56; color: #e2e8f0; padding: 8px 12px; border-radius: 6px; font-size: 13px; outline: none; }
 .form-input:focus { border-color: #3b82f6; }
 .form-select { background: #0f172a; border: 1px solid #2d3f56; color: #e2e8f0; padding: 8px 10px; border-radius: 6px; font-size: 13px; outline: none; width: 100%; }
-.section-label { font-size: 11px; font-weight: 700; color: #475569; letter-spacing: .05em; padding: 10px 0 6px; border-top: 1px solid #1e3050; margin-top: 6px; }
+.section-label { font-size: 11px; font-weight: 700; color: var(--text-dimmer); letter-spacing: .05em; padding: 10px 0 6px; border-top: 1px solid #1e3050; margin-top: 6px; }
 .section-label:first-child { border-top: none; padding-top: 0; }
 .upload-zone { border: 2px dashed #2d3f56; border-radius: 8px; padding: 28px; text-align: center; cursor: pointer; transition: all .2s; }
 .upload-zone:hover, .upload-zone.drag { border-color: #3b82f6; background: rgba(59,130,246,.05); }
 .summary-cards { display: grid; grid-template-columns: repeat(auto-fill,minmax(140px,1fr)); gap: 10px; margin-bottom: 16px; }
 .sc { background: #1e293b; border: 1px solid #2d3f56; border-radius: 10px; padding: 14px; }
-.sc-label { font-size: 11px; color: #64748b; margin-bottom: 4px; }
+.sc-label { font-size: 11px; color: var(--text-dim); margin-bottom: 4px; }
 .sc-val { font-size: 22px; font-weight: 800; }
-.dept-chip { display:inline-flex; align-items:center; gap:4px; background:#1e293b; border:1px solid #2d3f56; border-radius:6px; padding:4px 8px; cursor:pointer; font-size:11px; color:#94a3b8; transition:all .12s; user-select:none; }
+.dept-chip { display:inline-flex; align-items:center; gap:4px; background:#1e293b; border:1px solid #2d3f56; border-radius:6px; padding:4px 8px; cursor:pointer; font-size:11px; color:var(--text-muted); transition:all .12s; user-select:none; }
 .dept-chip.checked { font-weight:700; }
 .dept-chip input[type=checkbox] { display:none; }
 .tier-input { background:#1e293b; border:1px solid #2d3f56; color:#e2e8f0; padding:5px 8px; border-radius:5px; font-size:12px; text-align:right; outline:none; width:100%; min-width:65px; }
 .tier-input:focus { border-color:#3b82f6; }
 .role-tag { display:inline-flex; align-items:center; gap:4px; background:rgba(59,130,246,.15); border:1px solid rgba(59,130,246,.3); border-radius:6px; padding:3px 8px; font-size:12px; font-weight:600; color:#60a5fa; margin:2px; }
-.role-tag button { background:none; border:none; color:#475569; cursor:pointer; font-size:14px; line-height:1; padding:0 2px; }
+.role-tag button { background:none; border:none; color:var(--text-dimmer); cursor:pointer; font-size:14px; line-height:1; padding:0 2px; }
 .role-tag button:hover { color:#ef4444; }
 
 /* 獎金期間鎖定：禁用所有編輯類動作（保留檢視 / 匯出） */
@@ -204,7 +204,7 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
       </select>
       <button class="btn btn-primary" onclick="doLoad()">查詢</button>
       <button class="btn btn-secondary btn-sm" onclick="showUploadModal()" style="margin-left:auto">📤 上傳人員資料</button>
-      <span id="lastUpdate" style="font-size:11px;color:#64748b;white-space:nowrap"></span>
+      <span id="lastUpdate" style="font-size:11px;color:var(--text-dim);white-space:nowrap"></span>
     </div>
     <div class="tab-bar">
       <button class="tab-btn active" id="tab-btn-roster"   onclick="switchTab('roster')">👥 人員名單</button>
@@ -226,7 +226,7 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
     <!-- ══ 促銷獎金規則設定入口 ══ -->
     <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:12px;margin-bottom:14px;padding:14px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:linear-gradient(135deg,rgba(16,185,129,.1),rgba(16,185,129,.04))">
       <span style="font-size:14px;font-weight:800;color:#10b981">🎁 促銷獎金設定</span>
-      <span id="promoConfigCount" style="font-size:12px;color:#64748b;background:#0f172a;padding:2px 10px;border-radius:10px"></span>
+      <span id="promoConfigCount" style="font-size:12px;color:var(--text-dim);background:#0f172a;padding:2px 10px;border-radius:10px"></span>
       <button onclick="openPromoModal()"
         style="margin-left:auto;padding:6px 16px;background:#10b981;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">
         ⚙️ 促銷獎金規則設定
@@ -243,13 +243,13 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
   <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:12px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
     <span style="font-size:15px;font-weight:800;color:#f59e0b">🚗 業務鈑烤取送獎金</span>
     <div style="display:flex;align-items:center;gap:6px">
-      <span style="font-size:12px;color:#64748b;font-weight:600">結算期間</span>
+      <span style="font-size:12px;color:var(--text-dim);font-weight:600">結算期間</span>
       <select id="bodyshopPeriodSel" class="sel" onchange="loadBodyshopData()">
         <option value="">選擇期間...</option>
       </select>
     </div>
     <div style="display:flex;align-items:center;gap:6px">
-      <span style="font-size:12px;color:#64748b;font-weight:600">廠別</span>
+      <span style="font-size:12px;color:var(--text-dim);font-weight:600">廠別</span>
       <select id="bodyshopBranchSel" class="sel" onchange="loadBodyshopData()">
         <option value="">全部</option>
         <option value="AMA">AMA 內湖</option>
@@ -266,7 +266,7 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
 <button class="btn btn-secondary btn-sm" onclick="openBSSettings()" style="font-size:12px">⚙️ 設定</button>
     <button class="btn btn-danger btn-sm" onclick="runBodyshopReset()" style="font-size:12px">🔄 重置重比</button>
   </div>
-  <div id="bodyshopMatchInfo" style="width:100%;font-size:12px;color:#94a3b8;padding:4px 2px;min-height:18px"></div>
+  <div id="bodyshopMatchInfo" style="width:100%;font-size:12px;color:var(--text-muted);padding:4px 2px;min-height:18px"></div>
 
   <!-- ── 子頁籤 ── -->
   <div class="tab-bar" style="margin-bottom:14px">
@@ -287,7 +287,7 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
         <option value="pending">⏳ 未匹配</option>
         <option value="not_found">❌ 查無工單</option>
       </select>
-      <span id="bodyshopListCount" style="font-size:12px;color:#64748b"></span>
+      <span id="bodyshopListCount" style="font-size:12px;color:var(--text-dim)"></span>
     </div>
     <div id="bodyshopListContent"><div class="empty">請選擇期間</div></div>
   </div>
@@ -302,16 +302,16 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
     <div class="modal-head"><div class="modal-title">📤 上傳人員資料</div><button class="modal-close" onclick="closeModal('uploadModal')">×</button></div>
     <div class="modal-body">
 <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-        <span style="font-size:12px;color:#64748b;font-weight:600;white-space:nowrap">上傳期間</span>
+        <span style="font-size:12px;color:var(--text-dim);font-weight:600;white-space:nowrap">上傳期間</span>
         <select id="uploadPeriodSel" class="sel" style="flex:1">
           <option value="">選擇期間...</option>
         </select>
-        <span style="font-size:11px;color:#475569">（名冊會分月份保存）</span>
+        <span style="font-size:11px;color:var(--text-dimmer)">（名冊會分月份保存）</span>
       </div>
       <div class="upload-zone" id="rosterUploadZone" onclick="document.getElementById('rosterFileInput').click()">
         <div style="font-size:28px;margin-bottom:8px">📊</div>
         <strong>點擊選擇或拖拉檔案</strong>
-        <p style="margin-top:4px;color:#64748b;font-size:12px">支援 .xlsx / .xls</p>
+        <p style="margin-top:4px;color:var(--text-dim);font-size:12px">支援 .xlsx / .xls</p>
       </div>
       <input type="file" id="rosterFileInput" accept=".xlsx,.xls" style="display:none">
       <div id="rosterFileInfo" style="margin-top:8px;font-size:13px;min-height:20px"></div>
@@ -413,7 +413,7 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
             <option value="AMC">AMC 仁愛</option>
             <option value="AMD">AMD 士林</option>
           </select>
-          <div style="font-size:11px;color:#64748b;margin-top:6px;line-height:1.6">
+          <div style="font-size:11px;color:var(--text-dim);margin-top:6px;line-height:1.6">
             💡 若各廠有同名部門（如零件部、美容技師），請明確選擇此指標要抓哪個廠的實績與目標。<br>
             不選 = 自動依部門代碼推算，零件/聯合等部門可能推算失敗而變成集團合計。
           </div>
@@ -425,15 +425,15 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
         ⚠️ <strong>重要</strong>：若各廠有同名部門（如「零件部」），請確認選擇的是正確廠的部門代碼。<strong>留空 = 全廠所有在職正職人員都適用</strong>
       </div>
       <div id="mDeptCheckboxWrap" style="background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:10px 12px;max-height:220px;overflow-y:auto">
-        <span style="color:#475569;font-size:12px"><span class="spinner"></span>載入部門清單...</span>
+        <span style="color:var(--text-dimmer);font-size:12px"><span class="spinner"></span>載入部門清單...</span>
       </div>
       <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn btn-secondary btn-sm" onclick="selectAllDepts()">全選</button>
         <button class="btn btn-secondary btn-sm" onclick="clearAllDepts()">全部清除</button>
-        <span id="mDeptCountLabel" style="font-size:12px;color:#64748b;align-self:center"></span>
+        <span id="mDeptCountLabel" style="font-size:12px;color:var(--text-dim);align-self:center"></span>
       </div>
       <div id="mJobTitleSuggestions" style="display:none;margin-top:10px">
-        <div style="font-size:11px;color:#475569;margin-bottom:6px">此部門常見職稱（點擊快速加入）</div>
+        <div style="font-size:11px;color:var(--text-dimmer);margin-bottom:6px">此部門常見職稱（點擊快速加入）</div>
         <div id="mJobTitleChips" style="display:flex;flex-wrap:wrap;gap:5px"></div>
       </div>
 
@@ -442,12 +442,12 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
 <div id="bonusTabPanel-perf">
   <div class="section-label">🏆 達成率階梯獎金</div>
   <div style="background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:12px 14px;margin-bottom:14px">
-    <div style="font-size:12px;color:#64748b;line-height:1.7;margin-bottom:10px">
-      依達成率高低給予固定獎金，與促銷獎金<strong style="color:#94a3b8">分開累加</strong>。
+    <div style="font-size:12px;color:var(--text-dim);line-height:1.7;margin-bottom:10px">
+      依達成率高低給予固定獎金，與促銷獎金<strong style="color:var(--text-muted)">分開累加</strong>。
     </div>
     <div style="margin-bottom:10px">
-      <div style="font-size:12px;color:#64748b;margin-bottom:6px">
-        設定職稱欄位（不同職稱可有不同獎金金額）。<strong style="color:#94a3b8">不設定 = 所有人同一金額</strong>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:6px">
+        設定職稱欄位（不同職稱可有不同獎金金額）。<strong style="color:var(--text-muted)">不設定 = 所有人同一金額</strong>
       </div>
       <div id="mRoleTagsWrap" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;min-height:28px;background:#0f172a;border:1px solid #2d3f56;border-radius:6px;padding:6px 8px;align-items:center"></div>
       <div style="display:flex;gap:6px">
@@ -456,7 +456,7 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
         <button class="btn btn-secondary btn-sm" onclick="addRole()">＋ 加入</button>
       </div>
       <div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">
-        <span style="font-size:11px;color:#475569">常用：</span>
+        <span style="font-size:11px;color:var(--text-dimmer)">常用：</span>
         <button class="btn btn-secondary btn-sm" style="font-size:11px;padding:2px 8px" onclick="addRoleVal('資深經理')">資深經理</button>
         <button class="btn btn-secondary btn-sm" style="font-size:11px;padding:2px 8px" onclick="addRoleVal('經理')">經理</button>
         <button class="btn btn-secondary btn-sm" style="font-size:11px;padding:2px 8px" onclick="addRoleVal('資深副理')">資深副理</button>
@@ -464,7 +464,7 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
         <button class="btn btn-secondary btn-sm" style="font-size:11px;padding:2px 8px" onclick="addRoleVal('組員')">組員</button>
       </div>
     </div>
-    <div style="font-size:12px;color:#64748b;margin-bottom:6px">設定達成率對應的獎金金額（由高到低排列）</div>
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:6px">設定達成率對應的獎金金額（由高到低排列）</div>
     <div style="overflow-x:auto;margin-bottom:8px">
       <table id="mTierTable" style="width:100%;border-collapse:collapse;font-size:12px">
         <thead id="mTierHead"></thead>
@@ -500,7 +500,7 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
       <!-- ── 列表檢視：顯示已設定規則 ── -->
       <div id="promoListView">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-          <div style="flex:1;font-size:13px;color:#94a3b8">目前已設定 <span id="promoModalCount" style="font-weight:700;color:#10b981">0</span> 條規則</div>
+          <div style="flex:1;font-size:13px;color:var(--text-muted)">目前已設定 <span id="promoModalCount" style="font-weight:700;color:#10b981">0</span> 條規則</div>
           <button class="btn btn-primary" onclick="showPromoEditor()" style="background:#10b981;border:none;font-weight:700">＋ 新增規則</button>
         </div>
         <div id="promoConfigList" style="max-height:480px;overflow-y:auto">
@@ -534,7 +534,7 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
           <div class="form-group">
             <label>連結指標銷售品項</label>
             <select id="pmSaConfigId" class="form-select"><option value="">選擇...</option></select>
-            <div style="font-size:11px;color:#64748b;margin-top:4px">來自「各廠明細 → 指標銷售」的設定</div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:4px">來自「各廠明細 → 指標銷售」的設定</div>
           </div>
           <div class="form-group">
   <label>歸屬人員</label>
@@ -572,17 +572,17 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
             <div class="form-group">
               <label>折扣率下限（0~1）</label>
               <input type="number" id="pmDiscMin" class="form-input" placeholder="例：0.85" min="0" max="1" step="0.01">
-              <div style="font-size:11px;color:#64748b">留空=不限</div>
+              <div style="font-size:11px;color:var(--text-dim)">留空=不限</div>
             </div>
             <div class="form-group">
               <label>折扣率上限（0~1）</label>
               <input type="number" id="pmDiscMax" class="form-input" placeholder="例：0.99" min="0" max="1" step="0.01">
-              <div style="font-size:11px;color:#64748b">留空=不限</div>
+              <div style="font-size:11px;color:var(--text-dim)">留空=不限</div>
             </div>
             <div class="form-group">
               <label>獎金比例（%）</label>
               <input type="number" id="pmBonusPct" class="form-input" placeholder="例：5" min="0" max="100" step="0.1">
-              <div style="font-size:11px;color:#64748b">銷售金額 × %</div>
+              <div style="font-size:11px;color:var(--text-dim)">銷售金額 × %</div>
             </div>
           </div>
         </div>
@@ -609,7 +609,7 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
     <div class="form-group">
       <label>獎金比例（%）</label>
       <input type="number" id="pmSaPctBonus" class="form-input" value="0" min="0" max="100" step="0.1" placeholder="例：5">
-      <div style="font-size:11px;color:#64748b;margin-top:4px">銷售總額 × %</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:4px">銷售總額 × %</div>
     </div>
   </div>
 </div>
@@ -638,11 +638,11 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
         </select>
       </div>
     </div>
-    <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:8px">獎金階梯（由高到低排列，達到門檻套用該層）</div>
+    <div style="font-size:11px;font-weight:700;color:var(--text-dim);margin-bottom:8px">獎金階梯（由高到低排列，達到門檻套用該層）</div>
     <div id="pmTierRows" style="margin-bottom:8px"></div>
     <button onclick="addPmTierRow()" style="padding:4px 12px;background:#253347;color:#cbd5e1;border:1px solid #2d3f56;border-radius:5px;font-size:12px;cursor:pointer">＋ 新增階梯</button>
-    <div style="background:#0f172a;border-radius:6px;padding:8px 12px;margin-top:10px;font-size:11px;color:#475569;line-height:1.8">
-      💡 <strong style="color:#94a3b8">獎金類型說明：</strong><br>
+    <div style="background:#0f172a;border-radius:6px;padding:8px 12px;margin-top:10px;font-size:11px;color:var(--text-dimmer);line-height:1.8">
+      💡 <strong style="color:var(--text-muted)">獎金類型說明：</strong><br>
       • 百分比（%）：實績 × %，例如金額達10萬給10%<br>
       • 每單位（元）：實績數量 × 金額，例如每件給200元<br>
       • 固定金額：達標直接給固定金額
@@ -682,7 +682,7 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
     <div class="modal-body">
       <input type="hidden" id="empEditPeriod"><input type="hidden" id="empEditId">
       <div class="form-group"><label>員工</label><div id="empEditName" style="font-size:14px;font-weight:700;color:#e2e8f0;padding:8px 0"></div></div>
-      <div class="form-group"><label>目前部門</label><div id="empEditDept" style="font-size:12px;color:#64748b;padding:4px 0"></div></div>
+      <div class="form-group"><label>目前部門</label><div id="empEditDept" style="font-size:12px;color:var(--text-dim);padding:4px 0"></div></div>
       <div class="form-group">
         <label>調整至廠別</label>
         <select id="empEditFactory" class="form-select" onchange="onEmpEditFactoryChange()">
@@ -717,7 +717,7 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
       <button class="modal-close" onclick="closeModal('bodyshopUploadModal')">×</button>
     </div>
     <div class="modal-body">
-      <div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:11px 14px;font-size:12px;color:#94a3b8;line-height:1.8;margin-bottom:14px">
+      <div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:11px 14px;font-size:12px;color:var(--text-muted);line-height:1.8;margin-bottom:14px">
         📌 請上傳從 Google 表單下載的 Excel（.xlsx / .xls）<br>
         系統會自動讀取：<strong>申請日期、姓名、員編、車牌號碼、車輛進廠廠別、申請部門</strong><br>
         重複記錄（同車牌+同申請日期+同姓名）會自動略過
@@ -725,7 +725,7 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
       <div class="upload-zone" id="bodyshopUploadZone" onclick="document.getElementById('bodyshopFileInput').click()">
         <div style="font-size:28px;margin-bottom:8px">🚗</div>
         <strong>點擊選擇或拖拉 Excel 檔案</strong>
-        <p style="margin-top:4px;color:#64748b;font-size:12px">支援 .xlsx / .xls</p>
+        <p style="margin-top:4px;color:var(--text-dim);font-size:12px">支援 .xlsx / .xls</p>
       </div>
       <input type="file" id="bodyshopFileInput" accept=".xlsx,.xls" style="display:none">
       <div id="bodyshopFileInfo" style="margin-top:8px;font-size:13px;min-height:20px"></div>
@@ -749,7 +749,7 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
       <div class="form-group">
         <label>工單回溯天數（申請日期往前幾天內的工單才列入比對）</label>
         <input type="number" id="bsCfgLookback" class="form-input" value="30" min="0" max="365" placeholder="30">
-        <div style="font-size:11px;color:#64748b;margin-top:4px">申請日期當天及之後的工單一定納入，此設定控制往前追溯範圍</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:4px">申請日期當天及之後的工單一定納入，此設定控制往前追溯範圍</div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div class="form-group">
@@ -761,7 +761,7 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
           <input type="number" id="bsCfgRateB" class="form-input" value="4" min="0" max="100" step="0.1" placeholder="4">
         </div>
       </div>
-      <div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#94a3b8;line-height:1.8">
+      <div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text-muted);line-height:1.8">
         💡 每筆工單上限 <strong style="color:#e2e8f0">20,000 元</strong><br>
         獎金 = MIN( 維修收入 × 獎金率, 20,000 )
       </div>
@@ -1031,19 +1031,19 @@ function renderAlerts(s) {
   if (nHL.length) {
     html+='<div style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);border-radius:10px;padding:14px 18px;margin-bottom:10px">';
     html+='<div style="font-size:13px;font-weight:700;color:#3b82f6;margin-bottom:8px">🆕 '+pL+'新進（'+nHL.length+' 人）</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
-    nHL.forEach(r=>{ html+='<div style="background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.2);border-radius:7px;padding:6px 12px;font-size:12px"><span style="font-weight:700;color:#e2e8f0">'+r.emp_name+'</span><span style="color:#64748b;margin-left:6px">'+(r.dept_name||'')+'</span></div>'; });
+    nHL.forEach(r=>{ html+='<div style="background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.2);border-radius:7px;padding:6px 12px;font-size:12px"><span style="font-weight:700;color:#e2e8f0">'+r.emp_name+'</span><span style="color:var(--text-dim);margin-left:6px">'+(r.dept_name||'')+'</span></div>'; });
     html+='</div></div>';
   }
   if (rL.length) {
     html+='<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:10px;padding:14px 18px;margin-bottom:10px">';
     html+='<div style="font-size:13px;font-weight:700;color:#ef4444;margin-bottom:8px">🚨 '+pL+'離職（'+rL.length+' 人）</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
-    rL.forEach(r=>{ html+='<div style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2);border-radius:7px;padding:6px 12px;font-size:12px"><span style="font-weight:700;color:#e2e8f0">'+r.emp_name+'</span><span style="color:#64748b;margin-left:6px">'+(r.dept_name||'')+'</span><span style="color:#ef4444;margin-left:6px">'+(r.resign_date?.slice(0,10)||'')+'</span></div>'; });
+    rL.forEach(r=>{ html+='<div style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2);border-radius:7px;padding:6px 12px;font-size:12px"><span style="font-weight:700;color:#e2e8f0">'+r.emp_name+'</span><span style="color:var(--text-dim);margin-left:6px">'+(r.dept_name||'')+'</span><span style="color:#ef4444;margin-left:6px">'+(r.resign_date?.slice(0,10)||'')+'</span></div>'; });
     html+='</div></div>';
   }
   if (uL.length) {
     html+='<div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:14px 18px;margin-bottom:10px">';
     html+='<div style="font-size:13px;font-weight:700;color:#f59e0b;margin-bottom:8px">⏸️ 留職停薪（'+uL.length+' 人）</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
-    uL.forEach(r=>{ html+='<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:7px;padding:6px 12px;font-size:12px"><span style="font-weight:700;color:#e2e8f0">'+r.emp_name+'</span><span style="color:#64748b;margin-left:6px">'+(r.dept_name||'')+'</span></div>'; });
+    uL.forEach(r=>{ html+='<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:7px;padding:6px 12px;font-size:12px"><span style="font-weight:700;color:#e2e8f0">'+r.emp_name+'</span><span style="color:var(--text-dim);margin-left:6px">'+(r.dept_name||'')+'</span></div>'; });
     html+='</div></div>';
   }
   el.innerHTML=html;
@@ -1076,7 +1076,7 @@ function renderRosterTree(rows) {
     const fcId='fc-'+fi;
     html+='<div class="factory-section" style="border-color:'+meta.color+'44">';
     html+='<div class="factory-header" onclick="toggleSection(\''+fcId+'\')">';
-    html+='<span id="'+fcId+'-arrow" style="font-size:11px;color:#64748b;transition:transform .2s;display:inline-block;transform:rotate(90deg)">▶</span>';
+    html+='<span id="'+fcId+'-arrow" style="font-size:11px;color:var(--text-dim);transition:transform .2s;display:inline-block;transform:rotate(90deg)">▶</span>';
     html+='<span style="font-size:15px;font-weight:800;color:'+meta.color+'">'+meta.icon+' '+meta.label+'</span>';
     html+='<div style="margin-left:auto;display:flex;gap:6px"><span class="badge badge-green">'+activeC+' 在職</span>';
     if(unpaidC) html+='<span class="badge badge-yellow">'+unpaidC+' 停薪</span>';
@@ -1089,8 +1089,8 @@ function renderRosterTree(rows) {
       const rawName=dept.dept_name||dk;
       const displayName=(deptNameCount[rawName]>1&&FC_SHORT[f])?(FC_SHORT[f]+' '+rawName):rawName;
       html+='<div class="dept-section"><div class="dept-header" onclick="toggleSection(\''+dId+'\')">';
-      html+='<span id="'+dId+'-arrow" style="margin-right:4px;color:#475569;transition:transform .2s;display:inline-block">▶</span>';
-      html+='<span style="font-weight:700;color:#cbd5e1">'+displayName+'</span><span style="font-size:11px;color:#475569;margin-left:6px">'+dk+'</span>';
+      html+='<span id="'+dId+'-arrow" style="margin-right:4px;color:var(--text-dimmer);transition:transform .2s;display:inline-block">▶</span>';
+      html+='<span style="font-weight:700;color:#cbd5e1">'+displayName+'</span><span style="font-size:11px;color:var(--text-dimmer);margin-left:6px">'+dk+'</span>';
       html+='<div style="margin-left:auto;display:flex;gap:5px"><span style="font-size:11px;color:#10b981;font-weight:700">'+aE+'在</span>';
       if(uE) html+='<span style="font-size:11px;color:#f59e0b;font-weight:700">'+uE+'停</span>';
       if(rE) html+='<span style="font-size:11px;color:#ef4444">'+rE+'離</span>';
@@ -1100,7 +1100,7 @@ function renderRosterTree(rows) {
         const rc=e.status==='離職'?'emp-row-resign':e.status==='留職停薪'?'emp-row-unpaid':'';
         const eName=e.emp_name.replace(/'/g,"\\'"), eFact=(e.factory||'').replace(/'/g,"\\'");
         const _dA=e.dept_name?"'"+e.dept_name.replace(/'/g,"\\'")+"'":"''";
-        html+='<tr class="'+rc+'"><td style="font-family:monospace;font-size:11px;color:#94a3b8">'+e.emp_id+'</td><td style="font-weight:700">'+e.emp_name+'</td><td style="font-size:12px;color:#94a3b8">'+(e.job_title||'—')+'</td><td>'+(STATUS_BADGE[e.status]||e.status)+'</td><td style="font-size:12px;color:#64748b">'+(e.mgr1||'—')+'</td><td style="font-size:11px">'+(e.hire_date?.slice(0,10)||'—')+'</td><td style="font-size:11px;color:'+(e.resign_date?'#ef4444':'#475569')+'">'+(e.resign_date?.slice(0,10)||'—')+'</td>';
+        html+='<tr class="'+rc+'"><td style="font-family:monospace;font-size:11px;color:var(--text-muted)">'+e.emp_id+'</td><td style="font-weight:700">'+e.emp_name+'</td><td style="font-size:12px;color:var(--text-muted)">'+(e.job_title||'—')+'</td><td>'+(STATUS_BADGE[e.status]||e.status)+'</td><td style="font-size:12px;color:var(--text-dim)">'+(e.mgr1||'—')+'</td><td style="font-size:11px">'+(e.hire_date?.slice(0,10)||'—')+'</td><td style="font-size:11px;color:'+(e.resign_date?'#ef4444':'#475569')+'">'+(e.resign_date?.slice(0,10)||'—')+'</td>';
         html+='<td><button class="btn btn-secondary btn-sm" onclick="openEmpEditModal(\''+_rosterLoadedPeriod+'\',\''+e.emp_id+'\',\''+eFact+'\',\''+eName+'\','+_dA+')">✏️</button></td></tr>';
       });
       html+='</tbody></table></div></div>';
@@ -1188,7 +1188,7 @@ function renderMetricManagementPanel() {
   const REV_TYPE_LABEL={paid:'有費',bodywork:'鈑烤',general:'一般',extended:'延保'};
   const BRANCH_LABEL={'':'集團',AMA:'AMA',AMC:'AMC',AMD:'AMD'};
   if (!_metrics.length) {
-    return '<div style="padding:12px 0;color:#475569;font-size:12px">尚未建立任何指標</div>';
+    return '<div style="padding:12px 0;color:var(--text-dimmer);font-size:12px">尚未建立任何指標</div>';
   }
   return _metrics.map(m=>{
     const deptCodes=m.target_dept_codes||[];
@@ -1222,9 +1222,9 @@ if(promoRules.length){
           +'<span style="font-size:10px;background:rgba(59,130,246,.15);color:#3b82f6;padding:1px 6px;border-radius:4px">'+(SCOPE_LABEL[m.scope_type]||m.scope_type)+'</span>'
           +'<span style="font-size:10px;background:rgba(139,92,246,.15);color:#8b5cf6;padding:1px 6px;border-radius:4px">'+(SOURCE_LABEL[m.metric_source]||m.metric_source)+'</span>'
           +revTag
-          +(deptCodes.length?'<span style="font-size:10px;background:rgba(100,116,139,.15);color:#94a3b8;padding:1px 6px;border-radius:4px">📌 '+deptCodes.length+' 部門</span>':'<span style="font-size:10px;background:rgba(100,116,139,.15);color:#94a3b8;padding:1px 6px;border-radius:4px">📌 全廠</span>')
+          +(deptCodes.length?'<span style="font-size:10px;background:rgba(100,116,139,.15);color:var(--text-muted);padding:1px 6px;border-radius:4px">📌 '+deptCodes.length+' 部門</span>':'<span style="font-size:10px;background:rgba(100,116,139,.15);color:var(--text-muted);padding:1px 6px;border-radius:4px">📌 全廠</span>')
         +'</div>'
-        +(tierPreview?'<div style="font-size:11px;color:#64748b;margin-bottom:2px">🏆 '+tierPreview+'</div>':'<div style="font-size:11px;color:#475569;margin-bottom:2px">尚未設定達成率階梯</div>')
+        +(tierPreview?'<div style="font-size:11px;color:var(--text-dim);margin-bottom:2px">🏆 '+tierPreview+'</div>':'<div style="font-size:11px;color:var(--text-dimmer);margin-bottom:2px">尚未設定達成率階梯</div>')
         +(promoPreview?'<div style="font-size:11px;color:#10b981">🎁 '+promoPreview+'</div>':'')
       +'</div>'
       +'<div style="display:flex;gap:5px;flex-shrink:0">'
@@ -1239,7 +1239,7 @@ if(promoRules.length){
 async function loadDeptCheckboxes(selectedCodes) {
   const el=document.getElementById('mDeptCheckboxWrap');
   const periodForLoad=_period||_rosterPeriods[0];
-  if (!periodForLoad){ el.innerHTML='<span style="color:#475569;font-size:12px">請先選擇期間以載入部門列表</span>'; return; }
+  if (!periodForLoad){ el.innerHTML='<span style="color:var(--text-dimmer);font-size:12px">請先選擇期間以載入部門列表</span>'; return; }
   el.innerHTML='<span class="spinner"></span>';
   try {
     const depts=await fetch('/api/bonus/departments?period='+periodForLoad).then(r=>r.json());
@@ -1284,11 +1284,11 @@ async function loadDeptCheckboxes(selectedCodes) {
           ? (selectedCodes.includes(d.dept_code) && brOv && brOv.value===factory)
           : selectedCodes.includes(d.dept_code);
         html+='<label class="dept-chip '+(checked?'checked':'')+'" style="'+(checked?'background:'+fc+'22;border-color:'+fc+';color:'+fc:'')+'" onclick="toggleDeptChip(this,\''+fc+'\')">';
-        html+='<input type="checkbox" value="'+cbVal+'" '+(checked?'checked':'')+'>'+d.dept_name+dupWarn+' <span style="color:#475569;font-size:10px">'+d.dept_code+'</span></label>';
+        html+='<input type="checkbox" value="'+cbVal+'" '+(checked?'checked':'')+'>'+d.dept_name+dupWarn+' <span style="color:var(--text-dimmer);font-size:10px">'+d.dept_code+'</span></label>';
       });
       html+='</div></div>';
     });
-    el.innerHTML=html||'<span style="color:#475569;font-size:12px">無部門資料</span>';
+    el.innerHTML=html||'<span style="color:var(--text-dimmer);font-size:12px">無部門資料</span>';
     updateDeptCount();
   } catch(e){ el.innerHTML='<span style="color:#ef4444;font-size:12px">'+esc(e.message)+'</span>'; }
 }
@@ -1321,7 +1321,7 @@ async function loadDeptJobTitles() {
     chipsDiv.innerHTML=titles.map(t=>{
       const already=_tierRoles.includes(t);
       const safeT=t.replace(/'/g,"\\'");
-      return '<span onclick="'+(already?'':'addRoleVal(\''+safeT+'\')')+'" style="display:inline-flex;align-items:center;gap:3px;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:'+(already?'default':'pointer')+';border:1px solid;'+(already?'background:rgba(59,130,246,.15);border-color:#3b82f6;color:#60a5fa':'background:#1e293b;border-color:#2d3f56;color:#94a3b8')+'">'+(already?'✓ ':'＋ ')+t+'</span>';
+      return '<span onclick="'+(already?'':'addRoleVal(\''+safeT+'\')')+'" style="display:inline-flex;align-items:center;gap:3px;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:'+(already?'default':'pointer')+';border:1px solid;'+(already?'background:rgba(59,130,246,.15);border-color:#3b82f6;color:#60a5fa':'background:#1e293b;border-color:#2d3f56;color:var(--text-muted)')+'">'+(already?'✓ ':'＋ ')+t+'</span>';
     }).join('');
     sugDiv.style.display='';
   } catch(e){ if(sugDiv) sugDiv.style.display='none'; }
@@ -1351,7 +1351,7 @@ function getSelectedDeptBranchOverride() {
 // ══ 職稱角色 ══
 function renderRoleTags() {
   const wrap=document.getElementById('mRoleTagsWrap');
-  if (!_tierRoles.length){ wrap.innerHTML='<span style="color:#475569;font-size:11px">（未設定職稱 → 所有人同一金額）</span>'; return; }
+  if (!_tierRoles.length){ wrap.innerHTML='<span style="color:var(--text-dimmer);font-size:11px">（未設定職稱 → 所有人同一金額）</span>'; return; }
   wrap.innerHTML=_tierRoles.map((r,i)=>'<span class="role-tag">'+r+'<button onclick="removeRole('+i+')" title="移除">×</button></span>').join('');
   renderTierTable(); loadDeptJobTitles();
 }
@@ -1370,8 +1370,8 @@ function removeRole(i) { _tierRoles.splice(i,1); renderRoleTags(); renderTierTab
 function renderTierTable() {
   const head=document.getElementById('mTierHead'), body=document.getElementById('mTierBody');
   const roles=_tierRoles;
-  let thHtml='<tr><th style="background:#0f172a;color:#64748b;padding:7px 10px;border-bottom:1px solid #2d3f56;text-align:center;white-space:nowrap;min-width:90px">達成率 ≥ (%)</th>';
-  thHtml+='<th style="background:#0f172a;color:#64748b;padding:7px 10px;border-bottom:1px solid #2d3f56;text-align:center;white-space:nowrap;min-width:90px">未達 (%, 空=無上限)</th>';
+  let thHtml='<tr><th style="background:#0f172a;color:var(--text-dim);padding:7px 10px;border-bottom:1px solid #2d3f56;text-align:center;white-space:nowrap;min-width:90px">達成率 ≥ (%)</th>';
+  thHtml+='<th style="background:#0f172a;color:var(--text-dim);padding:7px 10px;border-bottom:1px solid #2d3f56;text-align:center;white-space:nowrap;min-width:90px">未達 (%, 空=無上限)</th>';
   if (roles.length) roles.forEach(r=>{ thHtml+='<th style="background:#0f172a;color:#10b981;padding:7px 10px;border-bottom:1px solid #2d3f56;text-align:center;white-space:nowrap;min-width:80px">'+r+'</th>'; });
   else thHtml+='<th style="background:#0f172a;color:#10b981;padding:7px 10px;border-bottom:1px solid #2d3f56;text-align:center;min-width:90px">獎金金額（元）</th>';
   thHtml+='<th style="background:#0f172a;padding:7px 6px;border-bottom:1px solid #2d3f56;width:30px"></th></tr>';
@@ -1379,7 +1379,7 @@ function renderTierTable() {
   let bodyHtml='';
   _tiers.forEach((t,i)=>{
     bodyHtml+='<tr><td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3)"><input class="tier-input" type="number" value="'+t.gte+'" min="0" max="300" step="0.1" onchange="_tiers['+i+'].gte=parseFloat(this.value)||0" style="color:#3b82f6;font-weight:700"></td>';
-    bodyHtml+='<td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3)"><input class="tier-input" type="number" value="'+(t.lt!==null?t.lt:'')+'" min="0" max="300" step="0.1" placeholder="無上限" onchange="_tiers['+i+'].lt=this.value===\'\'?null:parseFloat(this.value)" style="color:#64748b"></td>';
+    bodyHtml+='<td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3)"><input class="tier-input" type="number" value="'+(t.lt!==null?t.lt:'')+'" min="0" max="300" step="0.1" placeholder="無上限" onchange="_tiers['+i+'].lt=this.value===\'\'?null:parseFloat(this.value)" style="color:var(--text-dim)"></td>';
     if (roles.length) {
       roles.forEach(r=>{
         const amt=(t.amounts&&t.amounts[r]!==undefined)?t.amounts[r]:0;
@@ -1391,7 +1391,7 @@ function renderTierTable() {
     }
     bodyHtml+='<td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center"><button class="btn btn-danger btn-sm" onclick="removeTier('+i+')" style="padding:3px 8px">×</button></td></tr>';
   });
-  if (!_tiers.length) bodyHtml='<tr><td colspan="'+(2+(roles.length||1)+1)+'" style="padding:14px;text-align:center;color:#475569;font-size:12px">尚未設定階梯</td></tr>';
+  if (!_tiers.length) bodyHtml='<tr><td colspan="'+(2+(roles.length||1)+1)+'" style="padding:14px;text-align:center;color:var(--text-dimmer);font-size:12px">尚未設定階梯</td></tr>';
   body.innerHTML=bodyHtml;
 }
 function syncTierAmount(el) {
@@ -1417,7 +1417,7 @@ function renderPromoRules() {
   var wrap = document.getElementById('mPromoRulesWrap');
   if (!wrap) return;
   if (!_promoRules.length) {
-    wrap.innerHTML = '<div style="color:#475569;font-size:12px;padding:6px 0">尚未設定促銷獎金</div>';
+    wrap.innerHTML = '<div style="color:var(--text-dimmer);font-size:12px;padding:6px 0">尚未設定促銷獎金</div>';
     return;
   }
   var roles = _tierRoles;
@@ -1427,28 +1427,28 @@ function renderPromoRules() {
     var typeLabel = isQty ? '📦 數量型' : '💎 比例型';
 
     var mainRow = isQty
-      ? '<span style="font-size:11px;color:#64748b">每</span>'
+      ? '<span style="font-size:11px;color:var(--text-dim)">每</span>'
         + '<input type="number" value="'+rule.per_qty+'" min="1" step="1" '
         + 'style="background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:3px 6px;border-radius:5px;font-size:12px;width:48px;text-align:center;outline:none" '
         + 'data-pi="'+i+'" oninput="_promoRules['+i+'].per_qty=parseFloat(this.value)||1">'
-        + '<span style="font-size:11px;color:#64748b">件 給</span>'
+        + '<span style="font-size:11px;color:var(--text-dim)">件 給</span>'
         + '<input type="number" value="'+rule.bonus+'" min="0" step="1" '
         + 'style="background:#0f172a;border:1px solid #2d3f56;color:'+col+';padding:3px 8px;border-radius:5px;font-size:13px;font-weight:700;width:80px;text-align:right;outline:none" '
         + 'data-pi="'+i+'" oninput="_promoRules['+i+'].bonus=parseFloat(this.value)||0">'
-        + '<span style="font-size:11px;color:#64748b">元/件</span>'
-      : '<span style="font-size:11px;color:#64748b">銷售額</span>'
+        + '<span style="font-size:11px;color:var(--text-dim)">元/件</span>'
+      : '<span style="font-size:11px;color:var(--text-dim)">銷售額</span>'
         + '<input type="number" value="'+(rule.pct||0)+'" min="0" max="100" step="0.1" '
         + 'style="background:#0f172a;border:1px solid #2d3f56;color:'+col+';padding:3px 8px;border-radius:5px;font-size:13px;font-weight:700;width:60px;text-align:right;outline:none" '
         + 'data-pi="'+i+'" oninput="_promoRules['+i+'].pct=parseFloat(this.value)||0">'
-        + '<span style="font-size:11px;color:#64748b">%</span>';
+        + '<span style="font-size:11px;color:var(--text-dim)">%</span>';
 
     var roleAmtHtml = roles.length
       ? '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding-top:6px;border-top:1px solid #2d3f56;margin-top:6px">'
-        + '<span style="font-size:10px;font-weight:700;color:#475569">各職稱：</span>'
+        + '<span style="font-size:10px;font-weight:700;color:var(--text-dimmer)">各職稱：</span>'
         + roles.map(function(r) {
             var defVal = isQty ? (rule.bonus||0) : (rule.pct||0);
             var val = (rule.role_amounts && rule.role_amounts[r] != null) ? rule.role_amounts[r] : defVal;
-            return '<span style="font-size:10px;color:#94a3b8">' + r + ':</span> '
+            return '<span style="font-size:10px;color:var(--text-muted)">' + r + ':</span> '
               + '<input type="number" value="' + val + '" min="0" step="'+(isQty?'1':'0.1')+'" '
               + 'style="background:#0f172a;border:1px solid #2d3f56;color:'+col+';padding:2px 6px;border-radius:4px;font-size:11px;width:'+(isQty?'70':'55')+'px;text-align:right;outline:none" '
               + 'data-pi="' + i + '" data-role="' + r.replace(/"/g, '&quot;') + '" '
@@ -1767,12 +1767,12 @@ async function loadProgress() {
   el.innerHTML=`
     <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:10px;padding:12px 18px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
       <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:12px;color:#64748b;font-weight:600;white-space:nowrap">👥 名冊</span>
-        <span style="font-size:12px;font-weight:700;color:#94a3b8;background:#0f172a;padding:3px 10px;border-radius:5px" id="rosterPeriodLabel">載入中...</span>
+        <span style="font-size:12px;color:var(--text-dim);font-weight:600;white-space:nowrap">👥 名冊</span>
+        <span style="font-size:12px;font-weight:700;color:var(--text-muted);background:#0f172a;padding:3px 10px;border-radius:5px" id="rosterPeriodLabel">載入中...</span>
       </div>
       <span style="color:#374151;font-size:14px">｜</span>
       <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:200px">
-        <span style="font-size:12px;color:#64748b;font-weight:600;white-space:nowrap">📊 實績期間</span>
+        <span style="font-size:12px;color:var(--text-dim);font-weight:600;white-space:nowrap">📊 實績期間</span>
         <select id="actualPeriodSel" style="background:#0f172a;border:1px solid #3b82f6;color:#60a5fa;padding:6px 12px;border-radius:6px;font-size:13px;font-weight:700;outline:none;cursor:pointer;flex:1;min-width:0">
           ${periodOptions.map(p=>'<option value="'+p+'" '+(p===_actualPeriod?'selected':'')+'>'+p.slice(0,4)+'年'+parseInt(p.slice(4))+'月</option>').join('')}
         </select>
@@ -1828,7 +1828,7 @@ async function renderProgressContent() {
     if (rLbl&&_rosterLoadedPeriod) rLbl.textContent=_rosterLoadedPeriod.slice(0,4)+'年'+parseInt(_rosterLoadedPeriod.slice(4))+'月（最新）';
 
     if (!_rosterData.length) {
-      el.innerHTML='<div style="text-align:center;padding:48px;color:#64748b"><div style="font-size:36px;margin-bottom:12px">👥</div><div style="font-size:14px;font-weight:700;margin-bottom:8px">尚無人員名冊</div><div style="font-size:12px">請先點擊右上角「上傳人員資料」</div></div>';
+      el.innerHTML='<div style="text-align:center;padding:48px;color:var(--text-dim)"><div style="font-size:36px;margin-bottom:12px">👥</div><div style="font-size:14px;font-weight:700;margin-bottom:8px">尚無人員名冊</div><div style="font-size:12px">請先點擊右上角「上傳人員資料」</div></div>';
       return;
     }
 
@@ -2102,7 +2102,7 @@ var eff0=te0?te0.rate:(meta00.useAuto?meta00.autoRate:null);
         +'<div id="'+fcId+'-hdr" style="background:'+fcColor+'1e;padding:12px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none" onclick="toggleProgSection(\''+fcId+'\')">'
           +'<span id="'+fcId+'-arrow" style="font-size:12px;color:'+fcColor+';transition:transform .2s;display:inline-block;transform:rotate(90deg)">▶</span>'
           +'<span style="font-size:16px;font-weight:900;color:'+fcColor+'">'+fcLabel+'</span>'
-          +'<span style="font-size:12px;color:#64748b;background:#0f172a;padding:2px 8px;border-radius:10px">'+fcTotalPpl+' 人</span>'
+          +'<span style="font-size:12px;color:var(--text-dim);background:#0f172a;padding:2px 8px;border-radius:10px">'+fcTotalPpl+' 人</span>'
           +(fcBonusPpl>0?'<span style="font-size:12px;color:#10b981;background:rgba(16,185,129,.1);padding:2px 8px;border-radius:10px">'+fcBonusPpl+' 人有獎金</span>':'')
           +'<div style="margin-left:auto">'+(fcHasMetrics?'<span style="font-size:18px;font-weight:900;color:'+(fcTotalBonus>0?'#f59e0b':'#475569')+'">'+(fcTotalBonus>0?fcTotalBonus.toLocaleString()+' 元':'—')+'</span>':'')+'</div>'
         +'</div>'
@@ -2202,7 +2202,7 @@ memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonu
         }
         memberRows.sort(function(a,b){return b.total-a.total;});
 
-        var thBase='text-align:left;padding:8px 10px;background:#090f1a;color:#475569;font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;white-space:nowrap;border-right:1px solid #1a2535;';
+        var thBase='text-align:left;padding:8px 10px;background:#090f1a;color:var(--text-dimmer);font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;white-space:nowrap;border-right:1px solid #1a2535;';
 
         // 部門 header：指標標籤 + 每個指標的編輯/刪除 + 新增按鈕
         // 自動從 factory 推算 branch_override
@@ -2259,7 +2259,7 @@ memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonu
   : '')
          +'<button onclick="event.stopPropagation();openExtraBonusModal(\''+fc+'\',\''+dkey+'\',\''+displayDeptName.replace(/'/g,"\\'")+'\') " style="margin-left:4px;padding:2px 10px;border-radius:5px;border:1px solid #1d4ed8;background:rgba(59,130,246,.15);color:#60a5fa;font-size:11px;cursor:pointer;font-weight:700">💵 額外獎金</button>'
           +'<button onclick="event.stopPropagation();_openMRModal(\''+fc+'-'+dkey+'\')" style="margin-left:4px;padding:2px 10px;border-radius:5px;border:1px solid #4a1d96;background:rgba(139,92,246,.15);color:#a78bfa;font-size:11px;cursor:pointer;font-weight:700">💼 主管考核</button>'
-          +'<span style="font-size:11px;color:#475569;background:#0f172a;padding:1px 7px;border-radius:6px">'+dept.members.length+' 人</span>'
+          +'<span style="font-size:11px;color:var(--text-dimmer);background:#0f172a;padding:1px 7px;border-radius:6px">'+dept.members.length+' 人</span>'
             +deptTagsHtml
             +'<button onclick="event.stopPropagation();openNewMetricForDept(\''+dkey+'\',\''+displayDeptName.replace(/'/g,"\\'")+'\',\''+fc+'\',\''+autoBranch+'\')" '
               +'style="margin-left:auto;background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3);padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">＋ 新增獎金規則</button>'
@@ -2278,9 +2278,9 @@ memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonu
           var tp4=isTeamDept?teamPoolMap[mId4]:null;
           html+='<th style="'+thBase+'min-width:110px;text-align:center;background:#0c1524;border-bottom:1px solid #1e2d40">'
             +'<div style="font-size:11px;font-weight:800;color:#e2e8f0;margin-bottom:2px">'+(isTeamDept?'👥 ':'')+meta4.metric.metric_name+'</div>'
-            +(meta4.useAuto&&meta4.autoPT!==null?'<div style="font-size:10px;color:#64748b;margin-bottom:2px">📐 目標 <strong style="color:#94a3b8">'
+            +(meta4.useAuto&&meta4.autoPT!==null?'<div style="font-size:10px;color:var(--text-dim);margin-bottom:2px">📐 目標 <strong style="color:var(--text-muted)">'
             +(meta4.metric.metric_source==='tech_hours'?Math.round(meta4.autoPT)+' 小時':fv4(meta4.autoPT))+'</strong></div>':'')
-            +(meta4.useAuto&&meta4.autoRate!==null?'<div style="font-size:10px;color:#64748b;margin-bottom:2px">⚡ '
+            +(meta4.useAuto&&meta4.autoRate!==null?'<div style="font-size:10px;color:var(--text-dim);margin-bottom:2px">⚡ '
             +(meta4.metric.metric_source==='tech_hours'?(meta4.actual!==null?Math.round(meta4.actual)+' 小時':'—'):fv4(meta4.actual))+' <span style="color:'+rc4+';font-weight:700">'+meta4.autoRate.toFixed(1)+'%</span></div>':(meta4.useAuto?'<div style="font-size:9px;color:#f59e0b;margin-bottom:2px">📝 待填入實績</div>':''))
             +(tp4?'<div style="font-size:10px;color:#f59e0b;font-weight:800;margin-bottom:2px">池 '+tp4.pool.toLocaleString()+' 元</div>':'')
             +'<button onclick="event.stopPropagation();openMetricModal('+mId4+')" style="background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.25);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">✏️ 編輯指標</button>'
@@ -2304,7 +2304,7 @@ memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonu
           var statusColor=p4.status==='在職'?'#10b981':p4.status==='留職停薪'?'#f59e0b':'#ef4444';
           html+='<tr>'
             +'<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);font-weight:700;color:#e2e8f0;border-right:1px solid #1a2535">'+p4.emp_name+'</td>'
-            +'<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:#64748b;border-right:1px solid #1a2535">'+(p4.job_title||'—')+'</td>'
+            +'<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:var(--text-dim);border-right:1px solid #1a2535">'+(p4.job_title||'—')+'</td>'
             +'<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);border-right:1px solid #1a2535"><span style="font-size:10px;padding:1px 6px;border-radius:6px;background:'+statusColor+'22;color:'+statusColor+';font-weight:700">'+p4.status+'</span></td>';
 
           for (var mci=0;mci<deptMetricIds.length;mci++) {
@@ -2313,8 +2313,8 @@ memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonu
             var rc5=rate5===null?'#64748b':rate5>=100?'#10b981':rate5>=80?'#f59e0b':'#ef4444';
 html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:center;border-right:1px solid #1a2535;background:rgba(245,158,11,.02)">'
               +(hasTgt
-                ?(bonus5>0?'<span style="color:#f59e0b;font-weight:900;font-size:13px">'+bonus5.toLocaleString()+'<span style="font-size:9px;margin-left:1px">元</span></span>':'<span style="color:#475569;font-size:11px">0 元</span>')
-                :'<span style="color:#475569;font-size:11px">—</span>')
+                ?(bonus5>0?'<span style="color:#f59e0b;font-weight:900;font-size:13px">'+bonus5.toLocaleString()+'<span style="font-size:9px;margin-left:1px">元</span></span>':'<span style="color:var(--text-dimmer);font-size:11px">0 元</span>')
+                :'<span style="color:var(--text-dimmer);font-size:11px">—</span>')
               +(bData&&bData.promoBonus>0?'<div style="margin-top:3px;font-size:10px;color:#10b981;font-weight:700">🎁 '+bData.promoBonus.toLocaleString()+'<span style="font-size:9px;margin-left:1px">元</span></div>':'')
             +'</td>';
           }
@@ -2430,14 +2430,14 @@ html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);tex
     if (!hasMetrics) {
       html+='<div style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-radius:10px;padding:14px 18px;margin-top:8px;text-align:center">'
         +'<div style="font-size:13px;font-weight:700;color:#3b82f6;margin-bottom:4px">⚙️ 尚未設定獎金指標</div>'
-        +'<div style="font-size:12px;color:#64748b">請展開上方「獎金指標管理」新增指標，設定達成率與獎金階梯。</div></div>';
+        +'<div style="font-size:12px;color:var(--text-dim)">請展開上方「獎金指標管理」新增指標，設定達成率與獎金階梯。</div></div>';
     }
 
     el.innerHTML=html;
     // 渲染後載入並掛上每個廠別的檢查人簽核面板
     loadAndRenderSignatures();
   } catch(e) {
-    el.innerHTML='<div style="color:#ef4444;padding:16px">'+esc(e.message)+'<br><small style="color:#475569">'+esc(e.stack)+'</small></div>';
+    el.innerHTML='<div style="color:#ef4444;padding:16px">'+esc(e.message)+'<br><small style="color:var(--text-dimmer)">'+esc(e.stack)+'</small></div>';
   }
 }
 
@@ -2466,14 +2466,14 @@ function renderSignaturePanel(el) {
     var ts = sig.signed_at ? new Date(sig.signed_at).toLocaleString('zh-TW') : '';
     el.innerHTML =
       '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">'
-      +   '<div style="font-size:12px;font-weight:700;color:#94a3b8;white-space:nowrap">✅ 檢查人簽核</div>'
+      +   '<div style="font-size:12px;font-weight:700;color:var(--text-muted);white-space:nowrap">✅ 檢查人簽核</div>'
       +   '<img src="'+sig.signature_data+'" alt="signature" style="max-height:48px;background:#fff;border:1px solid #2d3f56;border-radius:6px;padding:2px 6px">'
       +   '<div style="flex:1;min-width:140px">'
       +     '<div style="font-size:13px;font-weight:700;color:#e2e8f0">'+escHtmlLite(sig.signer_name||'')+'</div>'
-      +     '<div style="font-size:10px;color:#64748b">簽於 '+ts+'</div>'
+      +     '<div style="font-size:10px;color:var(--text-dim)">簽於 '+ts+'</div>'
       +   '</div>'
       +   (locked
-          ? '<span style="font-size:11px;color:#64748b">🔒 期間已鎖定</span>'
+          ? '<span style="font-size:11px;color:var(--text-dim)">🔒 期間已鎖定</span>'
           : '<button onclick="openSignatureModal(\''+escAttr(fc)+'\',\''+escAttr(fcLabel)+'\')" style="padding:5px 11px;background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.3);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">重新簽核</button>'
             + '<button onclick="revokeSignature('+sig.id+')" style="padding:5px 11px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">撤銷</button>')
       + '</div>';
@@ -2481,9 +2481,9 @@ function renderSignaturePanel(el) {
     el.innerHTML =
       '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'
       +   '<div style="font-size:12px;font-weight:700;color:#f59e0b">⏳ 尚未簽核</div>'
-      +   '<div style="flex:1;font-size:11px;color:#64748b">主管確認核發金額後，請於此簽核（電子簽名）。</div>'
+      +   '<div style="flex:1;font-size:11px;color:var(--text-dim)">主管確認核發金額後，請於此簽核（電子簽名）。</div>'
       +   (locked
-          ? '<span style="font-size:11px;color:#64748b">🔒 期間已鎖定，無法簽核</span>'
+          ? '<span style="font-size:11px;color:var(--text-dim)">🔒 期間已鎖定，無法簽核</span>'
           : '<button onclick="openSignatureModal(\''+escAttr(fc)+'\',\''+escAttr(fcLabel)+'\')" style="padding:7px 16px;background:#10b981;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">✍️ 檢查人簽核</button>')
       + '</div>';
   }
@@ -2507,20 +2507,20 @@ function openSignatureModal(branch, label) {
     +   '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'
     +     '<div style="font-size:15px;font-weight:800;color:#e2e8f0">✍️ 檢查人簽核 — '+escHtmlLite(label)+'</div>'
     +     '<div style="flex:1"></div>'
-    +     '<button onclick="closeSigModal()" style="width:28px;height:28px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#64748b;font-size:16px;cursor:pointer">×</button>'
+    +     '<button onclick="closeSigModal()" style="width:28px;height:28px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:var(--text-dim);font-size:16px;cursor:pointer">×</button>'
     +   '</div>'
     +   '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">'
-    +     '<label style="font-size:11px;color:#64748b;font-weight:700">簽核人姓名</label>'
+    +     '<label style="font-size:11px;color:var(--text-dim);font-weight:700">簽核人姓名</label>'
     +     '<input id="sigSignerName" type="text" value="'+escHtmlLite(defaultName)+'" placeholder="例：王大明" style="background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:7px 10px;border-radius:6px;font-size:13px;outline:none">'
     +   '</div>'
-    +   '<div style="font-size:11px;color:#64748b;margin-bottom:5px">請在下方簽名（支援滑鼠 / 觸控筆）</div>'
+    +   '<div style="font-size:11px;color:var(--text-dim);margin-bottom:5px">請在下方簽名（支援滑鼠 / 觸控筆）</div>'
     +   '<div style="background:#fff;border:2px dashed #334155;border-radius:8px;overflow:hidden;touch-action:none">'
     +     '<canvas id="sigCanvas" width="600" height="220" style="display:block;width:100%;height:220px;cursor:crosshair;background:#fff"></canvas>'
     +   '</div>'
     +   '<div id="sigMsg" style="font-size:12px;color:#ef4444;min-height:16px;margin-top:6px"></div>'
     +   '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">'
-    +     '<button onclick="clearSigCanvas()" style="padding:7px 14px;background:transparent;border:1px solid #475569;color:#94a3b8;border-radius:6px;font-size:12px;cursor:pointer">🗑 清除重畫</button>'
-    +     '<button onclick="closeSigModal()" style="padding:7px 14px;background:transparent;border:1px solid #475569;color:#94a3b8;border-radius:6px;font-size:12px;cursor:pointer">取消</button>'
+    +     '<button onclick="clearSigCanvas()" style="padding:7px 14px;background:transparent;border:1px solid #475569;color:var(--text-muted);border-radius:6px;font-size:12px;cursor:pointer">🗑 清除重畫</button>'
+    +     '<button onclick="closeSigModal()" style="padding:7px 14px;background:transparent;border:1px solid #475569;color:var(--text-muted);border-radius:6px;font-size:12px;cursor:pointer">取消</button>'
     +     '<button onclick="submitSignature()" style="padding:7px 22px;background:#10b981;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">💾 確認簽核</button>'
     +   '</div>'
     + '</div></div>';
@@ -2696,7 +2696,7 @@ function renderPromoConfigList() {
   var el = document.getElementById('promoConfigList');
   if (!el) return;
   if (!_promoCfgs.length) {
-    el.innerHTML = '<div style="color:#475569;font-size:13px;padding:8px 0">尚未建立促銷獎金規則</div>';
+    el.innerHTML = '<div style="color:var(--text-dimmer);font-size:13px;padding:8px 0">尚未建立促銷獎金規則</div>';
     return;
   }
   el.innerHTML = _promoCfgs.map(function(c) {
@@ -2721,7 +2721,7 @@ function renderPromoConfigList() {
       + '<span style="font-size:10px;background:' + col + '22;color:' + col + ';padding:2px 8px;border-radius:4px;font-weight:700;flex-shrink:0">' + typeLabel + '</span>'
       + '<div style="flex:1;min-width:0">'
         + '<div style="font-weight:700;font-size:13px;color:#e2e8f0">' + c.rule_name + '</div>'
-        + '<div style="font-size:11px;color:#64748b;margin-top:2px">' + desc + '</div>'
+        + '<div style="font-size:11px;color:var(--text-dim);margin-top:2px">' + desc + '</div>'
       + '</div>'
       + '<span style="font-size:11px;padding:2px 8px;border-radius:5px;background:' + (c.active ? 'rgba(16,185,129,.15)' : 'rgba(100,116,139,.15)') + ';color:' + (c.active ? '#10b981' : '#94a3b8') + ';flex-shrink:0">' + (c.active ? '✅ 啟用' : '⏸ 停用') + '</span>'
       + '<button class="btn btn-secondary btn-sm" onclick="openPromoModal(' + c.id + ')">✏️</button>'
@@ -2734,14 +2734,14 @@ function renderPromoConfigList() {
 function renderPmTierRows() {
   var el = document.getElementById('pmTierRows');
   if (!el) return;
-  if (!_pmTiers.length) { el.innerHTML = '<div style="color:#475569;font-size:12px;padding:4px 0">尚未設定階梯</div>'; return; }
+  if (!_pmTiers.length) { el.innerHTML = '<div style="color:var(--text-dimmer);font-size:12px;padding:4px 0">尚未設定階梯</div>'; return; }
   el.innerHTML = _pmTiers.map(function(t, i) {
     return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;background:#0f172a;border-radius:6px;padding:7px 10px">'
-      +'<span style="font-size:11px;color:#64748b;white-space:nowrap">實績 ≥</span>'
+      +'<span style="font-size:11px;color:var(--text-dim);white-space:nowrap">實績 ≥</span>'
       +'<input type="number" value="'+t.gte+'" min="0" step="1" placeholder="門檻值"'
       +' style="width:90px;background:#1e293b;border:1px solid #2d3f56;color:#3b82f6;padding:4px 7px;border-radius:5px;font-size:12px;font-weight:700;outline:none"'
       +' oninput="_pmTiers['+i+'].gte=parseFloat(this.value)||0">'
-      +'<span style="font-size:11px;color:#64748b;white-space:nowrap">給</span>'
+      +'<span style="font-size:11px;color:var(--text-dim);white-space:nowrap">給</span>'
       +'<input type="number" value="'+t.bonus_value+'" min="0" step="0.1" placeholder="獎金值"'
       +' style="width:80px;background:#1e293b;border:1px solid #2d3f56;color:#10b981;padding:4px 7px;border-radius:5px;font-size:12px;font-weight:700;outline:none"'
       +' oninput="_pmTiers['+i+'].bonus_value=parseFloat(this.value)||0">'
@@ -3046,7 +3046,7 @@ function _openWeightModal(fc, dkey, membersJSON) {
     var w = saved[m.emp_id] !== undefined ? saved[m.emp_id] : 1;
     return '<tr>'
       +'<td style="padding:6px 10px;color:#e2e8f0;font-size:13px">'+m.name+'</td>'
-      +'<td style="padding:6px 10px;color:#94a3b8;font-size:12px">'+m.job_title+'</td>'
+      +'<td style="padding:6px 10px;color:var(--text-muted);font-size:12px">'+m.job_title+'</td>'
       +'<td style="padding:6px 4px;text-align:center">'
         +'<input type="number" min="0" step="0.5" value="'+w+'" data-empid="'+m.emp_id+'"'
         +' style="width:70px;background:#0f172a;border:1px solid #334155;border-radius:5px;'
@@ -3059,18 +3059,18 @@ function _openWeightModal(fc, dkey, membersJSON) {
     +' style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center">'
     +'<div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:24px;min-width:360px;max-width:90vw;max-height:80vh;overflow-y:auto">'
     +'<div style="font-size:15px;font-weight:800;color:#f1f5f9;margin-bottom:4px">⚖️ 團體制權重設定</div>'
-    +'<div style="font-size:11px;color:#64748b;margin-bottom:16px">數字越大分得越多，設為 0 則不分配</div>'
+    +'<div style="font-size:11px;color:var(--text-dim);margin-bottom:16px">數字越大分得越多，設為 0 則不分配</div>'
     +'<table style="width:100%;border-collapse:collapse">'
     +'<thead><tr>'
-    +'<th style="text-align:left;padding:4px 10px;font-size:11px;color:#64748b;font-weight:600">姓名</th>'
-    +'<th style="text-align:left;padding:4px 10px;font-size:11px;color:#64748b;font-weight:600">職稱</th>'
-    +'<th style="text-align:center;padding:4px 10px;font-size:11px;color:#64748b;font-weight:600">權重</th>'
+    +'<th style="text-align:left;padding:4px 10px;font-size:11px;color:var(--text-dim);font-weight:600">姓名</th>'
+    +'<th style="text-align:left;padding:4px 10px;font-size:11px;color:var(--text-dim);font-weight:600">職稱</th>'
+    +'<th style="text-align:center;padding:4px 10px;font-size:11px;color:var(--text-dim);font-weight:600">權重</th>'
     +'</tr></thead>'
     +'<tbody>'+rows+'</tbody>'
     +'</table>'
     +'<div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">'
     +'<button onclick="document.getElementById(\'weightModalBg\').remove()"'
-    +' style="padding:6px 16px;border-radius:6px;border:1px solid #475569;background:transparent;color:#94a3b8;font-size:12px;cursor:pointer">取消</button>'
+    +' style="padding:6px 16px;border-radius:6px;border:1px solid #475569;background:transparent;color:var(--text-muted);font-size:12px;cursor:pointer">取消</button>'
     +'<button onclick="_saveWeightModal(\''+fc+'\',\''+dkey+'\')"'
     +' style="padding:6px 16px;border-radius:6px;border:none;background:#3b82f6;color:#fff;font-size:12px;font-weight:700;cursor:pointer">💾 儲存</button>'
     +'</div>'
@@ -3136,14 +3136,14 @@ function _renderMRList() {
       var amtColor = amt > 0 ? '#c4b5fd' : '#f87171';
       return '<div style="background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:6px">'
         + '<div style="flex:1;min-width:0">'
-        +   '<div style="font-weight:700;font-size:13px;color:#e2e8f0">'+emp.name+'<span style="color:#64748b;font-weight:400;margin-left:4px;font-size:11px">'+(emp.title||'')+'</span></div>'
-        +   (note?'<div style="font-size:11px;color:#94a3b8;margin-top:2px">'+note+'</div>':'')
+        +   '<div style="font-weight:700;font-size:13px;color:#e2e8f0">'+emp.name+'<span style="color:var(--text-dim);font-weight:400;margin-left:4px;font-size:11px">'+(emp.title||'')+'</span></div>'
+        +   (note?'<div style="font-size:11px;color:var(--text-muted);margin-top:2px">'+note+'</div>':'')
         + '</div>'
         + '<span style="font-size:15px;font-weight:900;color:'+amtColor+';white-space:nowrap">'+(amt>0?'+':'')+amt.toLocaleString()+' 元</span>'
         + '<button class="btn btn-danger btn-sm" onclick="_deleteMRSingle(\''+safeId+'\')" style="padding:4px 10px;font-size:11px">刪除</button>'
         + '</div>';
     }).join('');
-  body.innerHTML = rowsHtml || '<div style="color:#475569;font-size:12px;padding:8px 0;text-align:center">此部門尚無主管考核記錄</div>';
+  body.innerHTML = rowsHtml || '<div style="color:var(--text-dimmer);font-size:12px;padding:8px 0;text-align:center">此部門尚無主管考核記錄</div>';
 }
 
 async function _saveMRSingle() {
@@ -3236,7 +3236,7 @@ await Promise.all(promises);
       var pre = val > 0 ? '＋' : '';
       cell.innerHTML = '<span style="display:inline-flex;align-items:baseline;gap:2px;padding:2px 10px;border-radius:20px;font-size:13px;font-weight:900;background:'+bg+';color:'+col+'">'
         + pre + val.toLocaleString() + '<span style="font-size:9px;margin-left:2px">元</span></span>'
-        + (note ? '<div style="font-size:10px;color:#64748b;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px" title="'+note.replace(/"/g,'&quot;')+'">'+note+'</div>' : '');
+        + (note ? '<div style="font-size:10px;color:var(--text-dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px" title="'+note.replace(/"/g,'&quot;')+'">'+note+'</div>' : '');
       // 更新同列總獎金
       var tr = cell.closest('tr');
       if (tr) {
@@ -3435,13 +3435,13 @@ async function openActualOverrideModal(metricId, metricName, period, isManual, m
       💰 金額類指標，以 <strong style="color:#fff">K（千元）</strong> 為單位輸入（例如輸入 <strong style="color:#fff">8035</strong> = 8,035,000 元）
     </div>` : `
     <div style="margin-bottom:10px;padding:8px 12px;background:#0f172a;border-radius:6px;border:1px solid #2d3f56">
-      <div style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:6px">輸入單位</div>
+      <div style="font-size:11px;color:var(--text-dim);font-weight:700;margin-bottom:6px">輸入單位</div>
       <div style="display:flex;gap:16px">
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:#94a3b8">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text-muted)">
           <input type="radio" name="aoUnit" value="raw" ${defaultUnit==='raw'?'checked':''} style="accent-color:#f59e0b">
           原始數字（小時／件）
         </label>
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:#94a3b8">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text-muted)">
           <input type="radio" name="aoUnit" value="k" ${defaultUnit==='k'?'checked':''} style="accent-color:#f59e0b">
           K（× 1,000，金額類）
         </label>
@@ -3455,7 +3455,7 @@ async function openActualOverrideModal(metricId, metricName, period, isManual, m
   const valPlaceholder    = isMoney ? '例：33,584（單位 K）' : (isManual ? '例：480（實際完成量）' : '例：320（小時）');
 
   const targetRow = isManual ? `
-    <div style="font-size:11px;color:#64748b;margin-bottom:4px">當月目標值${isMoney?'（K）':''}</div>
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">當月目標值${isMoney?'（K）':''}</div>
     <input type="number" id="aoTargetInput" value="${displayTarget}" min="0" step="${isMoney?'1':'0.1'}" placeholder="${targetPlaceholder}"
       style="width:100%;background:#0f172a;border:1px solid #3b82f6;color:#3b82f6;padding:8px 12px;border-radius:6px;font-size:14px;font-weight:800;outline:none;margin-bottom:10px">
   ` : '';
@@ -3464,10 +3464,10 @@ async function openActualOverrideModal(metricId, metricName, period, isManual, m
     style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center">
     <div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:24px;min-width:380px;max-width:90vw">
       <div style="font-size:15px;font-weight:800;color:#f59e0b;margin-bottom:4px">📝 ${isManual?'手動目標 / 實績':'手動填入實績'}</div>
-      <div style="font-size:12px;color:#64748b;margin-bottom:16px">${metricName}｜${period.slice(0,4)}年${parseInt(period.slice(4))}月${branch?' ｜ '+branch:' ｜ 全廠'}</div>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px">${metricName}｜${period.slice(0,4)}年${parseInt(period.slice(4))}月${branch?' ｜ '+branch:' ｜ 全廠'}</div>
       ${targetRow}
       ${isManual ? `
-      <div style="font-size:11px;color:#64748b;margin-bottom:6px;display:flex;align-items:center;gap:10px">
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;display:flex;align-items:center;gap:10px">
         <span>顯示格式</span>
         <label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:4px 10px;border-radius:5px;border:1px solid #2d3f56;font-size:12px">
           <input type="radio" name="aoDisplayFmt" value="k" ${((_metrics.find(x=>x.id===metricId)||{}).stat_field||'amount')==='amount'?'checked':''} style="accent-color:#3b82f6"> 💰 K（千元）
@@ -3476,16 +3476,16 @@ async function openActualOverrideModal(metricId, metricName, period, isManual, m
           <input type="radio" name="aoDisplayFmt" value="raw" ${((_metrics.find(x=>x.id===metricId)||{}).stat_field||'amount')!=='amount'?'checked':''} style="accent-color:#3b82f6"> 🔢 直接顯示（分數/件數）
         </label>
       </div>` : ''}
-      <div style="font-size:11px;color:#64748b;margin-bottom:4px">當月實績值${isMoney?'（K）':''}（留空 = ${isManual?'不顯示達成率':'使用 DMS 自動計算'}）</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">當月實績值${isMoney?'（K）':''}（留空 = ${isManual?'不顯示達成率':'使用 DMS 自動計算'}）</div>
       <input type="number" id="aoValInput" value="${displayVal}" min="0" step="${isMoney?'1':'0.1'}" placeholder="${valPlaceholder}"
         style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#f59e0b;padding:8px 12px;border-radius:6px;font-size:14px;font-weight:800;outline:none;margin-bottom:10px">
             ${unitRow}
-          <div style="font-size:11px;color:#64748b;margin-bottom:4px">備註</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">備註</div>
       <input type="text" id="aoNoteInput" value="${curNote}" placeholder="（選填）"
-        style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:#94a3b8;padding:7px 12px;border-radius:6px;font-size:13px;outline:none;margin-bottom:14px">
+        style="width:100%;background:#0f172a;border:1px solid #2d3f56;color:var(--text-muted);padding:7px 12px;border-radius:6px;font-size:13px;outline:none;margin-bottom:14px">
       <div style="display:flex;gap:8px;justify-content:flex-end">
         ${curVal!==''?`<button onclick="clearActualOverride(${metricId},'${period}','${branch}')" style="padding:6px 12px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:6px;font-size:12px;cursor:pointer">🗑 清除</button>`:''}
-        <button onclick="document.getElementById('aoModalBg').remove()" style="padding:6px 14px;border-radius:6px;border:1px solid #475569;background:transparent;color:#94a3b8;font-size:12px;cursor:pointer">取消</button>
+        <button onclick="document.getElementById('aoModalBg').remove()" style="padding:6px 14px;border-radius:6px;border:1px solid #475569;background:transparent;color:var(--text-muted);font-size:12px;cursor:pointer">取消</button>
         <button onclick="saveActualOverride(${metricId},'${period}','${branch}',${!!isManual})" style="padding:6px 16px;border-radius:6px;border:none;background:#f59e0b;color:#fff;font-size:12px;font-weight:700;cursor:pointer">💾 儲存</button>
       </div>
       <div id="aoMsg" style="font-size:12px;min-height:16px;margin-top:8px"></div>
@@ -3611,7 +3611,7 @@ async function clearActualOverride(metricId, period, branch) {
       +   '<span style="color:#e2e8f0;font-size:12.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0" title="'+nameSafe+'">'+nameSafe+'</span>'
       +   '<span style="color:#10b981;font-size:13px;font-weight:900;white-space:nowrap">'+item.amount.toLocaleString()+' 元</span>'
       + '</div>'
-      + (bd?'<div style="font-size:10.5px;color:#64748b;line-height:1.4">'+bd+'</div>':'')
+      + (bd?'<div style="font-size:10.5px;color:var(--text-dim);line-height:1.4">'+bd+'</div>':'')
       + '</div>';
   }).join('');
 
@@ -3624,7 +3624,7 @@ async function clearActualOverride(metricId, period, branch) {
     +   '<div style="padding:14px 20px;border-bottom:1px solid #2d3f56;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">'
     +     '<div style="flex:1;min-width:0">'
     +       '<div style="font-size:15px;font-weight:800;color:#10b981">🎁 促銷獎金明細</div>'
-    +       '<div style="font-size:12px;color:#94a3b8;margin-top:3px">'+empName+' <span style="color:#64748b;margin-left:6px">·'+countTxt+'</span></div>'
+    +       '<div style="font-size:12px;color:var(--text-muted);margin-top:3px">'+empName+' <span style="color:var(--text-dim);margin-left:6px">·'+countTxt+'</span></div>'
     +     '</div>'
     +     '<div style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.35);border-radius:8px;padding:7px 14px;text-align:right">'
     +       '<div style="font-size:10px;color:#10b981;font-weight:700">合計</div>'
@@ -3637,7 +3637,7 @@ async function clearActualOverride(metricId, period, branch) {
     +   '</div>'
     // Footer
     +   '<div style="padding:10px 20px;border-top:1px solid #2d3f56;display:flex;justify-content:flex-end">'
-    +     '<button onclick="document.getElementById(\'promoDetailBg\').remove()" style="padding:6px 22px;border-radius:7px;border:1px solid #475569;background:transparent;color:#94a3b8;font-size:13px;cursor:pointer">關閉</button>'
+    +     '<button onclick="document.getElementById(\'promoDetailBg\').remove()" style="padding:6px 22px;border-radius:7px;border:1px solid #475569;background:transparent;color:var(--text-muted);font-size:13px;cursor:pointer">關閉</button>'
     +   '</div>'
     + '</div></div>';
   var ex = document.getElementById('promoDetailBg'); if(ex) ex.remove();
@@ -3766,11 +3766,11 @@ async function loadBodyshopSummary() {
     const pendingMap = data.pendingMap || {};
     const periodLabel = _bsPeriod.slice(0,4) + '年' + parseInt(_bsPeriod.slice(4)) + '月';
     if (!rows.length) {
-     el.innerHTML = `<div class="empty"><div style="font-size:28px;margin-bottom:10px">🚗</div><div style="font-size:14px;font-weight:700;color:#94a3b8;margin-bottom:6px">${periodLabel} 尚無結清日期落在本月的獎金資料</div><div style="font-size:12px;color:#64748b">獎金依工單「結清日期」所在月份歸帳，請先上傳申請 Excel 再按「執行比對」</div></div>`;
+     el.innerHTML = `<div class="empty"><div style="font-size:28px;margin-bottom:10px">🚗</div><div style="font-size:14px;font-weight:700;color:var(--text-muted);margin-bottom:6px">${periodLabel} 尚無結清日期落在本月的獎金資料</div><div style="font-size:12px;color:var(--text-dim)">獎金依工單「結清日期」所在月份歸帳，請先上傳申請 Excel 再按「執行比對」</div></div>`;
       return;
     }
     const totalBonus = rows.reduce((s, r) => s + parseFloat(r.total_bonus || 0), 0);
-      let html = `<div style="font-size:12px;color:#64748b;background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.15);border-radius:8px;padding:8px 14px;margin-bottom:12px">
+      let html = `<div style="font-size:12px;color:var(--text-dim);background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.15);border-radius:8px;padding:8px 14px;margin-bottom:12px">
       📅 以下獎金為「結清日期」落在 <strong style="color:#10b981">${periodLabel}</strong> 的工單，非依申請月份統計
     </div>
     <div class="summary-cards" style="margin-bottom:16px">
@@ -3780,15 +3780,15 @@ async function loadBodyshopSummary() {
     </div>
     <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
       <thead><tr>
-        <th style="background:#0c1524;color:#475569;padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:left">員工姓名</th>
-        <th style="background:#0c1524;color:#475569;padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:left">員編</th>
-        <th style="background:#0c1524;color:#475569;padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:left">部門</th>
-        <th style="background:#0c1524;color:#475569;padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:center">廠別</th>
-        <th style="background:#0c1524;color:#475569;padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:center">結清筆數</th>
-        <th style="background:#0c1524;color:#475569;padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:right">維修總收入</th>
+        <th style="background:#0c1524;color:var(--text-dimmer);padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:left">員工姓名</th>
+        <th style="background:#0c1524;color:var(--text-dimmer);padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:left">員編</th>
+        <th style="background:#0c1524;color:var(--text-dimmer);padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:left">部門</th>
+        <th style="background:#0c1524;color:var(--text-dimmer);padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:center">廠別</th>
+        <th style="background:#0c1524;color:var(--text-dimmer);padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:center">結清筆數</th>
+        <th style="background:#0c1524;color:var(--text-dimmer);padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:right">維修總收入</th>
         <th style="background:#0c1524;color:#10b981;padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:right">獎金總額</th>
         <th style="background:#0c1524;color:#f59e0b;padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:center">待結清件數</th>
-        <th style="background:#0c1524;color:#475569;padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:left;min-width:200px">車牌明細</th>
+        <th style="background:#0c1524;color:var(--text-dimmer);padding:10px 12px;border-bottom:1px solid #2d3f56;text-align:left;min-width:200px">車牌明細</th>
       </tr></thead><tbody>`;
     rows.forEach(r => {
       const pendingCnt = pendingMap[r.emp_id || r.applicant_name] || 0;
@@ -3801,22 +3801,22 @@ async function loadBodyshopSummary() {
         const capped = inc * (rates[i] || 0.02) > 20000;
         return `<div style="margin-bottom:4px;padding:4px 0;border-bottom:1px solid rgba(45,63,86,.3)">
           <span style="font-weight:700;color:#e2e8f0">${p}</span>
-          <span style="color:#64748b;font-size:10px;margin-left:6px">${wos[i] || ''}</span>
-          <div style="margin-top:2px"><span style="color:#94a3b8;font-size:10px">${inc.toLocaleString()} × ${rate}% = </span>
+          <span style="color:var(--text-dim);font-size:10px;margin-left:6px">${wos[i] || ''}</span>
+          <div style="margin-top:2px"><span style="color:var(--text-muted);font-size:10px">${inc.toLocaleString()} × ${rate}% = </span>
           <span style="color:${capped?'#f97316':'#10b981'};font-weight:700;font-size:11px">${b.toLocaleString()}元</span>
           ${capped ? '<span style="color:#f97316;font-size:9px">(上限2萬)</span>' : ''}</div></div>`;
       }).join('');
       html += `<tr>
         <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);font-weight:700;color:#e2e8f0">${r.applicant_name}</td>
-        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);color:#94a3b8;font-size:11px;font-family:monospace">${r.emp_id || '—'}</td>
-        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);color:#64748b;font-size:12px">${r.dept_name || '—'}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);color:var(--text-muted);font-size:11px;font-family:monospace">${r.emp_id || '—'}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);color:var(--text-dim);font-size:12px">${r.dept_name || '—'}</td>
         <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);text-align:center"><span style="font-size:11px;padding:2px 8px;border-radius:4px;background:rgba(59,130,246,.15);color:#60a5fa">${BRANCH_LABEL[r.branch]||r.branch||'—'}</span></td>
         <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);text-align:center;font-weight:700">${r.work_order_count}</td>
-        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;color:#94a3b8">${Math.round(parseFloat(r.total_income||0)).toLocaleString()}</td>
-        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right"><span style="color:#10b981;font-weight:900;font-size:15px">${Math.round(parseFloat(r.total_bonus||0)).toLocaleString()}</span><span style="color:#64748b;font-size:10px;margin-left:2px">元</span></td>
-        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);text-align:center">${pendingCnt > 0 ? `<span style="font-size:11px;padding:2px 10px;border-radius:5px;background:rgba(245,158,11,.15);color:#f59e0b;font-weight:700">🕐 ${pendingCnt} 件</span>` : '<span style="color:#475569">—</span>'}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;color:var(--text-muted)">${Math.round(parseFloat(r.total_income||0)).toLocaleString()}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right"><span style="color:#10b981;font-weight:900;font-size:15px">${Math.round(parseFloat(r.total_bonus||0)).toLocaleString()}</span><span style="color:var(--text-dim);font-size:10px;margin-left:2px">元</span></td>
+        <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2);text-align:center">${pendingCnt > 0 ? `<span style="font-size:11px;padding:2px 10px;border-radius:5px;background:rgba(245,158,11,.15);color:#f59e0b;font-weight:700">🕐 ${pendingCnt} 件</span>` : '<span style="color:var(--text-dimmer)">—</span>'}</td>
         <td style="padding:10px 12px;border-bottom:1px solid rgba(45,63,86,.2)"><div style="cursor:pointer" onclick="_toggleBSDetail(this)">
-          <div style="display:flex;flex-wrap:wrap;gap:4px">${plates.slice(0,3).map(p=>`<span style="font-size:10px;background:#1e293b;border:1px solid #334155;border-radius:4px;padding:1px 6px;color:#94a3b8">${p}</span>`).join('')}${plates.length > 3 ? `<span style="font-size:10px;color:#64748b">+${plates.length-3}筆</span>` : ''}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px">${plates.slice(0,3).map(p=>`<span style="font-size:10px;background:#1e293b;border:1px solid #334155;border-radius:4px;padding:1px 6px;color:var(--text-muted)">${p}</span>`).join('')}${plates.length > 3 ? `<span style="font-size:10px;color:var(--text-dim)">+${plates.length-3}筆</span>` : ''}</div>
           <div class="bs-detail-rows" style="display:none;margin-top:8px;background:#0f172a;border-radius:6px;padding:8px 10px;border:1px solid #2d3f56">${detailRows}</div>
         </div></td></tr>`;
     });
@@ -3824,8 +3824,8 @@ async function loadBodyshopSummary() {
     html += `<tr style="background:rgba(16,185,129,.06)">
       <td colspan="4" style="padding:10px 12px;font-weight:800;color:#10b981;font-size:13px">${periodLabel} 合計</td>
       <td style="padding:10px 12px;text-align:center;font-weight:700">${rows.reduce((s,r)=>s+parseInt(r.work_order_count||0),0)}</td>
-      <td style="padding:10px 12px;text-align:right;color:#94a3b8;font-weight:700">${Math.round(rows.reduce((s,r)=>s+parseFloat(r.total_income||0),0)).toLocaleString()}</td>
-      <td style="padding:10px 12px;text-align:right"><span style="color:#10b981;font-weight:900;font-size:16px">${Math.round(grandTotal).toLocaleString()}</span><span style="font-size:10px;color:#64748b;margin-left:2px">元</span></td>
+      <td style="padding:10px 12px;text-align:right;color:var(--text-muted);font-weight:700">${Math.round(rows.reduce((s,r)=>s+parseFloat(r.total_income||0),0)).toLocaleString()}</td>
+      <td style="padding:10px 12px;text-align:right"><span style="color:#10b981;font-weight:900;font-size:16px">${Math.round(grandTotal).toLocaleString()}</span><span style="font-size:10px;color:var(--text-dim);margin-left:2px">元</span></td>
       <td colspan="2"></td></tr>`;
     html += '</tbody></table></div>';
     el.innerHTML = html;
@@ -3851,7 +3851,7 @@ async function loadBodyshopList() {
     const rows = data.rows || [];
     document.getElementById('bodyshopListCount').textContent = `共 ${data.total} 筆`;
     if (!rows.length) { el.innerHTML = '<div class="empty">無資料</div>'; return; }
-    const th = 'background:#0c1524;color:#475569;padding:8px 10px;border-bottom:1px solid #2d3f56;font-size:11px;font-weight:700;white-space:nowrap;text-align:left';
+    const th = 'background:#0c1524;color:var(--text-dimmer);padding:8px 10px;border-bottom:1px solid #2d3f56;font-size:11px;font-weight:700;white-space:nowrap;text-align:left';
     let html = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
       <thead><tr>
         <th style="${th}">狀態</th><th style="${th}">申請日期</th><th style="${th}">申請人</th>
@@ -3867,24 +3867,24 @@ async function loadBodyshopList() {
       const isCapped = settled && (parseFloat(r.income_total||0) * parseFloat(r.bonus_rate||0.02)) > 20000;
       html += `<tr>
         <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2)"><span style="font-size:11px;padding:2px 8px;border-radius:5px;background:${s.bg};color:${s.color};font-weight:700">${s.label}</span></td>
-        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:#94a3b8;font-size:11px">${(r.apply_date||'—').slice(0,10)}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:var(--text-muted);font-size:11px">${(r.apply_date||'—').slice(0,10)}</td>
         <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);font-weight:700;color:#e2e8f0">${r.applicant_name||'—'}</td>
-        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:#64748b;font-size:11px;font-family:monospace">${r.emp_id||'—'}</td>
-        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:#64748b;font-size:11px">${r.dept_name||'—'}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:var(--text-dim);font-size:11px;font-family:monospace">${r.emp_id||'—'}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:var(--text-dim);font-size:11px">${r.dept_name||'—'}</td>
         <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2)"><span style="font-size:10px;background:rgba(59,130,246,.12);color:#60a5fa;padding:1px 6px;border-radius:4px">${BRANCH_LABEL[r.branch]||r.branch||'—'}</span></td>
         <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);font-weight:700;font-size:11px;color:#e2e8f0">${r.plate_no_raw||'—'}</td>
-        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:#64748b;font-size:11px;font-family:monospace">${r.work_order||'—'}</td>
-        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:#94a3b8;font-size:11px">${r.repair_type||'—'}</td>
-        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:#64748b;font-size:11px">${(r.settle_date||'—').toString().slice(0,10)}</td>
-        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;color:#94a3b8;font-size:11px">${settled?Math.round(parseFloat(r.income_total||0)).toLocaleString():'—'}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:var(--text-dim);font-size:11px;font-family:monospace">${r.work_order||'—'}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:var(--text-muted);font-size:11px">${r.repair_type||'—'}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:var(--text-dim);font-size:11px">${(r.settle_date||'—').toString().slice(0,10)}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;color:var(--text-muted);font-size:11px">${settled?Math.round(parseFloat(r.income_total||0)).toLocaleString():'—'}</td>
         <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:center">
 ${settled ? `<select onchange="setBSRate(${r.id},this.value)" style="background:#1e293b;border:1px solid #2d3f56;color:#e2e8f0;padding:3px 6px;border-radius:5px;font-size:11px;outline:none">
             <option value="${(_bsSettings.rate_a||2)/100}" ${Math.abs(parseFloat(r.bonus_rate||0.02)-(_bsSettings.rate_a||2)/100)<0.001?'selected':''}>${_bsSettings.rate_a||2}%</option>
             <option value="${(_bsSettings.rate_b||4)/100}" ${Math.abs(parseFloat(r.bonus_rate||0.02)-(_bsSettings.rate_b||4)/100)<0.001?'selected':''}>${_bsSettings.rate_b||4}%</option>
-          </select>` : '<span style="color:#475569">—</span>'}
+          </select>` : '<span style="color:var(--text-dimmer)">—</span>'}
         </td>
         <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right">
-          ${settled ? `<span style="color:${isCapped?'#f97316':'#10b981'};font-weight:800">${Math.round(parseFloat(r.bonus_amount||0)).toLocaleString()} 元</span>${isCapped?'<span style="color:#f97316;font-size:9px;margin-left:2px">↑上限</span>':''}` : '<span style="color:#475569">—</span>'}
+          ${settled ? `<span style="color:${isCapped?'#f97316':'#10b981'};font-weight:800">${Math.round(parseFloat(r.bonus_amount||0)).toLocaleString()} 元</span>${isCapped?'<span style="color:#f97316;font-size:9px;margin-left:2px">↑上限</span>':''}` : '<span style="color:var(--text-dimmer)">—</span>'}
         </td>
         <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2)">
           <button class="btn btn-danger btn-sm" onclick="deleteBSApp(${r.id})">刪除</button>
@@ -3904,10 +3904,10 @@ async function loadBodyshopPending() {
     if (_bsBranch) params.set('branch', _bsBranch);
     const rows = await fetch('/api/bodyshop-bonus/pending?' + params).then(r => r.json());
     if (!rows.length) { el.innerHTML = '<div class="empty">🎉 目前無待結清記錄</div>'; return; }
-    const th = 'background:#0c1524;color:#475569;padding:8px 10px;border-bottom:1px solid #2d3f56;font-size:11px;font-weight:700;white-space:nowrap;text-align:left';
+    const th = 'background:#0c1524;color:var(--text-dimmer);padding:8px 10px;border-bottom:1px solid #2d3f56;font-size:11px;font-weight:700;white-space:nowrap;text-align:left';
     let html = `<div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px 18px;margin-bottom:14px">
       <span style="font-size:13px;font-weight:700;color:#f59e0b">⏳ 待結清總筆數：${rows.length} 筆</span>
-      <div style="font-size:12px;color:#64748b;margin-top:4px">以下記錄尚未結清，每月執行比對時會自動重新檢查</div>
+      <div style="font-size:12px;color:var(--text-dim);margin-top:4px">以下記錄尚未結清，每月執行比對時會自動重新檢查</div>
     </div>
     <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
       <thead><tr>
@@ -3922,12 +3922,12 @@ async function loadBodyshopPending() {
       html += `<tr>
         <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2)"><span style="font-size:11px;padding:2px 7px;border-radius:5px;background:${s.bg};color:${s.color};font-weight:700">${s.label}</span></td>
         <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);font-weight:700;color:#e2e8f0">${r.applicant_name}</td>
-        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:#94a3b8;font-size:11px">${(r.apply_date||'').toString().slice(0,10)}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:var(--text-muted);font-size:11px">${(r.apply_date||'').toString().slice(0,10)}</td>
         <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);font-weight:700;font-size:11px;color:#e2e8f0">${r.plate_no_raw||'—'}</td>
         <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2)"><span style="font-size:10px;background:rgba(59,130,246,.12);color:#60a5fa;padding:1px 6px;border-radius:4px">${BRANCH_LABEL[r.branch]||r.branch||'—'}</span></td>
-        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:#64748b;font-size:11px;font-family:monospace">${r.work_order||'—'}</td>
-        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:#94a3b8;font-size:11px">${r.repair_type||'—'}</td>
-        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right"><span style="color:${daysColor};font-weight:700">${days}</span><span style="color:#475569;font-size:10px;margin-left:2px">天</span></td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:var(--text-dim);font-size:11px;font-family:monospace">${r.work_order||'—'}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);color:var(--text-muted);font-size:11px">${r.repair_type||'—'}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right"><span style="color:${daysColor};font-weight:700">${days}</span><span style="color:var(--text-dimmer);font-size:10px;margin-left:2px">天</span></td>
       </tr>`;
     });
     html += '</tbody></table></div>';
@@ -4130,14 +4130,14 @@ function showManagerReviewNote(empId, empName, anchorEl) {
   pop.style.cssText = 'position:fixed;z-index:10000;background:#1a1832;border:1px solid #7c3aed;border-radius:10px;padding:14px 16px;min-width:280px;max-width:400px;box-shadow:0 20px 50px rgba(0,0,0,.6)';
   pop.innerHTML =
       '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #3b2063">'
-    +   '<div><div style="font-size:11px;color:#94a3b8">主管考核事由</div>'
+    +   '<div><div style="font-size:11px;color:var(--text-muted)">主管考核事由</div>'
     +   '<div style="font-size:14px;font-weight:900;color:#a78bfa">'+empName+'</div></div>'
-    +   '<div style="text-align:right"><div style="font-size:10px;color:#64748b">調整金額</div><div style="font-size:16px;font-weight:900;color:'+amtColor+'">'+amtPre+amt.toLocaleString()+' 元</div></div>'
+    +   '<div style="text-align:right"><div style="font-size:10px;color:var(--text-dim)">調整金額</div><div style="font-size:16px;font-weight:900;color:'+amtColor+'">'+amtPre+amt.toLocaleString()+' 元</div></div>'
     + '</div>'
     + (note
         ? '<div style="font-size:13px;line-height:1.7;color:#e2e8f0;background:#0f172a;border:1px solid #2d3f56;border-radius:7px;padding:10px 12px;white-space:pre-wrap">'+String(note).replace(/</g,'&lt;')+'</div>'
-        : '<div style="font-size:12px;color:#64748b;font-style:italic;padding:6px 0">（此筆主管考核未填寫事由）</div>')
-    + '<button onclick="this.closest(\'.mrNotePop\').remove()" style="margin-top:10px;width:100%;padding:5px;border-radius:6px;border:1px solid #334155;background:transparent;color:#94a3b8;cursor:pointer;font-size:12px">關閉</button>';
+        : '<div style="font-size:12px;color:var(--text-dim);font-style:italic;padding:6px 0">（此筆主管考核未填寫事由）</div>')
+    + '<button onclick="this.closest(\'.mrNotePop\').remove()" style="margin-top:10px;width:100%;padding:5px;border-radius:6px;border:1px solid #334155;background:transparent;color:var(--text-muted);cursor:pointer;font-size:12px">關閉</button>';
   document.body.appendChild(pop);
   var rect = anchorEl.getBoundingClientRect();
   var pr = pop.getBoundingClientRect();
@@ -4169,7 +4169,7 @@ function showExtraBonusNote(empId, anchorEl) {
   var listHtml = items.map(function(r){
     var amt = parseInt(r.amount)||0;
     return '<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid rgba(45,63,86,.3);font-size:12px">'
-      + '<span style="color:#e2e8f0;flex:1">'+((r.reason||'').replace(/</g,'&lt;')||'<span style="color:#64748b">（無事由）</span>')+'</span>'
+      + '<span style="color:#e2e8f0;flex:1">'+((r.reason||'').replace(/</g,'&lt;')||'<span style="color:var(--text-dim)">（無事由）</span>')+'</span>'
       + '<span style="color:#60a5fa;font-weight:900;white-space:nowrap">'+amt.toLocaleString()+' 元</span>'
       + '</div>';
   }).join('');
@@ -4178,12 +4178,12 @@ function showExtraBonusNote(empId, anchorEl) {
   pop.style.cssText = 'position:fixed;z-index:10000;background:#1a2332;border:1px solid #3b82f6;border-radius:10px;padding:14px 16px;min-width:280px;max-width:400px;box-shadow:0 20px 50px rgba(0,0,0,.6)';
   pop.innerHTML =
       '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #2d3f56">'
-    +   '<div><div style="font-size:11px;color:#64748b">額外獎金事由</div>'
+    +   '<div><div style="font-size:11px;color:var(--text-dim)">額外獎金事由</div>'
     +   '<div style="font-size:14px;font-weight:900;color:#60a5fa">'+empName+'</div></div>'
-    +   '<div style="text-align:right"><div style="font-size:10px;color:#64748b">合計</div><div style="font-size:16px;font-weight:900;color:#fff">'+total.toLocaleString()+' 元</div></div>'
+    +   '<div style="text-align:right"><div style="font-size:10px;color:var(--text-dim)">合計</div><div style="font-size:16px;font-weight:900;color:#fff">'+total.toLocaleString()+' 元</div></div>'
     + '</div>'
     + listHtml
-    + '<button onclick="this.closest(\'.ebNotePop\').remove()" style="margin-top:10px;width:100%;padding:5px;border-radius:6px;border:1px solid #334155;background:transparent;color:#94a3b8;cursor:pointer;font-size:12px">關閉</button>';
+    + '<button onclick="this.closest(\'.ebNotePop\').remove()" style="margin-top:10px;width:100%;padding:5px;border-radius:6px;border:1px solid #334155;background:transparent;color:var(--text-muted);cursor:pointer;font-size:12px">關閉</button>';
   document.body.appendChild(pop);
   // 定位在點擊元素附近
   var rect = anchorEl.getBoundingClientRect();
@@ -4220,11 +4220,11 @@ function renderEbList(filterFc, filterDkey) {
       .map(function(p){ return p.emp_id; });
     list = list.filter(function(r){ return deptEmps.indexOf(r.emp_id) !== -1; });
   }
-  if (!list.length) { el.innerHTML='<div style="color:#475569;font-size:12px;padding:8px 0">此部門尚無額外獎金記錄</div>'; return; }
+  if (!list.length) { el.innerHTML='<div style="color:var(--text-dimmer);font-size:12px;padding:8px 0">此部門尚無額外獎金記錄</div>'; return; }
   el.innerHTML = list.map(function(r){
     return '<div style="background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:6px">'
       +'<div style="flex:1"><div style="font-weight:700;font-size:13px;color:#e2e8f0">'+r.emp_name+'</div>'
-      +'<div style="font-size:11px;color:#64748b;margin-top:2px">'+(r.branch||'')+(r.reason?' ｜ '+r.reason:'')+'</div></div>'
+      +'<div style="font-size:11px;color:var(--text-dim);margin-top:2px">'+(r.branch||'')+(r.reason?' ｜ '+r.reason:'')+'</div></div>'
       +'<span style="font-size:15px;font-weight:900;color:#60a5fa">'+parseInt(r.amount).toLocaleString()+' 元</span>'
       +'<button class="btn btn-danger btn-sm" onclick="deleteExtraBonus('+r.id+')">刪除</button>'
     +'</div>';
@@ -4553,7 +4553,7 @@ async function exportBonusPdf() {
     + '.signBox.signed .sigImg{max-width:100%;max-height:60px;object-fit:contain;background:#fff;}'
     + '.signBox.signed .sigMeta{display:flex;justify-content:space-between;width:100%;font-size:9px;color:#334155;padding:0 2px;}'
     + '.signBox.signed .sigName{font-weight:700;}'
-    + '.signBox.signed .sigTs{color:#64748b;}'
+    + '.signBox.signed .sigTs{color:var(--text-dim);}'
     + '@page{size:A4 portrait;margin:10mm 8mm;}'
     + '@media print{body{margin:0;}*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important;}}';
 
@@ -5075,7 +5075,7 @@ function _applyBonusStyles(ws, rows, roles) {
     var cur = _beautyBranchMap[emp.empId] || '';
     return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(45,63,86,.3)">'
       +'<div><div style="color:#e2e8f0;font-size:13px;font-weight:700">'+emp.name+'</div>'
-      +'<div style="color:#64748b;font-size:11px">'+emp.title+'</div></div>'
+      +'<div style="color:var(--text-dim);font-size:11px">'+emp.title+'</div></div>'
       +'<select data-beautyempid="'+emp.empId+'" style="background:#0f172a;border:1px solid #0ea5e9;color:#38bdf8;padding:5px 8px;border-radius:6px;font-size:12px;outline:none">'
       +'<option value="" '+(cur===''?'selected':'')+'>-- 未分配 --</option>'
       +'<option value="AMA" '+(cur==='AMA'?'selected':'')+'>AMA 內湖</option>'
@@ -5089,13 +5089,13 @@ function _applyBonusStyles(ws, rows, roles) {
     +' style="position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:center;justify-content:center">'
     +'<div style="background:#1e293b;border:1px solid #0ea5e9;border-radius:12px;padding:24px;min-width:400px;max-width:90vw;max-height:80vh;overflow-y:auto">'
     +'<div style="font-size:15px;font-weight:800;color:#38bdf8;margin-bottom:4px">🎨 美容技師據點分配</div>'
-    +'<div style="font-size:11px;color:#64748b;margin-bottom:16px">設定每位技師服務哪個據點的美容技師-A/C/D，促銷獎金將依據點池分配</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;font-size:11px;color:#475569;font-weight:700;padding-bottom:6px;border-bottom:1px solid #2d3f56">'
+    +'<div style="font-size:11px;color:var(--text-dim);margin-bottom:16px">設定每位技師服務哪個據點的美容技師-A/C/D，促銷獎金將依據點池分配</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;font-size:11px;color:var(--text-dimmer);font-weight:700;padding-bottom:6px;border-bottom:1px solid #2d3f56">'
     +'<span>技師</span><span>服務據點</span></div>'
     + rows
     +'<div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">'
     +'<button onclick="document.getElementById(\'beautyBranchBg\').remove()"'
-    +' style="padding:6px 16px;border-radius:6px;border:1px solid #475569;background:transparent;color:#94a3b8;font-size:12px;cursor:pointer">取消</button>'
+    +' style="padding:6px 16px;border-radius:6px;border:1px solid #475569;background:transparent;color:var(--text-muted);font-size:12px;cursor:pointer">取消</button>'
     +'<button onclick="_saveBeautyBranchModal()"'
     +' style="padding:6px 16px;border-radius:6px;border:none;background:#0ea5e9;color:#fff;font-size:12px;font-weight:700;cursor:pointer">💾 儲存</button>'
     +'</div></div></div>';
@@ -5132,7 +5132,7 @@ async function _saveBeautyBranchModal() {
       <button class="modal-close" onclick="closeModal('exportChooserModal')">×</button>
     </div>
     <div class="modal-body">
-      <div style="font-size:13px;color:#94a3b8;margin-bottom:14px;line-height:1.7">請選擇匯出格式：</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.7">請選擇匯出格式：</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <button onclick="closeModal('exportChooserModal');exportBonusExcel();"
           style="padding:18px 10px;background:#1a4a2e;border:1.5px solid #166534;border-radius:10px;cursor:pointer;color:#4ade80;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .12s"
@@ -5201,7 +5201,7 @@ async function _saveBeautyBranchModal() {
         </div>
       </div>
       <button class="btn btn-primary" onclick="saveExtraBonus()" style="width:100%;margin-bottom:16px">＋ 新增</button>
-      <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">本月已設定清單</div>
+      <div style="font-size:12px;font-weight:700;color:var(--text-dim);margin-bottom:8px">本月已設定清單</div>
       <div id="ebList" style="max-height:260px;overflow-y:auto"></div>
     </div>
     <div class="modal-footer">
@@ -5215,31 +5215,31 @@ async function _saveBeautyBranchModal() {
   <div style="background:#0f172a;border:1px solid #2d4060;border-radius:14px;width:560px;max-width:92vw;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.6)">
     <div style="padding:16px 20px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center">
       <span id="mrModalTitle" style="color:#a78bfa;font-weight:900;font-size:15px">💼 主管考核設定</span>
-      <button onclick="_closeMRModal()" style="background:none;border:none;color:#64748b;font-size:18px;cursor:pointer;line-height:1;padding:2px 6px">✕</button>
+      <button onclick="_closeMRModal()" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;line-height:1;padding:2px 6px">✕</button>
     </div>
     <div style="padding:14px 20px;border-bottom:1px solid #1e293b;background:rgba(139,92,246,.04)">
       <div style="display:grid;grid-template-columns:1fr 90px;gap:8px;margin-bottom:8px">
         <div>
-          <label style="display:block;font-size:11px;color:#64748b;font-weight:700;margin-bottom:3px">人員</label>
+          <label style="display:block;font-size:11px;color:var(--text-dim);font-weight:700;margin-bottom:3px">人員</label>
           <select id="mrEmp" class="form-select" style="width:100%">
             <option value="">選擇人員...</option>
           </select>
         </div>
         <div>
-          <label style="display:block;font-size:11px;color:#64748b;font-weight:700;margin-bottom:3px">金額（元）</label>
+          <label style="display:block;font-size:11px;color:var(--text-dim);font-weight:700;margin-bottom:3px">金額（元）</label>
           <input type="number" id="mrAmount" class="form-input" placeholder="±" step="100" style="width:100%">
         </div>
       </div>
       <div style="margin-bottom:8px">
-        <label style="display:block;font-size:11px;color:#64748b;font-weight:700;margin-bottom:3px">理由</label>
+        <label style="display:block;font-size:11px;color:var(--text-dim);font-weight:700;margin-bottom:3px">理由</label>
         <input type="text" id="mrReason" class="form-input" placeholder="例：5S、CSI 滿意度、專案貢獻..." style="width:100%">
       </div>
       <button onclick="_saveMRSingle()" class="btn btn-primary" style="width:100%;background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none">＋ 新增／更新</button>
     </div>
-    <div style="padding:10px 20px 4px;font-size:12px;color:#64748b;font-weight:700;border-bottom:1px solid #1e293b">本月已設定清單</div>
+    <div style="padding:10px 20px 4px;font-size:12px;color:var(--text-dim);font-weight:700;border-bottom:1px solid #1e293b">本月已設定清單</div>
     <div id="mrModalBody" style="overflow-y:auto;flex:1;padding:8px 20px"></div>
     <div style="padding:10px 20px;border-top:1px solid #1e293b;display:flex;justify-content:flex-end">
-      <button onclick="_closeMRModal()" style="padding:6px 22px;border-radius:7px;border:1px solid #334155;background:transparent;color:#94a3b8;cursor:pointer;font-size:13px">關閉</button>
+      <button onclick="_closeMRModal()" style="padding:6px 22px;border-radius:7px;border:1px solid #334155;background:transparent;color:var(--text-muted);cursor:pointer;font-size:13px">關閉</button>
     </div>
   </div>
 </div>
