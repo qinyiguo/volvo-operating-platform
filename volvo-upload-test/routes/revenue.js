@@ -24,6 +24,7 @@ const XLSX   = require('xlsx');
 const pool   = require('../db/pool');
 const { requireAuth, requirePermission } = require('../lib/authMiddleware');
 const { checkPeriodLock, checkBatchPeriodLock, checkBatchUploadPeriodLock } = require('../lib/bonusPeriodLock');
+const { computeAllRevenues, prevYearPeriod } = require('../lib/revenueActual');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
@@ -48,6 +49,9 @@ function getWeekLabel(mondayStr) {
 }
 
 // ── 營收目標 CRUD ──
+// GET：若 *_last_year 為 NULL，自動用上年同月 DMS 實績補上（不改 DB）。
+// 這樣 2027 年不用再手動上傳 2026 實績 Excel — 只要 2026 當年度四大檔
+// 有完整上傳過，系統就能動態算出去年同期數字。
 router.get('/revenue-targets', async (req, res) => {
   const { period, branch } = req.query;
   try {
@@ -55,7 +59,28 @@ router.get('/revenue-targets', async (req, res) => {
     if (period) { conds.push(`period=$${idx++}`); params.push(period); }
     if (branch) { conds.push(`branch=$${idx++}`); params.push(branch); }
     const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
-    res.json((await pool.query(`SELECT * FROM revenue_targets ${where} ORDER BY period, branch`, params)).rows);
+    const rows = (await pool.query(
+      `SELECT * FROM revenue_targets ${where} ORDER BY period, branch`, params
+    )).rows;
+
+    // 自動補齊缺少的 *_last_year。DB 存的是原始 NT$（display 端會再 /1000 顯示 K），
+    // 所以直接塞 computeAllRevenues 回傳的原始金額即可。
+    const FIELDS = ['paid_last_year','bodywork_last_year','general_last_year','extended_last_year'];
+    await Promise.all(rows.map(async r => {
+      if (FIELDS.every(f => r[f] !== null && r[f] !== undefined)) return;
+      try {
+        const ly = await computeAllRevenues(prevYearPeriod(r.period), r.branch);
+        const roundN = v => v > 0 ? Math.round(v) : null;
+        if (r.paid_last_year     == null && ly.paid     > 0) r.paid_last_year     = roundN(ly.paid);
+        if (r.bodywork_last_year == null && ly.bodywork > 0) r.bodywork_last_year = roundN(ly.bodywork);
+        if (r.general_last_year  == null && ly.general  > 0) r.general_last_year  = roundN(ly.general);
+        if (r.extended_last_year == null && ly.extended > 0) r.extended_last_year = roundN(ly.extended);
+        // 標記此列的去年實績是動態計算來的（前端可選擇性顯示「⚡ 自動推算」）
+        r._last_year_auto = true;
+      } catch (e) { /* 算失敗就留 null，前端照顯示 '—' */ }
+    }));
+
+    res.json(rows);
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 

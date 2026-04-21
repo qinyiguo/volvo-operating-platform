@@ -891,6 +891,21 @@ branch_override filter → 強制指定此指標的分館實績來源
 
 上傳去年實績時，**年份欄位需填入今年**（例：2027 年上傳 2026 實績，year 欄位選 `2027`），原因是系統將去年實績存入今年各月紀錄中，與今年目標並列比較 — 查 `period='202701'~'202712'` 可同時拿到「2027 目標」與「2026 實績」。
 
+**自動 fallback（不用再手動上傳去年實績）**
+
+只要**上年度 DMS 四大檔都有上傳過**，`/api/revenue-targets` 與
+`/api/performance-targets` 讀取時會自動從 `repair_income` / `tech_performance`
+/ `parts_sales` 計算上年同月的數字補進 `*_last_year` / `last_year_value`
+欄位再回傳，DB 不會寫回，隨時可被手動上傳的 Excel 覆蓋。
+
+實作於 `lib/revenueActual.js`：
+- `computeAllRevenues(period, branch)` → `{paid, bodywork, general, extended}`
+- `computePerfActualForMetric(metric, period, branch)` → 單一指標實績
+- `prevYearPeriod(period)` → YYYYMM 上年同月
+
+補上的欄位會帶 `_last_year_auto:true` 旗標，前端若要標示「自動推算」可用。
+節省每年額外上傳一份去年 Excel 的作業。
+
 ### 期間鎖定（雙層）
 
 | 層級 | 鎖定時機 | 實作 | 鎖住的寫入 |
