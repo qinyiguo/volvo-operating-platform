@@ -1074,7 +1074,7 @@ function renderRosterTree(rows) {
   if (!rows.length){ el.innerHTML='<div class="empty">此期間無人員資料</div>'; return; }
   const byFactory={};
   rows.forEach(r=>{ const f=r.factory||'售後服務處'; if(!byFactory[f])byFactory[f]={}; const d=r.dept_code||'—'; if(!byFactory[f][d])byFactory[f][d]={dept_name:r.dept_name,employees:[]}; byFactory[f][d].employees.push(r); });
-  const FACTORY_ORDER=['售後服務處','AMA','AMD','AMC','聯合','鈑烤','零件'];
+  const FACTORY_ORDER=['售後服務處','AMA','AMC','AMD','聯合','鈑烤','零件'];
   const FC_SHORT={AMA:'AMA',AMC:'AMC',AMD:'AMD','聯合':'聯合','鈑烤':'鈑烤','零件':'零件','售後服務處':'總部'};
   const factories=[...new Set(rows.map(r=>r.factory||'售後服務處'))].sort((a,b)=>(FACTORY_ORDER.indexOf(a)+99)-(FACTORY_ORDER.indexOf(b)+99));
 
@@ -1291,7 +1291,7 @@ async function loadDeptCheckboxes(selectedCodes) {
       byFactory[f].push(d);
     });
     let html='';
-    const ORDER=['售後服務處','AMA','AMD','AMC','聯合','鈑烤','零件'];
+    const ORDER=['售後服務處','AMA','AMC','AMD','聯合','鈑烤','零件'];
     Object.entries(byFactory).sort(([a],[b])=>(ORDER.indexOf(a)+99)-(ORDER.indexOf(b)+99)).forEach(([factory,deptList])=>{
       const fc=FC_COLORS[factory]||'#94a3b8';
       html+='<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:'+fc+';margin-bottom:5px">'+factory+'</div><div style="display:flex;flex-wrap:wrap;gap:4px">';
@@ -2092,7 +2092,7 @@ function calcPromoBonus(unused1, unused2, branch, personName, jobTitle) {
       });
     }
 
-    var FC_ORDER=['售後服務處','AMA','AMD','AMC','聯合','鈑烤','零件','其他'];
+    var FC_ORDER=['售後服務處','AMA','AMC','AMD','聯合','鈑烤','零件','其他'];
     var FC_LABELS={AMA:'AMA 內湖',AMC:'AMC 仁愛',AMD:'AMD 士林','聯合':'聯合服務中心','鈑烤':'鈑烤廠','零件':'零件部','售後服務處':'售後服務處'};
     var FC_SHORT={AMA:'AMA',AMC:'AMC',AMD:'AMD','聯合':'聯合','鈑烤':'鈑烤','零件':'零件','售後服務處':'總部'};
 
