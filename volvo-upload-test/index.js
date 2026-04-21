@@ -7,8 +7,8 @@
  *   1. 全域 middleware: CORS（env-driven 白名單）、express.json、
  *      express.static、auditMiddleware（log 所有已登入請求）。
  *   2. 掛載所有 /api 路由。順序重要:含「未驗證端點」的 users.js
- *      （/users/login）與 auth.js（/auth/settings）必須最早掛上，
- *      否則會被後面 router 的 router.use(requireAuth) 攔截。
+ *      （/users/login）必須最早掛上，否則會被後面 router 的
+ *      router.use(requireAuth) 攔截。
  *   3. 啟動時跑 initDatabase() 建表補欄位，並啟一個 24h 週期
  *      cleanupStaleRows() 清理過期 session / 180 天前 audit_logs /
  *      365 天前 upload_history。
@@ -43,11 +43,10 @@ const { auditMiddleware } = require('./lib/auditLogger');
 app.use(auditMiddleware);
 
 // ── 路由掛載 ──
-// 注意：含未驗證端點的 router（users 的 /login、auth 的 /auth/settings）必須最先掛上。
+// 注意：含未驗證端點的 router（users 的 /login）必須最先掛上。
 // 因為其他 router 的 router.use(requireAuth) 會對任何進入該 router 的請求都先跑驗證，
 // 即使該 router 內部沒匹配到路由，未驗證請求也已經被攔下回 401。
 app.use('/api', require('./routes/users'));      // 含 /users/login（未驗證）
-app.use('/api', require('./routes/auth'));       // 含 /auth/settings（未驗證）
 
 app.use('/api', require('./routes/upload'));
 app.use('/api', require('./routes/saConfig'));

@@ -574,3 +574,26 @@ body.light-theme [style*="border: 1px solid #334155"] { border-color: #e2e8f0 !i
     background: initial;
   }
 }
+
+/* ═══════════════════════════════════════════════
+   灰字對比強化（掃全站 491 處硬編碼 inline color 做的攔截）
+   —— 由主題決定升降：
+       暗版底色深 → #475569 幾乎看不到、#64748b 偏暗 → 調亮
+       亮版底色白 → #94a3b8 太淺 < 3:1 → 調深
+   用 attribute selector 避免改動 491 處 inline style。
+   ═══════════════════════════════════════════════ */
+
+/* 暗版：深灰升到 slate-300（高對比）、中灰升到 slate-400（中對比） */
+body:not(.light-theme) [style*="color:#475569"],
+body:not(.light-theme) [style*="color: #475569"] { color: #cbd5e1 !important; }
+body:not(.light-theme) [style*="color:#64748b"],
+body:not(.light-theme) [style*="color: #64748b"] { color: #94a3b8 !important; }
+
+/* 亮版：淺灰太淺失標 → 加深到 slate-500 */
+body.light-theme [style*="color:#94a3b8"],
+body.light-theme [style*="color: #94a3b8"] { color: #64748b !important; }
+
+/* 同時處理常見的 class-based dim greys（KPI 標籤、卡片附註等） */
+body:not(.light-theme) .kpi-label,
+body:not(.light-theme) .card-title-note { color: #94a3b8 !important; }
+body:not(.light-theme) .kpi-sub         { color: #cbd5e1 !important; }
