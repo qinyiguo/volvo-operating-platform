@@ -663,6 +663,20 @@ router.get('/stats/tech-turnover', async (req, res) => {
 
     const bayConfigRes = await pool.query(`SELECT value FROM app_settings WHERE key='service_bays'`);
     const bayConfig = bayConfigRes.rows[0] ? JSON.parse(bayConfigRes.rows[0].value) : {};
+
+    // ── 載入本期「不計目標 / 不算人數」清單（共用 tech_hours_excludes）──
+    // 被標示的技師：周轉率人數分母中不納入、但實際台次照計算。
+    const excludeRes = await pool.query(
+      `SELECT branch, emp_name FROM tech_hours_excludes WHERE period=$1`,
+      [period]
+    );
+    const excludeMap = {};
+    excludeRes.rows.forEach(r => {
+      if (!excludeMap[r.branch]) excludeMap[r.branch] = new Set();
+      excludeMap[r.branch].add(r.emp_name);
+    });
+    const isExcluded = (br, name) => excludeMap[br]?.has(name);
+
     const result = {};
 
     for (const br of BRANCHES) {
@@ -725,9 +739,10 @@ router.get('/stats/tech-turnover', async (req, res) => {
                  OR (status='離職' AND resign_date IS NOT NULL AND resign_date >= $3::date))
           ORDER BY job_title, emp_name
         `, [rosterPeriod, br, periodStart]);
-        techNames = r.rows;
+        techNames = r.rows.map(t => ({ ...t, excluded: isExcluded(br, t.emp_name) }));
       }
-      const techCount = techNames.length;
+      // 只把「未排除」的人納入 tech_count 分母
+      const techCount = techNames.filter(t => !t.excluded).length;
 
       const visitsRes = await pool.query(`
         SELECT COUNT(*) AS total_visits FROM (
@@ -810,9 +825,9 @@ router.get('/stats/tech-turnover', async (req, res) => {
                OR (status='離職' AND resign_date IS NOT NULL AND resign_date >= $2::date))
         ORDER BY dept_name, emp_name
       `, [rosterPeriod, pStart]);
-      bwTechNames = r.rows;
+      bwTechNames = r.rows.map(t => ({ ...t, excluded: isExcluded('鈑烤', t.emp_name) }));
     }
-    const bwTechCount = bwTechNames.length;
+    const bwTechCount = bwTechNames.filter(t => !t.excluded).length;
     const bwRef = result['AMA'] || Object.values(result)[0] || {};
     const bwElapsedDays = bwRef.elapsed_days || 0;
     const bwWorkingDays = bwRef.working_days || 0;

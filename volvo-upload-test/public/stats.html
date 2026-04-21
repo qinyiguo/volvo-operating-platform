@@ -3187,7 +3187,8 @@ async function loadTechTurnover(period, branch) {
     // ── 說明 ──
     html += `<div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text-muted);line-height:1.8;margin-bottom:14px">
   🔄 <strong>引電施工周轉率</strong>：只計算引電台次（排除 PDI、鈑噴、事故保險）。周轉率 = 引電台次 ÷ 技師人數（不含領班）÷ 工作天數（台/人/天）。<br>
-  🔨 <strong>鈑烤施工周轉率</strong>：AMC / AMD 鈑烤集中在 AMA 施工，台次為 <strong>全集團合計</strong>（鈑噴 ＋ 事故保險）。技師人數為鈑烤廠維修部鈑金科 ＋ 烤漆科（<strong>含領班</strong>）。工作天以 AMA 為準。
+  🔨 <strong>鈑烤施工周轉率</strong>：AMC / AMD 鈑烤集中在 AMA 施工，台次為 <strong>全集團合計</strong>（鈑噴 ＋ 事故保險）。技師人數為鈑烤廠維修部鈑金科 ＋ 烤漆科（<strong>含領班</strong>）。工作天以 AMA 為準。<br>
+  👤 <strong>點擊下方技師姓名</strong>可切換「是否納入分母」 — 分母變動後周轉率即時重算（此清單與工時表「不計目標」共用 DB，修改會同步反映）。
 </div>`;
 
     // ── 引電 KPI 卡片（各廠）──
@@ -3239,16 +3240,20 @@ async function loadTechTurnover(period, branch) {
           </div>
         </div>` : ''}
         ${b.tech_names && b.tech_names.length ? `
-        <details style="border-top:1px solid #2d3f56;padding-top:10px;margin-top:8px">
-          <summary style="font-size:11px;color:var(--text-dim);cursor:pointer;user-select:none">計算人員 ${b.tech_count} 人 ▸</summary>
+        <details style="border-top:1px solid #2d3f56;padding-top:10px;margin-top:8px" open>
+          <summary style="font-size:11px;color:var(--text-dim);cursor:pointer;user-select:none">計算人員 ${b.tech_count} 人（共 ${b.tech_names.length} 位；點擊姓名切換「是否納入分母」）▸</summary>
           <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">
             ${b.tech_names.map(t => {
               const sCol = t.status==='在職'?'#10b981':t.status==='留職停薪'?'#f59e0b':'#ef4444';
-              return `<span style="background:#1e293b;border:1px solid #2d3f56;border-radius:5px;padding:2px 8px;font-size:11px">
-                <span style="color:#e2e8f0">${t.emp_name}</span>
+              const safeName = String(t.emp_name||'').replace(/'/g,"\\'");
+              const ex = !!t.excluded;
+              return `<button type="button" onclick="_turnoverToggleExclude('${period}','${br}','${safeName}',${!ex})"
+                title="${ex?'目前未納入分母，點擊 → 納入':'目前已納入分母，點擊 → 排除'}"
+                style="background:${ex?'rgba(100,116,139,.08)':'#1e293b'};border:1.5px ${ex?'dashed #64748b':'solid #2d3f56'};border-radius:5px;padding:2px 8px;font-size:11px;cursor:pointer;color:inherit;line-height:1.4;opacity:${ex?0.55:1}">
+                ${ex?'❌ ':''}<span style="color:#e2e8f0;text-decoration:${ex?'line-through':'none'}">${t.emp_name}</span>
                 <span style="color:var(--text-dimmer);margin-left:3px">${t.job_title}</span>
                 <span style="color:${sCol};margin-left:3px;font-size:10px">${t.status}</span>
-              </span>`;
+              </button>`;
             }).join('')}
           </div>
         </details>` : ''}
@@ -3302,17 +3307,21 @@ async function loadTechTurnover(period, branch) {
           </div>
         </div>` : ''}
         ${bw.tech_names && bw.tech_names.length ? `
-        <details style="border-top:1px solid #2d3f56;padding-top:10px;margin-top:8px">
-          <summary style="font-size:11px;color:var(--text-dim);cursor:pointer;user-select:none">計算人員 ${bw.tech_count} 人 ▸</summary>
+        <details style="border-top:1px solid #2d3f56;padding-top:10px;margin-top:8px" open>
+          <summary style="font-size:11px;color:var(--text-dim);cursor:pointer;user-select:none">計算人員 ${bw.tech_count} 人（共 ${bw.tech_names.length} 位；點擊姓名切換「是否納入分母」）▸</summary>
           <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">
             ${bw.tech_names.map(t => {
               const sCol = t.status==='在職'?'#10b981':t.status==='留職停薪'?'#f59e0b':'#ef4444';
-              return `<span style="background:#1e293b;border:1px solid #2d3f56;border-radius:5px;padding:2px 8px;font-size:11px">
-                <span style="color:#e2e8f0">${t.emp_name}</span>
+              const safeName = String(t.emp_name||'').replace(/'/g,"\\'");
+              const ex = !!t.excluded;
+              return `<button type="button" onclick="_turnoverToggleExclude('${period}','鈑烤','${safeName}',${!ex})"
+                title="${ex?'目前未納入分母，點擊 → 納入':'目前已納入分母，點擊 → 排除'}"
+                style="background:${ex?'rgba(100,116,139,.08)':'#1e293b'};border:1.5px ${ex?'dashed #64748b':'solid #2d3f56'};border-radius:5px;padding:2px 8px;font-size:11px;cursor:pointer;color:inherit;line-height:1.4;opacity:${ex?0.55:1}">
+                ${ex?'❌ ':''}<span style="color:#e2e8f0;text-decoration:${ex?'line-through':'none'}">${t.emp_name}</span>
                 <span style="color:var(--text-dimmer);margin-left:3px">${t.job_title}</span>
                 <span style="color:${t.dept_name?.includes('鈑金')?'#f97316':'#06b6d4'};margin-left:3px;font-size:10px">${t.dept_name}</span>
                 <span style="color:${sCol};margin-left:3px;font-size:10px">${t.status}</span>
-              </span>`;
+              </button>`;
             }).join('')}
           </div>
         </details>` : ''}
@@ -3489,6 +3498,37 @@ function _toggleTrTotal() {
   }
   const { BRANCHES, bd, sortedDates, branchColors } = _trChartCache;
   _renderTurnoverChart(BRANCHES, bd, sortedDates, branchColors);
+}
+
+// 切換「是否納入周轉率分母」—— 共用 tech_hours_excludes 表；
+// 沒 feature:tech_config_edit 的使用者會被後端擋掉 (403)，前端顯示 alert。
+async function _turnoverToggleExclude(period, branch, empName, excluded) {
+  if (window.DmsAuth && !DmsAuth.hasPermission('feature:tech_config_edit')) {
+    alert('您沒有修改技師設定的權限');
+    return;
+  }
+  try {
+    const r = await fetch('/api/tech-hours-excludes', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ period, branch, emp_name: empName, excluded: !!excluded }),
+    });
+    if (!r.ok) {
+      const t = await r.json().catch(() => ({}));
+      throw new Error(t.error || ('HTTP ' + r.status));
+    }
+    // 同步更新 tech-hours 畫面的 cache（如果有的話）
+    if (typeof _techExcludeCache !== 'undefined') {
+      if (_techExcludeCache.period === period) {
+        if (!_techExcludeCache.data[branch]) _techExcludeCache.data[branch] = new Set();
+        if (excluded) _techExcludeCache.data[branch].add(empName);
+        else          _techExcludeCache.data[branch].delete(empName);
+      }
+    }
+    loadTechTurnover(period, document.getElementById('selBranch').value);
+  } catch (e) {
+    alert('儲存失敗：' + e.message);
+  }
 }
 
 function _renderTurnoverChart(BRANCHES, bd, sortedDates, branchColors) {
