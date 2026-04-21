@@ -560,7 +560,6 @@
   <button class="mob-sec-btn" id="mob-menu-revenue-targets" onclick="showSection('revenue-targets')">📈 營收目標</button>
   <button class="mob-sec-btn" id="mob-menu-performance" onclick="showSection('performance')">🛒 精品銷售</button>
   <button class="mob-sec-btn" id="mob-menu-person-targets" onclick="showSection('person-targets')">👤 個人目標</button>
-  <button class="mob-sec-btn" id="mob-menu-upload-approval" onclick="showSection('upload-approval')">📬 上傳簽核</button>
   <button class="mob-sec-btn" id="mob-menu-users" onclick="showSection('users')">👥 使用者</button>
   <button class="mob-sec-btn" id="mob-menu-auditlog" onclick="showSection('auditlog')">📋 操作紀錄</button>
 </div>
@@ -599,10 +598,6 @@
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label">系統</div>
-      <div class="sidebar-item" onclick="showSection('upload-approval')" id="menu-upload-approval">
-        <span class="icon">📬</span> 上傳簽核
-        <span id="approvalBadge" style="display:none;margin-left:auto;background:#ef4444;color:#fff;font-size:10px;font-weight:800;padding:2px 6px;border-radius:10px">0</span>
-      </div>
       <div class="sidebar-item" onclick="showSection('users')" id="menu-users">
         <span class="icon">👥</span> 使用者管理
       </div>
@@ -999,21 +994,6 @@
 
    <!-- 🔧 工位設定 已移至 stats.html → 🔄 周轉率 頁右上角「各據點工位設定」按鈕 -->
 
-   <!-- ── 上傳簽核 ── -->
-    <div class="section-page" id="section-upload-approval">
-      <div class="page-title">📬 上傳簽核</div>
-      <p class="page-sub">已鎖定期間的上傳申請雙階段審核（據點主管 → 系統管理員）</p>
-      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-        <button class="btn btn-primary" id="aprTabTodo" onclick="aprSwitchTab('todo')">🔔 我待簽核 <span id="aprTodoCount" style="background:rgba(255,255,255,.2);padding:1px 7px;border-radius:9px;font-size:11px;margin-left:4px">0</span></button>
-        <button class="btn btn-secondary" id="aprTabMine" onclick="aprSwitchTab('mine')">📝 我的申請</button>
-        <button class="btn btn-secondary" id="aprTabAll"  onclick="aprSwitchTab('all')">📚 全部</button>
-        <button class="btn btn-secondary" onclick="loadApprovals()" style="margin-left:auto">🔄 重新整理</button>
-      </div>
-      <div id="aprList">
-        <div style="padding:40px;text-align:center;color:var(--text-dim)">載入中...</div>
-      </div>
-    </div>
-
    <!-- ── 使用者管理 ── -->
     <div class="section-page" id="section-users">
       <div class="page-title">👥 使用者管理</div>
@@ -1115,7 +1095,7 @@ document.addEventListener('keydown',e=>{
 });
 
 // ══ Sidebar ══
-const sections=['dbstatus','sa-config','working-days','beauty-op-hours','tech-wage-config','revenue-targets','performance','person-targets','upload-approval','users','auditlog'];
+const sections=['dbstatus','sa-config','working-days','beauty-op-hours','tech-wage-config','revenue-targets','performance','person-targets','users','auditlog'];
 function showSection(id){
   sections.forEach(s=>{
     document.getElementById(`section-${s}`).classList.toggle('active',s===id);
@@ -1136,7 +1116,6 @@ function showSection(id){
   if(id==='performance'){loadPerfMetrics();loadPerfTgtPeriods();initPerfUpYear();}
   if(id==='person-targets'){initPtSelectors();}
   if(id==='users') loadUsers();
-  if(id==='upload-approval') loadApprovals();
   if(id==='auditlog') { loadAuditLogs(1); loadAuditSummary(); }
 }
 
@@ -1819,160 +1798,7 @@ async function deletePersonTargets() {
 }
 
 // ══ 🔧 工位設定已移至 stats.html → 🔄 周轉率頁右上角「各據點工位設定」按鈕 ══
-
-// ══ 上傳簽核 JS ══
-let _aprScope = 'todo';
-const APR_UPLOAD_TYPE_LABEL = {
-  dms: 'DMS 四大檔', roster: '人員名冊',
-  perf_targets: '業績目標', revenue_targets: '營收目標',
-  revenue_targets_native: '營收目標（原生）', bodyshop: '業務鈑烤申請',
-};
-const APR_STATUS_LABEL = {
-  pending:         { txt: '等待據點主管', color: '#f59e0b' },
-  branch_approved: { txt: '等待系統管理員', color: '#3b82f6' },
-  super_approved:  { txt: '執行中', color: '#3b82f6' },
-  executed:        { txt: '已執行', color: '#10b981' },
-  rejected:        { txt: '已退件', color: '#ef4444' },
-  withdrawn:       { txt: '已撤回', color: '#64748b' },
-  expired:         { txt: '已過期', color: '#64748b' },
-};
-
-function aprSwitchTab(scope) {
-  _aprScope = scope;
-  ['todo','mine','all'].forEach(s => {
-    const btn = document.getElementById('aprTab' + s.charAt(0).toUpperCase() + s.slice(1));
-    if (!btn) return;
-    btn.classList.toggle('btn-primary',  s === scope);
-    btn.classList.toggle('btn-secondary', s !== scope);
-  });
-  loadApprovals();
-}
-
-async function loadApprovals() {
-  const host = document.getElementById('aprList');
-  if (!host) return;
-  host.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-dim)">載入中...</div>';
-  try {
-    const rows = await DmsAuth.fetchWithAuth(`/api/upload-requests?scope=${encodeURIComponent(_aprScope)}`).then(r => r.json());
-    if (rows.error) throw new Error(rows.error);
-    if (!rows.length) {
-      host.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-dim)">目前沒有資料</div>';
-      return;
-    }
-    host.innerHTML = rows.map(renderApprovalRow).join('');
-  } catch(e) {
-    host.innerHTML = '<div style="color:#ef4444;padding:12px">載入失敗：' + e.message + '</div>';
-  }
-  refreshApprovalBadge();
-}
-
-function renderApprovalRow(r) {
-  const st       = APR_STATUS_LABEL[r.status] || { txt: r.status, color: '#64748b' };
-  const typeLbl  = APR_UPLOAD_TYPE_LABEL[r.upload_type] || r.upload_type;
-  const created  = new Date(r.created_at).toLocaleString('zh-TW');
-  const expires  = new Date(r.expires_at).toLocaleString('zh-TW');
-  const me       = (window._currentUser || {});
-  const isSuper  = me.role === 'super_admin';
-  const canBranch = isSuper || ((me.permissions||[]).includes('feature:approve_upload_branch'));
-  const isMine   = r.requester_id === me.user_id || r.requester_username === me.username;
-  const showBranchApprove = r.status === 'pending' && canBranch;
-  const showSuperApprove  = r.status === 'branch_approved' && isSuper;
-  const showReject        = (r.status === 'pending' || r.status === 'branch_approved') && (canBranch || isSuper);
-  const showWithdraw      = r.status === 'pending' && isMine;
-
-  const escHtml = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const branchInfo = r.branch_approved_at
-    ? `<span style="color:#10b981">✅ ${escHtml(r.branch_approver_name||'')} ${new Date(r.branch_approved_at).toLocaleString('zh-TW')}</span>`
-    : '<span style="color:var(--text-dim)">尚未核可</span>';
-  const superInfo  = r.super_approved_at
-    ? `<span style="color:#10b981">✅ ${escHtml(r.super_approver_name||'')} ${new Date(r.super_approved_at).toLocaleString('zh-TW')}</span>`
-    : '<span style="color:var(--text-dim)">尚未核可</span>';
-  const rejectBlock = r.rejected_at
-    ? `<div style="color:#ef4444;font-size:12px;margin-top:6px">❌ ${escHtml(r.rejector_name||'')} ${new Date(r.rejected_at).toLocaleString('zh-TW')}：${escHtml(r.reject_note||'')}</div>`
-    : '';
-  const errorBlock = r.execute_error
-    ? `<div style="color:#ef4444;font-size:12px;margin-top:6px">⚠️ 執行失敗：${escHtml(r.execute_error)}</div>`
-    : '';
-
-  return `
-  <div class="card" style="margin-bottom:10px;padding:14px 18px">
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
-      <span style="background:${st.color}22;color:${st.color};font-size:11px;font-weight:700;padding:3px 9px;border-radius:10px">${st.txt}</span>
-      <span style="font-size:14px;font-weight:700">${typeLbl}</span>
-      <span style="font-size:12px;color:var(--text-dim)">期間 <b>${r.period.slice(0,4)}/${r.period.slice(4)}</b>${r.branch?(' · 廠別 '+r.branch):''}</span>
-      <span style="margin-left:auto;font-size:11px;color:var(--text-dimmer)">#${r.id} · 由 ${escHtml(r.requester_name||r.requester_username||'')} 於 ${created}</span>
-    </div>
-    <div style="font-size:13px;color:var(--text-dim);margin-bottom:4px">📎 ${escHtml(r.file_name||'')} <span style="color:var(--text-dimmer)">(${((r.file_size||0)/1024).toFixed(1)} KB)</span>
-      ${r.status === 'pending' || r.status === 'branch_approved' ? `<a href="/api/upload-requests/${r.id}/file" style="color:#3b82f6;text-decoration:none;margin-left:8px">⬇️ 下載原檔</a>` : ''}
-    </div>
-    <div style="font-size:13px;margin-bottom:6px">📝 <span style="color:var(--text-dim)">理由：</span>${escHtml(r.reason||'')}</div>
-    <div style="font-size:12px;color:var(--text-dim);margin-bottom:2px">一階（據點主管）：${branchInfo}</div>
-    <div style="font-size:12px;color:var(--text-dim)">二階（系統管理員）：${superInfo}</div>
-    ${rejectBlock}${errorBlock}
-    <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
-      ${showBranchApprove ? `<button class="btn btn-green" onclick="aprApprove(${r.id},'branch')">✅ 一階核可</button>` : ''}
-      ${showSuperApprove  ? `<button class="btn btn-primary" onclick="aprApprove(${r.id},'super')">👑 二階核可並執行</button>` : ''}
-      ${showReject        ? `<button class="btn btn-danger" onclick="aprReject(${r.id})">❌ 退件</button>` : ''}
-      ${showWithdraw      ? `<button class="btn btn-secondary" onclick="aprWithdraw(${r.id})">↩️ 撤回</button>` : ''}
-      <span style="margin-left:auto;font-size:11px;color:var(--text-dimmer)">過期時間 ${expires}</span>
-    </div>
-  </div>`;
-}
-
-async function aprApprove(id, stage) {
-  const note = prompt(stage === 'branch' ? '核可備註（可留空）：' : '系統管理員核可後將立即執行上傳。備註（可留空）：');
-  if (note === null) return;
-  const url = stage === 'branch' ? `/api/upload-requests/${id}/branch-approve` : `/api/upload-requests/${id}/super-approve`;
-  try {
-    const r = await DmsAuth.fetchWithAuth(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ note }),
-    });
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error || '核可失敗');
-    if (stage === 'super') alert(data.executed ? '✅ 已核可並成功執行上傳' : ('⚠️ 已核可但執行失敗：' + (data.error || '')));
-    else alert('✅ 已核可');
-    loadApprovals();
-  } catch(e) { alert('失敗：' + e.message); }
-}
-
-async function aprReject(id) {
-  const note = prompt('退件原因：');
-  if (!note) return;
-  try {
-    const r = await DmsAuth.fetchWithAuth(`/api/upload-requests/${id}/reject`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ note }),
-    });
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error || '退件失敗');
-    loadApprovals();
-  } catch(e) { alert('失敗：' + e.message); }
-}
-
-async function aprWithdraw(id) {
-  if (!confirm('確定要撤回這筆申請嗎？')) return;
-  try {
-    const r = await DmsAuth.fetchWithAuth(`/api/upload-requests/${id}`, { method: 'DELETE' });
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error || '撤回失敗');
-    loadApprovals();
-  } catch(e) { alert('失敗：' + e.message); }
-}
-
-async function refreshApprovalBadge() {
-  try {
-    const r = await DmsAuth.fetchWithAuth('/api/upload-requests/counts').then(r => r.json());
-    const badge = document.getElementById('approvalBadge');
-    const todoCount = document.getElementById('aprTodoCount');
-    if (badge) {
-      if (r.todo > 0) { badge.style.display = ''; badge.textContent = r.todo; }
-      else badge.style.display = 'none';
-    }
-    if (todoCount) todoCount.textContent = r.todo || 0;
-  } catch(e) {}
-}
+// ══ 📬 上傳簽核已移至獨立頁 /approvals.html（由 nav 的「📬 簽核」進入） ══
 
 // ══ 操作紀錄 JS ══
 let _auditPage = 1;
@@ -2428,14 +2254,7 @@ async function deleteUser(id, username) {
   if (window.DmsAuth && !DmsAuth.hasPermission('feature:export_audit')) {
     document.querySelectorAll('button[onclick*="exportAuditCSV"]').forEach(b => b.style.display = 'none');
   }
-  // 深連結：?section=xxx 直接切到指定分頁（nav 上的「📬 簽核」會用）
-  try {
-    const qs = new URLSearchParams(location.search);
-    const sec = qs.get('section');
-    if (sec && sections.includes(sec)) showSection(sec);
-  } catch(e) {}
   loadCounts();
-  refreshApprovalBadge();
 })();
 function initTheme(){const s=localStorage.getItem('volvo_theme')||'dark';applyTheme(s,false);}
 function applyTheme(t,re){if(t==='light')document.body.classList.add('light-theme');else document.body.classList.remove('light-theme');const b=document.getElementById('themeToggleBtn');if(b)b.textContent=t==='light'?'🌙':'☀️';localStorage.setItem('volvo_theme',t);}

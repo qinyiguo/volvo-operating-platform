@@ -106,8 +106,10 @@
         if (!nav || document.querySelector('.nav-link-approval')) return;
         const settingsLink = document.querySelector('.nav-link[href="/settings.html"]');
         const a = document.createElement('a');
-        a.href = '/settings.html?section=upload-approval';
+        a.href = '/approvals.html';
         a.className = 'nav-link nav-link-approval';
+        // 在 approvals.html 自身時標記 active
+        if (location.pathname === '/approvals.html') a.classList.add('active');
         a.innerHTML = '📬 簽核';
         if (todo > 0) {
           const badge = document.createElement('span');
