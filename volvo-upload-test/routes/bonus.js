@@ -273,7 +273,7 @@ router.post('/bonus/upload-roster', requirePermission('feature:upload_roster'), 
   if (!req.file) return res.status(400).json({ error: '請選擇檔案' });
   const period = String(req.body.period || '').trim();
   if (!period.match(/^\d{6}$/)) return res.status(400).json({ error: '請指定期間（YYYYMM）' });
-  if (checkPeriodLock(period, res)) return;
+  if (checkPeriodLock(period, res, req)) return;
   try {
     const rows = parseRosterExcel(req.file.buffer);
     if (!rows.length) return res.status(400).json({ error: '找不到有效資料列' });
@@ -331,7 +331,7 @@ router.get('/bonus/roster', async (req, res) => {
 router.patch('/bonus/roster/:period/:emp_id', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
   const { period, emp_id } = req.params;
   const { factory, dept_code, dept_name } = req.body;
-  if (checkPeriodLock(period, res)) return;
+  if (checkPeriodLock(period, res, req)) return;
   try {
     const p = [factory || null];
     const sets = ['factory=$1', 'updated_at=NOW()'];
@@ -473,9 +473,11 @@ router.get('/bonus/targets', async (req, res) => {
 router.put('/bonus/targets/batch', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
   const { entries } = req.body;
   if (!Array.isArray(entries) || !entries.length) return res.status(400).json({ error: '無資料' });
-  // 任一筆 entry 的 period 已鎖定 → 拒絕整批
-  const lockedPeriod = entries.find(function(e){ return e && e.period && isBonusPeriodLocked(e.period); });
-  if (lockedPeriod && checkPeriodLock(lockedPeriod.period, res)) return;
+  // 任一筆 entry 的 period 已鎖定 → 拒絕整批（super_admin 例外）
+  if (req.user?.role !== 'super_admin') {
+    const lockedPeriod = entries.find(function(e){ return e && e.period && isBonusPeriodLocked(e.period); });
+    if (lockedPeriod && checkPeriodLock(lockedPeriod.period, res, req)) return;
+  }
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -772,7 +774,7 @@ router.get('/bonus/actual-override', async (req, res) => {
 router.put('/bonus/actual-override', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
   const { metric_id, period, branch, actual_value, note } = req.body;
   if (!metric_id || !period) return res.status(400).json({ error: '參數不完整' });
-  if (checkPeriodLock(period, res)) return;
+  if (checkPeriodLock(period, res, req)) return;
   try {
     await pool.query(`
       INSERT INTO bonus_actual_overrides (metric_id, period, branch, actual_value, note, updated_at)
@@ -787,7 +789,7 @@ router.put('/bonus/actual-override', requirePermission('feature:bonus_metric_edi
 router.delete('/bonus/actual-override', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
   const { metric_id, period, branch } = req.query;
   if (!metric_id || !period) return res.status(400).json({ error: '參數不完整' });
-  if (checkPeriodLock(period, res)) return;
+  if (checkPeriodLock(period, res, req)) return;
   try {
     await pool.query(
       `DELETE FROM bonus_actual_overrides WHERE metric_id=$1 AND period=$2 AND COALESCE(branch,'')=$3`,
@@ -855,7 +857,7 @@ router.get('/bonus/extra-bonuses', async (req, res) => {
 // POST 新增額外獎金
 router.post('/bonus/extra-bonuses', requirePermission('feature:bonus_extra_edit'), async (req, res) => {
   const { period, emp_id, emp_name, branch, dept_code, amount, reason } = req.body;
-  if (checkPeriodLock(period, res)) return;
+  if (checkPeriodLock(period, res, req)) return;
   try {
     const { rows } = await pool.query(
       `INSERT INTO bonus_extra (period,emp_id,emp_name,branch,dept_code,amount,reason)
@@ -891,7 +893,7 @@ router.get('/bonus/beauty-branches', async (req, res) => {
 router.put('/bonus/beauty-branches', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
   const { period, assignments } = req.body;
   if (!period) return res.status(400).json({error:'period為必填'});
-  if (checkPeriodLock(period, res)) return;
+  if (checkPeriodLock(period, res, req)) return;
   const key = `beauty_branch_${period}`;
   try {
     await pool.query(
@@ -952,7 +954,7 @@ router.post('/bonus/signatures', requirePermission('feature:bonus_sign'), async 
   if (!period || !branch || !signer_name || !signature_data) {
     return res.status(400).json({ error: '參數不完整（需 period, branch, signer_name, signature_data）' });
   }
-  if (checkPeriodLock(period, res)) return;
+  if (checkPeriodLock(period, res, req)) return;
   try {
     const { rows } = await pool.query(`
       INSERT INTO bonus_signatures (period, branch, role, signer_name, signer_emp_id, signature_data, signed_at)
