@@ -29,6 +29,7 @@ const {
   requireAuth, requirePermission,
   getUserPermissions, ALL_PERMISSIONS,
   PAGE_PERMISSIONS, BRANCH_PERMISSIONS, FEATURE_PERMISSIONS,
+  LEGACY_PERMISSIONS,
   SUPER_ADMIN_PERMISSIONS,
 } = require('../lib/authMiddleware');
 
@@ -134,11 +135,17 @@ router.get('/users/me', requireAuth, async (req, res) => {
 });
 
 // GET /api/users/permissions-schema — 前端用，取得所有可設定的權限定義
+// 舊權限鍵（LEGACY_PERMISSIONS）被排除，避免再顯示在 UI
 router.get('/users/permissions-schema', requireAuth, (req, res) => {
+  const filterLegacy = (obj) => {
+    const out = {};
+    for (const [k, v] of Object.entries(obj)) if (!LEGACY_PERMISSIONS.has(k)) out[k] = v;
+    return out;
+  };
   res.json({
     pages:    PAGE_PERMISSIONS,
     branches: BRANCH_PERMISSIONS,
-    features: FEATURE_PERMISSIONS,
+    features: filterLegacy(FEATURE_PERMISSIONS),
   });
 });
 
@@ -291,7 +298,13 @@ router.put('/users/:id/password', requireAuth, async (req, res) => {
         return res.status(401).json({ error: '目前密碼不正確' });
       }
     } else {
-      // 修改別人 → 需要管理員權限
+      // 修改別人 → 需要「重設他人密碼」feature 權限 + 角色層級也必須可管
+      if (req.user.role !== 'super_admin') {
+        const perms = await getUserPermissions(req.user.user_id, req.user.role);
+        if (!perms.includes('feature:password_reset')) {
+          return res.status(403).json({ error: '無「重設他人密碼」權限' });
+        }
+      }
       if (!canManageRole(req.user.role, targetUser.role)) {
         return res.status(403).json({ error: '無法修改此使用者密碼' });
       }

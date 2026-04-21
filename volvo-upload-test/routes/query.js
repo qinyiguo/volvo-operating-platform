@@ -31,7 +31,7 @@ router.get('/income-config', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/income-config/:key', requirePermission('page:settings'), async (req, res) => {
+router.put('/income-config/:key', requirePermission('feature:sys_config_edit'), async (req, res) => {
   const { value } = req.body;
   if (!value) return res.status(400).json({ error:'值為必填' });
   try {
@@ -59,7 +59,7 @@ router.get('/working-days', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/working-days', requirePermission('page:settings'), async (req, res) => {
+router.put('/working-days', requirePermission('feature:sys_config_edit'), async (req, res) => {
   const { branch, period, work_dates, note } = req.body;
   if (!branch || !period) return res.status(400).json({ error: 'branch 和 period 為必填' });
   if (!Array.isArray(work_dates)) return res.status(400).json({ error: 'work_dates 必須為陣列' });
@@ -74,7 +74,7 @@ router.put('/working-days', requirePermission('page:settings'), async (req, res)
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/working-days', requirePermission('page:settings'), async (req, res) => {
+router.delete('/working-days', requirePermission('feature:sys_config_edit'), async (req, res) => {
   const { branch, period } = req.query;
   if (!branch || !period) return res.status(400).json({ error: 'branch 和 period 為必填' });
   try {
@@ -234,7 +234,7 @@ router.get('/beauty-op-hours', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/beauty-op-hours/:op_code', requirePermission('page:settings'), async (req, res) => {
+router.put('/beauty-op-hours/:op_code', requirePermission('feature:sys_config_edit'), async (req, res) => {
   const op_code = req.params.op_code.trim();
   const { description, standard_hours } = req.body;
   if (!op_code) return res.status(400).json({ error: 'op_code 為必填' });
@@ -251,7 +251,7 @@ router.put('/beauty-op-hours/:op_code', requirePermission('page:settings'), asyn
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/beauty-op-hours/:op_code', requirePermission('page:settings'), async (req, res) => {
+router.delete('/beauty-op-hours/:op_code', requirePermission('feature:sys_config_edit'), async (req, res) => {
   try {
     await pool.query(`DELETE FROM beauty_op_hours WHERE op_code=$1`, [req.params.op_code]);
     res.json({ ok: true });

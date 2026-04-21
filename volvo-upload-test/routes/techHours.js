@@ -619,7 +619,7 @@ router.get('/tech-capacity-config', async (req, res) => {
   catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/tech-capacity-config', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.put('/tech-capacity-config', requirePermission('feature:tech_config_edit'), async (req, res) => {
   try {
     await pool.query(
       `INSERT INTO app_settings (key, value) VALUES ('tech_capacity_config', $1)
@@ -833,7 +833,7 @@ router.get('/tech-bay-config', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/tech-bay-config', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.put('/tech-bay-config', requirePermission('feature:tech_config_edit'), async (req, res) => {
   try {
     await pool.query(`
       INSERT INTO app_settings (key, value) VALUES ('service_bays', $1)
@@ -863,7 +863,7 @@ router.get('/tech-group-config-v2', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/tech-group-config-v2', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.put('/tech-group-config-v2', requirePermission('feature:tech_config_edit'), async (req, res) => {
   const { branch, groups } = req.body;
   if (!branch) return res.status(400).json({ error: 'branch 為必填' });
   const key = `tech_groups_${branch}`;

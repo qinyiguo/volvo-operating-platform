@@ -563,6 +563,45 @@ await client.query(`CREATE INDEX IF NOT EXISTS idx_business_query_period_branch 
       ON CONFLICT (user_id, permission_key) DO NOTHING
     `);
 
+    // ─────────────────────────────────────────────────────────
+    // 權限拆分 migration（feature:upload / feature:targets / feature:bonus_edit）
+    // 舊鍵保留於 DB，但所有後端路由已改用新鍵；將現有擁有者一次性展開為對應新鍵。
+    // ON CONFLICT DO NOTHING → 再次啟動亦安全。
+    // ─────────────────────────────────────────────────────────
+    const MIGRATIONS = [
+      // 舊 feature:upload → 4 支新上傳權限
+      ['feature:upload', 'feature:upload_dms'],
+      ['feature:upload', 'feature:upload_roster'],
+      ['feature:upload', 'feature:upload_targets'],
+      ['feature:upload', 'feature:upload_bodyshop'],
+      // 舊 feature:targets → 3 支新目標權限
+      ['feature:targets', 'feature:perf_metric_edit'],
+      ['feature:targets', 'feature:perf_target_edit'],
+      ['feature:targets', 'feature:revenue_target_edit'],
+      // 舊 feature:bonus_edit → 7 支新編輯權限
+      ['feature:bonus_edit', 'feature:bonus_metric_edit'],
+      ['feature:bonus_edit', 'feature:bonus_extra_edit'],
+      ['feature:bonus_edit', 'feature:promo_bonus_edit'],
+      ['feature:bonus_edit', 'feature:bodyshop_bonus_edit'],
+      ['feature:bonus_edit', 'feature:sa_config_edit'],
+      ['feature:bonus_edit', 'feature:tech_config_edit'],
+      // page:monthly → 月報編輯（原本只有 requireAuth，升級為需要編輯權）
+      ['page:monthly', 'feature:monthly_edit'],
+      // page:stats → WIP 編輯（同上）
+      ['page:stats', 'feature:wip_edit'],
+      // feature:user_manage → 自動帶「重設他人密碼」
+      ['feature:user_manage', 'feature:password_reset'],
+      // 原本能編輯系統設定的 page:settings 使用者 → feature:sys_config_edit
+      ['page:settings', 'feature:sys_config_edit'],
+    ];
+    for (const [from, to] of MIGRATIONS) {
+      await client.query(`
+        INSERT INTO user_permissions (user_id, permission_key)
+        SELECT user_id, $2 FROM user_permissions WHERE permission_key = $1
+        ON CONFLICT (user_id, permission_key) DO NOTHING
+      `, [from, to]);
+    }
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS user_sessions (
         token      VARCHAR(70)  PRIMARY KEY,

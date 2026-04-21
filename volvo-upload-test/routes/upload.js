@@ -95,7 +95,7 @@ function parseSheetToObjects(sheet) {
   return objects;
 }
 
-router.post('/upload', requirePermission('feature:upload'), uploader.array('files', 8), async (req, res) => {
+router.post('/upload', requirePermission('feature:upload_dms'), uploader.array('files', 8), async (req, res) => {
   const results = [];
 
   for (const file of req.files) {

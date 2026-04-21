@@ -126,7 +126,7 @@ router.get('/bodyshop-bonus/settings', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-router.put('/bodyshop-bonus/settings', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.put('/bodyshop-bonus/settings', requirePermission('feature:bodyshop_bonus_edit'), async (req, res) => {
   const { lookback_days, rate_a, rate_b } = req.body;
   const val = JSON.stringify({
     // ★ 0 是合法值，不能用 || 30
@@ -200,7 +200,7 @@ function parseFormExcel(buffer) {
 }
 
 // ══ 上傳 Google Form Excel ══
-router.post('/bodyshop-bonus/upload', requirePermission('feature:upload'), upload.single('file'), async (req, res) => {
+router.post('/bodyshop-bonus/upload', requirePermission('feature:upload_bodyshop'), upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '請選擇檔案' });
   const batchId = `batch_${Date.now()}`;
   try {
@@ -252,7 +252,7 @@ router.post('/bodyshop-bonus/upload', requirePermission('feature:upload'), uploa
 });
 
 // ══ 執行匹配（一張申請 → 多張工單，每張工單獨立一列）══
-router.post('/bodyshop-bonus/match', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.post('/bodyshop-bonus/match', requirePermission('feature:bodyshop_bonus_edit'), async (req, res) => {
   const { period } = req.body;
   if (!period) return res.status(400).json({ error: 'period 為必填' });
 
@@ -448,7 +448,7 @@ router.post('/bodyshop-bonus/match', requirePermission('feature:bonus_edit'), as
 });
 
 // ══ 重置比對結果（清子列，原始列回 pending）══
-router.post('/bodyshop-bonus/reset-match', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.post('/bodyshop-bonus/reset-match', requirePermission('feature:bodyshop_bonus_edit'), async (req, res) => {
   const { app_period, branch } = req.body;
   if (app_period && checkPeriodLock(app_period, res)) return;
   try {
@@ -581,7 +581,7 @@ router.get('/bodyshop-bonus/pending', async (req, res) => {
 });
 
 // ══ 修改獎金比率（支援子列）══
-router.patch('/bodyshop-bonus/applications/:id/rate', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.patch('/bodyshop-bonus/applications/:id/rate', requirePermission('feature:bodyshop_bonus_edit'), async (req, res) => {
   const { bonus_rate } = req.body;
   try {
     const app = (await pool.query(
@@ -608,7 +608,7 @@ router.patch('/bodyshop-bonus/applications/:id/rate', requirePermission('feature
 });
 
 // ══ 修改備註 ══
-router.patch('/bodyshop-bonus/applications/:id/note', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.patch('/bodyshop-bonus/applications/:id/note', requirePermission('feature:bodyshop_bonus_edit'), async (req, res) => {
   const { note } = req.body;
   try {
     await pool.query(
@@ -620,7 +620,7 @@ router.patch('/bodyshop-bonus/applications/:id/note', requirePermission('feature
 });
 
 // ══ 刪除記錄（若為原始列，子列 CASCADE 自動刪除）══
-router.delete('/bodyshop-bonus/applications/:id', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.delete('/bodyshop-bonus/applications/:id', requirePermission('feature:bodyshop_bonus_edit'), async (req, res) => {
   try {
     // 先讀 app_period 做鎖定檢查
     const r = await pool.query('SELECT app_period FROM bodyshop_bonus_applications WHERE id=$1', [req.params.id]);

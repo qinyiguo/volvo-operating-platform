@@ -27,7 +27,7 @@
  */
 const router = require('express').Router();
 const pool   = require('../db/pool');
-const { requireAuth } = require('../lib/authMiddleware');
+const { requireAuth, requirePermission } = require('../lib/authMiddleware');
 
 router.use(requireAuth);
 
@@ -85,7 +85,7 @@ async function insertWipHistory(client, row, user) {
 }
 
 // PUT /api/wip/status/:work_order/:branch — 單筆更新
-router.put('/wip/status/:work_order/:branch', async (req, res) => {
+router.put('/wip/status/:work_order/:branch', requirePermission('feature:wip_edit'), async (req, res) => {
   const { work_order, branch } = req.params;
   const { wip_status, eta_date, reason, updated_by } = req.body;
   if (!WIP_STATUSES.includes(wip_status)) {
@@ -134,7 +134,7 @@ router.get('/wip/status/:work_order/:branch/history', async (req, res) => {
 });
 
 // PUT /api/wip/status/batch — 批次更新
-router.put('/wip/status/batch', async (req, res) => {
+router.put('/wip/status/batch', requirePermission('feature:wip_edit'), async (req, res) => {
   const { entries } = req.body;
   if (!Array.isArray(entries) || !entries.length)
     return res.status(400).json({ error: '無資料' });
@@ -172,7 +172,7 @@ router.put('/wip/status/batch', async (req, res) => {
 });
 
 // DELETE /api/wip/status/:work_order/:branch — 清除狀態（回到未填寫）
-router.delete('/wip/status/:work_order/:branch', async (req, res) => {
+router.delete('/wip/status/:work_order/:branch', requirePermission('feature:wip_edit'), async (req, res) => {
   const { work_order, branch } = req.params;
   try {
     await pool.query(`DELETE FROM wip_status_notes WHERE work_order=$1 AND branch=$2`, [work_order, branch]);

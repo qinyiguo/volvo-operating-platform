@@ -48,14 +48,44 @@ const BRANCH_PERMISSIONS = {
   'branch:AMA': 'AMA 內湖廠',
   'branch:AMC': 'AMC 仁愛廠',
   'branch:AMD': 'AMD 士林廠',
+  'branch:AME': 'AME 美容＋鈑烤',
 };
 const FEATURE_PERMISSIONS = {
-  'feature:upload':       'Excel 上傳',
-  'feature:targets':      '目標設定',
-  'feature:bonus_edit':   '獎金指標設定',
-  'feature:bonus_sign':   '獎金簽核',
-  'feature:user_manage':  '使用者管理',
+  // 上傳類（原 feature:upload 拆分）
+  'feature:upload_dms':          'DMS 四大檔上傳',
+  'feature:upload_roster':       '人員名冊上傳',
+  'feature:upload_targets':      '業績/營收目標上傳',
+  'feature:upload_bodyshop':     '業務鈑烤申請上傳',
+  // 業績與營收（原 feature:targets 拆分）
+  'feature:perf_metric_edit':    '業績指標定義',
+  'feature:perf_target_edit':    '業績目標/個人目標',
+  'feature:revenue_target_edit': '營收目標/週次預估',
+  // 各廠明細
+  'feature:tech_config_edit':    '產能/工位/技師/工資代碼',
+  'feature:wip_edit':            'WIP 工單狀態',
+  // 獎金（原 feature:bonus_edit 拆分）
+  'feature:bonus_metric_edit':   '獎金指標/目標/權重',
+  'feature:bonus_extra_edit':    '額外獎金/主管考核',
+  'feature:bonus_sign':          '獎金簽核',
+  'feature:promo_bonus_edit':    '促銷獎金規則',
+  'feature:bodyshop_bonus_edit': '業務鈑烤獎金',
+  'feature:sa_config_edit':      'SA 指標銷售配置',
+  // 月報
+  'feature:monthly_edit':        '月報版面/筆記',
+  // 系統
+  'feature:sys_config_edit':     '系統設定（收入/工作天/美容工時）',
+  'feature:user_manage':         '使用者管理',
+  'feature:password_reset':      '重設他人密碼',
+  // ── 舊權限鍵（保留於 DB，UI 隱藏；寫入端點已改用新鍵）──
+  'feature:upload':              '[舊] Excel 上傳',
+  'feature:targets':             '[舊] 目標設定',
+  'feature:bonus_edit':          '[舊] 獎金指標設定',
 };
+
+// 舊權限鍵不再顯示於 UI，但保留在 ALL_PERMISSIONS 以免前端顯示 undefined。
+const LEGACY_PERMISSIONS = new Set([
+  'feature:upload', 'feature:targets', 'feature:bonus_edit',
+]);
 
 const ALL_PERMISSIONS = { ...PAGE_PERMISSIONS, ...BRANCH_PERMISSIONS, ...FEATURE_PERMISSIONS };
 
@@ -139,5 +169,6 @@ module.exports = {
   PAGE_PERMISSIONS,
   BRANCH_PERMISSIONS,
   FEATURE_PERMISSIONS,
+  LEGACY_PERMISSIONS,
   SUPER_ADMIN_PERMISSIONS,
 };

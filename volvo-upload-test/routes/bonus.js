@@ -269,7 +269,7 @@ function parseRosterExcel(buffer) {
 }
 
 // ── 上傳人員資料 ──
-router.post('/bonus/upload-roster', requirePermission('feature:upload'), upload.single('file'), async (req, res) => {
+router.post('/bonus/upload-roster', requirePermission('feature:upload_roster'), upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '請選擇檔案' });
   const period = String(req.body.period || '').trim();
   if (!period.match(/^\d{6}$/)) return res.status(400).json({ error: '請指定期間（YYYYMM）' });
@@ -328,7 +328,7 @@ router.get('/bonus/roster', async (req, res) => {
 });
 
 // ── 手動調整員工廠別＋部門 ──
-router.patch('/bonus/roster/:period/:emp_id', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.patch('/bonus/roster/:period/:emp_id', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
   const { period, emp_id } = req.params;
   const { factory, dept_code, dept_name } = req.body;
   if (checkPeriodLock(period, res)) return;
@@ -397,7 +397,7 @@ router.get('/bonus/metrics', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/bonus/metrics', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.post('/bonus/metrics', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
   const { metric_name, description, scope_type, scope_value, metric_source,
           filters, stat_field, unit, sort_order, bonus_rule, target_dept_codes } = req.body;
   if (!metric_name) return res.status(400).json({ error: '名稱為必填' });
@@ -418,7 +418,7 @@ router.post('/bonus/metrics', requirePermission('feature:bonus_edit'), async (re
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/bonus/metrics/:id', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.put('/bonus/metrics/:id', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
   const { metric_name, description, scope_type, scope_value, metric_source,
           filters, stat_field, unit, sort_order, bonus_rule, target_dept_codes } = req.body;
   if (!metric_name) return res.status(400).json({ error: '名稱為必填' });
@@ -442,7 +442,7 @@ router.put('/bonus/metrics/:id', requirePermission('feature:bonus_edit'), async 
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/bonus/metrics/:id', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.delete('/bonus/metrics/:id', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
   try {
     await pool.query(`DELETE FROM bonus_targets WHERE metric_id=$1`, [req.params.id]);
     await pool.query(`DELETE FROM bonus_metrics WHERE id=$1`, [req.params.id]);
@@ -470,7 +470,7 @@ router.get('/bonus/targets', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/bonus/targets/batch', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.put('/bonus/targets/batch', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
   const { entries } = req.body;
   if (!Array.isArray(entries) || !entries.length) return res.status(400).json({ error: '無資料' });
   // 任一筆 entry 的 period 已鎖定 → 拒絕整批
@@ -497,7 +497,7 @@ router.put('/bonus/targets/batch', requirePermission('feature:bonus_edit'), asyn
   finally { client.release(); }
 });
 
-router.delete('/bonus/targets/:id', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.delete('/bonus/targets/:id', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
   try {
     // 先讀出該筆 target 的 period 做鎖定檢查
     const r = await pool.query('SELECT period FROM bonus_targets WHERE id=$1', [req.params.id]);
@@ -769,7 +769,7 @@ router.get('/bonus/actual-override', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/bonus/actual-override', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.put('/bonus/actual-override', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
   const { metric_id, period, branch, actual_value, note } = req.body;
   if (!metric_id || !period) return res.status(400).json({ error: '參數不完整' });
   if (checkPeriodLock(period, res)) return;
@@ -784,7 +784,7 @@ router.put('/bonus/actual-override', requirePermission('feature:bonus_edit'), as
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/bonus/actual-override', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.delete('/bonus/actual-override', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
   const { metric_id, period, branch } = req.query;
   if (!metric_id || !period) return res.status(400).json({ error: '參數不完整' });
   if (checkPeriodLock(period, res)) return;
@@ -806,7 +806,7 @@ router.get('/bonus/dept-mode', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/bonus/dept-mode', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.put('/bonus/dept-mode', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
   const { branch, dept_code, team_mode } = req.body;
   const key = `team_mode_${branch}_${dept_code}`;
   try {
@@ -827,7 +827,7 @@ router.get('/bonus/dept-weights', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/bonus/dept-weights', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.put('/bonus/dept-weights', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
   const { branch, dept_code, weights } = req.body;
   if (!branch || !dept_code) return res.status(400).json({ error: '參數不完整' });
   const key = `dept_weights_${branch}_${dept_code}`;
@@ -853,7 +853,7 @@ router.get('/bonus/extra-bonuses', async (req, res) => {
 });
 
 // POST 新增額外獎金
-router.post('/bonus/extra-bonuses', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.post('/bonus/extra-bonuses', requirePermission('feature:bonus_extra_edit'), async (req, res) => {
   const { period, emp_id, emp_name, branch, dept_code, amount, reason } = req.body;
   if (checkPeriodLock(period, res)) return;
   try {
@@ -867,7 +867,7 @@ router.post('/bonus/extra-bonuses', requirePermission('feature:bonus_edit'), asy
 });
 
 // DELETE 刪除額外獎金
-router.delete('/bonus/extra-bonuses/:id', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.delete('/bonus/extra-bonuses/:id', requirePermission('feature:bonus_extra_edit'), async (req, res) => {
   try {
     // 鎖定檢查：先讀出該筆 record 的 period
     const r = await pool.query('SELECT period FROM bonus_extra WHERE id=$1', [req.params.id]);
@@ -888,7 +888,7 @@ router.get('/bonus/beauty-branches', async (req, res) => {
   } catch(e) { res.status(500).json({error: e.message}); }
 });
 
-router.put('/bonus/beauty-branches', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.put('/bonus/beauty-branches', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
   const { period, assignments } = req.body;
   if (!period) return res.status(400).json({error:'period為必填'});
   if (checkPeriodLock(period, res)) return;
@@ -912,7 +912,7 @@ router.get('/bonus/promo-dept-mode', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/bonus/promo-dept-mode', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.put('/bonus/promo-dept-mode', requirePermission('feature:promo_bonus_edit'), async (req, res) => {
   const { branch, dept_code, team_mode } = req.body;
   const key = `promo_team_mode_${branch}_${dept_code}`;
   try {

@@ -13,7 +13,7 @@
 
 const router = require('express').Router();
 const pool   = require('../db/pool');
-const { requireAuth } = require('../lib/authMiddleware');
+const { requireAuth, requirePermission } = require('../lib/authMiddleware');
 
 router.use(requireAuth);
 
@@ -28,7 +28,7 @@ function safeKey(k) {
 }
 
 // PUT /api/notes/batch  — body: { entries:[{key,value}] }
-router.put('/notes/batch', async (req, res) => {
+router.put('/notes/batch', requirePermission('feature:monthly_edit'), async (req, res) => {
   const entries = req.body?.entries;
   if (!Array.isArray(entries) || !entries.length)
     return res.status(400).json({ error: 'entries must be a non-empty array' });
@@ -72,7 +72,7 @@ router.get('/notes/:key', async (req, res) => {
 });
 
 // PUT /api/notes/:key  — body: { value: string }
-router.put('/notes/:key', async (req, res) => {
+router.put('/notes/:key', requirePermission('feature:monthly_edit'), async (req, res) => {
   const key = safeKey(req.params.key);
   if (!key) return res.status(400).json({ error: 'invalid key' });
   const value = String(req.body?.value ?? '').slice(0, MAX_VAL_LEN);

@@ -23,7 +23,7 @@ router.get('/vctl/metrics', async (req, res) => {
   catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/vctl/metrics', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.post('/vctl/metrics', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
   const { metric_name, description, source_type, calc_method, account_types, filters, unit, sort_order } = req.body;
   if (!metric_name) return res.status(400).json({ error: '名稱為必填' });
   try {
@@ -37,7 +37,7 @@ router.post('/vctl/metrics', requirePermission('feature:bonus_edit'), async (req
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/vctl/metrics/:id', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.put('/vctl/metrics/:id', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
   const { metric_name, description, source_type, calc_method, account_types, filters, unit, sort_order } = req.body;
   if (!metric_name) return res.status(400).json({ error: '名稱為必填' });
   try {
@@ -52,7 +52,7 @@ router.put('/vctl/metrics/:id', requirePermission('feature:bonus_edit'), async (
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/vctl/metrics/:id', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.delete('/vctl/metrics/:id', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
   try { await pool.query('DELETE FROM vctl_metrics WHERE id=$1', [req.params.id]); res.json({ ok:true }); }
   catch(err) { res.status(500).json({ error: err.message }); }
 });

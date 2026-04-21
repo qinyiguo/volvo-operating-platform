@@ -20,7 +20,7 @@ router.get('/tech-wage-config', async (req, res) => {
   catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/tech-wage-config', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.post('/tech-wage-config', requirePermission('feature:tech_config_edit'), async (req, res) => {
   const { config_name, description, work_codes, account_types, stat_method } = req.body;
   if (!config_name) return res.status(400).json({ error: '名稱為必填' });
   if (!Array.isArray(work_codes) || !work_codes.length) return res.status(400).json({ error: '至少需要一個工資代碼' });
@@ -35,7 +35,7 @@ router.post('/tech-wage-config', requirePermission('feature:bonus_edit'), async 
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/tech-wage-config/:id', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.put('/tech-wage-config/:id', requirePermission('feature:tech_config_edit'), async (req, res) => {
   const { config_name, description, work_codes, account_types, stat_method } = req.body;
   if (!config_name) return res.status(400).json({ error: '名稱為必填' });
   const method = ['count','amount','hours'].includes(stat_method) ? stat_method : 'count';
@@ -50,7 +50,7 @@ router.put('/tech-wage-config/:id', requirePermission('feature:bonus_edit'), asy
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/tech-wage-config/:id', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.delete('/tech-wage-config/:id', requirePermission('feature:tech_config_edit'), async (req, res) => {
   try { await pool.query(`DELETE FROM tech_wage_configs WHERE id=$1`, [req.params.id]); res.json({ ok:true }); }
   catch(err) { res.status(500).json({ error: err.message }); }
 });
