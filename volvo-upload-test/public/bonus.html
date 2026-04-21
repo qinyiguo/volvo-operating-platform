@@ -484,7 +484,7 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
     <div style="margin-top:14px;padding-top:12px;border-top:1px dashed #2d3f56">
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text-muted)">
         <input type="checkbox" id="mZeroBelowChk" onchange="_onZeroBelowToggle()" style="accent-color:#ef4444">
-        <span>🎯 <strong>未達標歸零</strong> — 達成率低於以下 % 時，本項「績效獎金」歸 0（<strong style="color:var(--text-dim)">不影響額外獎金 / 促銷獎金 / 主管考核</strong>）</span>
+        <span>🎯 <strong>未達標歸零</strong> — 此指標達成率低於以下 % 時，該員工「所有績效指標獎金」皆歸 0（<strong style="color:var(--text-dim)">不影響額外獎金 / 促銷獎金 / 主管考核</strong>）</span>
       </label>
       <div id="mZeroBelowRow" style="display:none;margin-top:8px;display:flex;align-items:center;gap:8px">
         <span style="font-size:12px;color:var(--text-dim)">達成率 &lt;</span>
@@ -2004,12 +2004,17 @@ function calcPromoBonus(unused1, unused2, branch, personName, jobTitle) {
   return total;
 }
     
+    // 判斷某指標的達成率是否觸發「未達標歸零」
+    function isZeroBelowTriggered(rate, rule) {
+      if (rate===null) return false;
+      var zb=rule&&rule.zero_below_rate;
+      return zb!=null && zb!=='' && !isNaN(parseFloat(zb)) && rate<parseFloat(zb);
+    }
+
     function calcBonus(rate,jobTitle,tiers,roles,rule) {
       if (rate===null||!tiers||!tiers.length) return 0;
-      // 未達標歸零：若本指標設定 zero_below_rate 且達成率低於該值 → 績效獎金歸 0
-      // （不影響額外獎金 / 促銷獎金 / 主管考核 — 它們在別的計算流程）
-      var zb=rule&&rule.zero_below_rate;
-      if (zb!=null && zb!=='' && !isNaN(parseFloat(zb)) && rate<parseFloat(zb)) return 0;
+      // 未達標歸零：本指標自身歸 0 作為保險；整組連動歸 0 由呼叫端判斷
+      if (isZeroBelowTriggered(rate, rule)) return 0;
       var match=tiers.slice().sort(function(a,b){return b.gte-a.gte;}).find(function(t){return rate>=t.gte&&(t.lt===null||rate<t.lt);});
       if (!match) return 0;
       // per-tier mode：'flat' 用 amount、'per_role' 用 amounts[role]。
@@ -2166,12 +2171,21 @@ function calcPromoBonus(unused1, unused2, branch, personName, jobTitle) {
         fcTotalPpl+=dept0.members.length;
         for (var mi0b=0;mi0b<dept0.members.length;mi0b++) {
           var p0=dept0.members[mi0b], pTotal0=0;
+          // ★ 先蒐集所有指標的達成率；任一指標觸發未達標歸零 → 整組績效獎金歸 0
+          var pMetrics0=[], zeroOutAll0=false;
           for (var mii0=0;mii0<dMIds0.length;mii0++) {
             var mId00=dMIds0[mii0], meta00=metaById[mId00];
             var te0=(empTargets[p0.emp_id]&&empTargets[p0.emp_id][mId00])?empTargets[p0.emp_id][mId00]:(deptTargets[p0.dept_code]&&deptTargets[p0.dept_code][mId00])?deptTargets[p0.dept_code][mId00]:null;
             // ★ auto 指標：即使沒有手動設定目標，也用 autoRate
-var eff0=te0?te0.rate:(meta00.useAuto?meta00.autoRate:null);
-            if (eff0!==null) pTotal0+=calcBonus(eff0,p0.job_title||'',meta00.tiers,meta00.roles,meta00.rule);
+            var eff0=te0?te0.rate:(meta00.useAuto?meta00.autoRate:null);
+            pMetrics0.push({meta:meta00, rate:eff0});
+            if (isZeroBelowTriggered(eff0, meta00.rule)) zeroOutAll0=true;
+          }
+          if (!zeroOutAll0) {
+            for (var mii0b=0;mii0b<pMetrics0.length;mii0b++) {
+              var pm0=pMetrics0[mii0b];
+              if (pm0.rate!==null) pTotal0+=calcBonus(pm0.rate,p0.job_title||'',pm0.meta.tiers,pm0.meta.roles,pm0.meta.rule);
+            }
           }
           pTotal0 += calcPromoBonus(null, null, fc, p0.emp_name, p0.job_title||'');
           pTotal0 += (_extraBonusMap[p0.emp_id]||0);
@@ -2200,6 +2214,17 @@ var deptMetricIds=getMetricIdsForDept(dkey, fc), deptHasMetrics=deptMetricIds.le
         // ── 團體制：預先計算各指標的獎金池 ──
         var teamPoolMap={};
         var savedWeights=isTeamDept?_ppGetWeights(fc, dkey):{};
+        // ★ 部門級聯動歸零：任一 scope='dept' 的指標達成率觸發 zero_below_rate → 所有團體池歸 0
+        var deptZeroOutAll=false;
+        if(isTeamDept){
+          for (var dz=0; dz<deptMetricIds.length; dz++){
+            var dzMeta=metaById[deptMetricIds[dz]];
+            if(dzMeta.metric.scope_type!=='dept') continue;
+            var dzRate=dzMeta.useAuto?dzMeta.autoRate:
+              (deptTargets[dkey]&&deptTargets[dkey][deptMetricIds[dz]]?deptTargets[dkey][deptMetricIds[dz]].rate:null);
+            if (isZeroBelowTriggered(dzRate, dzMeta.rule)) { deptZeroOutAll=true; break; }
+          }
+        }
 if(isTeamDept){
           deptMetricIds.forEach(function(mId){
             var meta=metaById[mId];
@@ -2210,7 +2235,7 @@ if(isTeamDept){
             if(dRate===null){teamPoolMap[mId]=null;return;}
             var pool=0,totalW=0;
             dept.members.forEach(function(p){
-              var baseB=calcBonus(dRate,p.job_title||'',meta.tiers,meta.roles,meta.rule);
+              var baseB=deptZeroOutAll?0:calcBonus(dRate,p.job_title||'',meta.tiers,meta.roles,meta.rule);
               pool+=baseB;
               // 優先用手動設定的權重，否則等權重(1)
               var wt=savedWeights[p.emp_id]!==undefined?savedWeights[p.emp_id]:1;
@@ -2256,6 +2281,18 @@ if (isPromoTeamDept && !isBeautyDept && deptPromoPool > 0) {
   // 個人制（或美容部特殊邏輯）
   personPromoBonus = calcPromoBonus(null, null, fc, person3.emp_name, person3.job_title || '');
 }
+                // ★ 先檢查：任一績效指標觸發「未達標歸零」時，整組績效獎金歸 0
+                var zeroOutAll3=false;
+                for (var mcz=0;mcz<deptMetricIds.length;mcz++) {
+                  var mIdCz=deptMetricIds[mcz], metaCz=metaById[mIdCz];
+                  var teCz=(empTargets[person3.emp_id]&&empTargets[person3.emp_id][mIdCz])?empTargets[person3.emp_id][mIdCz]:(deptTargets[person3.dept_code]&&deptTargets[person3.dept_code][mIdCz])?deptTargets[person3.dept_code][mIdCz]:null;
+                  var effCz=teCz?teCz.rate:(metaCz.useAuto?metaCz.autoRate:null);
+                  // 團體制 scope='dept'：用部門達成率
+                  if(isTeamDept&&teamPoolMap[mIdCz]&&metaCz.metric.scope_type==='dept'){
+                    effCz=teamPoolMap[mIdCz].dRate;
+                  }
+                  if (isZeroBelowTriggered(effCz, metaCz.rule)) { zeroOutAll3=true; break; }
+                }
                 for (var mii2=0;mii2<deptMetricIds.length;mii2++) {
                   var mId3=deptMetricIds[mii2], meta3=metaById[mId3];
                   var te3=(empTargets[person3.emp_id]&&empTargets[person3.emp_id][mId3])?empTargets[person3.emp_id][mId3]:(deptTargets[person3.dept_code]&&deptTargets[person3.dept_code][mId3])?deptTargets[person3.dept_code][mId3]:null;
@@ -2272,7 +2309,9 @@ if (isPromoTeamDept && !isBeautyDept && deptPromoPool > 0) {
                             } else if(effectiveHasTarget){
                               bonusAmt=calcBonus(effectiveRate,person3.job_title||'',meta3.tiers,meta3.roles,meta3.rule);
                             }
-                            personBonuses[mId3]={bonus:bonusAmt,promoBonus:0,rate:dispRate,hasTarget:dispHasTgt};
+                            // ★ 整組績效獎金歸 0（但保留達成率顯示）
+                            if (zeroOutAll3) bonusAmt=0;
+                            personBonuses[mId3]={bonus:bonusAmt,promoBonus:0,rate:dispRate,hasTarget:dispHasTgt,zeroedByCascade:zeroOutAll3 && bonusAmt===0};
                             personTotal += bonusAmt;
                 }
 var personMR = (_managerReviewMap[person3.emp_id]&&_managerReviewMap[person3.emp_id].amount)||0;
