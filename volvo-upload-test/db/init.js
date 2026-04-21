@@ -260,6 +260,7 @@ const initDatabase = async () => {
         hire_date         DATE,
         resign_date       DATE,
         unpaid_leave_date DATE,
+        reinstated_date   DATE,
         mgr1              VARCHAR(100),
         mgr2              VARCHAR(100),
         factory           VARCHAR(20),
@@ -268,6 +269,7 @@ const initDatabase = async () => {
         updated_at        TIMESTAMPTZ DEFAULT NOW(),
         UNIQUE (period, emp_id)
       )`);
+    await client.query(`ALTER TABLE staff_roster ADD COLUMN IF NOT EXISTS reinstated_date DATE`);
 
     // ── 獎金指標 ──
     await client.query(`

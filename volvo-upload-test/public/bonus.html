@@ -1044,7 +1044,7 @@ function renderAlerts(s) {
   if (nHL.length) {
     html+='<div style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);border-radius:10px;padding:14px 18px;margin-bottom:10px">';
     html+='<div style="font-size:13px;font-weight:700;color:#3b82f6;margin-bottom:8px">🆕 '+pL+'新進（'+nHL.length+' 人）</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
-    nHL.forEach(r=>{ html+='<div style="background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.2);border-radius:7px;padding:6px 12px;font-size:12px"><span style="font-weight:700;color:#e2e8f0">'+r.emp_name+'</span><span style="color:var(--text-dim);margin-left:6px">'+(r.dept_name||'')+'</span></div>'; });
+    nHL.forEach(r=>{ html+='<div style="background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.2);border-radius:7px;padding:6px 12px;font-size:12px"><span style="font-weight:700;color:#e2e8f0">'+r.emp_name+'</span><span style="color:var(--text-dim);margin-left:6px">'+(r.dept_name||'')+'</span>'+(r.hire_date?'<span style="color:#3b82f6;margin-left:6px">'+r.hire_date.slice(0,10)+'</span>':'')+'</div>'; });
     html+='</div></div>';
   }
   if (rL.length) {
@@ -1056,7 +1056,12 @@ function renderAlerts(s) {
   if (uL.length) {
     html+='<div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:14px 18px;margin-bottom:10px">';
     html+='<div style="font-size:13px;font-weight:700;color:#f59e0b;margin-bottom:8px">⏸️ 留職停薪（'+uL.length+' 人）</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
-    uL.forEach(r=>{ html+='<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:7px;padding:6px 12px;font-size:12px"><span style="font-weight:700;color:#e2e8f0">'+r.emp_name+'</span><span style="color:var(--text-dim);margin-left:6px">'+(r.dept_name||'')+'</span></div>'; });
+    uL.forEach(r=>{
+      var dateStr='';
+      if (r.unpaid_leave_date) dateStr+='<span style="color:#f59e0b;margin-left:6px">停薪 '+r.unpaid_leave_date.slice(0,10)+'</span>';
+      if (r.reinstated_date)   dateStr+='<span style="color:#10b981;margin-left:6px">復職 '+r.reinstated_date.slice(0,10)+'</span>';
+      html+='<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:7px;padding:6px 12px;font-size:12px"><span style="font-weight:700;color:#e2e8f0">'+r.emp_name+'</span><span style="color:var(--text-dim);margin-left:6px">'+(r.dept_name||'')+'</span>'+dateStr+'</div>';
+    });
     html+='</div></div>';
   }
   el.innerHTML=html;
