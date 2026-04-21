@@ -73,17 +73,27 @@ function activeFilter(period, startIdx) {
   const prevMonthStart = m === 1
     ? `${y-1}-12-01`
     : `${y}-${String(m-1).padStart(2,'0')}-01`;
+  const thisMonthStart = `${y}-${String(m).padStart(2,'0')}-01`;
+  // 留職停薪：只在「留職停薪日在當月（或以後）」或「留職復職日在當月（或以後）」時納入
+  //   - 3/21 留職停薪 → 3 月仍需出現在獎金表（工作了部分月份）
+  //   - 2/1 留職停薪且未復職 → 3 月不出現
+  //   - 4 月復職 → 4 月出現
   return {
     cond: `
       AND (
-        status != '離職'
-        OR (resign_date IS NOT NULL AND resign_date >= $${startIdx}::date)
+        (status = '在職')
+        OR (status = '離職' AND resign_date IS NOT NULL AND resign_date >= $${startIdx}::date)
+        OR (status = '留職停薪' AND (
+             (unpaid_leave_date IS NOT NULL AND unpaid_leave_date >= $${startIdx + 1}::date)
+             OR (reinstated_date  IS NOT NULL AND reinstated_date  >= $${startIdx + 1}::date)
+        ))
       )
       AND COALESCE(job_category, '') NOT ILIKE '%計時%'
       AND COALESCE(job_title,    '') NOT ILIKE '%計時%'
     `,
     param: prevMonthStart,
-    nextIdx: startIdx + 1,
+    params: [prevMonthStart, thisMonthStart],
+    nextIdx: startIdx + 2,
   };
 }
 
@@ -259,6 +269,7 @@ function parseRosterExcel(buffer) {
       hire_date: fmtDate(r[col('到職日期')]),
       resign_date: fmtDate(r[col('離職日期')]),
       unpaid_leave_date: fmtDate(r[col('留職停薪日')]),
+      reinstated_date: fmtDate(r[col('留職復職日')]),
       mgr1: String(r[col('一階主管')] || '').trim(),
       mgr2: String(r[col('二階主管')] || '').trim(),
       job_category: String(r[col('職種名稱')] || '').trim(),
@@ -287,19 +298,20 @@ router.post('/bonus/upload-roster', requirePermission('feature:upload_roster'), 
         await client.query(`
           INSERT INTO staff_roster
             (period,emp_id,emp_name,dept_code,dept_name,job_title,status,
-             hire_date,resign_date,unpaid_leave_date,mgr1,mgr2,
+             hire_date,resign_date,unpaid_leave_date,reinstated_date,mgr1,mgr2,
              factory,job_category,job_class)
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
           ON CONFLICT (period,emp_id) DO UPDATE SET
             emp_name=EXCLUDED.emp_name, dept_code=EXCLUDED.dept_code,
             dept_name=EXCLUDED.dept_name, job_title=EXCLUDED.job_title,
             status=EXCLUDED.status, hire_date=EXCLUDED.hire_date,
             resign_date=EXCLUDED.resign_date, unpaid_leave_date=EXCLUDED.unpaid_leave_date,
+            reinstated_date=EXCLUDED.reinstated_date,
             mgr1=EXCLUDED.mgr1, mgr2=EXCLUDED.mgr2, factory=EXCLUDED.factory,
             job_category=EXCLUDED.job_category, job_class=EXCLUDED.job_class,
             updated_at=NOW()
         `, [period, r.emp_id, r.emp_name, r.dept_code, r.dept_name, r.job_title, r.status,
-            r.hire_date, r.resign_date, r.unpaid_leave_date, r.mgr1, r.mgr2,
+            r.hire_date, r.resign_date, r.unpaid_leave_date, r.reinstated_date, r.mgr1, r.mgr2,
             inferFactory(r.dept_code), r.job_category, r.job_class]);
         count++;
       }
@@ -316,7 +328,7 @@ router.get('/bonus/roster', async (req, res) => {
   if (!period) return res.status(400).json({ error: 'period 為必填' });
   try {
     const f = activeFilter(period, 2);
-    const p = [period, f.param]; let idx = f.nextIdx;
+    const p = [period, ...f.params]; let idx = f.nextIdx;
     let extra = '';
     if (factory)   { extra += ` AND factory=$${idx++}`;   p.push(factory); }
     if (status)    { extra += ` AND status=$${idx++}`;    p.push(status); }
@@ -364,7 +376,7 @@ router.get('/bonus/roster-summary', async (req, res) => {
       SELECT dept_code, dept_name, factory, status, COUNT(*) AS cnt
       FROM staff_roster WHERE period=$1 ${f.cond}
       GROUP BY dept_code, dept_name, factory, status ORDER BY dept_code, status
-    `, [period, f.param]);
+    `, [period, ...f.params]);
     const resignLastMonth = await pool.query(`
       SELECT emp_id, emp_name, dept_name, factory, resign_date, mgr1
       FROM staff_roster WHERE period=$1 AND status='離職' AND resign_date IS NOT NULL
@@ -378,13 +390,18 @@ router.get('/bonus/roster-summary', async (req, res) => {
         AND COALESCE(job_title,'') NOT ILIKE '%計時%'
       ORDER BY dept_code, hire_date
     `, [period, prevPeriod]);
+    // 留職停薪：只列出「本期」相關的（本期內留職停薪、或本期內復職）
     const unpaid = await pool.query(`
-      SELECT emp_id, emp_name, dept_name, factory, unpaid_leave_date, mgr1
+      SELECT emp_id, emp_name, dept_name, factory, unpaid_leave_date, reinstated_date, mgr1
       FROM staff_roster WHERE period=$1 AND status='留職停薪'
+        AND (
+          (unpaid_leave_date IS NOT NULL AND unpaid_leave_date >= $2::date)
+          OR (reinstated_date IS NOT NULL AND reinstated_date >= $2::date)
+        )
         AND COALESCE(job_category,'') NOT ILIKE '%計時%'
         AND COALESCE(job_title,'') NOT ILIKE '%計時%'
-      ORDER BY dept_code
-    `, [period]);
+      ORDER BY dept_code, unpaid_leave_date
+    `, [period, `${period.slice(0,4)}-${period.slice(4,6)}-01`]);
     res.json({ summary: summary.rows, resignLastMonth: resignLastMonth.rows, newHiresLastMonth: newHiresLastMonth.rows, unpaidLeave: unpaid.rows, prevPeriod });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
@@ -734,7 +751,7 @@ router.get('/bonus/scope-members', async (req, res) => {
   const deptCodesArr = dept_codes ? dept_codes.split(',').map(s=>s.trim()).filter(Boolean) : [];
   const f = activeFilter(period, 2);
   try {
-    const p = [period, f.param]; let idx = f.nextIdx;
+    const p = [period, ...f.params]; let idx = f.nextIdx;
     let extra = '';
     if (factory)             { extra += ` AND factory=$${idx++}`;           p.push(factory); }
     if (deptCodesArr.length) { extra += ` AND dept_code=ANY($${idx++})`;    p.push(deptCodesArr); }
@@ -754,7 +771,7 @@ router.get('/bonus/departments', async (req, res) => {
   if (!period) return res.status(400).json({ error: 'period 為必填' });
   const f = activeFilter(period, 2);
   try {
-    const r = await pool.query(`SELECT DISTINCT dept_code, dept_name, factory FROM staff_roster WHERE period=$1 ${f.cond} ORDER BY factory NULLS LAST, dept_code`, [period, f.param]);
+    const r = await pool.query(`SELECT DISTINCT dept_code, dept_name, factory FROM staff_roster WHERE period=$1 ${f.cond} ORDER BY factory NULLS LAST, dept_code`, [period, ...f.params]);
     res.json(r.rows);
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
