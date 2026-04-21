@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/manager-review  { period, emp_id, amount, note }
-router.post('/', requirePermission('feature:bonus_edit'), async (req, res) => {
+router.post('/', requirePermission('feature:bonus_extra_edit'), async (req, res) => {
   const { period, emp_id, amount, note } = req.body;
   if (!period || !emp_id) return res.status(400).json({ error: '缺少必要欄位' });
   if (isBonusPeriodLocked(period)) {

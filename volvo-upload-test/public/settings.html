@@ -2162,6 +2162,53 @@ function onRoleChange() {
   if (permSection) permSection.style.display = role === 'super_admin' ? 'none' : '';
 }
 
+// ═══ 角色預設（套用後仍可手動微調）═══
+const ROLE_PRESETS = {
+  viewer: [
+    'page:performance','page:stats','page:query','page:bonus','page:monthly',
+    'branch:AMA','branch:AMC','branch:AMD','branch:AME',
+  ],
+  branch_manager: [
+    'page:performance','page:stats','page:query','page:bonus','page:monthly',
+    'branch:AMA','branch:AMC','branch:AMD','branch:AME',
+    'feature:bonus_sign','feature:bonus_extra_edit','feature:wip_edit',
+  ],
+  bonus_admin: [
+    'page:performance','page:stats','page:bonus','page:monthly',
+    'branch:AMA','branch:AMC','branch:AMD','branch:AME',
+    'feature:bonus_metric_edit','feature:bonus_extra_edit','feature:bonus_sign',
+    'feature:promo_bonus_edit','feature:bodyshop_bonus_edit','feature:sa_config_edit',
+  ],
+  data_staff: [
+    'page:performance','page:stats','page:query','page:bonus',
+    'branch:AMA','branch:AMC','branch:AMD','branch:AME',
+    'feature:upload_dms','feature:upload_roster','feature:upload_targets','feature:upload_bodyshop',
+  ],
+  business_admin: [
+    'page:performance','page:stats','page:query','page:bonus','page:monthly',
+    'branch:AMA','branch:AMC','branch:AMD','branch:AME',
+    'feature:perf_metric_edit','feature:perf_target_edit','feature:revenue_target_edit',
+    'feature:tech_config_edit',
+  ],
+  sys_admin: [
+    'page:performance','page:stats','page:query','page:bonus','page:monthly','page:settings',
+    'branch:AMA','branch:AMC','branch:AMD','branch:AME',
+    'feature:sys_config_edit','feature:monthly_edit','feature:user_manage','feature:password_reset',
+  ],
+  full: null,  // 特殊：全勾
+};
+
+function applyRolePreset(key) {
+  if (!key) return;
+  const boxes = document.querySelectorAll('#umPermSection [name=perm]');
+  if (key === 'full') {
+    boxes.forEach(b => b.checked = true);
+    return;
+  }
+  const allow = new Set(ROLE_PRESETS[key] || []);
+  boxes.forEach(b => b.checked = allow.has(b.value));
+}
+
 async function saveUser() {
   const msg  = document.getElementById('umMsg');
   const btn  = document.getElementById('umSaveBtn');
@@ -2273,28 +2320,69 @@ initTheme();
         </select>
       </div>
       <div id="umPermSection">
-        <div style="font-size:12px;color:#64748b;font-weight:700;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">功能權限設定</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
-          <div>
-            <div style="font-size:11px;color:#475569;margin-bottom:6px">📄 頁面存取</div>
+        <!-- 角色預設 -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+          <span style="font-size:12px;color:#64748b;font-weight:700">👥 套用角色預設：</span>
+          <select id="umRolePreset" onchange="applyRolePreset(this.value)" style="background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:6px 10px;border-radius:6px;font-size:12px">
+            <option value="">— 自訂 —</option>
+            <option value="viewer">🔍 觀察員（純檢視）</option>
+            <option value="branch_manager">🏢 據點主管</option>
+            <option value="bonus_admin">💰 獎金管理</option>
+            <option value="data_staff">📤 資料專員</option>
+            <option value="business_admin">📊 業務管理</option>
+            <option value="sys_admin">🛠 系統管理</option>
+            <option value="full">👑 全功能</option>
+          </select>
+          <span style="font-size:11px;color:#64748b">（選完可再手動調整）</span>
+        </div>
+        <!-- 分組權限 -->
+        <div class="um-perm-grid">
+          <div class="um-perm-col">
+            <div class="um-perm-head">📄 頁面檢視</div>
             <label class="um-perm-row"><input type="checkbox" name="perm" value="page:performance"> 業績指標</label>
             <label class="um-perm-row"><input type="checkbox" name="perm" value="page:stats"> 各廠明細</label>
             <label class="um-perm-row"><input type="checkbox" name="perm" value="page:query"> 資料查詢</label>
             <label class="um-perm-row"><input type="checkbox" name="perm" value="page:bonus"> 獎金表</label>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="page:monthly"> 月報</label>
             <label class="um-perm-row"><input type="checkbox" name="perm" value="page:settings"> 系統設定</label>
-          </div>
-          <div>
-            <div style="font-size:11px;color:#475569;margin-bottom:6px">🏭 廠別存取</div>
+            <div class="um-perm-head" style="margin-top:12px">🏭 廠別存取</div>
             <label class="um-perm-row"><input type="checkbox" name="perm" value="branch:AMA"> AMA 內湖廠</label>
             <label class="um-perm-row"><input type="checkbox" name="perm" value="branch:AMC"> AMC 仁愛廠</label>
             <label class="um-perm-row"><input type="checkbox" name="perm" value="branch:AMD"> AMD 士林廠</label>
             <label class="um-perm-row"><input type="checkbox" name="perm" value="branch:AME"> AME 美容＋鈑烤</label>
-            <div style="font-size:11px;color:#475569;margin-bottom:6px;margin-top:10px">⚙️ 功能操作</div>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:upload"> Excel 上傳</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:targets"> 目標設定</label>
-            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:bonus_edit"> 獎金指標設定</label>
+          </div>
+          <div class="um-perm-col">
+            <div class="um-perm-head">📤 上傳功能</div>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:upload_dms"> DMS 四大檔上傳</label>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:upload_roster"> 人員名冊上傳</label>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:upload_targets"> 業績/營收目標上傳</label>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:upload_bodyshop"> 業務鈑烤申請上傳</label>
+
+            <div class="um-perm-head" style="margin-top:12px">📊 業績與營收</div>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:perf_metric_edit"> 業績指標定義</label>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:perf_target_edit"> 業績/個人目標</label>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:revenue_target_edit"> 營收目標/週次預估</label>
+
+            <div class="um-perm-head" style="margin-top:12px">🏭 各廠設定</div>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:tech_config_edit"> 產能/工位/技師/工資代碼</label>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:wip_edit"> WIP 工單狀態</label>
+          </div>
+          <div class="um-perm-col">
+            <div class="um-perm-head">💰 獎金管理</div>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:bonus_metric_edit"> 獎金指標/目標/權重</label>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:bonus_extra_edit"> 額外獎金/主管考核</label>
             <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:bonus_sign"> 獎金簽核</label>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:promo_bonus_edit"> 促銷獎金規則</label>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:bodyshop_bonus_edit"> 業務鈑烤獎金</label>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:sa_config_edit"> SA 指標銷售配置</label>
+
+            <div class="um-perm-head" style="margin-top:12px">📑 月報</div>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:monthly_edit"> 月報版面/筆記</label>
+
+            <div class="um-perm-head" style="margin-top:12px">⚙️ 系統</div>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:sys_config_edit"> 系統設定（收入/工作天/美容工時）</label>
             <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:user_manage"> 使用者管理</label>
+            <label class="um-perm-row"><input type="checkbox" name="perm" value="feature:password_reset"> 重設他人密碼</label>
           </div>
         </div>
       </div>
@@ -2311,6 +2399,31 @@ initTheme();
 .um-perm-row { display:flex;align-items:center;gap:7px;padding:4px 0;font-size:13px;color:#94a3b8;cursor:pointer; }
 .um-perm-row:hover { color:#e2e8f0; }
 .um-perm-row input { accent-color:#3b82f6;cursor:pointer; }
+.um-perm-grid {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:14px;
+  margin-bottom:14px;
+}
+.um-perm-col {
+  background:#0f172a;
+  border:1px solid #1e293b;
+  border-radius:8px;
+  padding:10px 12px;
+}
+.um-perm-head {
+  font-size:11px;
+  color:#475569;
+  font-weight:700;
+  letter-spacing:.5px;
+  margin-bottom:5px;
+}
+@media (max-width: 900px) {
+  .um-perm-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 560px) {
+  .um-perm-grid { grid-template-columns: 1fr; }
+}
 </style>
 </body>
 </html>
