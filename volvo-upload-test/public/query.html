@@ -24,7 +24,7 @@
   .nav { background: #1e293b; border-bottom: 1px solid #2d3f56; padding: 0 24px; display: flex; align-items: center; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .nav::-webkit-scrollbar { display: none; }
   .nav-brand { font-size: 15px; font-weight: 700; color: #fff; padding: 16px 0; margin-right: 24px; white-space: nowrap; flex-shrink: 0; }
-  .nav-link { padding: 16px 14px; color: #64748b; font-size: 13px; font-weight: 600; text-decoration: none; border-bottom: 2px solid transparent; white-space: nowrap; flex-shrink: 0; }
+  .nav-link { padding: 16px 14px; color: var(--text-dim); font-size: 13px; font-weight: 600; text-decoration: none; border-bottom: 2px solid transparent; white-space: nowrap; flex-shrink: 0; }
   .nav-link:hover { color: #e2e8f0; }
   .nav-link.active { color: #3b82f6; border-bottom-color: #3b82f6; }
 
@@ -33,7 +33,7 @@
 
   /* Desktop filter: single row */
   .filter-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .filter-bar label { font-size: 12px; color: #64748b; font-weight: 600; white-space: nowrap; }
+  .filter-bar label { font-size: 12px; color: var(--text-dim); font-weight: 600; white-space: nowrap; }
   .filter-bar select,
   .filter-bar input { background: #1e293b; border: 1px solid #2d3f56; color: #e2e8f0; padding: 7px 10px; border-radius: 6px; font-size: 13px; outline: none; transition: border-color .15s; }
   .filter-bar select:focus,
@@ -67,15 +67,15 @@
   .badge-green  { background: rgba(16,185,129,.15); color: #10b981; }
   .badge-yellow { background: rgba(245,158,11,.15); color: #f59e0b; }
   .badge-purple { background: rgba(139,92,246,.15); color: #8b5cf6; }
-  .badge-gray   { background: rgba(100,116,139,.15); color: #94a3b8; }
+  .badge-gray   { background: rgba(100,116,139,.15); color: var(--text-muted); }
 
   /* ── Table ── */
   .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  th { background: #0f172a; color: #64748b; font-size: 11px; font-weight: 700; text-align: left; padding: 9px 10px; border-bottom: 1px solid #2d3f56; white-space: nowrap; position: sticky; top: 0; z-index: 2; }
+  th { background: #0f172a; color: var(--text-dim); font-size: 11px; font-weight: 700; text-align: left; padding: 9px 10px; border-bottom: 1px solid #2d3f56; white-space: nowrap; position: sticky; top: 0; z-index: 2; }
   th.sortable { cursor: pointer; user-select: none; }
   th.sortable:hover { color: #e2e8f0; }
-  th .sort-icon { font-size: 10px; margin-left: 3px; color: #475569; }
+  th .sort-icon { font-size: 10px; margin-left: 3px; color: var(--text-dimmer); }
   th.sort-asc .sort-icon::after { content: '▲'; color: #3b82f6; }
   th.sort-desc .sort-icon::after { content: '▼'; color: #3b82f6; }
   th:not(.sort-asc):not(.sort-desc) .sort-icon::after { content: '⇅'; }
@@ -85,26 +85,26 @@
   .num { text-align: right; font-variant-numeric: tabular-nums; }
 
   /* ── States ── */
-  .loading { text-align: center; padding: 48px; color: #64748b; font-size: 14px; }
+  .loading { text-align: center; padding: 48px; color: var(--text-dim); font-size: 14px; }
   .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #2d3f56; border-top-color: #3b82f6; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 8px; vertical-align: middle; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .empty { text-align: center; padding: 48px; color: #64748b; }
+  .empty { text-align: center; padding: 48px; color: var(--text-dim); }
   .search-highlight { background: rgba(251,191,36,.25); color: #fbbf24; border-radius: 2px; }
 
   /* ── Pagination ── */
   .pagination { display: flex; align-items: center; gap: 6px; padding: 12px 16px; border-top: 1px solid #2d3f56; flex-wrap: wrap; }
-  .page-btn { width: 32px; height: 32px; border: 1px solid #2d3f56; border-radius: 6px; background: #0f172a; color: #64748b; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+  .page-btn { width: 32px; height: 32px; border: 1px solid #2d3f56; border-radius: 6px; background: #0f172a; color: var(--text-dim); font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; }
   .page-btn:hover { border-color: #3b82f6; color: #3b82f6; }
   .page-btn.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
   .page-btn:disabled { opacity: .4; cursor: not-allowed; }
-  .page-info { font-size: 12px; color: #64748b; margin-left: 4px; }
-  .row-count { font-size: 12px; color: #475569; background: #0f172a; padding: 4px 10px; border-radius: 5px; border: 1px solid #2d3f56; }
+  .page-info { font-size: 12px; color: var(--text-dim); margin-left: 4px; }
+  .row-count { font-size: 12px; color: var(--text-dimmer); background: #0f172a; padding: 4px 10px; border-radius: 5px; border: 1px solid #2d3f56; }
 
   /* ── Period selector ── */
   .period-selector { position: relative; }
   .period-btn { display: flex; align-items: center; gap: 6px; background: #1e293b; border: 1px solid #2d3f56; color: #e2e8f0; padding: 7px 10px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; user-select: none; min-width: 120px; justify-content: space-between; outline: none; transition: border-color .15s; }
   .period-btn:hover, .period-btn.open { border-color: #3b82f6; }
-  .period-btn .pb-arrow { font-size: 9px; color: #475569; transition: transform .2s; }
+  .period-btn .pb-arrow { font-size: 9px; color: var(--text-dimmer); transition: transform .2s; }
   .period-btn.open .pb-arrow { transform: rotate(180deg); color: #3b82f6; }
   .period-dropdown { position: absolute; top: calc(100% + 4px); left: 0; background: #1a2740; border: 1px solid #334155; border-radius: 10px; box-shadow: 0 12px 40px rgba(0,0,0,.8); z-index: 9999; width: 240px; display: none; flex-direction: column; overflow: hidden; }
   .period-dropdown.open { display: flex; }
@@ -112,17 +112,17 @@
   .period-dd-year { font-size: 11px; font-weight: 700; color: #374151; padding: 8px 12px 3px; display: flex; align-items: center; gap: 6px; }
   .period-dd-year::after { content: ''; flex: 1; height: 1px; background: #1e3050; }
   .period-dd-months { display: grid; grid-template-columns: repeat(4,1fr); gap: 3px; padding: 0 8px 6px; }
-  .period-dd-mo { padding: 6px 4px; border-radius: 6px; cursor: pointer; text-align: center; font-size: 12px; font-weight: 700; color: #64748b; border: 1px solid transparent; transition: all .1s; }
+  .period-dd-mo { padding: 6px 4px; border-radius: 6px; cursor: pointer; text-align: center; font-size: 12px; font-weight: 700; color: var(--text-dim); border: 1px solid transparent; transition: all .1s; }
   .period-dd-mo:hover { background: rgba(59,130,246,.1); border-color: rgba(59,130,246,.3); color: #93c5fd; }
   .period-dd-mo.selected { background: rgba(59,130,246,.18); border-color: #3b82f6; color: #3b82f6; }
-  .period-dd-mo.has-data { color: #94a3b8; }
-  .period-dd-mo.has-data:not(.selected) { color: #94a3b8; }
+  .period-dd-mo.has-data { color: var(--text-muted); }
+  .period-dd-mo.has-data:not(.selected) { color: var(--text-muted); }
 
   /* ── Column toggle ── */
   .col-toggle-wrap { position: relative; }
   .col-toggle-dropdown { position: absolute; top: calc(100% + 4px); right: 0; background: #1a2740; border: 1px solid #334155; border-radius: 10px; box-shadow: 0 12px 40px rgba(0,0,0,.8); z-index: 999; width: 200px; padding: 10px 0; display: none; max-height: 60vh; overflow-y: auto; }
   .col-toggle-dropdown.open { display: block; }
-  .col-toggle-item { display: flex; align-items: center; gap: 8px; padding: 8px 14px; cursor: pointer; font-size: 13px; color: #94a3b8; transition: background .1s; }
+  .col-toggle-item { display: flex; align-items: center; gap: 8px; padding: 8px 14px; cursor: pointer; font-size: 13px; color: var(--text-muted); transition: background .1s; }
   .col-toggle-item:hover { background: rgba(59,130,246,.08); color: #e2e8f0; }
   .col-toggle-item input[type=checkbox] { accent-color: #3b82f6; width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; }
 
@@ -149,7 +149,7 @@
     .filter-row-2 { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 6px; }
     .filter-row-2 { margin-bottom: 0; }
 
-    .filter-label { font-size: 11px; color: #64748b; font-weight: 600; white-space: nowrap; }
+    .filter-label { font-size: 11px; color: var(--text-dim); font-weight: 600; white-space: nowrap; }
     .filter-select { background: #1e293b; border: 1px solid #2d3f56; color: #e2e8f0; padding: 7px 8px; border-radius: 6px; font-size: 12px; outline: none; flex: 1; min-width: 0; }
     .filter-select:focus { border-color: #3b82f6; }
     .filter-input { background: #1e293b; border: 1px solid #2d3f56; color: #e2e8f0; padding: 7px 10px; border-radius: 6px; font-size: 12px; outline: none; flex: 1; min-width: 0; }
@@ -289,7 +289,7 @@
       <div class="card-head-title" id="tableTitle">🔧 維修收入分類明細</div>
       <span id="rowCountBadge" class="row-count">0 筆</span>
       <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
-        <label style="font-size:12px;color:#64748b">每頁</label>
+        <label style="font-size:12px;color:var(--text-dim)">每頁</label>
         <select id="selPageSize" style="background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:4px 6px;border-radius:5px;font-size:12px" onchange="goPage(1)">
           <option value="50">50</option>
           <option value="100" selected>100</option>
@@ -718,7 +718,7 @@ function renderTable(){
   };
 
   let thead = '<thead><tr>';
-  thead += `<th style="width:36px;color:#475569">#</th>`;
+  thead += `<th style="width:36px;color:var(--text-dimmer)">#</th>`;
   visibleCols.forEach(c=>{
     const sortClass = _sortCol===c.key?`sort-${_sortDir}`:'';
     thead += `<th class="sortable ${sortClass}" onclick="doSort('${c.key}')">${c.label}<span class="sort-icon"></span></th>`;
@@ -731,7 +731,7 @@ function renderTable(){
   } else {
     pageRows.forEach((row, ri)=>{
       tbody += '<tr>';
-      tbody += `<td style="color:#475569;font-size:11px">${start+ri+1}</td>`;
+      tbody += `<td style="color:var(--text-dimmer);font-size:11px">${start+ri+1}</td>`;
       visibleCols.forEach(c=>{
         const raw = row[c.key];
         let cellContent;
@@ -805,9 +805,9 @@ function renderSummary(tbl, rows){
   const branchColors={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b'};
   const kpiCard=(label,value,sub='',color='#e2e8f0')=>`
     <div style="background:#1e293b;border:1px solid #2d3f56;border-radius:10px;padding:14px 18px;min-width:120px">
-      <div style="font-size:11px;color:#64748b;margin-bottom:4px">${label}</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">${label}</div>
       <div style="font-size:20px;font-weight:800;color:${color}">${value}</div>
-      ${sub?`<div style="font-size:11px;color:#64748b;margin-top:3px">${sub}</div>`:''}
+      ${sub?`<div style="font-size:11px;color:var(--text-dim);margin-top:3px">${sub}</div>`:''}
     </div>`;
   let html='';
   if(tbl==='repair_income'){

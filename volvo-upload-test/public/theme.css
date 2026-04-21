@@ -4,6 +4,8 @@
    ═══════════════════════════════════════════════════ */
 
 /* ── CSS 變數（深色預設） ── */
+/* 灰字三階：muted 最亮（高對比 secondary）→ dim 中 → dimmer 最暗（hint）。
+   暗版底色深，全部上調 1 階確保可讀。 */
 :root {
   --bg-base:      #0f172a;
   --bg-card:      #1a2332;
@@ -13,9 +15,9 @@
   --border:       #2d3f56;
   --border2:      #334155;
   --text-primary: #e2e8f0;
-  --text-muted:   #94a3b8;
-  --text-dim:     #64748b;
-  --text-dimmer:  #475569;
+  --text-muted:   #cbd5e1;  /* 暗版高對比 ~10:1 */
+  --text-dim:     #94a3b8;  /* 暗版中對比 ~5.8:1 */
+  --text-dimmer:  #64748b;  /* 暗版邊界 ~4.3:1（hint 用） */
 }
 
 body.light-theme {
@@ -27,9 +29,9 @@ body.light-theme {
   --border:       #e2e8f0;
   --border2:      #cbd5e1;
   --text-primary: #1e293b;
-  --text-muted:   #475569;
-  --text-dim:     #64748b;
-  --text-dimmer:  #64748b;
+  --text-muted:   #334155;  /* 亮版高對比 ~10:1 */
+  --text-dim:     #475569;  /* 亮版中對比 ~7.5:1 */
+  --text-dimmer:  #64748b;  /* 亮版邊界 ~4.9:1 */
 }
 
 /* ═══════════════════════════════════════════════
@@ -58,13 +60,13 @@ body.light-theme .sel               { background: #ffffff !important; border-col
 /* ── 卡片 ── */
 body.light-theme .card              { background: #ffffff !important; border-color: #e2e8f0 !important; box-shadow: 0 1px 4px rgba(0,0,0,.06) !important; }
 body.light-theme .card-title        { color: #1e293b !important; }
-body.light-theme .card-title-note   { color: #64748b !important; }
+body.light-theme .card-title-note   { color: var(--text-dim) !important; }
 
 /* ── KPI 卡片 ── */
 body.light-theme .kpi-card          { background: #ffffff !important; border-color: #e2e8f0 !important; box-shadow: 0 1px 4px rgba(0,0,0,.06) !important; }
-body.light-theme .kpi-label         { color: #64748b !important; }
-body.light-theme .kpi-value         { color: #1e293b !important; }
-body.light-theme .kpi-sub           { color: #94a3b8 !important; }
+body.light-theme .kpi-label         { color: var(--text-dim) !important; }
+body.light-theme .kpi-value         { color: var(--text-primary) !important; }
+body.light-theme .kpi-sub           { color: var(--text-dimmer) !important; }
 /* 保留語義色（不覆蓋） */
 body.light-theme .kpi-green  { color: #059669 !important; }
 body.light-theme .kpi-blue   { color: #2563eb !important; }
@@ -576,24 +578,8 @@ body.light-theme [style*="border: 1px solid #334155"] { border-color: #e2e8f0 !i
 }
 
 /* ═══════════════════════════════════════════════
-   灰字對比強化（掃全站 491 處硬編碼 inline color 做的攔截）
-   —— 由主題決定升降：
-       暗版底色深 → #475569 幾乎看不到、#64748b 偏暗 → 調亮
-       亮版底色白 → #94a3b8 太淺 < 3:1 → 調深
-   用 attribute selector 避免改動 491 處 inline style。
+   class-based 灰字 → 接到 CSS 變數，自動隨主題升降
+   （inline 灰字已 sed 改成 color:var(--text-*)）
    ═══════════════════════════════════════════════ */
-
-/* 暗版：深灰升到 slate-300（高對比）、中灰升到 slate-400（中對比） */
-body:not(.light-theme) [style*="color:#475569"],
-body:not(.light-theme) [style*="color: #475569"] { color: #cbd5e1 !important; }
-body:not(.light-theme) [style*="color:#64748b"],
-body:not(.light-theme) [style*="color: #64748b"] { color: #94a3b8 !important; }
-
-/* 亮版：淺灰太淺失標 → 加深到 slate-500 */
-body.light-theme [style*="color:#94a3b8"],
-body.light-theme [style*="color: #94a3b8"] { color: #64748b !important; }
-
-/* 同時處理常見的 class-based dim greys（KPI 標籤、卡片附註等） */
-body:not(.light-theme) .kpi-label,
-body:not(.light-theme) .card-title-note { color: #94a3b8 !important; }
-body:not(.light-theme) .kpi-sub         { color: #cbd5e1 !important; }
+.kpi-label, .card-title-note { color: var(--text-dim) !important; }
+.kpi-sub                     { color: var(--text-muted) !important; }

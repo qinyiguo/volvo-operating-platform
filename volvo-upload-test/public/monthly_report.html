@@ -347,13 +347,13 @@ body.pres-mode .cPBar{display:none !important;}
 .nav{background:#1e293b;border-bottom:1px solid #2d3f56;padding:0 14px;display:flex;align-items:center;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-shrink:0;}
 .nav::-webkit-scrollbar{display:none;}
 .nav-brand{font-size:14px;font-weight:700;color:#fff;padding:12px 0;margin-right:18px;white-space:nowrap;flex-shrink:0;}
-.nav-link{padding:12px 12px;color:#64748b;font-size:12px;font-weight:600;text-decoration:none;border-bottom:2px solid transparent;white-space:nowrap;flex-shrink:0;transition:color .15s;}
+.nav-link{padding:12px 12px;color:var(--text-dim);font-size:12px;font-weight:600;text-decoration:none;border-bottom:2px solid transparent;white-space:nowrap;flex-shrink:0;transition:color .15s;}
 .nav-link:hover{color:#e2e8f0;}
 .nav-link.active{color:#3b82f6;border-bottom-color:#3b82f6;}
 /* 亮版覆蓋（本檔用 data-theme 切換，不走 body.light-theme）*/
 [data-theme="light"] .nav          { background:#ffffff; border-bottom-color:#e2e8f0; box-shadow:0 2px 12px rgba(0,0,0,.08); }
 [data-theme="light"] .nav-brand    { color:#1e293b; }
-[data-theme="light"] .nav-link     { color:#64748b; }
+[data-theme="light"] .nav-link     { color:var(--text-dim); }
 [data-theme="light"] .nav-link:hover { color:#1e293b; }
 [data-theme="light"] .nav-link.active { color:#3b82f6; border-bottom-color:#3b82f6; }
 </style>
