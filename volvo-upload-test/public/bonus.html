@@ -421,16 +421,23 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
       </div>
 
       <div class="section-label">📌 套用對象（部門篩選）</div>
-      <div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.25);border-radius:7px;padding:8px 12px;font-size:11px;color:#f59e0b;line-height:1.7;margin-bottom:8px">
-        ⚠️ <strong>重要</strong>：若各廠有同名部門（如「零件部」），請確認選擇的是正確廠的部門代碼。<strong>留空 = 全廠所有在職正職人員都適用</strong>
+      <div id="mDeptSummary" style="background:#1e293b;border:1px solid #2d3f56;border-radius:7px;padding:8px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:12px;color:var(--text-dim);font-weight:700">已套用：</span>
+        <span id="mDeptSummaryChips" style="display:flex;gap:5px;flex-wrap:wrap;flex:1;min-width:0"></span>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="toggleDeptPicker()" id="mDeptToggleBtn">＋ 擴充至其他部門</button>
       </div>
-      <div id="mDeptCheckboxWrap" style="background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:10px 12px;max-height:220px;overflow-y:auto">
-        <span style="color:var(--text-dimmer);font-size:12px"><span class="spinner"></span>載入部門清單...</span>
-      </div>
-      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn btn-secondary btn-sm" onclick="selectAllDepts()">全選</button>
-        <button class="btn btn-secondary btn-sm" onclick="clearAllDepts()">全部清除</button>
-        <span id="mDeptCountLabel" style="font-size:12px;color:var(--text-dim);align-self:center"></span>
+      <div id="mDeptPickerArea" style="display:none">
+        <div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.25);border-radius:7px;padding:8px 12px;font-size:11px;color:#f59e0b;line-height:1.7;margin-bottom:8px">
+          ⚠️ <strong>重要</strong>：若各廠有同名部門（如「零件部」），請確認選擇的是正確廠的部門代碼。<strong>留空 = 全廠所有在職正職人員都適用</strong>
+        </div>
+        <div id="mDeptCheckboxWrap" style="background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:10px 12px;max-height:220px;overflow-y:auto">
+          <span style="color:var(--text-dimmer);font-size:12px"><span class="spinner"></span>載入部門清單...</span>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-secondary btn-sm" onclick="selectAllDepts()">全選</button>
+          <button class="btn btn-secondary btn-sm" onclick="clearAllDepts()">全部清除</button>
+          <span id="mDeptCountLabel" style="font-size:12px;color:var(--text-dim);align-self:center"></span>
+        </div>
       </div>
       <div id="mJobTitleSuggestions" style="display:none;margin-top:10px">
         <div style="font-size:11px;color:var(--text-dimmer);margin-bottom:6px">此部門常見職稱（點擊快速加入）</div>
@@ -472,6 +479,19 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
       </table>
     </div>
     <button class="btn btn-secondary btn-sm" onclick="addTier()" style="margin-bottom:4px">＋ 新增階梯</button>
+
+    <!-- 未達標歸零 -->
+    <div style="margin-top:14px;padding-top:12px;border-top:1px dashed #2d3f56">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text-muted)">
+        <input type="checkbox" id="mZeroBelowChk" onchange="_onZeroBelowToggle()" style="accent-color:#ef4444">
+        <span>🎯 <strong>未達標歸零</strong> — 達成率低於以下 % 時，本項「績效獎金」歸 0（<strong style="color:var(--text-dim)">不影響額外獎金 / 促銷獎金 / 主管考核</strong>）</span>
+      </label>
+      <div id="mZeroBelowRow" style="display:none;margin-top:8px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:12px;color:var(--text-dim)">達成率 &lt;</span>
+        <input type="number" id="mZeroBelowRate" value="70" min="0" max="100" step="0.1" style="background:#0f172a;border:1px solid #ef4444;color:#ef4444;padding:5px 9px;border-radius:5px;font-size:13px;font-weight:700;width:80px;text-align:right;outline:none">
+        <span style="font-size:12px;color:var(--text-dim)">% 時本項獎金為 <strong style="color:#ef4444">0</strong></span>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1305,6 +1325,31 @@ function toggleDeptChip(label, color) {
 function updateDeptCount() {
   const cnt=document.querySelectorAll('#mDeptCheckboxWrap input[type=checkbox]:checked').length;
   document.getElementById('mDeptCountLabel').textContent=cnt>0?'已選 '+cnt+' 個部門':'（留空 = 全廠所有正職人員）';
+  renderDeptSummaryChips();
+}
+
+function renderDeptSummaryChips() {
+  const host=document.getElementById('mDeptSummaryChips');
+  if (!host) return;
+  const checked=document.querySelectorAll('#mDeptCheckboxWrap input[type=checkbox]:checked');
+  if (!checked.length) {
+    host.innerHTML='<span style="font-size:12px;color:var(--text-dimmer);font-style:italic">（留空 = 全廠所有在職正職人員都適用）</span>';
+    return;
+  }
+  host.innerHTML=[...checked].map(cb=>{
+    const lbl=cb.closest('label');
+    const txt=(lbl?lbl.textContent:cb.value).trim();
+    return '<span style="background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.35);padding:3px 9px;border-radius:5px;font-size:12px;font-weight:700">'+txt+'</span>';
+  }).join('');
+}
+
+function toggleDeptPicker() {
+  const area=document.getElementById('mDeptPickerArea');
+  const btn=document.getElementById('mDeptToggleBtn');
+  if (!area) return;
+  const open=area.style.display!=='none';
+  area.style.display=open?'none':'';
+  if (btn) btn.textContent=open?'＋ 擴充至其他部門':'－ 收起';
 }
 
 async function loadDeptJobTitles() {
@@ -1370,29 +1415,48 @@ function removeRole(i) { _tierRoles.splice(i,1); renderRoleTags(); renderTierTab
 function renderTierTable() {
   const head=document.getElementById('mTierHead'), body=document.getElementById('mTierBody');
   const roles=_tierRoles;
-  let thHtml='<tr><th style="background:#0f172a;color:var(--text-dim);padding:7px 10px;border-bottom:1px solid #2d3f56;text-align:center;white-space:nowrap;min-width:90px">達成率 ≥ (%)</th>';
-  thHtml+='<th style="background:#0f172a;color:var(--text-dim);padding:7px 10px;border-bottom:1px solid #2d3f56;text-align:center;white-space:nowrap;min-width:90px">未達 (%, 空=無上限)</th>';
-  if (roles.length) roles.forEach(r=>{ thHtml+='<th style="background:#0f172a;color:#10b981;padding:7px 10px;border-bottom:1px solid #2d3f56;text-align:center;white-space:nowrap;min-width:80px">'+r+'</th>'; });
-  else thHtml+='<th style="background:#0f172a;color:#10b981;padding:7px 10px;border-bottom:1px solid #2d3f56;text-align:center;min-width:90px">獎金金額（元）</th>';
+  const hasRoles=roles.length>0;
+  let thHtml='<tr><th style="background:#0f172a;color:var(--text-dim);padding:7px 10px;border-bottom:1px solid #2d3f56;text-align:center;white-space:nowrap;min-width:80px">達成率 ≥ (%)</th>';
+  thHtml+='<th style="background:#0f172a;color:var(--text-dim);padding:7px 10px;border-bottom:1px solid #2d3f56;text-align:center;white-space:nowrap;min-width:80px">未達 (%, 空=無上限)</th>';
+  if (hasRoles) thHtml+='<th style="background:#0f172a;color:var(--text-dim);padding:7px 6px;border-bottom:1px solid #2d3f56;text-align:center;white-space:nowrap;min-width:110px">金額模式</th>';
+  thHtml+='<th style="background:#0f172a;color:#10b981;padding:7px 10px;border-bottom:1px solid #2d3f56;text-align:center;min-width:90px">共用金額（元）</th>';
+  if (hasRoles) roles.forEach(r=>{ thHtml+='<th style="background:#0f172a;color:#10b981;padding:7px 10px;border-bottom:1px solid #2d3f56;text-align:center;white-space:nowrap;min-width:80px">'+r+'</th>'; });
   thHtml+='<th style="background:#0f172a;padding:7px 6px;border-bottom:1px solid #2d3f56;width:30px"></th></tr>';
   head.innerHTML=thHtml;
   let bodyHtml='';
   _tiers.forEach((t,i)=>{
-    bodyHtml+='<tr><td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3)"><input class="tier-input" type="number" value="'+t.gte+'" min="0" max="300" step="0.1" onchange="_tiers['+i+'].gte=parseFloat(this.value)||0" style="color:#3b82f6;font-weight:700"></td>';
+    // 預設模式：有 amounts 物件 & 有 roles → per_role；否則 flat
+    if (!t.mode) t.mode = (hasRoles && t.amounts && Object.keys(t.amounts).length) ? 'per_role' : 'flat';
+    const isPerRole = hasRoles && t.mode==='per_role';
+    bodyHtml+='<tr>';
+    bodyHtml+='<td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3)"><input class="tier-input" type="number" value="'+t.gte+'" min="0" max="300" step="0.1" onchange="_tiers['+i+'].gte=parseFloat(this.value)||0" style="color:#3b82f6;font-weight:700"></td>';
     bodyHtml+='<td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3)"><input class="tier-input" type="number" value="'+(t.lt!==null?t.lt:'')+'" min="0" max="300" step="0.1" placeholder="無上限" onchange="_tiers['+i+'].lt=this.value===\'\'?null:parseFloat(this.value)" style="color:var(--text-dim)"></td>';
-    if (roles.length) {
+    if (hasRoles) {
+      bodyHtml+='<td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center"><button type="button" onclick="toggleTierMode('+i+')" title="切換：共用金額 / 依職稱" style="background:'+(isPerRole?'rgba(139,92,246,.15)':'rgba(16,185,129,.15)')+';color:'+(isPerRole?'#a78bfa':'#10b981')+';border:1px solid '+(isPerRole?'#8b5cf6':'#10b981')+';padding:3px 8px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">'+(isPerRole?'依職稱':'共用')+'</button></td>';
+    }
+    // 共用金額欄（flat 模式下可編輯；per_role 模式下變 fallback 顯示）
+    const flatAmt=t.amount!==undefined?t.amount:0;
+    bodyHtml+='<td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3)"><input class="tier-input" type="number" value="'+flatAmt+'" min="0" step="1" '+(isPerRole?'placeholder="未填入則用此"':'')+' onchange="_tiers['+i+'].amount=parseFloat(this.value)||0" style="color:'+(isPerRole?'var(--text-dim)':'#10b981')+';font-weight:700;opacity:'+(isPerRole?'.6':'1')+'"></td>';
+    if (hasRoles) {
       roles.forEach(r=>{
-        const amt=(t.amounts&&t.amounts[r]!==undefined)?t.amounts[r]:0;
-        bodyHtml+='<td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3)"><input class="tier-input" type="number" value="'+amt+'" min="0" step="1" data-ti="'+i+'" data-role="'+r.replace(/"/g,'&quot;')+'" oninput="syncTierAmount(this)" style="color:#10b981;font-weight:700"></td>';
+        const amt=(t.amounts&&t.amounts[r]!==undefined)?t.amounts[r]:'';
+        const disabled=isPerRole?'':'disabled';
+        bodyHtml+='<td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3)"><input class="tier-input" type="number" value="'+amt+'" min="0" step="1" data-ti="'+i+'" data-role="'+r.replace(/"/g,'&quot;')+'" '+disabled+' oninput="syncTierAmount(this)" style="color:#10b981;font-weight:700;opacity:'+(isPerRole?'1':'.4')+'"></td>';
       });
-    } else {
-      const amt=t.amount!==undefined?t.amount:(t.amounts?.default||0);
-      bodyHtml+='<td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3)"><input class="tier-input" type="number" value="'+amt+'" min="0" step="1" onchange="_tiers['+i+'].amount=parseFloat(this.value)||0" style="color:#10b981;font-weight:700"></td>';
     }
     bodyHtml+='<td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center"><button class="btn btn-danger btn-sm" onclick="removeTier('+i+')" style="padding:3px 8px">×</button></td></tr>';
   });
-  if (!_tiers.length) bodyHtml='<tr><td colspan="'+(2+(roles.length||1)+1)+'" style="padding:14px;text-align:center;color:var(--text-dimmer);font-size:12px">尚未設定階梯</td></tr>';
+  if (!_tiers.length) {
+    const colspan=2+(hasRoles?1:0)+1+(hasRoles?roles.length:0)+1;
+    bodyHtml='<tr><td colspan="'+colspan+'" style="padding:14px;text-align:center;color:var(--text-dimmer);font-size:12px">尚未設定階梯</td></tr>';
+  }
   body.innerHTML=bodyHtml;
+}
+function toggleTierMode(i) {
+  if (!_tiers[i]) return;
+  _tiers[i].mode = _tiers[i].mode==='per_role' ? 'flat' : 'per_role';
+  if (_tiers[i].mode==='per_role' && !_tiers[i].amounts) _tiers[i].amounts={};
+  renderTierTable();
 }
 function syncTierAmount(el) {
   var i=parseInt(el.getAttribute('data-ti')), role=el.getAttribute('data-role');
@@ -1540,17 +1604,30 @@ function removeTier(i) { _tiers.splice(i,1); renderTierTable(); }
 
 function getTiersData() {
   const trs=document.querySelectorAll('#mTierBody tr');
+  const hasRoles=_tierRoles.length>0;
   trs.forEach((tr,i)=>{
     if (!_tiers[i]) return;
     const inputs=tr.querySelectorAll('input[type=number]');
     if (inputs[0]) _tiers[i].gte=parseFloat(inputs[0].value)||0;
     if (inputs[1]) _tiers[i].lt=inputs[1].value===''?null:parseFloat(inputs[1].value);
-    if (_tierRoles.length) {
+    // inputs[2] = 共用金額；之後若有 roles 再接 per-role
+    if (inputs[2]) _tiers[i].amount=parseFloat(inputs[2].value)||0;
+    if (hasRoles) {
       if (!_tiers[i].amounts) _tiers[i].amounts={};
-      _tierRoles.forEach((r,ri)=>{ if(inputs[2+ri]) _tiers[i].amounts[r]=parseFloat(inputs[2+ri].value)||0; });
-    } else { if (inputs[2]) _tiers[i].amount=parseFloat(inputs[2].value)||0; }
+      _tierRoles.forEach((r,ri)=>{
+        const el=inputs[3+ri];
+        if (!el) return;
+        _tiers[i].amounts[r] = el.value===''?0:(parseFloat(el.value)||0);
+      });
+    }
+    if (!_tiers[i].mode) _tiers[i].mode = hasRoles ? 'per_role' : 'flat';
   });
   return [..._tiers].sort((a,b)=>b.gte-a.gte);
+}
+
+function _onZeroBelowToggle() {
+  const on = document.getElementById('mZeroBelowChk').checked;
+  document.getElementById('mZeroBelowRow').style.display = on ? 'flex' : 'none';
 }
 
 function onMSourceChange() {
@@ -1639,6 +1716,20 @@ async function openMetricModal(id) {
   document.getElementById('mRuleNote').value=rule.note||'';
   _tierRoles=[...(rule.roles||[])];
   _tiers=(rule.tiers||[]).map(t=>({...t}));
+  // 未達標歸零：載入 zero_below_rate
+  const zb=rule.zero_below_rate;
+  const zbChk=document.getElementById('mZeroBelowChk');
+  const zbRow=document.getElementById('mZeroBelowRow');
+  const zbInp=document.getElementById('mZeroBelowRate');
+  if (zb!=null && zb!=='') {
+    if (zbChk) zbChk.checked=true;
+    if (zbRow) zbRow.style.display='flex';
+    if (zbInp) zbInp.value=zb;
+  } else {
+    if (zbChk) zbChk.checked=false;
+    if (zbRow) zbRow.style.display='none';
+    if (zbInp) zbInp.value=70;
+  }
   if (m.metric_source==='performance') {
     const perfId=(m.filters||[]).find(f=>f.type==='perf_metric_id')?.value;
     if (perfId) document.getElementById('mPerfMetricId').value=perfId;
@@ -1666,6 +1757,14 @@ async function openMetricModal(id) {
   }
   await loadDeptCheckboxes(m.target_dept_codes||[]);
   if ((m.target_dept_codes||[]).length) loadDeptJobTitles();
+  // 預設收合完整部門列表；只有 > 1 個部門或編輯中但部門為空 時才自動展開
+  const pickerArea=document.getElementById('mDeptPickerArea');
+  const toggleBtn=document.getElementById('mDeptToggleBtn');
+  const selN=(m.target_dept_codes||[]).length;
+  const shouldOpen = selN > 1 || (id && selN === 0);
+  if (pickerArea) pickerArea.style.display = shouldOpen ? '' : 'none';
+  if (toggleBtn)  toggleBtn.textContent  = shouldOpen ? '－ 收起' : '＋ 擴充至其他部門';
+  renderDeptSummaryChips();
   setTimeout(()=>document.getElementById('mName').focus(),80);
 }
 
@@ -1705,6 +1804,11 @@ if (src!=='manual'&&src!=='performance'&&src!=='revenue') {
       tiers:   tiersData,
       note:    document.getElementById('mRuleNote').value.trim()
     };
+    // 未達標歸零
+    if (document.getElementById('mZeroBelowChk')?.checked) {
+      const zbVal=parseFloat(document.getElementById('mZeroBelowRate').value);
+      if (!isNaN(zbVal)) bonus_rule.zero_below_rate=zbVal;
+    }
   const payload={ metric_name, description:document.getElementById('mDesc').value.trim(), scope_type:document.getElementById('mScope').value, metric_source:src, stat_field:document.getElementById('mStatField')?.value||'amount', unit:document.getElementById('mUnit').value.trim(), sort_order:parseInt(document.getElementById('mOrder').value)||0, filters, bonus_rule, target_dept_codes };
   const btn=document.getElementById('btnSaveMetric'); btn.disabled=true;
   // ★ 儲存捲軸位置
@@ -1808,7 +1912,7 @@ async function renderProgressContent() {
     var metaById={}, deptTargets={}, empTargets={};
     for (var mi0=0;mi0<_metrics.length;mi0++) {
       var m0=_metrics[mi0];
-      metaById[m0.id]={metric:m0,actual:null,autoPT:null,useAuto:false,autoRate:null,tiers:(m0.bonus_rule||{}).tiers||[],roles:(m0.bonus_rule||{}).roles||[]};
+      metaById[m0.id]={metric:m0,actual:null,autoPT:null,useAuto:false,autoRate:null,tiers:(m0.bonus_rule||{}).tiers||[],roles:(m0.bonus_rule||{}).roles||[],rule:(m0.bonus_rule||{})};
     }
 
       var allMetricIds=Object.keys(metaById);
@@ -1840,7 +1944,7 @@ async function renderProgressContent() {
           var tiers=(m.bonus_rule||{}).tiers||[], roles=(m.bonus_rule||{}).roles||[];
 var useAuto=(m.metric_source==='revenue'||m.metric_source==='performance'||m.metric_source==='tech_hours'||m.metric_source==='manual')&&autoPT!==null;
           var autoRate=useAuto&&autoPT>0&&actual!==null?actual/autoPT*100:null;
-          metaById[m.id]={metric:m,actual:actual,autoPT:autoPT,useAuto:useAuto,autoRate:autoRate,effectiveBranch:item.effectiveBranch,tiers:(m.bonus_rule||{}).tiers||[],roles:(m.bonus_rule||{}).roles||[],promoRules:(m.bonus_rule||{}).promo_rules||[]};
+          metaById[m.id]={metric:m,actual:actual,autoPT:autoPT,useAuto:useAuto,autoRate:autoRate,effectiveBranch:item.effectiveBranch,tiers:(m.bonus_rule||{}).tiers||[],roles:(m.bonus_rule||{}).roles||[],promoRules:(m.bonus_rule||{}).promo_rules||[],rule:(m.bonus_rule||{})};
           for (var ti=0;ti<item.targets.length;ti++) {
             var t2=item.targets[ti], tgtVal=parseFloat(t2.target_value||0);
             var rate2=useAuto?autoRate:(tgtVal>0&&actual!==null?actual/tgtVal*100:null);
@@ -1900,13 +2004,20 @@ function calcPromoBonus(unused1, unused2, branch, personName, jobTitle) {
   return total;
 }
     
-    function calcBonus(rate,jobTitle,tiers,roles) {
+    function calcBonus(rate,jobTitle,tiers,roles,rule) {
       if (rate===null||!tiers||!tiers.length) return 0;
+      // 未達標歸零：若本指標設定 zero_below_rate 且達成率低於該值 → 績效獎金歸 0
+      // （不影響額外獎金 / 促銷獎金 / 主管考核 — 它們在別的計算流程）
+      var zb=rule&&rule.zero_below_rate;
+      if (zb!=null && zb!=='' && !isNaN(parseFloat(zb)) && rate<parseFloat(zb)) return 0;
       var match=tiers.slice().sort(function(a,b){return b.gte-a.gte;}).find(function(t){return rate>=t.gte&&(t.lt===null||rate<t.lt);});
       if (!match) return 0;
-      if (roles&&roles.length&&match.amounts) {
+      // per-tier mode：'flat' 用 amount、'per_role' 用 amounts[role]。
+      // 若未指定 mode：有 amounts 就依職稱、沒有就 flat。
+      var mode=match.mode||(match.amounts?'per_role':'flat');
+      if (mode==='per_role' && roles&&roles.length&&match.amounts) {
         var hit=roles.find(function(r){return jobTitle&&(jobTitle===r||jobTitle.indexOf(r)>=0||r.indexOf(jobTitle)>=0);});
-        return hit?(match.amounts[hit]||0):(match.amount||0);
+        if (hit && match.amounts[hit]!=null) return match.amounts[hit]||0;
       }
       return match.amount||0;
     }
@@ -2060,7 +2171,7 @@ function calcPromoBonus(unused1, unused2, branch, personName, jobTitle) {
             var te0=(empTargets[p0.emp_id]&&empTargets[p0.emp_id][mId00])?empTargets[p0.emp_id][mId00]:(deptTargets[p0.dept_code]&&deptTargets[p0.dept_code][mId00])?deptTargets[p0.dept_code][mId00]:null;
             // ★ auto 指標：即使沒有手動設定目標，也用 autoRate
 var eff0=te0?te0.rate:(meta00.useAuto?meta00.autoRate:null);
-            if (eff0!==null) pTotal0+=calcBonus(eff0,p0.job_title||'',meta00.tiers,meta00.roles);
+            if (eff0!==null) pTotal0+=calcBonus(eff0,p0.job_title||'',meta00.tiers,meta00.roles,meta00.rule);
           }
           pTotal0 += calcPromoBonus(null, null, fc, p0.emp_name, p0.job_title||'');
           pTotal0 += (_extraBonusMap[p0.emp_id]||0);
@@ -2099,7 +2210,7 @@ if(isTeamDept){
             if(dRate===null){teamPoolMap[mId]=null;return;}
             var pool=0,totalW=0;
             dept.members.forEach(function(p){
-              var baseB=calcBonus(dRate,p.job_title||'',meta.tiers,meta.roles);
+              var baseB=calcBonus(dRate,p.job_title||'',meta.tiers,meta.roles,meta.rule);
               pool+=baseB;
               // 優先用手動設定的權重，否則等權重(1)
               var wt=savedWeights[p.emp_id]!==undefined?savedWeights[p.emp_id]:1;
@@ -2159,7 +2270,7 @@ if (isPromoTeamDept && !isBeautyDept && deptPromoPool > 0) {
                           bonusAmt=tp.totalW>0?Math.round(tp.pool*wt3/tp.totalW):0;
                               dispRate=tp.dRate; dispHasTgt=true;
                             } else if(effectiveHasTarget){
-                              bonusAmt=calcBonus(effectiveRate,person3.job_title||'',meta3.tiers,meta3.roles);
+                              bonusAmt=calcBonus(effectiveRate,person3.job_title||'',meta3.tiers,meta3.roles,meta3.rule);
                             }
                             personBonuses[mId3]={bonus:bonusAmt,promoBonus:0,rate:dispRate,hasTarget:dispHasTgt};
                             personTotal += bonusAmt;
