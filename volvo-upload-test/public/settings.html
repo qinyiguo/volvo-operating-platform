@@ -2428,6 +2428,12 @@ async function deleteUser(id, username) {
   if (window.DmsAuth && !DmsAuth.hasPermission('feature:export_audit')) {
     document.querySelectorAll('button[onclick*="exportAuditCSV"]').forEach(b => b.style.display = 'none');
   }
+  // 深連結：?section=xxx 直接切到指定分頁（nav 上的「📬 簽核」會用）
+  try {
+    const qs = new URLSearchParams(location.search);
+    const sec = qs.get('section');
+    if (sec && sections.includes(sec)) showSection(sec);
+  } catch(e) {}
   loadCounts();
   refreshApprovalBadge();
 })();

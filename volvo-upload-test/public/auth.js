@@ -82,24 +82,54 @@
       }
     },
 
-    // ── 取得待簽核數量並貼到 nav（僅有 page:settings 才打 API）──
+    // ── 取得待簽核數量並在 nav 插入獨立的「📬 簽核」入口 ──
+    // 顯示條件（三擇一）：
+    //   1. super_admin
+    //   2. 擁有 feature:approve_upload_branch
+    //   3. 自己有 pending / branch_approved 的申請（避免被忽略）
     async _refreshApprovalBadgeOnNav() {
       try {
         const user = window._currentUser;
         if (!user) return;
         const has = (k) => user.role === 'super_admin' || (user.permissions || []).includes(k);
-        if (!has('page:settings')) return;
-        // 只有可能當 approver 的人才顯示 badge
-        if (user.role !== 'super_admin' && !has('feature:approve_upload_branch')) return;
-        const r = await this.fetchWithAuth('/api/upload-requests/counts').then(r => r.json());
-        if (!r || typeof r.todo !== 'number' || r.todo <= 0) return;
-        const link = document.querySelector('.nav-link[href="/settings.html"]');
-        if (!link || link.querySelector('.apr-nav-badge')) return;
-        const dot = document.createElement('span');
-        dot.className = 'apr-nav-badge';
-        dot.textContent = r.todo;
-        dot.style.cssText = 'margin-left:4px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;padding:1px 6px;border-radius:9px;vertical-align:top';
-        link.appendChild(dot);
+        const isApprover = user.role === 'super_admin' || has('feature:approve_upload_branch');
+
+        // 先問一次計數，決定要不要顯示
+        const r = await this.fetchWithAuth('/api/upload-requests/counts').then(r => r.json()).catch(()=>null);
+        const todo = r ? (r.todo || 0) : 0;
+        const mine = r ? (r.mine || 0) : 0;
+        const shouldShow = isApprover || mine > 0;
+        if (!shouldShow) return;
+
+        // 只在導覽列還沒放過時插入
+        const nav = document.querySelector('.nav');
+        if (!nav || document.querySelector('.nav-link-approval')) return;
+        const settingsLink = document.querySelector('.nav-link[href="/settings.html"]');
+        const a = document.createElement('a');
+        a.href = '/settings.html?section=upload-approval';
+        a.className = 'nav-link nav-link-approval';
+        a.innerHTML = '📬 簽核';
+        if (todo > 0) {
+          const badge = document.createElement('span');
+          badge.className = 'apr-nav-badge';
+          badge.textContent = todo;
+          badge.style.cssText = 'margin-left:4px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;padding:1px 6px;border-radius:9px;vertical-align:top';
+          a.appendChild(badge);
+        } else if (mine > 0) {
+          const dot = document.createElement('span');
+          dot.textContent = mine;
+          dot.style.cssText = 'margin-left:4px;background:rgba(59,130,246,.2);color:#60a5fa;font-size:10px;font-weight:800;padding:1px 6px;border-radius:9px;vertical-align:top';
+          a.appendChild(dot);
+        }
+        // 插在 設定 之前；若沒有 設定 連結，就附到最後一個 nav-link 後面
+        if (settingsLink && settingsLink.parentNode) {
+          settingsLink.parentNode.insertBefore(a, settingsLink);
+        } else {
+          const links = nav.querySelectorAll('.nav-link');
+          const last = links[links.length - 1];
+          if (last && last.parentNode) last.parentNode.insertBefore(a, last.nextSibling);
+          else nav.appendChild(a);
+        }
       } catch(e) {}
     },
 
