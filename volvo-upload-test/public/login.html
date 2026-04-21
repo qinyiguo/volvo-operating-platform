@@ -482,11 +482,12 @@ setInterval(tickTime, 1000); tickTime();
 
 function redirectAfterLogin(user) {
   // 依第一個有效頁面權限跳轉
-  const pageOrder = ['page:performance','page:stats','page:query','page:bonus','page:settings'];
+  const pageOrder = ['page:performance','page:stats','page:query','page:monthly','page:bonus','page:settings'];
   const pageMap   = {
     'page:performance': '/performance.html',
     'page:stats':       '/stats.html',
     'page:query':       '/query.html',
+    'page:monthly':     '/monthly_report.html',
     'page:bonus':       '/bonus.html',
     'page:settings':    '/settings.html',
   };
