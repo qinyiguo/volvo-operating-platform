@@ -50,8 +50,9 @@
 
 ---
 
-## Session `01TaGue54CzED2ZwuRpLPaC1`（2026-04-20 當前 session）
+## Session `01TaGue54CzED2ZwuRpLPaC1`（2026-04-20 ~ 04-21，跨日 session，分支 `claude/fix-signature-saving-5gxKw`）
 
+### 04-20 部分
 - `607dcf7` 各據點主管無法儲存簽名：`/bonus/signatures` 權限改為 `page:bonus`
 - `af00b3a` 導入獨立權限 `feature:bonus_sign`（獎金簽核）
   - `authMiddleware` 註冊新權限
@@ -63,6 +64,43 @@
   - `bonus.html` 加 768px / 480px 斷點、inline grid 單欄化、簽名 canvas 縮高
   - `monthly_report.html` 加 480px，`.kpiRow` 單欄
   - `settings.html` `.modal-close` 44×44、權限 grid 單欄
+
+### 04-21 權限模型大改（細緻化）
+- `faa3aa8` 01:23 granular permission model + role presets
+  - 角色、頁面、功能權限分層；內建 admin / data_staff / 據點主管 … 預設組合
+- `e87cb05` 01:44 nav 隱藏沒權限的連結、修補關聯 UI gap
+- `fc15466` 01:55 匯出權限：獎金表 / 查詢 / 明細 / 月報 / 稽核 各自 guard
+
+### 04-21 業績
+- `90160ae` 02:39 集團天數進度不應把 3 廠工作天加總（應取集團單位）
+
+### 04-21 期間鎖定分層
+一開始 bonus 鎖死在月底 → 多次調整最終拆成「上傳層」月初鎖 + 「獎金層」次月 25 日鎖
+- `1b7f09e` 02:48 期間鎖定提醒：頁面載入 / 切換期間時都顯示
+- `00adb54` 02:52 鎖定時點從月底 23:00 → 次月 25 日 23:59
+- `68a7cdb` 03:27 補齊所有跨月寫入端點的鎖檢查；super_admin bypass
+- `a625a1d` 03:41 鎖定時點調為次月第一個工作日 17:59
+- `e973be1` 06:26 **分層鎖**：上傳鎖（月初）+ 獎金鎖（25 日）
+- `25208a5` 06:30 `/bonus/upload-roster` 移除上傳鎖（HR 對帳彈性）
+
+### 04-21 legacy 清理 & 主題
+- `cde8014` 03:00 移除舊「系統管理員密碼」設定（orphan `settings_password`）
+- `21dcd2d` 03:05 grey 文字對比提升（修 dark-mode 可讀性）
+- `2ff15d3` 03:14 真正修法：inline grey hex → CSS vars（取代單純 selector hack）
+
+### 04-21 上傳簽核（locked period 兩階段）
+- `76c77fa` 04:05 鎖期後仍允許上傳，但必須兩階段簽核
+- `af617a0` 04:26 「上傳簽核」從 設定 底下提升為獨立 nav 連結
+- `cc47562` 05:35 進一步拉成頂層獨立頁面 `/approvals.html`
+
+### 04-21 獎金指標 Modal（為 fix-bonus-reset-logic 鋪路）
+- `d566bd9` 06:43 移除「實績期間」override — 所有分頁共用單一期間選擇
+- `772a0e2` 07:07 獎金規則三項改善：
+  - 套用對象 picker 簡化（summary chips + 預設收合）
+  - 階梯金額 per-tier mode 切換（`flat` ↔ `per_role`）
+  - 「未達標歸零」threshold checkbox（寫入 `bonus_rule.zero_below_rate`，為當日後續連動歸零的 PR 做基礎）
+
+合計 04-21 此 session 共 18 個 non-merge commit。
 
 ---
 
@@ -166,5 +204,8 @@
 
 ## 統計
 - 3 天合計 53 個可見 non-merge commit（04-18 資安強化之 PR #1–#7 已 squash，本數未列入）
-- 加上 04-21 session 的 8 個 commit，本週期可見 non-merge commit 共 61 個
-- 主軸：**全站資安強化**（04-18 當日公告）、**獎金表電子簽核 + 匯出版型**、**月報 Executive 模式**、**手機響應式**、**Light Mode 補洞**、**權限分級（獎金指標設定 vs 獎金簽核）**、**獎金表 UX / 計算邏輯收尾**（04-21）
+- 04-21 再補 26 個 non-merge commit：
+  - session `01TaGue54CzED2ZwuRpLPaC1`（`fix-signature-saving-5gxKw` 分支續戰）= 18 個
+  - session `claude/fix-bonus-reset-logic-tOTi4`（本日新開分支）= 8 個
+- 本週期可見 non-merge commit 共 79 個
+- 主軸：**全站資安強化**（04-18 當日公告）、**獎金表電子簽核 + 匯出版型**、**月報 Executive 模式**、**手機響應式**、**Light Mode 補洞**、**權限模型細緻化**（04-21 大改）、**期間鎖定分層（上傳 / 獎金）+ 兩階段簽核**（04-21）、**獎金表 UX / 計算邏輯收尾**（04-21）
