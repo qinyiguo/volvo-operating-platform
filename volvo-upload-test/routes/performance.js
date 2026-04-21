@@ -17,6 +17,7 @@ const XLSX   = require('xlsx');
 const pool   = require('../db/pool');
 const { requireAuth, requirePermission } = require('../lib/authMiddleware');
 const { checkPeriodLock, checkBatchPeriodLock, checkBatchUploadPeriodLock } = require('../lib/bonusPeriodLock');
+const { computePerfActualForMetric, prevYearPeriod } = require('../lib/revenueActual');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
@@ -66,6 +67,8 @@ router.delete('/performance-metrics/:id', requirePermission('feature:perf_metric
 });
 
 // ── 業績目標 ──
+// GET：若 last_year_value 為 NULL，自動用上年同月 DMS 實績補上（不改 DB）。
+// 這樣 2027 年不用再手動上傳 2026 實績 Excel。
 router.get('/performance-targets', async (req, res) => {
   const { metric_id, period } = req.query;
   try {
@@ -73,7 +76,33 @@ router.get('/performance-targets', async (req, res) => {
     if (metric_id) { conds.push(`metric_id=$${idx++}`); params.push(metric_id); }
     if (period)    { conds.push(`period=$${idx++}`);    params.push(period); }
     const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
-    res.json((await pool.query(`SELECT * FROM performance_targets ${where} ORDER BY branch`, params)).rows);
+    const rows = (await pool.query(
+      `SELECT * FROM performance_targets ${where} ORDER BY branch`, params
+    )).rows;
+
+    // 收集需要補值的 metric_id（避免重複 query 同一個 metric 的定義）
+    const missing = rows.filter(r => r.last_year_value == null);
+    if (missing.length) {
+      const metricIds = [...new Set(missing.map(r => r.metric_id))];
+      const metricRes = await pool.query(
+        `SELECT * FROM performance_metrics WHERE id = ANY($1)`, [metricIds]
+      );
+      const metricById = Object.fromEntries(metricRes.rows.map(m => [m.id, m]));
+
+      await Promise.all(missing.map(async r => {
+        const m = metricById[r.metric_id];
+        if (!m) return;
+        try {
+          const ly = await computePerfActualForMetric(m, prevYearPeriod(r.period), r.branch);
+          if (ly > 0) {
+            r.last_year_value   = Math.round(ly);
+            r._last_year_auto   = true;
+          }
+        } catch (e) { /* ignore */ }
+      }));
+    }
+
+    res.json(rows);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
