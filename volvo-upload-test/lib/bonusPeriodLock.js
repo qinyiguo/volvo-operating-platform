@@ -3,8 +3,8 @@
  * -------------------------------------------------------------
  * 獎金期間鎖定：純計算、不寫 DB。
  *
- * 規則：期間 YYYYMM 的獎金，在「次月最後一天 23:00」後鎖定。
- *   例：202603 → 2026/04/30 23:00 後鎖定
+ * 規則：期間 YYYYMM 的獎金，在「次月 25 日 23:59」後鎖定。
+ *   例：202603 → 2026/04/25 23:59 後鎖定
  *
  * 被 routes/bonus.js、routes/managerReview.js、routes/bodyshopBonus.js 等共用。
  */
@@ -13,9 +13,8 @@ function bonusPeriodLockAt(period) {
   if (!period || !/^\d{6}$/.test(String(period))) return null;
   const y = parseInt(period.slice(0, 4));
   const m = parseInt(period.slice(4)); // 1-indexed
-  // 次月最後一天 = (次月 + 1) 的第 0 天
-  const lastDay = new Date(y, m + 1, 0).getDate();
-  return new Date(y, m, lastDay, 23, 0, 0, 0);
+  // 次月 25 日 23:59（month 參數為 0-indexed，所以次月就是 m）
+  return new Date(y, m, 25, 23, 59, 0, 0);
 }
 
 function isBonusPeriodLocked(period) {
