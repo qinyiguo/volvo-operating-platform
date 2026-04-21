@@ -51,16 +51,20 @@
         this.save(token, user); // 更新快取
         window._currentUser = user;
 
+        // 先依權限過濾導覽列，讓使用者即使卡在無權限頁也能跳到有權限的頁
+        this._filterNavByPermission(user);
+
         // 檢查頁面權限
         if (requiredPermission && user.role !== 'super_admin') {
           if (!user.permissions.includes(requiredPermission)) {
+            const homeHref = this._firstAllowedPage(user) || '/login.html';
             document.body.innerHTML = `
               <div style="display:flex;align-items:center;justify-content:center;height:100vh;
                           background:#0f172a;color:#e2e8f0;flex-direction:column;gap:16px;font-family:sans-serif">
                 <div style="font-size:48px">🚫</div>
                 <div style="font-size:20px;font-weight:700">無存取權限</div>
                 <div style="color:#64748b">您沒有查看此頁面的權限，請聯絡管理員</div>
-                <a href="/performance.html" style="margin-top:8px;color:#3b82f6;text-decoration:none;font-size:14px">← 返回首頁</a>
+                <a href="${homeHref}" style="margin-top:8px;color:#3b82f6;text-decoration:none;font-size:14px">← 返回首頁</a>
               </div>`;
             return null;
           }
@@ -74,6 +78,43 @@
         if (redirectOnFail) window.location.href = '/login.html';
         return null;
       }
+    },
+
+    // ── 頁面權限 → nav-link 對應表 ──
+    _navPermissionMap: {
+      '/performance.html':    'page:performance',
+      '/stats.html':          'page:stats',
+      '/query.html':          'page:query',
+      '/monthly_report.html': 'page:monthly',
+      '/bonus.html':          'page:bonus',
+      '/settings.html':       'page:settings',
+    },
+
+    // ── 隱藏使用者沒權限的 nav-link ──
+    _filterNavByPermission(user) {
+      if (!user || user.role === 'super_admin') return;
+      const perms = new Set(user.permissions || []);
+      document.querySelectorAll('.nav-link').forEach(a => {
+        const href = (a.getAttribute('href') || '').split('?')[0].split('#')[0];
+        const need = this._navPermissionMap[href];
+        if (need && !perms.has(need)) a.style.display = 'none';
+      });
+    },
+
+    // ── 找出使用者能進入的第一個頁面（依 nav 順序）──
+    _firstAllowedPage(user) {
+      if (!user) return null;
+      if (user.role === 'super_admin') return '/performance.html';
+      const order = [
+        '/performance.html','/stats.html','/query.html',
+        '/monthly_report.html','/bonus.html','/settings.html',
+      ];
+      const perms = new Set(user.permissions || []);
+      for (const href of order) {
+        const need = this._navPermissionMap[href];
+        if (!need || perms.has(need)) return href;
+      }
+      return null;
     },
 
     // ── 登出 ──
@@ -110,11 +151,12 @@
     visibleBranches() {
       const user = window._currentUser;
       if (!user) return [];
-      if (user.role === 'super_admin') return ['AMA', 'AMC', 'AMD'];
-      const allowed = ['AMA','AMC','AMD'].filter(br => user.permissions.includes(`branch:${br}`));
+      const ALL = ['AMA','AMC','AMD','AME'];
+      if (user.role === 'super_admin') return ALL;
+      const allowed = ALL.filter(br => user.permissions.includes(`branch:${br}`));
       // 若有指定 branch 且 permissions 未明確包含，以 branch 為準
       if (!allowed.length && user.branch) return [user.branch];
-      return allowed.length ? allowed : ['AMA','AMC','AMD'];
+      return allowed.length ? allowed : ALL;
     },
 
     // ── 導覽列使用者圖示 ──
