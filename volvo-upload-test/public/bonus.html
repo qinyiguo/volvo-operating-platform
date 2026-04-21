@@ -2012,7 +2012,8 @@ function calcPromoBonus(unused1, unused2, branch, personName, jobTitle) {
     }
 
     // 依職務排序：數字越小職等越高。
-    // 清單由高到低；「資深X」必須排在「X」之前才會先被匹配到。
+    // 清單由高到低；較具體的職稱（如 L4技師、美容技師）必須排在較泛用的「技師」之前
+    // 才會先被 indexOf 匹配到。
     function jobTitleRank(title) {
       var t = String(title||'');
       var levels = [
@@ -2020,10 +2021,16 @@ function calcPromoBonus(unused1, unused2, branch, personName, jobTitle) {
         '處長','資深協理','協理','廠長',
         '資深經理','技術長','經理',
         '資深副理','副理',
-        '資深主任','主任','組長','領班',
+        '資深主任','主任',
+        '組長','領班','副領班',
         '資深顧問','顧問',
         '資深專員','專員',
-        '資深技師','技師',
+        // 技師類：資深 → L4-L0 → 美容類（高級 → 一般 → 洗車）→ 一般技師 → 實習生
+        '資深技師',
+        'L4技師','L3技師','L2技師','L1技師','L0技師',
+        '高級美容技師','美容技師','洗車美容',
+        '技師',
+        '實習生',
         '組員','助理','工讀'
       ];
       for (var i=0;i<levels.length;i++) {
