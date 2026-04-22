@@ -202,9 +202,9 @@
 
 ---
 
-## Session `claude/fix-upload-error-dYN1c`（2026-04-22，業務查詢上傳失敗修補）
+## Session `claude/fix-upload-error-dYN1c`（2026-04-22，業務查詢上傳失敗修補 + 獎金表匯出大整修）
 
-分支：`claude/fix-upload-error-dYN1c`（1 commit）。
+分支：`claude/fix-upload-error-dYN1c`（10 commits，跨兩項主題）。
 
 ### 維修業務查詢 Excel 上傳失敗 — `repair_item` 改 TEXT（37a32f3）
 - 症狀：上傳 `維修業務查詢-開單時間-2026{01..04}.xls(x)` 4 檔皆顯示失敗，後端 PostgreSQL 錯誤 `value too long for type character varying(200)`
@@ -214,6 +214,48 @@
   - 新增 `ALTER TABLE business_query ALTER COLUMN repair_item TYPE TEXT` 升級既有 DB
 - 效果：部署後 4 支業務查詢檔可成功寫入，不再截斷
 
+### 獎金表匯出整修（04fba05 → 10df8cf，8 commits）
+完整重寫匯出輸出；資料來源由「DOM 解析」改為「計算當下蒐集的 `_bonusExportList`」；螢幕顯示欄位不動（仍有額外 / 銷售 / 主管考核 三獨立欄）。
+
+**1. 額外獎金併入銷售獎金（04fba05 → 10df8cf）**
+- Excel / PDF 匯出原本「績效獎金 = 各指標獎金加總 + 額外獎金」。改為 104 薪資匯入慣例：
+  - 績效獎金 = 各指標獎金加總（**不含**額外）
+  - 銷售獎金 = 原銷售獎金 + **額外獎金**
+- 壓縮範圍由 `3..L-4` 改 `3..L-5`；cells[L-4]（額外）併入銷售欄。
+- PDF 匯出原本未同步（績效仍含額外、銷售不含額外）→ 已修；兩種匯出數字現可對齊。
+
+**2. 獎金表 Excel：0 預設值（dc2508f）**
+- 績效 / 銷售 / 主管考核 / 總獎金 無值時原顯示空白，改為 `0`。
+- 濾空規則放寬為「姓名 / 職務 / 狀態 皆空才濾」，金額全 0 但有姓名的列保留，方便核對全員名單。
+
+**3. 新增 104 獎金表明細匯出（04fba05 → 4bbfa93）**
+- 獨立函式 `exportBonus104()` 寫出單獨檔案 `104獎金表明細_<period>_<branch>.xlsx`，不混進獎金表 Excel。
+- 匯出格式選擇 modal 由 2 鈕（Excel / PDF）擴為 3 鈕，新增「🧾 104 明細 — 薪資匯入格式」。
+- 三個工作表（Tab）：**績效獎金** / **銷售獎金** / **主管考核**。
+- 欄位（10 欄）：員工編號 / 科目代碼 (A016) / 幣別代碼 (NTD) / 加扣金額 / 加扣起始日 / 加扣終止日 / 薪資明細說明 / 備註 / 部門 / 姓名。
+- 加扣期間 = `period` 的**次一個月份**（例：`period=202603` 3 月計算 → 加扣 `20260401~20260430` → 5 月核發）；跨年／閏年自動處理。
+- 薪資明細說明 = 加扣月 + 類別（例：`202604績效獎金`），不再跟著 period。
+- 排序：`售後服務處 → AMA → AMC → AMD → 聯合 → 鈑烤 → 零件 → 其他`；同廠依部門、姓名。
+- 全員納入，含 0 元 / 無金額者（原本會被跳過）。
+- 依廠別套用淺色底色（AMA 淺藍 / AMC 淺綠 / AMD 淺黃 / 聯合 淺紫 / 鈑烤 淺橘 / 零件 淺蒂芙尼 / 售後服務處 極淺灰），方便人眼掃描。
+
+**4. 渲染期蒐集 `_bonusExportList`（04fba05）**
+- 於 `renderProgressContent` 的 dept 迴圈內、`memberRows.sort` 後 push 每人 `{branch, branch_label, dept, dept_code, emp_id, emp_name, job_title, status, perfBonus, extraBonus, promoBonus, mrBonus, total}`。
+- perfBonus 僅加總各指標獎金（不含額外 / 促銷 / 主管考核）。
+- 供 `exportBonusExcel` / `exportBonus104` 共用，免重複 DOM 解析。
+
+**5. `_applyBonusStyles` 支援可變欄寬（04fba05）**
+- 原本 `dept / factory / noteTitle` 列的 merge 硬碼 `0..6`（7 欄假設）；改為 `0..maxC`，同時支援 7 欄主表與 10 欄 104 明細。
+- 7 欄主表 `maxC=6` 時行為與原本相同。
+
+**6. 全站顯示文字：促銷獎金 → 銷售獎金（8a96bde, 10df8cf）**
+- `bonus.html`（43 處）、`settings.html`、`routes/bonus.js`、`db/init.js`、`lib/authMiddleware.js`、`lib/auditLogger.js`、`routes/promoBonus.js`、`lib/bonusPeriodLock.js` 的中文顯示字串與 docblock 全數改名。
+- 程式識別名**保留不動**：`feature:promo_bonus_edit`、`/api/promo-bonus/*`、`promo_bonus_configs`、`_promoApiResults`、`_promoTeamModeCache`、`isPromoTeam` 等。只改 UI 字串與 log label。
+- 第二波補掉單獨「促銷」字眼（團體/個人切換鈕、index 註解、settings 頁面簡介、兩份 docblock）。
+
+**7. PDF 匯出同步修正（10df8cf）**
+- `exportBonusPdf` 原本與 Excel 不一致：績效仍含額外、銷售只取原促銷。檢查後統一為同一套 `3..L-5` + `L-4+L-3` 邏輯，兩種匯出數字可對齊。
+
 ---
 
 ## 統計
@@ -221,5 +263,8 @@
 - 04-21 再補 26 個 non-merge commit：
   - session `01TaGue54CzED2ZwuRpLPaC1`（`fix-signature-saving-5gxKw` 分支續戰）= 18 個
   - session `claude/fix-bonus-reset-logic-tOTi4`（本日新開分支）= 8 個
-- 本週期可見 non-merge commit 共 79 個
-- 主軸：**全站資安強化**（04-18 當日公告）、**獎金表電子簽核 + 匯出版型**、**月報 Executive 模式**、**手機響應式**、**Light Mode 補洞**、**權限模型細緻化**（04-21 大改）、**期間鎖定分層（上傳 / 獎金）+ 兩階段簽核**（04-21）、**獎金表 UX / 計算邏輯收尾**（04-21）
+- 04-22 再補 10 個 non-merge commit（`claude/fix-upload-error-dYN1c`）：
+  - 業務查詢上傳失敗修補（repair_item TEXT）= 1 個
+  - 獎金表匯出整修（104 明細 + 額外→銷售 + 0 預設 + 全站改名 + PDF 同步）= 9 個
+- 本週期可見 non-merge commit 共 89 個
+- 主軸：**全站資安強化**（04-18 當日公告）、**獎金表電子簽核 + 匯出版型**、**月報 Executive 模式**、**手機響應式**、**Light Mode 補洞**、**權限模型細緻化**（04-21 大改）、**期間鎖定分層（上傳 / 獎金）+ 兩階段簽核**（04-21）、**獎金表 UX / 計算邏輯收尾**（04-21）、**104 薪資匯入格式 + 類別重分配 + 促銷 → 銷售 改名**（04-22）
