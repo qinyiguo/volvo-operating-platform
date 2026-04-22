@@ -1,7 +1,7 @@
 /**
  * routes/promoBonus.js  mount: app.use('/api', …)
  * -------------------------------------------------------------
- * 促銷 / 專案獎金規則與計算（獨立於一般月績效獎金）。
+ * 銷售 / 專案獎金規則與計算（獨立於一般月績效獎金）。
  *
  *   GET    /api/promo-bonus/configs            規則列表
  *   POST   /api/promo-bonus/configs            (feature:bonus_edit)
