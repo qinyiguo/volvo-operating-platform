@@ -5156,6 +5156,8 @@ function _appendSheet104(wb, list, period, branch) {
   var lastDay = new Date(nextY, nextM, 0).getDate();
   var monthStart = '' + nextY + mm + '01';
   var monthEnd   = '' + nextY + mm + String(lastDay).padStart(2, '0');
+  // 薪資明細說明的期間以加扣月份為準（YYYYMM）
+  var deductPeriod = '' + nextY + mm;
 
   // ── 依廠別排序（售後服務處 → AMA → AMC → AMD → 聯合 → 鈑烤 → 零件 → 其他）──
   var FC_ORDER_EXPORT = ['售後服務處','AMA','AMC','AMD','聯合','鈑烤','零件','其他'];
@@ -5197,7 +5199,7 @@ function _appendSheet104(wb, list, period, branch) {
         Math.round(amt),
         monthStart,
         monthEnd,
-        period + title,
+        deductPeriod + title,
         '',
         r.dept || '',
         r.emp_name || ''
