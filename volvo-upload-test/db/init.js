@@ -72,7 +72,7 @@ const initDatabase = async () => {
       CREATE TABLE IF NOT EXISTS business_query (
         id SERIAL PRIMARY KEY, period VARCHAR(6), branch VARCHAR(10),
         work_order VARCHAR(30), open_time TIMESTAMPTZ, settle_date DATE,
-        plate_no VARCHAR(20), vin VARCHAR(30), status VARCHAR(20), repair_item VARCHAR(200),
+        plate_no VARCHAR(20), vin VARCHAR(30), status VARCHAR(20), repair_item TEXT,
         service_advisor VARCHAR(50), assigned_tech VARCHAR(50), repair_tech VARCHAR(50),
         repair_type VARCHAR(50), car_series VARCHAR(50), car_model VARCHAR(50),
         model_year VARCHAR(10), owner VARCHAR(100), is_ev VARCHAR(10),
@@ -89,6 +89,8 @@ const initDatabase = async () => {
     await client.query(`ALTER TABLE business_query ADD COLUMN IF NOT EXISTS labor_fee NUMERIC(12,2) DEFAULT 0`);
     await client.query(`ALTER TABLE business_query ADD COLUMN IF NOT EXISTS repair_material_fee NUMERIC(12,2) DEFAULT 0`);
     await client.query(`ALTER TABLE business_query ADD COLUMN IF NOT EXISTS sales_material_fee NUMERIC(12,2) DEFAULT 0`);
+    // DMS 交修項目名稱常串接多筆，易超過 200 字 → 改 TEXT 免被截斷
+    await client.query(`ALTER TABLE business_query ALTER COLUMN repair_item TYPE TEXT`);
     await client.query(`ALTER TABLE repair_income ALTER COLUMN account_type TYPE VARCHAR(50)`);
     await client.query(`ALTER TABLE repair_income ALTER COLUMN account_type_code TYPE VARCHAR(50)`);
     await client.query(`ALTER TABLE repair_income ALTER COLUMN account_type TYPE VARCHAR(100)`);
@@ -109,7 +111,7 @@ const initDatabase = async () => {
         CREATE TABLE business_query (
           id SERIAL PRIMARY KEY, period VARCHAR(6), branch VARCHAR(10),
           work_order VARCHAR(30), open_time TIMESTAMPTZ, settle_date DATE,
-          plate_no VARCHAR(20), vin VARCHAR(30), status VARCHAR(20), repair_item VARCHAR(200),
+          plate_no VARCHAR(20), vin VARCHAR(30), status VARCHAR(20), repair_item TEXT,
           service_advisor VARCHAR(50), assigned_tech VARCHAR(50), repair_tech VARCHAR(50),
           repair_type VARCHAR(50), car_series VARCHAR(50), car_model VARCHAR(50),
           model_year VARCHAR(10), owner VARCHAR(100), is_ev VARCHAR(10),
