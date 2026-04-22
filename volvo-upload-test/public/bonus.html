@@ -2434,7 +2434,7 @@ memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonu
     +'border:1.5px solid '+(isPromoTeam?'#10b981':'#64748b')+';'
     +'background:'+(isPromoTeam?'rgba(16,185,129,.15)':'transparent')+';'
     +'color:'+(isPromoTeam?'#10b981':'#64748b')+'"'
-    +' title="銷售獎金計算模式">🎁 促銷'+(isPromoTeam?'團體':'個人')+'</span>';
+    +' title="銷售獎金計算模式">🎁 銷售'+(isPromoTeam?'團體':'個人')+'</span>';
 })()
          +(fc==='聯合'&&(dept.dept_name||'').includes('美容')
   ? '<button onclick="event.stopPropagation();_openBeautyBranchModal(\''+fc+'\',\''+dkey+'\')" style="margin-left:4px;padding:2px 10px;border-radius:5px;border:1px solid #0ea5e9;background:rgba(14,165,233,.15);color:#38bdf8;font-size:11px;cursor:pointer;font-weight:700">🎨 美容據點分配</button>'
@@ -3547,7 +3547,7 @@ function _mrDebounce(el) {
         var perfVal = 0, promoVal = 0;
         // 績效欄（第4欄，index 3）
         if (cells[3]) { var m = cells[3].innerText.replace(/,/g,'').match(/-?\d+/); if (m) perfVal = parseInt(m[0])||0; }
-        // 促銷欄（第5欄，index 4）
+        // 銷售欄（第5欄，index 4）
         if (cells[4]) { var m2 = cells[4].innerText.replace(/,/g,'').match(/-?\d+/); if (m2) promoVal = parseInt(m2[0])||0; }
         var total = perfVal + promoVal + newVal;
         if (lastTd) lastTd.innerHTML = total
@@ -4624,19 +4624,26 @@ async function exportBonusPdf() {
             cells.push(val);
             for (var s = 1; s < sp; s++) cells.push('');
           });
+          // 壓縮邏輯：與 Excel 匯出一致
+          // 績效獎金 = 3~(L-5) 各指標獎金加總（不含 L-4 額外獎金）
+          // 銷售獎金 = 額外獎金（L-4） + 原銷售獎金（L-3）
+          // 無金額一律顯示 0
           var perf = 0, hasPerfVal = false;
-          for (var i = 3; i <= L - 4 && i < cells.length; i++) {
+          for (var i = 3; i <= L - 5 && i < cells.length; i++) {
             if (typeof cells[i] === 'number') { perf += cells[i]; hasPerfVal = true; }
           }
+          var extraNum = typeof cells[L-4] === 'number' ? cells[L-4] : 0;
+          var promoNum = typeof cells[L-3] === 'number' ? cells[L-3] : 0;
+          var reviewNum = typeof cells[L-2] === 'number' ? cells[L-2] : 0;
+          var totalNum  = typeof cells[L-1] === 'number' ? cells[L-1] : 0;
           var newRow = [
             cells[0] || '', cells[1] || '', cells[2] || '',
-            hasPerfVal ? perf : '',
-            typeof cells[L-3] === 'number' ? cells[L-3] : (cells[L-3] || ''),
-            typeof cells[L-2] === 'number' ? cells[L-2] : (cells[L-2] || ''),
-            typeof cells[L-1] === 'number' ? cells[L-1] : (cells[L-1] || ''),
+            hasPerfVal ? perf : 0,
+            extraNum + promoNum,
+            reviewNum,
+            totalNum,
           ];
-          if (newRow.slice(0,3).some(function(c){return c!=='';}) ||
-              newRow.slice(3).some(function(c){return c!=='' && c!==0;})) {
+          if (newRow.slice(0,3).some(function(c){return c!=='';})) {
             var isSummary = typeof newRow[0]==='string' && /[（(]\s*\d+\s*人\s*[）)]/.test(newRow[0]);
             dataRowsHtml += '<tr'+(isSummary?' class="sumRow"':'')+'>'
               + newRow.slice(0,3).map(function(c){return '<td>'+escHtml(c)+'</td>';}).join('')
