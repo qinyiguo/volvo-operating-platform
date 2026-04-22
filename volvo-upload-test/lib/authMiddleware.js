@@ -67,7 +67,7 @@ const FEATURE_PERMISSIONS = {
   'feature:bonus_metric_edit':   '獎金指標/目標/權重',
   'feature:bonus_extra_edit':    '額外獎金/主管考核',
   'feature:bonus_sign':          '獎金簽核',
-  'feature:promo_bonus_edit':    '促銷獎金規則',
+  'feature:promo_bonus_edit':    '銷售獎金規則',
   'feature:bodyshop_bonus_edit': '業務鈑烤獎金',
   'feature:sa_config_edit':      'SA 指標銷售配置',
   // 月報

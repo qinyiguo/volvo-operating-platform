@@ -8,7 +8,7 @@
     - 人員名冊（在職 / 留職停薪 / 本月離職）
     - 獎金指標管理（DMS 來源、職稱分層階梯、科別篩選）
     - 獎金進度(依廠別 × 科別占比 × 個人相對權重算應領)
-    - 促銷獎金規則設定
+    - 銷售獎金規則設定
     - 鈑烤獎金申請/比對
     - 主管審核調整
   注意:
@@ -223,13 +223,13 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
     <div id="rosterTree"><div class="loading"><span class="spinner"></span>載入中</div></div>
   </div>
 <div id="tab-progress" style="display:none">
-    <!-- ══ 促銷獎金規則設定入口 ══ -->
+    <!-- ══ 銷售獎金規則設定入口 ══ -->
     <div style="background:#1a2332;border:1px solid #2d3f56;border-radius:12px;margin-bottom:14px;padding:14px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:linear-gradient(135deg,rgba(16,185,129,.1),rgba(16,185,129,.04))">
-      <span style="font-size:14px;font-weight:800;color:#10b981">🎁 促銷獎金設定</span>
+      <span style="font-size:14px;font-weight:800;color:#10b981">🎁 銷售獎金設定</span>
       <span id="promoConfigCount" style="font-size:12px;color:var(--text-dim);background:#0f172a;padding:2px 10px;border-radius:10px"></span>
       <button onclick="openPromoModal()"
         style="margin-left:auto;padding:6px 16px;background:#10b981;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">
-        ⚙️ 促銷獎金規則設定
+        ⚙️ 銷售獎金規則設定
       </button>
     </div>
   <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
@@ -449,7 +449,7 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
   <div class="section-label">🏆 達成率階梯獎金</div>
   <div style="background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:12px 14px;margin-bottom:14px">
     <div style="font-size:12px;color:var(--text-dim);line-height:1.7;margin-bottom:10px">
-      依達成率高低給予固定獎金，與促銷獎金<strong style="color:var(--text-muted)">分開累加</strong>。
+      依達成率高低給予固定獎金，與銷售獎金<strong style="color:var(--text-muted)">分開累加</strong>。
     </div>
     <div style="margin-bottom:10px">
       <div style="font-size:12px;color:var(--text-dim);margin-bottom:6px">
@@ -483,7 +483,7 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
     <div style="margin-top:14px;padding-top:12px;border-top:1px dashed #2d3f56">
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text-muted)">
         <input type="checkbox" id="mZeroBelowChk" onchange="_onZeroBelowToggle()" style="accent-color:#ef4444">
-        <span>🎯 <strong>未達標歸零</strong> — 此指標達成率低於以下 % 時，該員工「所有績效指標獎金」皆歸 0（<strong style="color:var(--text-dim)">不影響額外獎金 / 促銷獎金 / 主管考核</strong>）</span>
+        <span>🎯 <strong>未達標歸零</strong> — 此指標達成率低於以下 % 時，該員工「所有績效指標獎金」皆歸 0（<strong style="color:var(--text-dim)">不影響額外獎金 / 銷售獎金 / 主管考核</strong>）</span>
       </label>
       <div id="mZeroBelowRow" style="display:none;margin-top:8px;display:flex;align-items:center;gap:8px">
         <span style="font-size:12px;color:var(--text-dim)">達成率 &lt;</span>
@@ -502,11 +502,11 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
   </div>
 </div>
 
-  <!-- 促銷獎金設定 Modal -->
+  <!-- 銷售獎金設定 Modal -->
 <div class="modal-bd" id="promoModal">
   <div class="modal-win" style="max-width:720px">
     <div class="modal-head">
-      <div class="modal-title" id="promoModalTitle">⚙️ 促銷獎金規則設定</div>
+      <div class="modal-title" id="promoModalTitle">⚙️ 銷售獎金規則設定</div>
       <button class="modal-close" onclick="closeModal('promoModal')">×</button>
     </div>
     <div class="modal-body">
@@ -523,7 +523,7 @@ body.bonus-period-locked button[onclick*="_ppOpen"]
       <!-- ── 編輯檢視：新增 / 編輯單一規則 ── -->
       <div id="promoEditorView" style="display:none">
         <button onclick="showPromoList()" style="background:transparent;border:none;color:#60a5fa;font-size:12px;cursor:pointer;margin-bottom:10px;padding:0">← 返回規則清單</button>
-        <div id="promoEditorTitle" style="font-size:14px;font-weight:800;color:#e2e8f0;margin-bottom:12px">新增促銷獎金規則</div>
+        <div id="promoEditorTitle" style="font-size:14px;font-weight:800;color:#e2e8f0;margin-bottom:12px">新增銷售獎金規則</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
         <div class="form-group">
           <label>規則名稱 <span style="color:#ef4444">*</span></label>
@@ -1468,7 +1468,7 @@ function addTier() {
   _tiers.push({gte:lastGte,lt:null,amount:0,amounts}); renderTierTable();
 }
 
-// ══ 促銷獎金規則 ══
+// ══ 銷售獎金規則 ══
 async function _ensureSaConfigs() {
   if (!_saConfigsList.length) {
     try { _saConfigsList = await fetch('/api/sa-config').then(r => r.json()); } catch(e) {}
@@ -1479,7 +1479,7 @@ function renderPromoRules() {
   var wrap = document.getElementById('mPromoRulesWrap');
   if (!wrap) return;
   if (!_promoRules.length) {
-    wrap.innerHTML = '<div style="color:var(--text-dimmer);font-size:12px;padding:6px 0">尚未設定促銷獎金</div>';
+    wrap.innerHTML = '<div style="color:var(--text-dimmer);font-size:12px;padding:6px 0">尚未設定銷售獎金</div>';
     return;
   }
   var roles = _tierRoles;
@@ -1792,7 +1792,7 @@ if (src!=='manual'&&src!=='performance'&&src!=='revenue') {
   }
   const target_dept_codes=getSelectedDeptCodes();
   const tiersData=getTiersData();
-  // 整理促銷獎金（讀取最新 per_qty、bonus 值）
+  // 整理銷售獎金（讀取最新 per_qty、bonus 值）
     const bonus_rule={
       roles:   [..._tierRoles],
       tiers:   tiersData
@@ -1915,7 +1915,7 @@ async function renderProgressContent() {
       var allMetricIds=Object.keys(metaById);
       var hasMetrics=allMetricIds.length>0; 
 // promo_rules 需要的 SA 銷售矩陣（per-person qty）
-// ── 獨立促銷獎金結果 ──
+// ── 獨立銷售獎金結果 ──
       var _promoApiResults = { configs:[], resultsByConfig:{} };
       try {
         var promoQs = 'period=' + _period;
@@ -1952,7 +1952,7 @@ var useAuto=(m.metric_source==='revenue'||m.metric_source==='performance'||m.met
       }
     } catch(apiErr){ console.warn('progress API error:',apiErr); }
 
-// ── 促銷獎金計算（使用獨立設定）──
+// ── 銷售獎金計算（使用獨立設定）──
 function calcPromoBonus(unused1, unused2, branch, personName, jobTitle) {
   var rByC = (_promoApiResults && _promoApiResults.resultsByConfig) || {};
 
@@ -1963,7 +1963,7 @@ function calcPromoBonus(unused1, unused2, branch, personName, jobTitle) {
     var assignedBranch = _beautyBranchMap[person.emp_id] || null;
     if (!assignedBranch) return 0;
 
-    // 取得此據點美容技師的促銷獎金總池
+    // 取得此據點美容技師的銷售獎金總池
     var beautyKey = '美容技師-' + (assignedBranch==='AMA'?'A':assignedBranch==='AMC'?'C':'D');
     var pool = 0;
     for (var cid in rByC) {
@@ -2272,7 +2272,7 @@ if(isTeamDept){
           });
         }
 
-       // ── 促銷獎金：計算部門總池（團體制）──
+       // ── 銷售獎金：計算部門總池（團體制）──
 var isBeautyDept = fc === '聯合' && (dept.dept_name || '').includes('美容');
 var deptPromoPool = 0;
 var deptPromoTotalW = 0;
@@ -2301,7 +2301,7 @@ _mrModalDepts[fc+'-'+dkey] = dept.members.map(function(p){
                 var person3=dept.members[mi3], personBonuses={}, personTotal=0;
                 var personPromoBonus;
 if (isPromoTeamDept && !isBeautyDept && deptPromoPool > 0) {
-  // 團體制：依權重分配促銷獎金池
+  // 團體制：依權重分配銷售獎金池
   var myW_promo = savedWeights[person3.emp_id] !== undefined ? savedWeights[person3.emp_id] : 1;
   personPromoBonus = deptPromoTotalW > 0 ? Math.round(deptPromoPool * myW_promo / deptPromoTotalW) : 0;
 } else {
@@ -2434,7 +2434,7 @@ memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonu
     +'border:1.5px solid '+(isPromoTeam?'#10b981':'#64748b')+';'
     +'background:'+(isPromoTeam?'rgba(16,185,129,.15)':'transparent')+';'
     +'color:'+(isPromoTeam?'#10b981':'#64748b')+'"'
-    +' title="促銷獎金計算模式">🎁 促銷'+(isPromoTeam?'團體':'個人')+'</span>';
+    +' title="銷售獎金計算模式">🎁 促銷'+(isPromoTeam?'團體':'個人')+'</span>';
 })()
          +(fc==='聯合'&&(dept.dept_name||'').includes('美容')
   ? '<button onclick="event.stopPropagation();_openBeautyBranchModal(\''+fc+'\',\''+dkey+'\')" style="margin-left:4px;padding:2px 10px;border-radius:5px;border:1px solid #0ea5e9;background:rgba(14,165,233,.15);color:#38bdf8;font-size:11px;cursor:pointer;font-weight:700">🎨 美容據點分配</button>'
@@ -2474,8 +2474,8 @@ memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonu
         html+='<th style="'+thBase+'min-width:100px;text-align:right;background:#0c1524;color:#60a5fa">💵 額外獎金</th>'
         html+='<th style="'+thBase+'min-width:100px;text-align:right;background:#0c1524;color:#10b981">'
   +(isPromoTeamDept&&!isBeautyDept&&deptPromoPool>0
-    ? '🎁 促銷獎金 <span style="font-size:9px;color:#064e3b;background:#bbf7d0;padding:1px 4px;border-radius:3px">池 '+deptPromoPool.toLocaleString()+'元</span>'
-    : '🎁 促銷獎金')
+    ? '🎁 銷售獎金 <span style="font-size:9px;color:#064e3b;background:#bbf7d0;padding:1px 4px;border-radius:3px">池 '+deptPromoPool.toLocaleString()+'元</span>'
+    : '🎁 銷售獎金')
 +'</th>'
         html+='<th style="'+thBase+'min-width:140px;text-align:center;background:#0c1524;color:#a78bfa">🎯 主管考核</th>'
     +'<th style="'+thBase+'min-width:80px;text-align:right;background:#0c1524;color:#f59e0b'+(deptHasMetrics?'':';display:none')+'">總獎金</th>'
@@ -2505,7 +2505,7 @@ html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);tex
           var mrVal = mRow.mrBonus||0;
           var mrNote = (_managerReviewMap[p4.emp_id]&&_managerReviewMap[p4.emp_id].note)||'';
           var safeEmpId = p4.emp_id.replace(/'/g,"\\'");
-          // 促銷獎金（前）
+          // 銷售獎金（前）
 var promoDetailData = encodeURIComponent(JSON.stringify(
   Object.keys((_promoApiResults&&_promoApiResults.resultsByConfig)||{}).map(function(cid){
     var cfg2 = ((_promoApiResults.resultsByConfig[cid]||{}).config)||{};
@@ -2555,7 +2555,7 @@ html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);tex
   +(extraAmt>0?'<span onclick="showExtraBonusNote(\''+_safeEbEmpId+'\',this)" style="color:#60a5fa;font-size:14px;cursor:pointer;text-decoration:underline dotted" title="點擊查看事由">'+extraAmt.toLocaleString()+'<span style="font-size:9px;margin-left:1px">元</span></span>':'<span style="color:#2d4060">—</span>')
 +'</td>';
 
-// 促銷獎金 td
+// 銷售獎金 td
 html+='<td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.2);text-align:right;background:rgba(16,185,129,.03);font-weight:900;">'
   +(mRow.promoBonus>0?'<span onclick="_openPromoDetail(\''+p4.emp_name.replace(/'/g,"\\'")+'\',\''+promoDetailData+'\')" style="color:#10b981;font-size:14px;cursor:pointer;text-decoration:underline dotted">'+mRow.promoBonus.toLocaleString()+'<span style="font-size:9px;margin-left:1px">元</span></span>':'<span style="color:#2d4060">—</span>')
 +'</td>';
@@ -2869,14 +2869,14 @@ async function promptApprovalRequest({ upload_type, period, branch, file, extras
 hideLock();
 
   // ════════════════════════════════════════════
-// 促銷獎金獨立設定
+// 銷售獎金獨立設定
 // ════════════════════════════════════════════
 var _extraBonusMap = {};
 var _extraBonusList = [];
 var _beautyBranchMap = {}; // { emp_id: 'AMA'|'AMC'|'AMD' }
 let _managerReviewMap = {}; // { emp_id: { amount, note } }
 // 供「匯出 Excel / 104 獎金表明細」使用；每次 renderProgressContent 重算時覆寫
-// 績效獎金 = 各指標獎金加總（不含額外獎金）；促銷獎金、額外獎金、主管考核各自獨立
+// 績效獎金 = 各指標獎金加總（不含額外獎金）；銷售獎金、額外獎金、主管考核各自獨立
 var _bonusExportList = []; // [{branch, branch_label, dept, dept_code, emp_id, emp_name, job_title, status, perfBonus, extraBonus, promoBonus, mrBonus, total}]
   async function loadExtraBonus() {
   try {
@@ -2899,7 +2899,7 @@ const ALL_PAYCODES = ['一般','票劵','內結','保險','延保','保固','善
 const CATALOG_TYPES = ['精品','配件'];
 
 function togglePromoSection() {
-  // 促銷獎金設定已改為 Modal 形式；舊的折疊區塊已移除。此函式留著避免舊呼叫點出錯
+  // 銷售獎金設定已改為 Modal 形式；舊的折疊區塊已移除。此函式留著避免舊呼叫點出錯
   var body = document.getElementById('promoSectionBody');
   if (!body) return;
   var arrow = document.getElementById('promoSectionArrow');
@@ -2922,7 +2922,7 @@ function renderPromoConfigList() {
   var el = document.getElementById('promoConfigList');
   if (!el) return;
   if (!_promoCfgs.length) {
-    el.innerHTML = '<div style="color:var(--text-dimmer);font-size:13px;padding:8px 0">尚未建立促銷獎金規則</div>';
+    el.innerHTML = '<div style="color:var(--text-dimmer);font-size:13px;padding:8px 0">尚未建立銷售獎金規則</div>';
     return;
   }
   el.innerHTML = _promoCfgs.map(function(c) {
@@ -2994,7 +2994,7 @@ function showPromoList() {
   document.getElementById('promoEditorView').style.display = 'none';
   document.getElementById('promoListFooter').style.display = '';
   document.getElementById('promoEditorFooter').style.display = 'none';
-  document.getElementById('promoModalTitle').textContent = '⚙️ 促銷獎金規則設定';
+  document.getElementById('promoModalTitle').textContent = '⚙️ 銷售獎金規則設定';
   // 重新渲染列表（規則可能剛被新增/編輯）
   renderPromoConfigList();
   var cntEl = document.getElementById('promoModalCount');
@@ -3005,8 +3005,8 @@ function showPromoEditor(id) {
   document.getElementById('promoEditorView').style.display = '';
   document.getElementById('promoListFooter').style.display = 'none';
   document.getElementById('promoEditorFooter').style.display = '';
-  document.getElementById('promoEditorTitle').textContent = id ? '✏️ 編輯促銷獎金規則' : '＋ 新增促銷獎金規則';
-  document.getElementById('promoModalTitle').textContent = id ? '✏️ 編輯促銷獎金規則' : '＋ 新增促銷獎金規則';
+  document.getElementById('promoEditorTitle').textContent = id ? '✏️ 編輯銷售獎金規則' : '＋ 新增銷售獎金規則';
+  document.getElementById('promoModalTitle').textContent = id ? '✏️ 編輯銷售獎金規則' : '＋ 新增銷售獎金規則';
   _openPromoEditor(id);
 }
 async function openPromoModal(id) {
@@ -3174,7 +3174,7 @@ async function savePromoCfg() {
 }
 
 async function deletePromoCfg(id, name) {
-  if (!confirm('確定刪除促銷獎金規則「' + name + '」？')) return;
+  if (!confirm('確定刪除銷售獎金規則「' + name + '」？')) return;
   await fetch('/api/promo-bonus/configs/' + id, { method: 'DELETE' });
   await loadPromoConfigs();
   var inner = document.getElementById('progressInner');
@@ -3849,7 +3849,7 @@ async function clearActualOverride(metricId, period, branch) {
     // Header
     +   '<div style="padding:14px 20px;border-bottom:1px solid #2d3f56;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">'
     +     '<div style="flex:1;min-width:0">'
-    +       '<div style="font-size:15px;font-weight:800;color:#10b981">🎁 促銷獎金明細</div>'
+    +       '<div style="font-size:15px;font-weight:800;color:#10b981">🎁 銷售獎金明細</div>'
     +       '<div style="font-size:12px;color:var(--text-muted);margin-top:3px">'+empName+' <span style="color:var(--text-dim);margin-left:6px">·'+countTxt+'</span></div>'
     +     '</div>'
     +     '<div style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.35);border-radius:8px;padding:7px 14px;text-align:right">'
@@ -4662,7 +4662,7 @@ async function exportBonusPdf() {
       }
 
       var dataTblHtml = '<table class="data"><thead><tr>'
-        + ['姓名','職務','狀態','績效獎金','促銷獎金','主管考核','總獎金']
+        + ['姓名','職務','狀態','績效獎金','銷售獎金','主管考核','總獎金']
             .map(function(h){return '<th>'+h+'</th>';}).join('')
         + '</tr></thead><tbody>' + dataRowsHtml + '</tbody></table>';
 
@@ -4731,7 +4731,7 @@ async function exportBonusPdf() {
     summaryHtml = '<section class="sheet summarySheet">'
       + '<h2>獎金彙總 — '+escHtml(branch)+'<span class="periodLabel">期間：'+escHtml(periodLabel)+'</span></h2>'
       + '<table class="data summaryTbl"><thead><tr>'
-      + ['據點','部門','人數','績效獎金','促銷獎金','主管考核','總金額'].map(function(h){return '<th>'+h+'</th>';}).join('')
+      + ['據點','部門','人數','績效獎金','銷售獎金','主管考核','總金額'].map(function(h){return '<th>'+h+'</th>';}).join('')
       + '</tr></thead><tbody>'+rowsHtml+'</tbody></table>'
       + signRowHtmlFull()
       + '</section>';
@@ -4861,7 +4861,7 @@ async function exportBonusExcel() {
           return;
         }
 
-        // 最後三欄（額外獎金、促銷獎金、主管考核、總獎金）沒有 div 結構
+        // 最後三欄（額外獎金、銷售獎金、主管考核、總獎金）沒有 div 結構
         if (!divs.length) {
           colHeaders.push(clean(clone.innerText));
           return;
@@ -4904,11 +4904,11 @@ async function exportBonusExcel() {
         });
       }
 
-      // ── 欄位標題列（壓縮為 7 欄：姓名/職務/狀態/績效獎金/促銷獎金/主管考核/總獎金） ──
-      // 績效獎金 = 各指標獎金加總（不含額外獎金、促銷獎金、主管考核）
-      // 促銷獎金 = 原促銷獎金 + 額外獎金（104 薪資匯入慣例：額外併入銷售類）
+      // ── 欄位標題列（壓縮為 7 欄：姓名/職務/狀態/績效獎金/銷售獎金/主管考核/總獎金） ──
+      // 績效獎金 = 各指標獎金加總（不含額外獎金、銷售獎金、主管考核）
+      // 銷售獎金 = 原銷售獎金 + 額外獎金（104 薪資匯入慣例：額外併入銷售類）
       var L = colHeaders.length;
-      pushR('colHeader', ['姓名', '職務', '狀態', '績效獎金', '促銷獎金', '主管考核', '總獎金']);
+      pushR('colHeader', ['姓名', '職務', '狀態', '績效獎金', '銷售獎金', '主管考核', '總獎金']);
 
       // ── 資料列 ──
       var tbody = tbl.querySelector('tbody');
@@ -4944,7 +4944,7 @@ async function exportBonusExcel() {
             for (var s = 1; s < span; s++) cells.push('');
           });
           // 壓縮：3~(L-5) 區段加總 = 績效獎金（僅各指標；不含額外獎金）
-          // 額外獎金（L-4）併入促銷獎金（L-3）→ 匯出「促銷獎金」欄
+          // 額外獎金（L-4）併入銷售獎金（L-3）→ 匯出「銷售獎金」欄
           var perf = 0, hasPerfVal = false;
           for (var i = 3; i <= L - 5 && i < cells.length; i++) {
             if (typeof cells[i] === 'number') { perf += cells[i]; hasPerfVal = true; }
@@ -5052,7 +5052,7 @@ async function exportBonusExcel() {
 
     sPush('factory', ['獎金彙總 — ' + branch, '', '', '期間：' + period.slice(0,4) + '年' + parseInt(period.slice(4)) + '月', '', '', '']);
     sPush('empty', []);
-    sPush('colHeader', ['據點', '部門', '人數', '績效獎金', '促銷獎金', '主管考核', '總金額']);
+    sPush('colHeader', ['據點', '部門', '人數', '績效獎金', '銷售獎金', '主管考核', '總金額']);
 
     // 同一個 branch 的部門一起顯示；branch 改變時插一個小計列
     var curBranch = null;
@@ -5116,7 +5116,7 @@ async function exportBonusExcel() {
 }
 
 // ══ 匯出 104 獎金表明細（人資系統薪資匯入用，獨立檔案）══
-// 三大類：績效獎金、促銷獎金（含額外獎金）、主管考核
+// 三大類：績效獎金、銷售獎金（含額外獎金）、主管考核
 async function exportBonus104() {
   if (window.DmsAuth && !DmsAuth.hasPermission('feature:export_bonus')) {
     alert('您沒有「獎金表匯出」權限，請聯絡管理員');
@@ -5232,7 +5232,7 @@ function _appendSheet104(wb, list, period, branch) {
   }
 
   buildSheet('績效獎金', function(r){ return r.perfBonus || 0; });
-  buildSheet('促銷獎金', function(r){ return (r.promoBonus || 0) + (r.extraBonus || 0); });
+  buildSheet('銷售獎金', function(r){ return (r.promoBonus || 0) + (r.extraBonus || 0); });
   buildSheet('主管考核', function(r){ return r.mrBonus || 0; });
 }
 
@@ -5441,7 +5441,7 @@ function _applyBonusStyles(ws, rows, roles) {
     +' style="position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:center;justify-content:center">'
     +'<div style="background:#1e293b;border:1px solid #0ea5e9;border-radius:12px;padding:24px;min-width:400px;max-width:90vw;max-height:80vh;overflow-y:auto">'
     +'<div style="font-size:15px;font-weight:800;color:#38bdf8;margin-bottom:4px">🎨 美容技師據點分配</div>'
-    +'<div style="font-size:11px;color:var(--text-dim);margin-bottom:16px">設定每位技師服務哪個據點的美容技師-A/C/D，促銷獎金將依據點池分配</div>'
+    +'<div style="font-size:11px;color:var(--text-dim);margin-bottom:16px">設定每位技師服務哪個據點的美容技師-A/C/D，銷售獎金將依據點池分配</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;font-size:11px;color:var(--text-dimmer);font-weight:700;padding-bottom:6px;border-bottom:1px solid #2d3f56">'
     +'<span>技師</span><span>服務據點</span></div>'
     + rows

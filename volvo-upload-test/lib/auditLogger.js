@@ -70,7 +70,7 @@ const RESOURCE_LABELS = {
   '/api/bonus/beauty-branches':     '美容技師分配',
   '/api/bonus/pp-alloc':            '個人占比配置',
   '/api/manager-review':            '主管考核',
-  '/api/promo-bonus/configs':       '促銷獎金規則',
+  '/api/promo-bonus/configs':       '銷售獎金規則',
   '/api/bodyshop-bonus/settings':   '業務鈑烤設定',
   '/api/bodyshop-bonus/applications': '業務鈑烤申請',
   '/api/sa-config':                 'SA 指標銷售配置',

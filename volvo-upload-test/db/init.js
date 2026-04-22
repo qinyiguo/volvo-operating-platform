@@ -374,7 +374,7 @@ const initDatabase = async () => {
         updated_at    TIMESTAMPTZ DEFAULT NOW()
       )`);
     
-// ──新建促銷獎金 
+// ──新建銷售獎金 
       await client.query(`
       CREATE TABLE IF NOT EXISTS promo_bonus_configs (
         id SERIAL PRIMARY KEY,
