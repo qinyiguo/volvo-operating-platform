@@ -1878,6 +1878,8 @@ async function renderProgressContent() {
   var el=document.getElementById('progressInner');
   if (!el) return;
   var actLabel=_period.slice(0,4)+'年'+parseInt(_period.slice(4))+'月';
+  // 重設匯出用明細，於下方 dept 迴圈內填入每人獎金
+  _bonusExportList = [];
 
   try {
     var factory=document.getElementById('selFactory').value;
@@ -2355,6 +2357,32 @@ memberRows.push({person:person3,bonuses:personBonuses,promoBonus:personPromoBonu
           if (b.total!==a.total) return b.total-a.total;
           return String(a.person.emp_name||'').localeCompare(String(b.person.emp_name||''));
         });
+
+        // ── 蒐集匯出用資料（給 Excel 與 104 薪資明細用） ──
+        for (var _exi=0;_exi<memberRows.length;_exi++) {
+          var _exMr = memberRows[_exi];
+          var _exPerf = 0;
+          for (var _bk in _exMr.bonuses) {
+            if (_exMr.bonuses[_bk] && typeof _exMr.bonuses[_bk].bonus === 'number') {
+              _exPerf += _exMr.bonuses[_bk].bonus;
+            }
+          }
+          _bonusExportList.push({
+            branch:       fc,
+            branch_label: fcLabel,
+            dept_code:    dkey,
+            dept:         dept.dept_name || dkey,
+            emp_id:       _exMr.person.emp_id || '',
+            emp_name:     _exMr.person.emp_name || '',
+            job_title:    _exMr.person.job_title || '',
+            status:       _exMr.person.status || '',
+            perfBonus:    _exPerf,
+            extraBonus:   _exMr.extraBonus || 0,
+            promoBonus:   _exMr.promoBonus || 0,
+            mrBonus:      _exMr.mrBonus || 0,
+            total:        _exMr.total || 0
+          });
+        }
 
         var thBase='text-align:left;padding:8px 10px;background:#090f1a;color:var(--text-dimmer);font-size:11px;font-weight:700;border-bottom:1px solid #2d3f56;white-space:nowrap;border-right:1px solid #1a2535;';
 
@@ -2843,10 +2871,13 @@ hideLock();
   // ════════════════════════════════════════════
 // 促銷獎金獨立設定
 // ════════════════════════════════════════════
-var _extraBonusMap = {}; 
+var _extraBonusMap = {};
 var _extraBonusList = [];
 var _beautyBranchMap = {}; // { emp_id: 'AMA'|'AMC'|'AMD' }
 let _managerReviewMap = {}; // { emp_id: { amount, note } }
+// 供「匯出 Excel / 104 獎金表明細」使用；每次 renderProgressContent 重算時覆寫
+// 績效獎金 = 各指標獎金加總（不含額外獎金）；促銷獎金、額外獎金、主管考核各自獨立
+var _bonusExportList = []; // [{branch, branch_label, dept, dept_code, emp_id, emp_name, job_title, status, perfBonus, extraBonus, promoBonus, mrBonus, total}]
   async function loadExtraBonus() {
   try {
     var rows = await fetch('/api/bonus/extra-bonuses?period=' + _period).then(r=>r.json());
@@ -4874,7 +4905,8 @@ async function exportBonusExcel() {
       }
 
       // ── 欄位標題列（壓縮為 7 欄：姓名/職務/狀態/績效獎金/促銷獎金/主管考核/總獎金） ──
-      // 績效獎金 = 各指標獎金加總 + 額外獎金（不含促銷獎金、主管考核）
+      // 績效獎金 = 各指標獎金加總（不含額外獎金、促銷獎金、主管考核）
+      // 促銷獎金 = 原促銷獎金 + 額外獎金（104 薪資匯入慣例：額外併入銷售類）
       var L = colHeaders.length;
       pushR('colHeader', ['姓名', '職務', '狀態', '績效獎金', '促銷獎金', '主管考核', '總獎金']);
 
@@ -4911,12 +4943,16 @@ async function exportBonusExcel() {
             cells.push(val);
             for (var s = 1; s < span; s++) cells.push('');
           });
-          // 壓縮：3~(L-4) 區段加總 = 績效獎金（各指標 + 額外獎金）
+          // 壓縮：3~(L-5) 區段加總 = 績效獎金（僅各指標；不含額外獎金）
+          // 額外獎金（L-4）併入促銷獎金（L-3）→ 匯出「促銷獎金」欄
           var perf = 0, hasPerfVal = false;
-          for (var i = 3; i <= L - 4 && i < cells.length; i++) {
+          for (var i = 3; i <= L - 5 && i < cells.length; i++) {
             if (typeof cells[i] === 'number') { perf += cells[i]; hasPerfVal = true; }
           }
-          var promo  = cells[L-3];
+          var extraNum = typeof cells[L-4] === 'number' ? cells[L-4] : 0;
+          var promoNum = typeof cells[L-3] === 'number' ? cells[L-3] : 0;
+          var promoSum = extraNum + promoNum;
+          var hasPromo = (typeof cells[L-4] === 'number') || (typeof cells[L-3] === 'number');
           var review = cells[L-2];
           var total  = cells[L-1];
           var newRow = [
@@ -4924,7 +4960,7 @@ async function exportBonusExcel() {
             cells[1] || '',
             cells[2] || '',
             hasPerfVal ? perf : '',
-            typeof promo === 'number' ? promo : (promo || ''),
+            hasPromo ? promoSum : (cells[L-3] || ''),
             typeof review === 'number' ? review : (review || ''),
             typeof total === 'number' ? total : (total || ''),
           ];
@@ -5076,7 +5112,78 @@ async function exportBonusExcel() {
     if (lastIdx > 0) { names.splice(lastIdx, 1); names.unshift('獎金彙總'); }
   }
 
+  // ══ 104 獎金表明細（人資系統薪資匯入用）══
+  // 三大類：績效獎金、促銷獎金（含額外獎金）、主管考核
+  // 過濾：依目前選擇的廠別；加扣期間 = period 的前一個月份
+  _appendSheet104(wb, _bonusExportList, period, branch);
+
   XLSX.writeFile(wb, '獎金表_' + period + '_' + branch + '.xlsx');
+}
+
+// 104 人資系統薪資匯入格式：員工編號 / 科目代碼 / 幣別代碼 / 加扣金額 /
+// 加扣起始日 / 加扣終止日 / 薪資明細說明 / 備註
+// period 'YYYYMM' → 加扣期間取前一個月份（e.g. 202601 → 20251201 ~ 20251231）
+function _appendSheet104(wb, list, period, branch) {
+  if (!list || !list.length) return;
+  // 依廠別過濾（當選擇 AMA/AMC/AMD 等單一廠時）
+  var filtered = list.filter(function(r) {
+    if (!branch || branch === '全部') return true;
+    return r.branch === branch || r.branch_label === branch;
+  });
+  if (!filtered.length) return;
+
+  var py = parseInt(period.slice(0,4), 10);
+  var pm = parseInt(period.slice(4,6), 10);
+  var prevY = pm === 1 ? py - 1 : py;
+  var prevM = pm === 1 ? 12 : pm - 1;
+  var mm = String(prevM).padStart(2, '0');
+  var lastDay = new Date(prevY, prevM, 0).getDate();
+  var monthStart = '' + prevY + mm + '01';
+  var monthEnd   = '' + prevY + mm + String(lastDay).padStart(2, '0');
+
+  var rows = [], roles = [];
+  function push(role, arr) { rows.push(arr || []); roles.push(role || 'empty'); }
+
+  var HEADERS = ['員工編號','科目代碼','幣別代碼','加扣金額','加扣起始日','加扣終止日','薪資明細說明','備註'];
+
+  function section(title, desc, amountFn, minAbs) {
+    push('dept', ['■ ' + title + (desc ? '　—　' + desc : ''), '', '', '', '', '', '', '']);
+    push('colHeader', HEADERS);
+    var count = 0;
+    filtered.forEach(function(r) {
+      var amt = amountFn(r);
+      if (!amt || Math.abs(amt) < (minAbs || 1)) return;
+      push('data', [
+        r.emp_id || '',
+        'A016',
+        'NTD',
+        Math.round(amt),
+        monthStart,
+        monthEnd,
+        period + title,
+        ''
+      ]);
+      count++;
+    });
+    if (!count) push('data', ['（本期無資料）', '', '', '', '', '', '', '']);
+    push('empty', []);
+  }
+
+  section('績效獎金', '各指標獎金加總（不含額外獎金）', function(r){ return r.perfBonus || 0; });
+  section('促銷獎金', '含額外獎金 + 促銷獎金', function(r){ return (r.promoBonus || 0) + (r.extraBonus || 0); });
+  section('主管考核', '可正可負', function(r){ return r.mrBonus || 0; });
+
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  _xlsxAutoWidth(ws, rows);
+  _applyBonusStyles(ws, rows, roles);
+
+  if (!ws['!rows']) ws['!rows'] = [];
+  for (var ri = 0; ri < roles.length; ri++) {
+    if (roles[ri] === 'dept') ws['!rows'][ri] = { hpt: 22 };
+    else if (roles[ri] === 'colHeader') ws['!rows'][ri] = { hpt: 20 };
+  }
+
+  XLSX.utils.book_append_sheet(wb, ws, '104獎金表明細');
 }
 
 function _xlsxAutoWidth(ws, rows) {
@@ -5237,15 +5344,15 @@ function _applyBonusStyles(ws, rows, roles) {
   }
   roles.forEach(function(role, R) {
     if (role === 'factory') {
-      // A:C 廠別名稱、D:G 期間文字
+      // A:C 廠別名稱、D:maxC 期間文字
       addMerge(R, 0, 2);
-      addMerge(R, 3, 6);
+      addMerge(R, 3, maxC);
     } else if (role === 'dept' || role === 'noteTitle') {
-      // 整列 A:G 跨欄
-      addMerge(R, 0, 6);
+      // 整列 A:maxC 跨欄（支援可變欄數：7 欄獎金表 / 8 欄 104 明細）
+      addMerge(R, 0, maxC);
     } else if (role === 'noteHeader' || role === 'noteData') {
-      // 「理由」欄 B:G 跨欄
-      addMerge(R, 1, 6);
+      // 「理由」欄 B:maxC 跨欄
+      addMerge(R, 1, maxC);
     } else if (role === 'signHeader') {
       // 簽核標題列：5 個簽核角色分布 — 單位主管跨 1-2、總經理室跨 4-5
       addMerge(R, 1, 2, 'center');

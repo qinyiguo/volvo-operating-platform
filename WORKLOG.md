@@ -202,6 +202,20 @@
 
 ---
 
+## Session `claude/fix-upload-error-dYN1c`（2026-04-22，業務查詢上傳失敗修補）
+
+分支：`claude/fix-upload-error-dYN1c`（1 commit）。
+
+### 維修業務查詢 Excel 上傳失敗 — `repair_item` 改 TEXT（37a32f3）
+- 症狀：上傳 `維修業務查詢-開單時間-2026{01..04}.xls(x)` 4 檔皆顯示失敗，後端 PostgreSQL 錯誤 `value too long for type character varying(200)`
+- 原因：`business_query` 表僅 `repair_item`（DMS 的「交修項目名稱」）欄位是 `VARCHAR(200)`；DMS 匯出常把同工單多個交修項目串成一格，實測超過 200 字即被整批 INSERT 拒絕
+- 修正：`db/init.js`
+  - `CREATE TABLE business_query` 兩處（初始建表 + `work_order` 缺欄時的重建分支）：`repair_item VARCHAR(200)` → `repair_item TEXT`
+  - 新增 `ALTER TABLE business_query ALTER COLUMN repair_item TYPE TEXT` 升級既有 DB
+- 效果：部署後 4 支業務查詢檔可成功寫入，不再截斷
+
+---
+
 ## 統計
 - 3 天合計 53 個可見 non-merge commit（04-18 資安強化之 PR #1–#7 已 squash，本數未列入）
 - 04-21 再補 26 個 non-merge commit：
