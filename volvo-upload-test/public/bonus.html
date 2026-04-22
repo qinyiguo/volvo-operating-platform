@@ -5146,22 +5146,24 @@ function _appendSheet104(wb, list, period, branch) {
   });
   if (!filtered.length) return;
 
+  // 加扣期間 = period 的「次一個月份」
+  // 例：period=202603（3 月計算）→ 加扣 4 月（薪資加在 4 月）→ 5 月核發
   var py = parseInt(period.slice(0,4), 10);
   var pm = parseInt(period.slice(4,6), 10);
-  var prevY = pm === 1 ? py - 1 : py;
-  var prevM = pm === 1 ? 12 : pm - 1;
-  var mm = String(prevM).padStart(2, '0');
-  var lastDay = new Date(prevY, prevM, 0).getDate();
-  var monthStart = '' + prevY + mm + '01';
-  var monthEnd   = '' + prevY + mm + String(lastDay).padStart(2, '0');
-
-  var rows = [], roles = [];
-  function push(role, arr) { rows.push(arr || []); roles.push(role || 'empty'); }
+  var nextY = pm === 12 ? py + 1 : py;
+  var nextM = pm === 12 ? 1 : pm + 1;
+  var mm = String(nextM).padStart(2, '0');
+  var lastDay = new Date(nextY, nextM, 0).getDate();
+  var monthStart = '' + nextY + mm + '01';
+  var monthEnd   = '' + nextY + mm + String(lastDay).padStart(2, '0');
 
   var HEADERS = ['員工編號','科目代碼','幣別代碼','加扣金額','加扣起始日','加扣終止日','薪資明細說明','備註'];
 
-  function section(title, desc, amountFn, minAbs) {
-    push('dept', ['■ ' + title + (desc ? '　—　' + desc : ''), '', '', '', '', '', '', '']);
+  // 為每一類獎金建立獨立工作表
+  function buildSheet(title, amountFn, minAbs) {
+    var rows = [], roles = [];
+    function push(role, arr) { rows.push(arr || []); roles.push(role || 'empty'); }
+
     push('colHeader', HEADERS);
     var count = 0;
     filtered.forEach(function(r) {
@@ -5180,24 +5182,20 @@ function _appendSheet104(wb, list, period, branch) {
       count++;
     });
     if (!count) push('data', ['（本期無資料）', '', '', '', '', '', '', '']);
-    push('empty', []);
+
+    var ws = XLSX.utils.aoa_to_sheet(rows);
+    _xlsxAutoWidth(ws, rows);
+    _applyBonusStyles(ws, rows, roles);
+    if (!ws['!rows']) ws['!rows'] = [];
+    for (var ri = 0; ri < roles.length; ri++) {
+      if (roles[ri] === 'colHeader') ws['!rows'][ri] = { hpt: 22 };
+    }
+    XLSX.utils.book_append_sheet(wb, ws, title);
   }
 
-  section('績效獎金', '各指標獎金加總（不含額外獎金）', function(r){ return r.perfBonus || 0; });
-  section('促銷獎金', '含額外獎金 + 促銷獎金', function(r){ return (r.promoBonus || 0) + (r.extraBonus || 0); });
-  section('主管考核', '可正可負', function(r){ return r.mrBonus || 0; });
-
-  var ws = XLSX.utils.aoa_to_sheet(rows);
-  _xlsxAutoWidth(ws, rows);
-  _applyBonusStyles(ws, rows, roles);
-
-  if (!ws['!rows']) ws['!rows'] = [];
-  for (var ri = 0; ri < roles.length; ri++) {
-    if (roles[ri] === 'dept') ws['!rows'][ri] = { hpt: 22 };
-    else if (roles[ri] === 'colHeader') ws['!rows'][ri] = { hpt: 20 };
-  }
-
-  XLSX.utils.book_append_sheet(wb, ws, '104獎金表明細');
+  buildSheet('績效獎金', function(r){ return r.perfBonus || 0; });
+  buildSheet('促銷獎金', function(r){ return (r.promoBonus || 0) + (r.extraBonus || 0); });
+  buildSheet('主管考核', function(r){ return r.mrBonus || 0; });
 }
 
 function _xlsxAutoWidth(ws, rows) {
