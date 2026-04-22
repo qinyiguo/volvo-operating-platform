@@ -4955,18 +4955,18 @@ async function exportBonusExcel() {
           var hasPromo = (typeof cells[L-4] === 'number') || (typeof cells[L-3] === 'number');
           var review = cells[L-2];
           var total  = cells[L-1];
+          // 無輸入金額一律預設 0（避免匯出呈現空白）
           var newRow = [
             cells[0] || '',
             cells[1] || '',
             cells[2] || '',
-            hasPerfVal ? perf : '',
-            hasPromo ? promoSum : (cells[L-3] || ''),
-            typeof review === 'number' ? review : (review || ''),
-            typeof total === 'number' ? total : (total || ''),
+            hasPerfVal ? perf : 0,
+            hasPromo ? promoSum : 0,
+            typeof review === 'number' ? review : 0,
+            typeof total === 'number' ? total : 0,
           ];
-          // 跳過整列皆空的列
-          if (newRow.slice(0,3).some(function(c){return c!=='';}) ||
-              newRow.slice(3).some(function(c){return c!=='' && c!==0;})) {
+          // 跳過完全無人員資訊（姓名 / 職務 / 狀態皆空）的列；金額全 0 但有名字 → 保留並顯示為 0
+          if (newRow.slice(0,3).some(function(c){return c!=='';})) {
             // 判斷是「部門彙總列」還是「個人資料列」
             var isSummary = typeof newRow[0]==='string' && /[（(]\s*\d+\s*人\s*[）)]/.test(newRow[0]);
             pushR(isSummary ? 'summary' : 'data', newRow);
