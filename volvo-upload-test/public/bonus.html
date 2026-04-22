@@ -5157,18 +5157,39 @@ function _appendSheet104(wb, list, period, branch) {
   var monthStart = '' + nextY + mm + '01';
   var monthEnd   = '' + nextY + mm + String(lastDay).padStart(2, '0');
 
-  var HEADERS = ['員工編號','科目代碼','幣別代碼','加扣金額','加扣起始日','加扣終止日','薪資明細說明','備註'];
+  // ── 依廠別排序（售後服務處 → AMA → AMC → AMD → 聯合 → 鈑烤 → 零件 → 其他）──
+  var FC_ORDER_EXPORT = ['售後服務處','AMA','AMC','AMD','聯合','鈑烤','零件','其他'];
+  var sorted = filtered.slice().sort(function(a, b) {
+    var ra = FC_ORDER_EXPORT.indexOf(a.branch); if (ra < 0) ra = 99;
+    var rb = FC_ORDER_EXPORT.indexOf(b.branch); if (rb < 0) rb = 99;
+    if (ra !== rb) return ra - rb;
+    var dc = String(a.dept || '').localeCompare(String(b.dept || ''));
+    if (dc !== 0) return dc;
+    return String(a.emp_name || '').localeCompare(String(b.emp_name || ''));
+  });
+
+  // ── 廠別底色（RGB hex，淺色避免覆蓋文字）──
+  var BRANCH_FILL = {
+    'AMA':        'DBEAFE', // 淺藍
+    'AMC':        'D1FAE5', // 淺綠
+    'AMD':        'FEF3C7', // 淺黃
+    '聯合':       'EDE9FE', // 淺紫
+    '鈑烤':       'FFEDD5', // 淺橘
+    '零件':       'CCFBF1', // 淺蒂芙尼
+    '售後服務處': 'F1F5F9'  // 極淺灰
+  };
+
+  var HEADERS = ['員工編號','科目代碼','幣別代碼','加扣金額','加扣起始日','加扣終止日','薪資明細說明','備註','部門','姓名'];
 
   // 為每一類獎金建立獨立工作表
-  function buildSheet(title, amountFn, minAbs) {
+  function buildSheet(title, amountFn) {
     var rows = [], roles = [];
     function push(role, arr) { rows.push(arr || []); roles.push(role || 'empty'); }
 
     push('colHeader', HEADERS);
-    var count = 0;
-    filtered.forEach(function(r) {
-      var amt = amountFn(r);
-      if (!amt || Math.abs(amt) < (minAbs || 1)) return;
+    // 全員納入（含 0 元 / 無金額者）
+    sorted.forEach(function(r) {
+      var amt = amountFn(r) || 0;
       push('data', [
         r.emp_id || '',
         'A016',
@@ -5177,18 +5198,33 @@ function _appendSheet104(wb, list, period, branch) {
         monthStart,
         monthEnd,
         period + title,
-        ''
+        '',
+        r.dept || '',
+        r.emp_name || ''
       ]);
-      count++;
     });
-    if (!count) push('data', ['（本期無資料）', '', '', '', '', '', '', '']);
 
     var ws = XLSX.utils.aoa_to_sheet(rows);
     _xlsxAutoWidth(ws, rows);
     _applyBonusStyles(ws, rows, roles);
+
+    // 依廠別覆蓋每筆資料列的底色（roles 為 'data' 的列對應 sorted[ri-1]）
+    for (var ri = 1; ri < rows.length; ri++) {
+      if (roles[ri] !== 'data') continue;
+      var src = sorted[ri - 1];
+      var rgb = (src && BRANCH_FILL[src.branch]) || 'FFFFFF';
+      for (var ci = 0; ci < HEADERS.length; ci++) {
+        var addr = XLSX.utils.encode_cell({ r: ri, c: ci });
+        var cell = ws[addr];
+        if (!cell) continue;
+        cell.s = cell.s || {};
+        cell.s.fill = { fgColor: { rgb: rgb } };
+      }
+    }
+
     if (!ws['!rows']) ws['!rows'] = [];
-    for (var ri = 0; ri < roles.length; ri++) {
-      if (roles[ri] === 'colHeader') ws['!rows'][ri] = { hpt: 22 };
+    for (var rr = 0; rr < roles.length; rr++) {
+      if (roles[rr] === 'colHeader') ws['!rows'][rr] = { hpt: 22 };
     }
     XLSX.utils.book_append_sheet(wb, ws, title);
   }
