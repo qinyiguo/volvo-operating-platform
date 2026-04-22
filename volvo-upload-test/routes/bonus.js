@@ -922,7 +922,7 @@ router.put('/bonus/beauty-branches', requirePermission('feature:bonus_metric_edi
   } catch(e) { res.status(500).json({error: e.message}); }
 });
 
-// 促銷獎金部門模式（獨立於績效獎金）
+// 銷售獎金部門模式（獨立於績效獎金）
 router.get('/bonus/promo-dept-mode', async (req, res) => {
   const { branch, dept_code } = req.query;
   const key = `promo_team_mode_${branch}_${dept_code}`;
