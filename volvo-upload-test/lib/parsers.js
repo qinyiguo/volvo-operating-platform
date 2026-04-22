@@ -127,7 +127,7 @@ const parseBusinessQuery = (rows, branch, period) => rows
       plate_no:       String(pick(r, '車牌號碼', '車牌號', '車牌') || '').trim(),
       vin:            String(pick(r, '車身號碼', 'VIN') || '').trim(),
       status:         String(pick(r, '工單狀態', '狀態') || '').trim(),
-      repair_item:    String(pick(r, '交修項目') || '').trim(),
+      repair_item:    String(pick(r, '交修項目名稱', '交修項目', '交修內容') || '').trim(),
       service_advisor:String(pick(r, '服務顧問') || '').trim(),
       assigned_tech:  String(pick(r, '指定技師') || '').trim(),
       repair_tech:    String(pick(r, '維修技師') || '').trim(),
