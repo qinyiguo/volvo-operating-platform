@@ -41,8 +41,14 @@ app.use(helmet({
       //   jsdelivr / cdnjs — xlsx-js-style / @e965/xlsx / Chart.js / html2canvas / gridstack
       //   fonts.googleapis.com — login.html 的 @import
       //   fonts.gstatic.com    — 實際字型檔
+      // Helmet 預設把 script-src-attr 設為 'none' 阻擋 onclick="..." 等 inline
+      // event handler；我們全站用了大量這種寫法 → 需明確加 unsafe-inline。
       'script-src':       ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com'],
+      'script-src-attr':  ["'unsafe-inline'"],
+      'script-src-elem':  ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com'],
       'style-src':        ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://fonts.googleapis.com'],
+      'style-src-attr':   ["'unsafe-inline'"],
+      'style-src-elem':   ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://fonts.googleapis.com'],
       'img-src':          ["'self'", 'data:', 'blob:'],
       'font-src':         ["'self'", 'data:', 'https://fonts.gstatic.com'],
       'connect-src':      ["'self'"],
