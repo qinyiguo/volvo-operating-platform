@@ -205,9 +205,21 @@ async function softAuth(req, res, next) {
 // Bearer-only client（無 cookie）豁免：CSRF 攻擊需受害者已登入的瀏覽器，
 // 不存在於純 API client 的威脅模型。
 // 內部 service 呼叫（x-internal-service 正確）亦豁免。
+// 登入 / 登出端點豁免：它們本身就是切換 session 狀態，且 login.html 不載 auth.js
+// 所以 fetch 不會自動帶 X-CSRF-Token；若有人保留舊 dms_token cookie 也不該卡在登入。
+// req.originalUrl 總是完整路徑 '/api/users/login'（不受 app.use 掛載前綴影響）
+const CSRF_EXEMPT_PATHS = new Set([
+  '/api/users/login',
+  '/api/users/logout',
+]);
 function csrfProtect(req, res, next) {
   const method = String(req.method || 'GET').toUpperCase();
   if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return next();
+
+  // 登入 / 登出豁免（login.html 不載 auth.js → 不會自動帶 X-CSRF-Token；
+  // 且這兩個端點就是切換 session 狀態，本身對 CSRF 免疫）
+  const pathOnly = (req.originalUrl || '').split('?')[0];
+  if (CSRF_EXEMPT_PATHS.has(pathOnly)) return next();
 
   // 內部呼叫豁免
   const intHdr = req.headers['x-internal-service'];
