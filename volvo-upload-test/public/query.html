@@ -5,13 +5,15 @@
   路徑:  /query.html
   權限:  page:query
   功能:  四大資料表（repair_income / tech_performance / parts_sales /
-         business_query）全文搜尋 + 篩選 + 排序 + 欄位切換 + CSV 匯出。
+         business_query）全文搜尋 + 篩選 + 排序 + 欄位切換 + Excel 匯出。
   相依 API: /api/query/*、/api/periods
 -->
 <html lang="zh-TW">
 <head>
 <link rel="stylesheet" href="/theme.css">
 <script src="/auth.js"></script>
+<!-- @e965/xlsx: maintained fork with CVE-2023-30533 / CVE-2024-22363 fixes -->
+<script src="https://cdn.jsdelivr.net/npm/@e965/xlsx@0.20.3/dist/xlsx.full.min.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Volvo 資料查詢</title>
@@ -244,7 +246,7 @@
           <button class="btn btn-secondary" onclick="toggleColMenu()">⚙️ 欄位</button>
           <div class="col-toggle-dropdown" id="colToggleDropdown"></div>
         </div>
-        <button class="btn btn-green" onclick="doExport()">⬇️ 匯出 CSV</button>
+        <button class="btn btn-green" onclick="doExport()">⬇️ 匯出 Excel</button>
       </div>
     </div>
 
@@ -856,7 +858,7 @@ function renderSummary(tbl, rows){
   bar.innerHTML=`<div style="display:flex;gap:8px;flex-wrap:wrap">${html}</div>`;
 }
 
-// ═══ Export CSV ═══
+// ═══ Export Excel ═══
 function doExport(){
   if (window.DmsAuth && !DmsAuth.hasPermission('feature:export_data')) {
     alert('您沒有「資料匯出」權限，請聯絡管理員'); return;
@@ -865,27 +867,21 @@ function doExport(){
   const def = TABLE_DEFS[tbl];
   const visibleCols = def.cols.filter(c => !_hiddenCols.has(c.key));
   if(!_filteredRows.length){ alert('無資料可匯出'); return; }
-  // CSV formula injection 防護：開頭為 = + - @ \t \r 的儲存格在 Excel 會被當公式執行。
-  // 一律補單引號 prefix 中和；後面的 escape 規則照原樣處理。
-  const csvSafe = s => /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
-  const header = visibleCols.map(c=>c.label).join(',');
-  const rows = _filteredRows.map(row =>
-    visibleCols.map(c=>{
-      const v = row[c.key];
-      const s = csvSafe(v===null||v===undefined?'':String(v));
-      return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g,'""')}"` : s;
-    }).join(',')
-  );
-  const csv = '\uFEFF' + [header, ...rows].join('\r\n');
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
+  // Excel formula injection 防護：開頭為 = + - @ \t \r 的儲存格會被 Excel 當公式執行 → 補單引號中和
+  const xlsxSafe = v => {
+    if (v === null || v === undefined || v === '') return '';
+    if (typeof v === 'number') return v;
+    const s = String(v);
+    return /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+  };
+  const header = visibleCols.map(c => c.label);
+  const rows = _filteredRows.map(row => visibleCols.map(c => xlsxSafe(row[c.key])));
+  const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, tbl);
   const period = _currentPeriod||'全部';
   const branch = _getBranch()||'全部';
-  a.download = `${tbl}_${period}_${branch}_${Date.now()}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+  XLSX.writeFile(wb, `${tbl}_${period}_${branch}_${Date.now()}.xlsx`);
 }
 
 // ═══ Search debounce ═══

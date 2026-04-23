@@ -1,6 +1,6 @@
 # 工作日誌
 
-> 期間：2026-04-18 ~ 2026-04-21
+> 期間：2026-04-18 ~ 2026-04-23
 > 彙整方式：依 commit message 末尾的 `session_xxx` 反推 session，配合時間排序。
 
 ---
@@ -258,6 +258,86 @@
 
 ---
 
+## Session `claude/fix-upload-error-dYN1c`（2026-04-23 續戰，全站資安再強化 + 部署後連環 bug 收尾）
+
+同分支跨 04-22 → 04-23。04-23 新增 11 個 non-merge commit，主軸為：依 OWASP 檢查報告逐項補資安、部署到 Zeabur 後才浮現的 CSP / CSRF / DB 啟動連環 bug 收拾。
+
+### 1. 全面資安修補（45ff5f1）
+依 OWASP 檢查報告分級處理 — **2 CRITICAL + 5 HIGH + 7 MEDIUM**：
+- **SQL injection**：所有 raw SQL 改 parameterized
+- **Rate limit**：`/api/users/login` 15 分 10 次（`express-rate-limit`）
+- **Helmet**：CSP / HSTS / X-Frame-Options / X-Content-Type-Options
+- **SSRF 防護**：upload URL 白名單
+- **Magic bytes**：`lib/utils.js::isExcelBuffer` 嚴格檢查 Excel 檔頭
+- **Session rotation**：登入後重發 token；改密碼撤銷所有 session
+- **Global error handler**：index.js 統一接錯，不再外漏 stack trace / DB schema
+- **trust proxy**：Zeabur 反代環境取真實 IP（`loopback, linklocal, uniquelocal`，不直接 `true`）
+- **pbkdf2 100k → 600k 漸進升級**：users 加 `password_iterations` 欄位；登入成功若還是 100k 就即時重算到 600k，使用者無感
+- **密碼最小長度 10**（`PASSWORD_MIN_LENGTH`）
+- **Lockfile / Dockerfile USER node**：container 不以 root 跑 node
+
+### 2. xlsx CVE + HttpOnly cookie + CSRF + XSS 收尾（c93cfe4）
+- `xlsx@0.18.5` → `@e965/xlsx@0.20.3`（維護分支，含 CVE-2023-30533 / CVE-2024-22363 修補）
+- Token 從 `localStorage` 搬到 **HttpOnly + Secure + SameSite=Lax cookie**（`dms_token`）
+- CSRF 以 **double-submit cookie** 守：`dms_csrf`（非 HttpOnly）＋ 每個狀態變更請求 header `X-CSRF-Token` 必須等值；login / logout / GET / 內部呼叫豁免
+- 全站 `${e.message}` innerHTML 改 escape，防 XSS audit 掃出的反射式注入
+
+### 3. Session 4h 絕對 + 30min 閒置 + 帳號鎖定（988cf83）
+按 OWASP ASVS L2（含個資的內部系統）：
+- **絕對 TTL 4 小時**；**閒置 30 分**即自動失效（`user_sessions.last_activity` 節流 60s 更新）
+- **帳號鎖定**：密碼錯 3 次 → 暫時鎖 15 分；解鎖後再錯 3 次 → **永久鎖**（需 super_admin 解）
+- 新增欄位：`failed_login_count / locked_until / had_temp_lock / requires_manual_unlock`
+- 前端 idle countdown + 自動跳登入頁
+
+### 4. 稽核系統四階段強化（1acdd4c，單 commit ~1000 行 + 2 新 lib 檔）
+- **Phase 1**：修「所有登入 username=anonymous」bug（login handler 尚未設 `req.user` → 補 `req._audit_user / req._audit_username` stash）；enrich DELETE detail；audit_logs 加 pg_trgm GIN 索引加速 keyword ILIKE
+- **Phase 2**：`lib/auditAlerts.js` — 五類告警偵測（BRUTE_FORCE / MASS_DOWNLOAD / MULTI_LOCK / SUSPICIOUS_DELETE / MANY_AUTH_FAIL）+ Webhook 通知 + 🚨 UI banner
+- **Phase 3**：UX —  row 詳細 modal、CSV 欄位挑選（per-user localStorage 記住選擇）、篩選條件 preset 存取、清理稽核雙人審核（發起者 ≠ 審核者）
+- **Phase 4**：`lib/auditCheckpoint.js` — 月度 SHA-256 hash chain（每月第一天對上月 audit_logs 做摘要 + `prev_hash` 串鏈）；DB rule `audit_logs_no_update` 阻擋 UPDATE；提供 verify endpoint 檢驗歷史列是否被竄改
+
+### 5. 部署後連環 bug 收尾（90f94d9 → 3cfa37e，共 7 個 commit）
+實際部署到 Zeabur 後依序遇到並修掉：
+1. **90f94d9** — CSP 擋 Google Fonts + CSRF 擋 login POST + form 預設 `GET` 導致密碼被塞 URL query 外洩
+2. **fbc6a9f** — form 仍會 native POST 到 `/login.html`（JS onclick preventDefault 失效 fallback），補**三層防禦**：`method="post" action=""` + `onsubmit return false` + `addEventListener('submit', preventDefault)`
+3. **6e4068d** — Helmet 預設 `script-src-attr / style-src-attr` 為 `'none'` 擋掉全站大量 `onclick="..."` inline event handler；放行 `'unsafe-inline'` 並補 `*-elem`
+4. **ddc6a35** — `connect-src` 放行 CDN：gridstack / chart.js / html2canvas 動態 fetch sub-resource（source maps / worker chunks / web fonts）
+5. **04654c8** — 派 agent 掃出 4 個潛在 bug 一次修掉：CSP 漏 unpkg / logout 漏刪 session / `fetchWithAuth` 可能送 `Authorization: Bearer null` / bonus.html 重複的 fetch wrapper
+6. **633c295** — logout 加 3s abort 保險 + `window.location.replace` 確保就算 API 掛了也會跳轉回登入頁
+7. **3cfa37e** — DB `ETIMEDOUT` 時 `process.exit(1)` 造成 container 重啟 **crash-loop**：改成先起 HTTP server（`/health` 可用）讓 Zeabur 不殺 container，背景指數回退重試 initDatabase；pool 加 `connectionTimeoutMillis: 10_000` + `pool.on('error')` 接 idle client 斷線
+
+---
+
+## Session `claude/new-session-q2UKk`（2026-04-23，login 強化 + CSV → XLSX）
+
+新開分支，處理 3cfa37e 後 login 仍偶發 500 的症狀診斷，以及全站 CSV 匯出改 XLSX。
+
+### 1. login 500 → DB readiness gate（f51bc4e）
+症狀：部署後 `POST /api/users/login` 回 500 且 client 看不出原因。
+- 加 `dbReady` flag，背景 `initDatabase()` 成功後才翻 true
+- `/api/*` 前加 gate：未就緒時回 **503 + `code=DB_NOT_READY`** + 「系統啟動中，請 10 秒後重試」（不再是模糊 500）
+- `/health` 多回 `db_ready` 欄位方便運維一眼判斷「server 起來但 DB 還沒接好」狀態
+- 全域 error handler 印出 `pg err.code` / `err.detail`，下次 500 時 Zeabur log 一眼定位
+- 不解決 DB 永久掛掉的情況，但把「暫時不可用」與「真 bug」清楚分流
+
+### 2. CSV 匯出全面改 XLSX（567de74）
+盤點 6 個 client-side CSV 匯出（後端無 CSV 端點），全部改 XLSX：
+| 檔案 | 函式 | 新輸出 |
+|---|---|---|
+| settings.html | `downloadPerfTemplate` | `零配精品目標範本_${y}.xlsx` |
+| settings.html | `downloadRevTemplate`  | `營收目標範本_${y}全年.xlsx` |
+| settings.html | `exportAuditCSV`       | `audit_log_${date}.xlsx` |
+| settings.html | `doExportAuditCSV`     | `audit_log_${date}.xlsx`（自選欄位） |
+| stats.html    | `exportWipModalCSV`    | `wip_${filter}.xlsx` |
+| query.html    | `doExport`             | `${table}_${period}_${branch}_${ts}.xlsx` |
+
+- `settings.html` / `query.html` 新增 `@e965/xlsx@0.20.3` CDN（`stats.html` 已有）
+- `XLSX.utils.aoa_to_sheet` + `book_append_sheet` + `writeFile`；移除 Blob / text-csv / UTF-8 BOM
+- Formula injection 防護保留（`= + - @ \t \r` 開頭加單引號），但 **number type 保留**，Excel 可直接加總
+- UI 按鈕 / 範本文字 / 註解 `CSV` → `Excel`
+- 函式名保留（`exportAuditCSV` 等），避免觸動其他 `querySelector('button[onclick*=...]')` 的權限 gate
+
+---
+
 ## 統計
 - 3 天合計 53 個可見 non-merge commit（04-18 資安強化之 PR #1–#7 已 squash，本數未列入）
 - 04-21 再補 26 個 non-merge commit：
@@ -266,5 +346,9 @@
 - 04-22 再補 10 個 non-merge commit（`claude/fix-upload-error-dYN1c`）：
   - 業務查詢上傳失敗修補（repair_item TEXT）= 1 個
   - 獎金表匯出整修（104 明細 + 額外→銷售 + 0 預設 + 全站改名 + PDF 同步）= 9 個
-- 本週期可見 non-merge commit 共 89 個
-- 主軸：**全站資安強化**（04-18 當日公告）、**獎金表電子簽核 + 匯出版型**、**月報 Executive 模式**、**手機響應式**、**Light Mode 補洞**、**權限模型細緻化**（04-21 大改）、**期間鎖定分層（上傳 / 獎金）+ 兩階段簽核**（04-21）、**獎金表 UX / 計算邏輯收尾**（04-21）、**104 薪資匯入格式 + 類別重分配 + 促銷 → 銷售 改名**（04-22）
+- 04-23 再補 **13 個 non-merge commit**：
+  - session `claude/fix-upload-error-dYN1c`（04-22 續戰）= **11 個**：資安全面修補 4 + 部署後連環 bug 7
+  - session `claude/new-session-q2UKk`（login 強化 + CSV→XLSX）= **2 個**
+  - 04-22 ~ 04-23 本 session（`fix-upload-error-dYN1c`）累積 **21 commit、~4.5k 行新增**
+- **本週期（04-18 起）累計 102 個 non-merge commit**
+- 主軸：**全站資安強化**（04-18 當日公告 → 04-23 OWASP 全面收尾：session 鎖定 / 稽核 hash chain / HttpOnly + CSRF / pbkdf2 升級）、**獎金表電子簽核 + 匯出版型**、**月報 Executive 模式**、**手機響應式**、**Light Mode 補洞**、**權限模型細緻化**（04-21 大改）、**期間鎖定分層 + 兩階段簽核**（04-21）、**獎金表 UX / 計算邏輯收尾**（04-21）、**104 薪資匯入格式 + 促銷 → 銷售 改名**（04-22）、**部署後 CSP / CSRF / DB crash-loop 連環收尾**（04-23）、**CSV 匯出全面改 XLSX**（04-23）
