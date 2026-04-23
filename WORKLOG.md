@@ -268,3 +268,136 @@
   - 獎金表匯出整修（104 明細 + 額外→銷售 + 0 預設 + 全站改名 + PDF 同步）= 9 個
 - 本週期可見 non-merge commit 共 89 個
 - 主軸：**全站資安強化**（04-18 當日公告）、**獎金表電子簽核 + 匯出版型**、**月報 Executive 模式**、**手機響應式**、**Light Mode 補洞**、**權限模型細緻化**（04-21 大改）、**期間鎖定分層（上傳 / 獎金）+ 兩階段簽核**（04-21）、**獎金表 UX / 計算邏輯收尾**（04-21）、**104 薪資匯入格式 + 類別重分配 + 促銷 → 銷售 改名**（04-22）
+
+---
+
+## Session `claude/fix-upload-error-dYN1c` 續（2026-04-23，資安全面重做 + 稽核系統四階段強化 + 部署 bug 收尾）
+
+分支續跑一整天，從資安檢查報告出發，把系統安全姿態從「功能堪用」拉到「可對外」等級，然後在 Zeabur 實際部署後又陸續修了一堆連帶的 deploy-specific bug。共 11 個 commit。
+
+### 1. 全面資安檢查與修補（45ff5f1）
+基於 agent 做的 OWASP 風格檢查報告，分級處理：
+
+**CRITICAL**
+- **C1 SQL Injection** `routes/auditLogs.js` 6 支 query 把 `guard.branch` 直接拼接 SQL（源自 `users.branch` 欄位，super_admin 可寫）→ 全改 `$1` 參數綁定
+- **C3 Login brute force**：`/api/users/login` 裝 `express-rate-limit` 15 分 10 次/IP
+
+**HIGH**
+- **H1** `helmet` + CSP + HSTS + X-Frame-Options + X-Content-Type-Options
+- **H4** `uploadApproval` replay URL 改寫死 `127.0.0.1:${PORT}`，不信任 `req.headers.host`（防 Host header 注入把 internal auth header 外送）
+- **H5** `lib/utils.js` 新 `isExcelBuffer` + `excelFileFilter`，6 個上傳 route 全套 magic bytes 驗證（防副檔名偽造 + zip bomb）
+- **H6** CSV / XLSX 匯出 formula injection 防護（`= + - @ \t \r` 起頭補 `'`）— query / settings / stats / bonus 匯出全套
+- **H7** 使用者 role / branch / is_active / permissions 變更 → `revokeAllSessions()` 撤銷所有 session
+- **H8** global error handler 回 generic message，PG schema / err.message 不再外漏
+
+**MEDIUM**
+- **M1** auditLogger 吞錯改 `console.warn`
+- **M2** `app.set('trust proxy')` + `req.ip` 代替手解 X-Forwarded-For（防偽 IP 汙染稽核）
+- **M3** production 必填 `INITIAL_ADMIN_PASSWORD`，不再印隨機密碼到 stdout
+- **M4** `.gitignore` / `.dockerignore` / `package-lock.json` / Dockerfile USER node + npm ci
+- **M5** 密碼最小長度 6 → **10 字元**
+- **M7** pbkdf2 100k → **600k**（OWASP 2023+）。加 `users.password_iterations` 欄位漸進升級：登入成功後若 iter < 600k 自動 rehash，使用者無感；`crypto.timingSafeEqual` 防時序攻擊
+
+**H3**（動態 SQL 識別名）親自審計確認 `${fld}` / `${statExpr}` / `${col}` 皆由 ternary 從封閉字串集選出，是隱式 allowlist，不需動
+
+### 2. xlsx CVE 修補 + HttpOnly cookie + CSRF + XSS 收尾（c93cfe4）
+- **C2 xlsx@0.18.5 CVE**（GHSA-4r6h-8v6p-xvw6 / GHSA-5pgg-2g8v-p4x9）：
+  - 伺服端：`package.json` npm alias `xlsx → @e965/xlsx@0.20.3`（SheetJS 官方維護鏡像）
+  - 前端：stats.html / bonus.html fallback CDN 換 `@e965/xlsx@0.20.3`
+- **C4 localStorage token → HttpOnly cookie + CSRF**：
+  - Server 登入發 `dms_token` (httpOnly, secure, sameSite=lax, 8h) + `dms_csrf`（非 httpOnly 讓 JS 讀）
+  - `requireAuth` / `softAuth` 優先讀 cookie，Bearer 保留相容 curl
+  - `csrfProtect` middleware（double-submit cookie）：GET/HEAD/OPTIONS 豁免、內部服務豁免、純 API client（無 cookie）豁免、其他狀態變更請求必須 `X-CSRF-Token` 等於 `dms_csrf` cookie
+  - `public/auth.js`：init() 不再靠 localStorage 判斷，直接打 `/api/users/me`；fetch 包裝自動加 `credentials` + 從 `dms_csrf` 讀 CSRF token 塞 header
+  - `login.html`：登入後不寫 token 到 localStorage；logout 清兩個 cookie
+  - `index.js`：加 `cookie-parser`；CSP 補 jsdelivr + cdnjs 白名單
+- **XSS 掃尾**：query.html / monthly_report.html / approvals.html 全加 `window._h` HTML escape，`${e.message}` 全換 `_h(...)` 包裹
+
+### 3. Session TTL 收緊 + 帳號鎖定（988cf83）
+依 OWASP ASVS L2 對含個資系統的建議：
+- **絕對 TTL: 8h → 4h**
+- 新增**閒置 TTL: 30 min**（user_sessions 新 `last_activity` 欄位，resolveToken 檢查，每次有效請求更新，節流 <60s 不重複寫）
+- 前端 `auth.js` 閒置偵測：30 分無操作自動登出 + 最後 1 分鐘黃底警告條
+- **帳號鎖定狀態機**（`users` 表新 4 欄 `failed_login_count` / `locked_until` / `had_temp_lock` / `requires_manual_unlock`）
+  - 3 次錯誤 → 暫時鎖 15 分
+  - 之前被暫鎖過又再錯 3 次 → 永久鎖，需 super_admin 解
+  - `POST /api/users/:id/unlock`（僅 super_admin）
+  - settings 使用者管理頁：⏳ 暫時鎖 / 🔒 永久鎖徽章 + 🔓 解鎖按鈕
+  - 新 audit action: `LOGIN_LOCK_TEMP` / `LOGIN_LOCK_PERM` / `ACCOUNT_UNLOCK`
+
+### 4. 稽核系統四階段強化（1acdd4c）
+agent 檢查後發現稽核系統嚴重資料缺口（所有登入事件 username='anonymous'、無告警、無防竄改）。分四階段處理：
+
+**Phase 1 — 關鍵資料補強**
+- 修 `username='anonymous'` bug：`writeLog` 支援 `req._audit_user / _audit_username / _audit_detail`，login handler 全路徑填真實 username + 結果描述（含「密碼錯誤（第 N/3 次）→ 觸發暫時鎖」）
+- DELETE/UPDATE 補 `resource_detail`：`users`、`bonus_metrics`、`performance_metrics`、`revenue_targets`、`promo_bonus_configs` 五支 DELETE 先 SELECT 預存名稱後再刪，寫入明細；users PUT 只記敏感欄位 diff
+- `pg_trgm` GIN 索引加速 ILIKE 搜尋 `resource_detail` / `resource`
+
+**Phase 2 — 資安告警（`lib/auditAlerts.js`，每 5 分鐘掃）**
+- **BRUTE_FORCE** 同 IP 1h 內 401 ≥ 20 → critical
+- **MANY_AUTH_FAIL** 同帳號 1h 內失敗 ≥ 10 → high
+- **MULTI_LOCK** 1h 內 ≥ 5 帳號被鎖 → critical
+- **MASS_DOWNLOAD** 同帳號 10 分內 DOWNLOAD ≥ 100 → critical
+- **SUSPICIOUS_DELETE** 10 分內 DELETE ≥ 20 / 非工作時間 DELETE ≥ 3 → high / medium
+- 同 signature 1h 去重；`ALERT_WEBHOOK_URL` 發 Slack/Teams；設定頁頂端 🚨 banner + 認領按鈕
+
+**Phase 3 — UI 優化**
+- 點擊紀錄列彈詳細 modal
+- CSV 匯出欄位挑選（per-user localStorage 記憶）
+- 💾 存 / 📂 載篩選預設
+- 稽核清理**雙人審核**（`audit_cleanup_requests` 表）：A super_admin 發起 → B 另一位核准才執行；24h 過期；防單一 rogue admin 洗稽核
+
+**Phase 4 — Tamper-evidence（`lib/auditCheckpoint.js`）**
+- 每月自動為上月做 SHA-256 hash + `chain_hash = SHA256(prev_hash || rows_digest)` 鏈式雜湊
+- DB `RULE audit_logs_no_update` 阻擋 UPDATE（只能 DELETE 走雙人審核）
+- `GET /audit-checkpoints/verify` 驗證單月或全部；失敗回 stored vs recomputed hash
+- 設定頁「🔗 Hash Chain 防竄改驗證」區塊
+
+### 5. 部署後連環 bug 收尾（90f94d9 → 3cfa37e 共 6 commit）
+
+CSP 太嚴格 + 遷移後的連帶效應：
+
+**90f94d9** 登入頁壞掉（CSP 擋 Google Fonts + CSRF 擋 login POST + form 預設 GET 洩密碼）
+- `style-src` 加 `fonts.googleapis.com`、`font-src` 加 `fonts.gstatic.com`
+- `csrfProtect` 豁免 `/api/users/login` + `/api/users/logout`（用 `req.originalUrl` 比對）
+- login form 改 `method="post" action=""` 讓 fallback 也不會把帳密塞 URL
+
+**fbc6a9f** 登入後 form 仍 native POST → `Cannot POST /login.html`
+- 原本 `onsubmit="handleLogin(event);return false"` 在 handleLogin 拋例外時 `return false` 不會跑
+- 三層防護：form method + 純 inline `event.preventDefault();return false` + `addEventListener(..., capture=true)`
+
+**6e4068d** 點各廠明細 / 獎金表等頁面所有按鈕報 CSP 錯
+- helmet 預設 `script-src-attr: 'none'` 獨立於 `script-src`，擋全站 `onclick="…"`
+- 明確加 `script-src-attr` / `script-src-elem` / `style-src-attr` / `style-src-elem` 放行 inline event handler
+
+**ddc6a35** 月報 gridstack / chart.js 載入失敗
+- `connect-src` 只有 `'self'` 擋 library 動態 fetch sub-resource
+- 放行 `cdn.jsdelivr.net` + `cdnjs.cloudflare.com`
+
+**04654c8** agent bug-sweep 後一次修 4 個真實 bug
+- **CSP unpkg** 沒白名單（monthly_report.html gridstack 三層 fallback jsdelivr → **unpkg** → cdnjs，jsdelivr 掛時 unpkg 被擋）→ 全 directive 加 `https://unpkg.com`
+- **logout 根本沒發 POST**：`if (token)` 檢查 `localStorage.getItem('dms_token')`，cookie 時代永遠 null → POST 從未發 → server session 沒刪。改無條件 POST
+- **fetchWithAuth 送 `Bearer null`** header：加 `if (token)` 才塞 Authorization
+- **bonus.html 重複包 window.fetch**：覆蓋掉 auth.js 全域包裝，所有 POST/PUT/DELETE 漏 `X-CSRF-Token` → CSRF 403。移除這層
+
+**633c295** 登出畫面不跳轉
+- fetch 可能 hang 導致 `await` 卡住，redirect 永遠跑不到
+- `AbortController` 3 秒強制 abort + `keepalive: true` + `window.location.replace`
+
+**3cfa37e** Zeabur DB 連線 timeout → container crash loop
+- `index.js` 原本 `initDatabase().catch(err => process.exit(1))` → DB 短暫掛就殺服務 → crash loop
+- 改：先起 HTTP server 讓 `/health` 200，DB init 背景 async loop 指數回退 2/4/8/16/32s 永不放棄，成功後才啟動 cleanupStaleRows / auditAlertDetector / auditCheckpointScheduler
+- `db/pool.js` 加 `connectionTimeoutMillis: 10_000` + `idleTimeoutMillis: 30_000` + `pool.on('error')` 接 idle 斷線
+- `routes/bodyshopBonus.js` 原 require-time 同步 `initTable()` 改背景 loop + rethrow 讓 retry 看到失敗
+
+---
+
+## 統計更新
+- 04-23 共 11 個 non-merge commit（`claude/fix-upload-error-dYN1c` 分支持續延伸）：
+  - 資安全面修補（CRITICAL + HIGH + MEDIUM 共 14 項） = 3 個大 commit
+  - 稽核系統四階段強化 = 1 個大 commit（含 3 個新 lib 檔 + 7 個新表 / 欄位 + ~1000 行）
+  - Session / 帳號鎖定 = 1 個大 commit
+  - 部署後連環 bug 修補 = 6 個
+- 04-22 ~ 04-23 session 累計 21 個 non-merge commit，單分支 4.5k+ 行新增
+- 本週期可見 non-merge commit 共 **100 個**
+- 主軸（追加）：**OWASP 全面修補 + 稽核系統防竄改 + 帳號鎖定 + 部署韌性**（04-23，系統從「功能堪用」拉到「可對外上線」）
