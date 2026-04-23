@@ -37,11 +37,14 @@ app.use(helmet({
     useDefaults: true,
     directives: {
       // 前端有大量 inline <script> 與 inline event handler；逐步移除前先保留 unsafe-inline
-      // CDN 白名單：jsdelivr（xlsx-js-style / @e965/xlsx）+ cdnjs（Chart.js / html2canvas 等）
+      // CDN 白名單：
+      //   jsdelivr / cdnjs — xlsx-js-style / @e965/xlsx / Chart.js / html2canvas / gridstack
+      //   fonts.googleapis.com — login.html 的 @import
+      //   fonts.gstatic.com    — 實際字型檔
       'script-src':       ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com'],
-      'style-src':        ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com'],
+      'style-src':        ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://fonts.googleapis.com'],
       'img-src':          ["'self'", 'data:', 'blob:'],
-      'font-src':         ["'self'", 'data:'],
+      'font-src':         ["'self'", 'data:', 'https://fonts.gstatic.com'],
       'connect-src':      ["'self'"],
       'frame-ancestors':  ["'none'"],
       'object-src':       ["'none'"],

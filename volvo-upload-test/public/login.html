@@ -415,8 +415,10 @@
       <span id="errorText"></span>
     </div>
 
-    <!-- Form -->
-    <form id="loginForm" onsubmit="handleLogin(event)" autocomplete="off">
+    <!-- Form — method="post" 是防禦層：若 JS handleLogin 因任何原因未能 preventDefault，
+         瀏覽器預設 GET 會把帳號/密碼放到 URL（危險）。明確指定 POST + 空 action
+         讓 fallback 也不會外漏密碼。 -->
+    <form id="loginForm" method="post" action="" onsubmit="handleLogin(event); return false" autocomplete="off">
 
       <div class="field">
         <label>帳號 / Username</label>
