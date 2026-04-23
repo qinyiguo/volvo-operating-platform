@@ -2053,31 +2053,47 @@ function renderUsersTable(users) {
   users.forEach(u => {
     const isMe = u.id === me?.id;
     const lastLogin = u.last_login ? new Date(u.last_login).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+    // 鎖定狀態徽章（優先於「啟用/停用」顯示）
+    let statusBadge;
+    if (u.lock_state === 'locked_permanent') {
+      statusBadge = `<span style="background:rgba(239,68,68,.15);color:#ef4444;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700">🔒 永久鎖定</span>`;
+    } else if (u.lock_state === 'locked_temp') {
+      const mins = Math.ceil((new Date(u.locked_until) - Date.now()) / 60000);
+      statusBadge = `<span style="background:rgba(245,158,11,.15);color:#f59e0b;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700">⏳ 暫時鎖定 (${mins}分)</span>`;
+    } else {
+      statusBadge = `<span style="background:${u.is_active?'rgba(16,185,129,.12)':'rgba(100,116,139,.12)'};color:${u.is_active?'#10b981':'#64748b'};padding:2px 8px;border-radius:5px;font-size:11px">
+          ${u.is_active ? '✅ 啟用' : '⛔ 停用'}
+        </span>`;
+    }
+    // 僅 super_admin 看得到「解鎖」按鈕；對 locked_permanent 特別顯眼
+    const canUnlock = me?.role === 'super_admin' && (u.lock_state === 'locked_permanent' || u.lock_state === 'locked_temp');
+    const unlockBtn = canUnlock ? `
+          <button onclick="unlockUser(${u.id},'${_h(u.username)}')"
+            style="background:rgba(16,185,129,.12);color:#10b981;border:1px solid rgba(16,185,129,.3);padding:4px 10px;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer;margin-right:4px">
+            🔓 解鎖
+          </button>` : '';
     html += `<tr style="${!u.is_active?'opacity:.4':''}">
       <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3)">
-        <span style="font-weight:700;color:#e2e8f0">${u.username}</span>
+        <span style="font-weight:700;color:#e2e8f0">${_h(u.username)}</span>
         ${isMe ? '<span style="background:rgba(59,130,246,.15);color:#60a5fa;font-size:10px;padding:1px 6px;border-radius:4px;margin-left:6px">我</span>' : ''}
       </td>
-      <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3);color:var(--text-muted)">${u.display_name}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3);color:var(--text-muted)">${_h(u.display_name)}</td>
       <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3)">
         <span style="background:${roleColor[u.role]}22;color:${roleColor[u.role]};padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700">
-          ${roleLabel[u.role] || u.role}
+          ${roleLabel[u.role] || _h(u.role)}
         </span>
       </td>
-      <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3);color:var(--text-dim)">${u.branch || '全廠'}</td>
-      <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3)">
-        <span style="background:${u.is_active?'rgba(16,185,129,.12)':'rgba(100,116,139,.12)'};color:${u.is_active?'#10b981':'#64748b'};padding:2px 8px;border-radius:5px;font-size:11px">
-          ${u.is_active ? '✅ 啟用' : '⛔ 停用'}
-        </span>
-      </td>
+      <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3);color:var(--text-dim)">${_h(u.branch || '全廠')}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3)">${statusBadge}</td>
       <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3);color:var(--text-dimmer);font-size:12px">${lastLogin}</td>
       <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center">
+        ${unlockBtn}
         ${!isMe ? `
           <button onclick="openEditUserModal(${JSON.stringify(u).replace(/"/g,'&quot;')})"
             style="background:rgba(59,130,246,.1);color:#3b82f6;border:1px solid rgba(59,130,246,.2);padding:4px 10px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;margin-right:4px">
             編輯
           </button>
-          <button onclick="deleteUser(${u.id},'${u.username}')"
+          <button onclick="deleteUser(${u.id},'${_h(u.username)}')"
             style="background:rgba(239,68,68,.08);color:#ef4444;border:1px solid rgba(239,68,68,.2);padding:4px 10px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer">
             刪除
           </button>
@@ -2397,6 +2413,18 @@ async function deleteUser(id, username) {
     if (data.error) throw new Error(data.error);
     loadUsers();
   } catch(e) { alert('刪除失敗：' + e.message); }
+}
+
+// 僅 super_admin 可用：解鎖帳號（清 failed_login_count / locked_until / had_temp_lock / requires_manual_unlock）
+async function unlockUser(id, username) {
+  if (!confirm(`確定解鎖「${username}」？將會清除所有鎖定狀態。`)) return;
+  try {
+    const res  = await DmsAuth.fetchWithAuth(`/api/users/${id}/unlock`, { method:'POST' });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    alert('✅ 已解鎖');
+    loadUsers();
+  } catch(e) { alert('解鎖失敗：' + e.message); }
 }
 
 // ══ 初始化 ══

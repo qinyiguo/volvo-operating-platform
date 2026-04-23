@@ -104,21 +104,33 @@ const ALL_PERMISSIONS = { ...PAGE_PERMISSIONS, ...BRANCH_PERMISSIONS, ...FEATURE
 // ═══ 超級管理員擁有所有權限 ═══
 const SUPER_ADMIN_PERMISSIONS = Object.keys(ALL_PERMISSIONS);
 
-// ═══ 從 DB 或 in-memory 驗證 token ═══
+// ═══ Session TTL（與 routes/users.js 保持一致）═══
+// 絕對 4 小時；閒置 30 分即自動失效（符合 OWASP ASVS L2 對含個資系統的建議）
+const SESSION_IDLE_MS = 30 * 60 * 1000;
+
+// ═══ 從 DB 或 in-memory 驗證 token（含絕對 + 閒置雙重超時） ═══
 async function resolveToken(token) {
   if (!token) return null;
   try {
     const r = await pool.query(`
-      SELECT s.token, s.expires_at,
+      SELECT s.token, s.expires_at, s.last_activity,
              u.id AS user_id, u.username, u.display_name,
              u.role, u.branch, u.is_active
       FROM user_sessions s
       JOIN users u ON u.id = s.user_id
-      WHERE s.token = $1 AND s.expires_at > NOW()
-    `, [token]);
+      WHERE s.token = $1
+        AND s.expires_at > NOW()
+        AND s.last_activity > NOW() - ($2::text || ' milliseconds')::interval
+    `, [token, String(SESSION_IDLE_MS)]);
     if (!r.rows.length) return null;
     const user = r.rows[0];
     if (!user.is_active) return null;
+    // 閒置活化：每次有效請求都把 last_activity 往前推（節流：<60s 內不重複寫）
+    pool.query(
+      `UPDATE user_sessions SET last_activity=NOW()
+         WHERE token=$1 AND last_activity < NOW() - INTERVAL '60 seconds'`,
+      [token]
+    ).catch(e => console.warn('[auth] last_activity update failed:', e.message));
     return user;
   } catch(e) {
     return null;

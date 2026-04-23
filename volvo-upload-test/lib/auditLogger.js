@@ -24,6 +24,7 @@ const METHOD_ACTION = {
 // 特定路由覆寫 action label
 const PATH_ACTION_MAP = [
   { pattern: /\/upload/i,                   action: 'UPLOAD'   },
+  { pattern: /\/unlock/i,                   action: 'ACCOUNT_UNLOCK' },
   { pattern: /\/login/i,                    action: 'LOGIN'    },
   { pattern: /\/logout/i,                   action: 'LOGOUT'   },
   { pattern: /\/export|\/csv/i,             action: 'DOWNLOAD' },
@@ -31,6 +32,24 @@ const PATH_ACTION_MAP = [
   { pattern: /\/password/i,                 action: 'PWD_CHANGE'},
   { pattern: /\/users/i,                    action: 'USER_MGMT'},
 ];
+
+// Action 中文對照（給 settings 稽核頁顯示用）
+const ACTION_LABELS = {
+  LOGIN:            '登入',
+  LOGOUT:           '登出',
+  PWD_CHANGE:       '改密碼',
+  USER_MGMT:        '使用者管理',
+  UPLOAD:           '上傳',
+  DOWNLOAD:         '下載',
+  SUBMIT:           '提交',
+  VIEW:             '檢視',
+  CREATE:           '建立',
+  UPDATE:           '更新',
+  DELETE:           '刪除',
+  LOGIN_LOCK_TEMP:  '帳號暫時鎖定',
+  LOGIN_LOCK_PERM:  '帳號永久鎖定',
+  ACCOUNT_UNLOCK:   '帳號解鎖',
+};
 
 // 對應路由的人可讀名稱
 const RESOURCE_LABELS = {

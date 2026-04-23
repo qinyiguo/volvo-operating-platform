@@ -50,6 +50,15 @@ const {
 const PBKDF2_ITER_DEFAULT = 600000;
 const PASSWORD_MIN_LENGTH = 10;
 
+// ── Session TTL（OWASP ASVS L2 / 含個資的內部系統規格）──
+// 絕對 4 小時；閒置 30 分即自動失效（lib/authMiddleware.js 會檢查 last_activity）
+const SESSION_ABSOLUTE_MS = 4 * 60 * 60 * 1000;
+const SESSION_IDLE_MS     = 30 * 60 * 1000;
+
+// ── 帳號鎖定（3 次錯 → 15 分；再錯 3 次 → 永久鎖）──
+const LOCK_THRESHOLD  = 3;
+const LOCK_DURATION_MS = 15 * 60 * 1000;
+
 function hashPassword(password, salt, iterations = PBKDF2_ITER_DEFAULT) {
   return crypto.pbkdf2Sync(password, salt, iterations, 32, 'sha256').toString('hex');
 }
@@ -94,13 +103,73 @@ router.post('/users/login', async (req, res, next) => {
     const r = await pool.query(
       `SELECT * FROM users WHERE username = $1`, [username.trim()]
     );
+    // 使用者不存在 → 回統一訊息避免帳號列舉
     if (!r.rows.length) return res.status(401).json({ error: '帳號或密碼錯誤' });
     const user = r.rows[0];
     if (!user.is_active) return res.status(403).json({ error: '帳號已停用，請聯絡管理員' });
-    const storedIter = user.password_iterations || 100000;
-    if (!verifyPassword(password, user.password_hash, user.password_salt, storedIter)) {
-      return res.status(401).json({ error: '帳號或密碼錯誤' });
+
+    // ── 帳號鎖定檢查 ──
+    // 永久鎖：需 super_admin 解鎖
+    if (user.requires_manual_unlock) {
+      return res.status(403).json({
+        error: '帳號已鎖定，請聯絡系統管理員解鎖',
+        code:  'ACCOUNT_LOCKED_PERM'
+      });
     }
+    // 暫時鎖：還沒到期
+    if (user.locked_until && new Date(user.locked_until) > new Date()) {
+      const mins = Math.ceil((new Date(user.locked_until) - Date.now()) / 60000);
+      return res.status(403).json({
+        error: `帳號暫時鎖定，請 ${mins} 分鐘後再試`,
+        code:  'ACCOUNT_LOCKED_TEMP',
+        locked_until: user.locked_until,
+      });
+    }
+
+    // ── 驗證密碼 ──
+    const storedIter = user.password_iterations || 100000;
+    const ok = verifyPassword(password, user.password_hash, user.password_salt, storedIter);
+
+    if (!ok) {
+      // 失敗計數遞增；達門檻 → 暫時鎖 / 永久鎖
+      const newCount = (user.failed_login_count || 0) + 1;
+      if (newCount >= LOCK_THRESHOLD) {
+        if (user.had_temp_lock) {
+          // 之前被暫時鎖過且又錯到第 3 次 → 永久鎖，需 super_admin 解
+          await pool.query(
+            `UPDATE users SET requires_manual_unlock=true, failed_login_count=0, locked_until=NULL WHERE id=$1`,
+            [user.id]
+          );
+          await writeLoginLock(req, user, 'LOGIN_LOCK_PERM', '永久鎖定（需管理員解鎖）');
+          return res.status(403).json({
+            error: '帳號已鎖定，請聯絡系統管理員解鎖',
+            code:  'ACCOUNT_LOCKED_PERM'
+          });
+        } else {
+          // 首次達門檻 → 暫時鎖 15 分鐘
+          const until = new Date(Date.now() + LOCK_DURATION_MS);
+          await pool.query(
+            `UPDATE users SET failed_login_count=0, locked_until=$2, had_temp_lock=true WHERE id=$1`,
+            [user.id, until]
+          );
+          await writeLoginLock(req, user, 'LOGIN_LOCK_TEMP', '暫時鎖定 15 分鐘');
+          return res.status(403).json({
+            error: '連續錯誤 3 次，帳號已暫時鎖定 15 分鐘',
+            code:  'ACCOUNT_LOCKED_TEMP',
+            locked_until: until,
+          });
+        }
+      } else {
+        await pool.query(`UPDATE users SET failed_login_count=$2 WHERE id=$1`, [user.id, newCount]);
+        return res.status(401).json({ error: '帳號或密碼錯誤' });
+      }
+    }
+
+    // ── 驗證成功：清失敗計數與鎖定狀態 ──
+    await pool.query(
+      `UPDATE users SET failed_login_count=0, locked_until=NULL, had_temp_lock=false, last_login=NOW() WHERE id=$1`,
+      [user.id]
+    );
 
     // 漸進升級：舊 100k → 600k 重算，使用者無感
     if (storedIter < PBKDF2_ITER_DEFAULT) {
@@ -116,37 +185,30 @@ router.post('/users/login', async (req, res, next) => {
       }
     }
 
-    // 建立 session token，8 小時有效
+    // 建立 session token（4h 絕對 + 30min 閒置）
     const token     = generateToken();
-    const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + SESSION_ABSOLUTE_MS);
     await pool.query(
-      `INSERT INTO user_sessions (token, user_id, expires_at) VALUES ($1, $2, $3)`,
+      `INSERT INTO user_sessions (token, user_id, expires_at, last_activity) VALUES ($1, $2, $3, NOW())`,
       [token, user.id, expiresAt]
-    );
-
-    // 更新最後登入時間
-    await pool.query(
-      `UPDATE users SET last_login = NOW() WHERE id = $1`, [user.id]
     );
 
     const permissions = await getUserPermissions(user.id, user.role);
 
-    // 安全：token 改用 HttpOnly cookie（XSS 取不到），搭配 SameSite=Lax 防 CSRF 的主力
-    // 並發 CSRF token（非 HttpOnly）供前端 JS 讀取並回填 X-CSRF-Token header
+    // Cookie（HttpOnly 防 XSS）+ CSRF token
     const csrfToken = crypto.randomBytes(24).toString('hex');
     const isHttps   = process.env.NODE_ENV === 'production';
-    const maxAge    = 8 * 60 * 60 * 1000;
     res.cookie('dms_token', token, {
       httpOnly: true, secure: isHttps, sameSite: 'lax',
-      maxAge, path: '/',
+      maxAge: SESSION_ABSOLUTE_MS, path: '/',
     });
     res.cookie('dms_csrf', csrfToken, {
       httpOnly: false, secure: isHttps, sameSite: 'lax',
-      maxAge, path: '/',
+      maxAge: SESSION_ABSOLUTE_MS, path: '/',
     });
 
     res.json({
-      // token 仍回傳讓 curl/Postman/舊 client 相容；cookie 已設好，前端不必存
+      // token 仍回傳讓 curl/Postman/舊 client 相容
       token,
       csrf_token: csrfToken,
       user: {
@@ -158,9 +220,24 @@ router.post('/users/login', async (req, res, next) => {
         permissions,
       },
       expires_at: expiresAt,
+      idle_timeout_ms: SESSION_IDLE_MS,  // 前端用來做 idle countdown
     });
   } catch(err) { next(err); }
 });
+
+// 寫帳號鎖定事件到 audit_logs（手動寫，因為 login 無 req.user）
+async function writeLoginLock(req, user, action, detail) {
+  try {
+    const { writeLog } = require('../lib/auditLogger');
+    const fakeReq = Object.assign({}, req, {
+      user: {
+        user_id: user.id, username: user.username, display_name: user.display_name,
+        role: user.role, branch: user.branch,
+      },
+    });
+    await writeLog(fakeReq, { action, resource: '帳號鎖定', detail });
+  } catch(e) { console.warn('[login-lock] audit write failed:', e.message); }
+}
 
 // POST /api/users/logout
 router.post('/users/logout', requireAuth, async (req, res, next) => {
@@ -213,15 +290,17 @@ router.get('/users/permissions-schema', requireAuth, (req, res) => {
 // ═══════════════════════════════════════════════
 
 // GET /api/users — 列出所有使用者（依角色過濾）
-router.get('/users', requireAuth, requirePermission('feature:user_manage'), async (req, res) => {
+router.get('/users', requireAuth, requirePermission('feature:user_manage'), async (req, res, next) => {
   try {
+    const cols = `id, username, display_name, role, branch, is_active, last_login, created_at,
+                  failed_login_count, locked_until, had_temp_lock, requires_manual_unlock`;
     let query, params;
     if (req.user.role === 'super_admin') {
-      query  = `SELECT id, username, display_name, role, branch, is_active, last_login, created_at FROM users ORDER BY role, username`;
+      query  = `SELECT ${cols} FROM users ORDER BY role, username`;
       params = [];
     } else if (req.user.role === 'branch_admin') {
       // 據點管理員只能看自己據點的使用者
-      query  = `SELECT id, username, display_name, role, branch, is_active, last_login, created_at FROM users WHERE branch = $1 AND role = 'user' ORDER BY username`;
+      query  = `SELECT ${cols} FROM users WHERE branch = $1 AND role = 'user' ORDER BY username`;
       params = [req.user.branch];
     } else {
       return res.status(403).json({ error: '無使用者管理權限' });
@@ -238,12 +317,19 @@ router.get('/users', requireAuth, requirePermission('feature:user_manage'), asyn
       );
       pr.rows.forEach(p => { permMap[p.user_id] = p.permissions; });
     }
-    const users = r.rows.map(u => ({
-      ...u,
-      permissions: u.role === 'super_admin' ? SUPER_ADMIN_PERMISSIONS : (permMap[u.id] || []),
-    }));
+    const users = r.rows.map(u => {
+      // 鎖定狀態 enum 給前端顯示用
+      let lock_state = 'normal';
+      if (u.requires_manual_unlock)            lock_state = 'locked_permanent';
+      else if (u.locked_until && new Date(u.locked_until) > new Date()) lock_state = 'locked_temp';
+      return {
+        ...u,
+        permissions: u.role === 'super_admin' ? SUPER_ADMIN_PERMISSIONS : (permMap[u.id] || []),
+        lock_state,
+      };
+    });
     res.json(users);
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { next(err); }
 });
 
 // POST /api/users — 新增使用者
@@ -387,12 +473,43 @@ router.put('/users/:id/password', requireAuth, async (req, res, next) => {
 
     const salt = generateSalt();
     const hash = hashPassword(password, salt, PBKDF2_ITER_DEFAULT);
+    // 改密碼同時清鎖定狀態（管理員重設給被鎖帳號時很重要）
     await pool.query(
-      `UPDATE users SET password_hash=$1, password_salt=$2, password_iterations=$3, updated_at=NOW() WHERE id=$4`,
+      `UPDATE users
+         SET password_hash=$1, password_salt=$2, password_iterations=$3,
+             failed_login_count=0, locked_until=NULL, had_temp_lock=false, requires_manual_unlock=false,
+             updated_at=NOW()
+       WHERE id=$4`,
       [hash, salt, PBKDF2_ITER_DEFAULT, targetId]
     );
     // 強制登出該使用者所有 session
     await revokeAllSessions(targetId);
+    res.json({ ok: true });
+  } catch(err) { next(err); }
+});
+
+// POST /api/users/:id/unlock — 解鎖帳號（僅 super_admin）
+router.post('/users/:id/unlock', requireAuth, async (req, res, next) => {
+  const targetId = parseInt(req.params.id);
+  if (req.user.role !== 'super_admin') {
+    return res.status(403).json({ error: '僅系統管理員可解鎖帳號' });
+  }
+  try {
+    const target = await pool.query(`SELECT id, username, display_name, role, branch FROM users WHERE id=$1`, [targetId]);
+    if (!target.rows.length) return res.status(404).json({ error: '找不到使用者' });
+    await pool.query(
+      `UPDATE users SET failed_login_count=0, locked_until=NULL, had_temp_lock=false, requires_manual_unlock=false WHERE id=$1`,
+      [targetId]
+    );
+    // 稽核紀錄
+    try {
+      const { writeLog } = require('../lib/auditLogger');
+      await writeLog(req, {
+        action: 'ACCOUNT_UNLOCK',
+        resource: '帳號解鎖',
+        detail: `解鎖 ${target.rows[0].username}（${target.rows[0].display_name || ''}）`
+      });
+    } catch(e) {}
     res.json({ ok: true });
   } catch(err) { next(err); }
 });

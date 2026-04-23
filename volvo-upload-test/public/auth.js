@@ -455,4 +455,34 @@
     } catch (e) { /* fall through — 不阻斷原始請求 */ }
     return _origFetch(input, init);
   };
+
+  // ── 閒置自動登出（30 分鐘無操作 → 警告 → 登出）──
+  // 伺服端 session 也有 30 分閒置檢查（lib/authMiddleware resolveToken）；
+  // 這邊只是 UX 提示 + 主動登出，避免離座時畫面一直留著敏感資料。
+  const IDLE_LIMIT_MS  = 30 * 60 * 1000;       // 30 分鐘
+  const IDLE_WARN_MS   = IDLE_LIMIT_MS - 60000; // 最後 1 分鐘顯示警告
+  let _idleLast = Date.now();
+  let _idleWarnShown = false;
+  function _resetIdle() { _idleLast = Date.now(); _idleWarnShown = false; const b=document.getElementById('_idleWarnBar'); if (b) b.remove(); }
+  ['mousedown','keydown','scroll','touchstart','click'].forEach(ev => {
+    document.addEventListener(ev, _resetIdle, { passive: true, capture: true });
+  });
+  setInterval(() => {
+    // 無登入狀態（login 頁）就不啟用
+    if (!window._currentUser) return;
+    const idle = Date.now() - _idleLast;
+    if (idle >= IDLE_LIMIT_MS) {
+      try { alert('閒置超過 30 分鐘，已自動登出'); } catch(e) {}
+      window.DmsAuth.logout();
+      return;
+    }
+    if (idle >= IDLE_WARN_MS && !_idleWarnShown) {
+      _idleWarnShown = true;
+      const bar = document.createElement('div');
+      bar.id = '_idleWarnBar';
+      bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;padding:10px 16px;background:#fef3c7;color:#92400e;font-size:13px;font-weight:700;text-align:center;border-bottom:2px solid #f59e0b';
+      bar.textContent = '⏰ 閒置即將自動登出，請點擊畫面任一處以延長 session';
+      document.body.appendChild(bar);
+    }
+  }, 30000); // 30 秒檢查一次
 })();

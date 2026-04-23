@@ -667,14 +667,24 @@ await client.query(`CREATE INDEX IF NOT EXISTS idx_business_query_period_branch 
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS user_sessions (
-        token      VARCHAR(70)  PRIMARY KEY,
-        user_id    INTEGER      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        expires_at TIMESTAMPTZ  NOT NULL,
-        created_at TIMESTAMPTZ  DEFAULT NOW()
+        token         VARCHAR(70)  PRIMARY KEY,
+        user_id       INTEGER      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        expires_at    TIMESTAMPTZ  NOT NULL,
+        last_activity TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+        created_at    TIMESTAMPTZ  DEFAULT NOW()
       )
     `);
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_sessions_user    ON user_sessions(user_id)`);
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_sessions_expires ON user_sessions(expires_at)`);
+    // 舊 DB 補欄位（閒置超時用）
+    await client.query(`ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS last_activity TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_sessions_user     ON user_sessions(user_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_sessions_expires  ON user_sessions(expires_at)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_sessions_activity ON user_sessions(last_activity)`);
+
+    // ── 帳號鎖定欄位（3 次錯 → 15 分暫時鎖；再錯 3 次 → 永久鎖需 super_admin 解）──
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_login_count     INTEGER     NOT NULL DEFAULT 0`);
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until           TIMESTAMPTZ`);
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS had_temp_lock          BOOLEAN     NOT NULL DEFAULT false`);
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS requires_manual_unlock BOOLEAN     NOT NULL DEFAULT false`);
 
    // ── 操作紀錄 ──
   await client.query(`
