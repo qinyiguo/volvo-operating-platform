@@ -832,17 +832,10 @@ if (me && me.branch) {
     }
   }
 
-  // 攔截所有 /api/ 請求，自動帶入 auth token
-  const _origFetch = window.fetch;
-  window.fetch = function(url, opts) {
-    opts = opts || {};
-    if (typeof url === 'string' && url.startsWith('/api/')) {
-      opts.headers = opts.headers || {};
-      const token = localStorage.getItem('dms_token');
-      if (token) opts.headers['Authorization'] = 'Bearer ' + token;
-    }
-    return _origFetch.call(this, url, opts);
-  };
+  // 注：原本這裡有自己的 window.fetch 包裝以帶 Authorization: Bearer ${localStorage.dms_token}，
+  // 已移除；全部交給 auth.js 的全域 fetch 包裝（處理 cookie credentials + X-CSRF-Token header +
+  // Bearer 相容）。Cookie 時代 localStorage 沒 token 了，原本那層只會送 'Bearer null' 或沒 header，
+  // 且會覆蓋掉 auth.js 的 CSRF header → POST/PUT/DELETE 被 CSRF middleware 擋 403。
 
   await loadPeriods();
   await loadPerfMetricsList();
