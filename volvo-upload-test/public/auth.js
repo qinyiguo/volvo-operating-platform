@@ -174,17 +174,25 @@
 
     // ── 登出 ──
     async logout() {
+      const clearAndRedirect = () => {
+        try { this.clear(); } catch(e) {}
+        window.location.replace('/login.html');
+      };
       const token = this.getToken();
       if (token) {
         try {
+          const ctrl  = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 3000);
           await fetch('/api/users/logout', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${token}` },
+            signal: ctrl.signal,
+            keepalive: true,
           });
-        } catch(e) {}
+          clearTimeout(timer);
+        } catch(e) { /* abort / 網路錯都照樣登出跳轉 */ }
       }
-      this.clear();
-      window.location.href = '/login.html';
+      clearAndRedirect();
     },
 
     // ── API 請求（自動帶 token）──
