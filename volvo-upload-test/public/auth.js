@@ -182,24 +182,30 @@
     },
 
     // ── 登出 ──
+    // Cookie 時代：即使 localStorage 沒 token，server 也會依 dms_token cookie 刪 session。
+    // 不再用 Authorization header，讓全域 fetch 包裝器處理 credentials + CSRF（/users/logout
+    // 在 server CSRF middleware 已豁免，X-CSRF-Token 可缺）。
+    // 加 3 秒 AbortController 保險：即便 fetch 因任何原因 hang，前端也保證跳到 login 頁；
+    // 伺服端 session 還沒被刪也沒關係，4h 後自然過期 + cookie 已清。
     async logout() {
-      const token = this.getToken();
-      if (token) {
-        try {
-          await fetch('/api/users/logout', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-        } catch(e) {}
-      }
-      this.clear();
-      window.location.href = '/login.html';
+      const clearAndRedirect = () => {
+        try { this.clear(); } catch(e) {}
+        window.location.replace('/login.html');
+      };
+      try {
+        const ctrl  = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 3000);
+        await fetch('/api/users/logout', { method: 'POST', signal: ctrl.signal, keepalive: true });
+        clearTimeout(timer);
+      } catch(e) { /* 包含 abort、網路錯 — 都照樣登出跳轉 */ }
+      clearAndRedirect();
     },
 
-    // ── API 請求（自動帶 token）──
+    // ── API 請求（cookie 會自動帶，僅在有 localStorage token 時補 Bearer 相容）──
     fetchWithAuth(url, options = {}) {
       const token = this.getToken();
-      const headers = { ...(options.headers || {}), 'Authorization': `Bearer ${token}` };
+      const headers = { ...(options.headers || {}) };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
       return fetch(url, { ...options, headers });
     },
 
