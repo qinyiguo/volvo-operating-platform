@@ -85,10 +85,32 @@ async function cleanupStaleRows() {
 }
 
 // ── 啟動 ──
-initDatabase()
-  .then(() => app.listen(PORT, () => console.log(`Server running on port ${PORT}`)))
-  .then(() => {
-    cleanupStaleRows();                                   // 啟動後跑一次
-    setInterval(cleanupStaleRows, 24 * 60 * 60 * 1000);   // 之後每 24h
-  })
-  .catch(err => { console.error('DB初始化失敗:', err.message); process.exit(1); });
+// 策略：先起 HTTP server 讓 /health 立即可用，DB 初始化在背景重試到成功為止。
+const server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// Graceful shutdown
+['SIGTERM', 'SIGINT'].forEach(sig => {
+  process.on(sig, () => {
+    console.log(`[${sig}] shutting down...`);
+    server.close(() => pool.end().finally(() => process.exit(0)));
+    setTimeout(() => process.exit(1), 10000).unref();
+  });
+});
+
+// 背景 DB 初始化：指數回退重試，不再直接 process.exit
+(async function bootstrapDatabase() {
+  const MAX_BACKOFF_MS = 30_000;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await initDatabase();
+      console.log(`[initDB] ✅ 完成（嘗試 ${attempt} 次）`);
+      break;
+    } catch (err) {
+      const wait = Math.min(MAX_BACKOFF_MS, 2000 * Math.pow(2, Math.min(attempt - 1, 4)));
+      console.error(`[initDB] 嘗試 ${attempt} 失敗：${err.message} — ${wait / 1000}s 後重試`);
+      await new Promise(r => setTimeout(r, wait));
+    }
+  }
+  cleanupStaleRows();                                   // 啟動後跑一次
+  setInterval(cleanupStaleRows, 24 * 60 * 60 * 1000);   // 之後每 24h
+})();
