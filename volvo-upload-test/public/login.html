@@ -415,10 +415,13 @@
       <span id="errorText"></span>
     </div>
 
-    <!-- Form — method="post" 是防禦層：若 JS handleLogin 因任何原因未能 preventDefault，
-         瀏覽器預設 GET 會把帳號/密碼放到 URL（危險）。明確指定 POST + 空 action
-         讓 fallback 也不會外漏密碼。 -->
-    <form id="loginForm" method="post" action="" onsubmit="handleLogin(event); return false" autocomplete="off">
+    <!-- Form — method="post" + action="" 是底層防禦：若 JS 沒掛上 submit listener，
+         最差情況也只會 POST 到 /login.html 拿到 404，不會把帳密塞 URL 外洩。
+         真正攔截在下方 <script> 用 addEventListener('submit', …, capture=true)，
+         確保 preventDefault 一定先跑、不依賴 inline onsubmit 的 ReferenceError 行為。 -->
+    <form id="loginForm" method="post" action=""
+          onsubmit="event.preventDefault();return false;"
+          autocomplete="off">
 
       <div class="field">
         <label>帳號 / Username</label>
@@ -575,6 +578,14 @@ async function handleLogin(e) {
 document.getElementById('password').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('loginForm').requestSubmit();
 });
+
+// ── 表單提交：用 addEventListener + capture 確保 preventDefault 先跑 ──
+// 不用 inline onsubmit 的原因：若 handleLogin 因任何原因未定義 / 拋例外，
+// inline 寫法會讓 browser fallback 到 native submit（POST /login.html → 404）。
+document.getElementById('loginForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  if (typeof handleLogin === 'function') handleLogin(e);
+}, true);
 </script>
 </body>
 </html>
