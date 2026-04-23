@@ -159,18 +159,24 @@ function extractDataContext(req) {
 }
 
 // ─── 核心寫入函式 ─────────────────────────────────────────────────
+// req._audit_user / req._audit_username / req._audit_detail 可由 route 先設好，
+// middleware 於 res.end hook 觸發 writeLog 時會讀取這些欄位（用於 login handler：
+// req.user 尚未由 requireAuth 設定時，login route 自己 stash 使用者資訊）。
 async function writeLog(req, overrides = {}) {
   try {
-    const user    = req.user || null;
+    const user    = req.user || req._audit_user || null;
     const ip      = getClientIP(req);
     const ua      = (req.headers['user-agent'] || '').slice(0, 300);
     const path    = req.path || req.url || '';
     const method  = req.method || 'GET';
     const ctx     = extractDataContext(req);
 
+    // username 解析優先序：req.user → req._audit_username（失敗登入時用）→ 'anonymous'
+    const effectiveUsername = user?.username || req._audit_username || 'anonymous';
+
     const row = {
       user_id:      user?.user_id  || null,
-      username:     user?.username || 'anonymous',
+      username:     effectiveUsername,
       display_name: user?.display_name || '',
       user_role:    user?.role     || '',
       user_branch:  user?.branch   || null,
@@ -179,7 +185,9 @@ async function writeLog(req, overrides = {}) {
       action:       overrides.action       || resolveAction(method, path),
       resource:     overrides.resource     || resolveResource(path),
       resource_path: overrides.path        || path.split('?')[0],
-      resource_detail: overrides.detail   || null,
+      // resource_detail 優先用 overrides > req._audit_detail（route stash）> null
+      resource_detail: overrides.detail !== undefined ? overrides.detail
+                      : (req._audit_detail != null ? req._audit_detail : null),
       data_branch:  overrides.data_branch  || ctx.data_branch,
       data_period:  overrides.data_period  || ctx.data_period,
       status_code:  overrides.status_code  || null,

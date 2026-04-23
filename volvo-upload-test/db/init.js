@@ -717,6 +717,77 @@ await client.query(`CREATE INDEX IF NOT EXISTS idx_business_query_period_branch 
   await client.query(`CREATE INDEX IF NOT EXISTS idx_al_ip       ON audit_logs(ip_address, created_at DESC)`);
   await client.query(`CREATE INDEX IF NOT EXISTS idx_al_branch   ON audit_logs(user_branch, created_at DESC)`);
   await client.query(`CREATE INDEX IF NOT EXISTS idx_al_data_br  ON audit_logs(data_branch)`);
+  // keyword ILIKE 搜尋 resource_detail 用 pg_trgm GIN 索引加速（有些 managed DB 需要 superuser 裝 extension；失敗就跳過）
+  try {
+    await client.query(`CREATE EXTENSION IF NOT EXISTS pg_trgm`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_al_detail_trgm ON audit_logs USING GIN (resource_detail gin_trgm_ops)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_al_resource_trgm ON audit_logs USING GIN (resource gin_trgm_ops)`);
+  } catch(e) { console.warn('[initDB] pg_trgm 不可用，keyword 搜尋將走 seq scan:', e.message); }
+
+  // ── 資安告警（背景偵測器寫入；super_admin 可於設定頁查看 / 認領）──
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS audit_alerts (
+      id               BIGSERIAL  PRIMARY KEY,
+      alert_type       VARCHAR(40) NOT NULL,   -- BRUTE_FORCE / MASS_DOWNLOAD / MULTI_LOCK / SUSPICIOUS_DELETE / MANY_AUTH_FAIL
+      severity         VARCHAR(10) NOT NULL,   -- critical | high | medium
+      triggered_at     TIMESTAMPTZ DEFAULT NOW(),
+      window_start     TIMESTAMPTZ,            -- 偵測視窗起點
+      window_end       TIMESTAMPTZ,            -- 偵測視窗結束
+      signature        VARCHAR(200),           -- 去重用：同 signature 1h 內不重複告警
+      summary          TEXT NOT NULL,
+      details          JSONB,                  -- { ip, username, count, sample_ids: [..], ... }
+      acknowledged_by  INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      acknowledged_at  TIMESTAMPTZ,
+      webhook_sent     BOOLEAN DEFAULT false
+    )
+  `);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_alerts_trig  ON audit_alerts(triggered_at DESC)`);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_alerts_ack   ON audit_alerts(acknowledged_at) WHERE acknowledged_at IS NULL`);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_alerts_sig   ON audit_alerts(signature, triggered_at DESC)`);
+
+  // ── 稽核清理雙人審核（審核者必須不同於發起者）──
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS audit_cleanup_requests (
+      id              SERIAL PRIMARY KEY,
+      requester_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      requester_name  VARCHAR(100),
+      keep_days       INTEGER NOT NULL,
+      reason          TEXT,
+      status          VARCHAR(20) NOT NULL DEFAULT 'pending',  -- pending | approved | rejected | expired
+      approver_id     INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      approver_name   VARCHAR(100),
+      approved_at     TIMESTAMPTZ,
+      deleted_rows    INTEGER,
+      created_at      TIMESTAMPTZ DEFAULT NOW(),
+      expires_at      TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '24 hours')
+    )
+  `);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_acr_status ON audit_cleanup_requests(status, created_at DESC)`);
+
+  // ── 稽核防竄改：月度 hash-chain checkpoints ──
+  // 每月第一天為上個月的 audit_logs 做 SHA-256 摘要 + prev_hash chain。
+  // 若有人改了歷史 row，後續 verify 會對不上。
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS audit_checkpoints (
+      id          SERIAL PRIMARY KEY,
+      period      VARCHAR(7)  NOT NULL UNIQUE,       -- YYYY-MM
+      row_count   INTEGER     NOT NULL DEFAULT 0,
+      min_id      BIGINT,
+      max_id      BIGINT,
+      chain_hash  VARCHAR(64) NOT NULL,              -- SHA-256 of (prev_hash || rows_digest)
+      prev_hash   VARCHAR(64),                       -- 鏈接前一月
+      created_at  TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  // DB 層保護：阻止對 audit_logs 做 UPDATE（DELETE 仍開放給 cleanup job / 2-admin approval 用）
+  // 某些 managed PG 可能會限制 CREATE RULE，以 try/catch 包起來。
+  try {
+    await client.query(`
+      CREATE OR REPLACE RULE audit_logs_no_update AS
+      ON UPDATE TO audit_logs DO INSTEAD NOTHING
+    `);
+  } catch(e) { console.warn('[initDB] audit_logs_no_update rule:', e.message); }
  
   // 自動分區清理（可選）：保留 180 天
   // 若資料量龐大，可考慮設定 pg_partman 或排程清理

@@ -462,12 +462,21 @@ router.put('/bonus/metrics/:id', requirePermission('feature:bonus_metric_edit'),
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/bonus/metrics/:id', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
+router.delete('/bonus/metrics/:id', requirePermission('feature:bonus_metric_edit'), async (req, res, next) => {
   try {
+    // 先撈出即將刪除的指標資訊供稽核
+    const pre = await pool.query(`SELECT metric_name, scope_type, scope_value FROM bonus_metrics WHERE id=$1`, [req.params.id]);
+    const preT = await pool.query(`SELECT COUNT(*) AS c FROM bonus_targets WHERE metric_id=$1`, [req.params.id]);
     await pool.query(`DELETE FROM bonus_targets WHERE metric_id=$1`, [req.params.id]);
     await pool.query(`DELETE FROM bonus_metrics WHERE id=$1`, [req.params.id]);
+    if (pre.rows.length) {
+      const m = pre.rows[0];
+      req._audit_detail = `刪除獎金指標 id=${req.params.id} name="${m.metric_name}" scope=${m.scope_type}:${m.scope_value || ''} 連同 ${preT.rows[0].c} 筆目標`;
+    } else {
+      req._audit_detail = `刪除獎金指標 id=${req.params.id}（原不存在）`;
+    }
     res.json({ ok: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { next(err); }
 });
 
 // ══════════════════════════════════════════════

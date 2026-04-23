@@ -112,14 +112,15 @@ router.put('/revenue-targets/batch', requirePermission('feature:revenue_target_e
   finally { client.release(); }
 });
 
-router.delete('/revenue-targets', requirePermission('feature:revenue_target_edit'), async (req, res) => {
+router.delete('/revenue-targets', requirePermission('feature:revenue_target_edit'), async (req, res, next) => {
   const { branch, period } = req.query;
   if (!branch || !period) return res.status(400).json({ error: 'branch 和 period 為必填' });
   if (checkPeriodLock(period, res, req)) return;
   try {
-    await pool.query(`DELETE FROM revenue_targets WHERE branch=$1 AND period=$2`, [branch, period]);
+    const r = await pool.query(`DELETE FROM revenue_targets WHERE branch=$1 AND period=$2`, [branch, period]);
+    req._audit_detail = `刪除營收目標 branch=${branch} period=${period} (${r.rowCount} 筆)`;
     res.json({ ok: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { next(err); }
 });
 
 // ── 營收目標 Excel 匯入（範本格式）──

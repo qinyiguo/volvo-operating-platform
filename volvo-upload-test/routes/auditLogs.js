@@ -237,24 +237,183 @@ router.get('/audit-logs/user/:username', async (req, res) => {
 
 // ─── DELETE /api/audit-logs/cleanup ─────────────────────────────
 // 清理舊紀錄（只有 super_admin 可執行）
-router.delete('/audit-logs/cleanup', async (req, res) => {
-  if (req.user.role !== 'super_admin') return res.status(403).json({ error: '僅超級管理員可執行' });
-  const { keep_days = 90 } = req.query;
+// ═══════════════════════════════════════════════
+// 稽核清理：雙人審核制（防單一 super_admin 洗稽核）
+// 流程: A super_admin POST request → B 另一個 super_admin POST approve → 執行 DELETE
+// ═══════════════════════════════════════════════
+
+// 發起清理申請
+router.post('/audit-logs/cleanup-requests', async (req, res, next) => {
+  if (req.user.role !== 'super_admin') return res.status(403).json({ error: '僅超級管理員可申請' });
+  const keep_days = parseInt(req.body?.keep_days);
+  const reason    = String(req.body?.reason || '').trim();
+  if (!keep_days || keep_days < 30) return res.status(400).json({ error: 'keep_days 必須 ≥ 30（防誤刪）' });
+  if (!reason) return res.status(400).json({ error: '請填寫清理理由' });
   try {
     const r = await pool.query(
-      `DELETE FROM audit_logs WHERE created_at < NOW() - ($1 || ' days')::interval RETURNING id`,
-      [parseInt(keep_days) || 90]
+      `INSERT INTO audit_cleanup_requests (requester_id, requester_name, keep_days, reason)
+       VALUES ($1,$2,$3,$4) RETURNING id, created_at, expires_at`,
+      [req.user.user_id, req.user.display_name || req.user.username, keep_days, reason]
     );
-    // 記錄這次清理操作本身
-    await pool.query(`
-      INSERT INTO audit_logs
-        (username, display_name, user_role, ip_address, action, resource, resource_detail)
-      VALUES ($1,$2,$3,$4,'DELETE','操作紀錄清理',$5)
-    `, [req.user.username, req.user.display_name, req.user.role,
-        req.headers['x-forwarded-for'] || req.ip,
-        `清除 ${keep_days} 天前紀錄，共 ${r.rowCount} 筆`]);
-    res.json({ ok: true, deleted: r.rowCount, keep_days });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+    req._audit_detail = `發起稽核清理申請 keep_days=${keep_days} reason="${reason}"`;
+    res.json({ ok: true, ...r.rows[0], keep_days, reason });
+  } catch(err) { next(err); }
+});
+
+// 列出待審核申請
+router.get('/audit-logs/cleanup-requests', async (req, res, next) => {
+  if (req.user.role !== 'super_admin') return res.status(403).json({ error: '僅超級管理員可檢視' });
+  try {
+    // 過期的 pending 標記為 expired
+    await pool.query(
+      `UPDATE audit_cleanup_requests SET status='expired' WHERE status='pending' AND expires_at < NOW()`
+    );
+    const r = await pool.query(
+      `SELECT * FROM audit_cleanup_requests ORDER BY created_at DESC LIMIT 50`
+    );
+    res.json(r.rows);
+  } catch(err) { next(err); }
+});
+
+// 核准申請 → 執行清理（審核者必須不是發起者）
+router.post('/audit-logs/cleanup-requests/:id/approve', async (req, res, next) => {
+  if (req.user.role !== 'super_admin') return res.status(403).json({ error: '僅超級管理員可核准' });
+  try {
+    const r = await pool.query(
+      `SELECT * FROM audit_cleanup_requests WHERE id=$1`, [req.params.id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error: '找不到申請' });
+    const reqRow = r.rows[0];
+    if (reqRow.status !== 'pending') return res.status(400).json({ error: `申請狀態為 ${reqRow.status}，無法核准` });
+    if (new Date(reqRow.expires_at) < new Date()) return res.status(400).json({ error: '申請已過期（24 小時）' });
+    if (reqRow.requester_id === req.user.user_id) {
+      return res.status(403).json({ error: '不能核准自己發起的申請（雙人審核）' });
+    }
+    // 執行清理
+    const del = await pool.query(
+      `DELETE FROM audit_logs WHERE created_at < NOW() - ($1::text || ' days')::interval RETURNING id`,
+      [reqRow.keep_days]
+    );
+    await pool.query(
+      `UPDATE audit_cleanup_requests
+         SET status='approved', approver_id=$2, approver_name=$3, approved_at=NOW(), deleted_rows=$4
+       WHERE id=$1`,
+      [reqRow.id, req.user.user_id, req.user.display_name || req.user.username, del.rowCount]
+    );
+    req._audit_detail = `核准稽核清理 req_id=${reqRow.id} keep_days=${reqRow.keep_days} deleted=${del.rowCount}（發起: ${reqRow.requester_name}）`;
+    res.json({ ok: true, deleted: del.rowCount, keep_days: reqRow.keep_days });
+  } catch(err) { next(err); }
+});
+
+// 拒絕申請
+router.post('/audit-logs/cleanup-requests/:id/reject', async (req, res, next) => {
+  if (req.user.role !== 'super_admin') return res.status(403).json({ error: '僅超級管理員可拒絕' });
+  try {
+    const r = await pool.query(
+      `UPDATE audit_cleanup_requests SET status='rejected' WHERE id=$1 AND status='pending' RETURNING *`,
+      [req.params.id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error: '申請不存在或狀態不是待審' });
+    req._audit_detail = `拒絕稽核清理 req_id=${req.params.id}`;
+    res.json({ ok: true });
+  } catch(err) { next(err); }
+});
+
+// ═══════════════════════════════════════════════
+// 資安告警 API
+// ═══════════════════════════════════════════════
+
+// 列出告警（預設只顯示未認領；可帶 ?all=1 看全部）
+router.get('/audit-alerts', async (req, res, next) => {
+  if (!['super_admin','branch_admin'].includes(req.user.role)) {
+    return res.status(403).json({ error: '無檢視權限' });
+  }
+  const { all, severity } = req.query;
+  const conds = [];
+  const params = [];
+  let idx = 1;
+  if (!all)       { conds.push(`acknowledged_at IS NULL`); }
+  if (severity)   { conds.push(`severity = $${idx++}`); params.push(severity); }
+  const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
+  try {
+    const r = await pool.query(
+      `SELECT a.*, u.display_name AS ack_by_name
+       FROM audit_alerts a
+       LEFT JOIN users u ON u.id = a.acknowledged_by
+       ${where}
+       ORDER BY a.triggered_at DESC
+       LIMIT 200`,
+      params
+    );
+    res.json(r.rows);
+  } catch(err) { next(err); }
+});
+
+// 告警計數（nav badge 用）
+router.get('/audit-alerts/count', async (req, res, next) => {
+  if (!['super_admin','branch_admin'].includes(req.user.role)) return res.json({ unacked: 0 });
+  try {
+    const r = await pool.query(
+      `SELECT COUNT(*) FILTER (WHERE acknowledged_at IS NULL) AS unacked,
+              COUNT(*) FILTER (WHERE acknowledged_at IS NULL AND severity='critical') AS critical
+       FROM audit_alerts
+       WHERE triggered_at > NOW() - INTERVAL '7 days'`
+    );
+    res.json(r.rows[0]);
+  } catch(err) { next(err); }
+});
+
+// 認領告警（表示已處理）
+router.post('/audit-alerts/:id/acknowledge', async (req, res, next) => {
+  if (!['super_admin','branch_admin'].includes(req.user.role)) {
+    return res.status(403).json({ error: '無認領權限' });
+  }
+  try {
+    const r = await pool.query(
+      `UPDATE audit_alerts SET acknowledged_by=$1, acknowledged_at=NOW()
+       WHERE id=$2 AND acknowledged_at IS NULL
+       RETURNING id`,
+      [req.user.user_id, req.params.id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error: '告警不存在或已被認領' });
+    req._audit_detail = `認領告警 id=${req.params.id}`;
+    res.json({ ok: true });
+  } catch(err) { next(err); }
+});
+
+// ═══════════════════════════════════════════════
+// 稽核 tamper-evidence：hash chain checkpoints
+// ═══════════════════════════════════════════════
+
+// 列出所有 checkpoint
+router.get('/audit-checkpoints', async (req, res, next) => {
+  if (req.user.role !== 'super_admin') return res.status(403).json({ error: '僅超級管理員可檢視' });
+  try {
+    const r = await pool.query(
+      `SELECT period, row_count, min_id, max_id, chain_hash, prev_hash, created_at
+       FROM audit_checkpoints ORDER BY period DESC`
+    );
+    res.json(r.rows);
+  } catch(err) { next(err); }
+});
+
+// 驗證某月或全部
+router.get('/audit-checkpoints/verify', async (req, res, next) => {
+  if (req.user.role !== 'super_admin') return res.status(403).json({ error: '僅超級管理員可驗證' });
+  const { period } = req.query;
+  try {
+    const { verifyCheckpoint, verifyAllCheckpoints } = require('../lib/auditCheckpoint');
+    if (period) {
+      const r = await verifyCheckpoint(period);
+      req._audit_detail = `驗證 checkpoint ${period}: ${r.ok ? 'OK' : '失敗'}`;
+      res.json(r);
+    } else {
+      const results = await verifyAllCheckpoints();
+      const allOk   = results.every(r => r.ok);
+      req._audit_detail = `驗證全部 ${results.length} 個 checkpoint: ${allOk ? 'OK' : '有失敗項目'}`;
+      res.json({ all_ok: allOk, results });
+    }
+  } catch(err) { next(err); }
 });
 
 module.exports = router;

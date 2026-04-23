@@ -98,19 +98,36 @@ function canManageRole(managerRole, targetRole) {
 // POST /api/users/login
 router.post('/users/login', async (req, res, next) => {
   const { username, password } = req.body;
-  if (!username || !password) return res.status(400).json({ error: '請輸入帳號與密碼' });
+  // Stash attempted username 讓 auditMiddleware 寫入正確 username（失敗時 req.user 不會被設）
+  req._audit_username = (username ? String(username).trim() : '').slice(0, 50) || 'anonymous';
+  if (!username || !password) {
+    req._audit_detail = '缺少帳號或密碼';
+    return res.status(400).json({ error: '請輸入帳號與密碼' });
+  }
   try {
     const r = await pool.query(
       `SELECT * FROM users WHERE username = $1`, [username.trim()]
     );
     // 使用者不存在 → 回統一訊息避免帳號列舉
-    if (!r.rows.length) return res.status(401).json({ error: '帳號或密碼錯誤' });
+    if (!r.rows.length) {
+      req._audit_detail = '帳號不存在';
+      return res.status(401).json({ error: '帳號或密碼錯誤' });
+    }
     const user = r.rows[0];
-    if (!user.is_active) return res.status(403).json({ error: '帳號已停用，請聯絡管理員' });
+    // 命中 user → 讓稽核用真實使用者資訊（而非只有 username）
+    req._audit_user = {
+      user_id: user.id, username: user.username, display_name: user.display_name,
+      role: user.role, branch: user.branch,
+    };
+    if (!user.is_active) {
+      req._audit_detail = '帳號已停用';
+      return res.status(403).json({ error: '帳號已停用，請聯絡管理員' });
+    }
 
     // ── 帳號鎖定檢查 ──
     // 永久鎖：需 super_admin 解鎖
     if (user.requires_manual_unlock) {
+      req._audit_detail = '嘗試登入已永久鎖定帳號';
       return res.status(403).json({
         error: '帳號已鎖定，請聯絡系統管理員解鎖',
         code:  'ACCOUNT_LOCKED_PERM'
@@ -119,6 +136,7 @@ router.post('/users/login', async (req, res, next) => {
     // 暫時鎖：還沒到期
     if (user.locked_until && new Date(user.locked_until) > new Date()) {
       const mins = Math.ceil((new Date(user.locked_until) - Date.now()) / 60000);
+      req._audit_detail = `嘗試登入暫時鎖定中的帳號（剩 ${mins} 分）`;
       return res.status(403).json({
         error: `帳號暫時鎖定，請 ${mins} 分鐘後再試`,
         code:  'ACCOUNT_LOCKED_TEMP',
@@ -141,6 +159,7 @@ router.post('/users/login', async (req, res, next) => {
             [user.id]
           );
           await writeLoginLock(req, user, 'LOGIN_LOCK_PERM', '永久鎖定（需管理員解鎖）');
+          req._audit_detail = `密碼錯誤（第 ${newCount} 次）→ 觸發永久鎖`;
           return res.status(403).json({
             error: '帳號已鎖定，請聯絡系統管理員解鎖',
             code:  'ACCOUNT_LOCKED_PERM'
@@ -153,6 +172,7 @@ router.post('/users/login', async (req, res, next) => {
             [user.id, until]
           );
           await writeLoginLock(req, user, 'LOGIN_LOCK_TEMP', '暫時鎖定 15 分鐘');
+          req._audit_detail = `密碼錯誤（第 ${newCount} 次）→ 觸發暫時鎖 15 分`;
           return res.status(403).json({
             error: '連續錯誤 3 次，帳號已暫時鎖定 15 分鐘',
             code:  'ACCOUNT_LOCKED_TEMP',
@@ -161,6 +181,7 @@ router.post('/users/login', async (req, res, next) => {
         }
       } else {
         await pool.query(`UPDATE users SET failed_login_count=$2 WHERE id=$1`, [user.id, newCount]);
+        req._audit_detail = `密碼錯誤（第 ${newCount}/${LOCK_THRESHOLD} 次）`;
         return res.status(401).json({ error: '帳號或密碼錯誤' });
       }
     }
@@ -170,6 +191,7 @@ router.post('/users/login', async (req, res, next) => {
       `UPDATE users SET failed_login_count=0, locked_until=NULL, had_temp_lock=false, last_login=NOW() WHERE id=$1`,
       [user.id]
     );
+    req._audit_detail = '登入成功';
 
     // 漸進升級：舊 100k → 600k 重算，使用者無感
     if (storedIter < PBKDF2_ITER_DEFAULT) {
@@ -432,6 +454,16 @@ router.put('/users/:id', requireAuth, requirePermission('feature:user_manage'), 
       if (securityChanged) await revokeAllSessions(targetId, client);
 
       await client.query('COMMIT');
+
+      // 稽核 detail：僅記錄「有變更的敏感欄位」，不記整個 body（避免 PII 外漏）
+      const diffs = [];
+      if (effectiveRole   !== targetUser.role)     diffs.push(`role: ${targetUser.role} → ${effectiveRole}`);
+      if (effectiveBranch !== targetUser.branch)   diffs.push(`branch: ${targetUser.branch || '（無）'} → ${effectiveBranch || '（無）'}`);
+      if (effectiveActive !== targetUser.is_active) diffs.push(`is_active: ${targetUser.is_active} → ${effectiveActive}`);
+      if (Array.isArray(permissions))              diffs.push(`permissions: 共 ${permissions.length} 項`);
+      req._audit_detail = `更新 ${targetUser.username}（${targetUser.display_name || ''}）: ` +
+        (diffs.length ? diffs.join(', ') : '無敏感欄位變更');
+
       res.json({ ok: true, sessions_revoked: securityChanged });
     } catch(err) { await client.query('ROLLBACK'); throw err; }
     finally { client.release(); }
@@ -515,18 +547,23 @@ router.post('/users/:id/unlock', requireAuth, async (req, res, next) => {
 });
 
 // DELETE /api/users/:id — 刪除使用者
-router.delete('/users/:id', requireAuth, requirePermission('feature:user_manage'), async (req, res) => {
+router.delete('/users/:id', requireAuth, requirePermission('feature:user_manage'), async (req, res, next) => {
   const targetId = parseInt(req.params.id);
   if (targetId === req.user.user_id) return res.status(400).json({ error: '不能刪除自己的帳號' });
   try {
-    const target = await pool.query(`SELECT role FROM users WHERE id=$1`, [targetId]);
+    const target = await pool.query(
+      `SELECT id, username, display_name, role, branch FROM users WHERE id=$1`, [targetId]
+    );
     if (!target.rows.length) return res.status(404).json({ error: '找不到使用者' });
-    if (!canManageRole(req.user.role, target.rows[0].role)) {
+    const t = target.rows[0];
+    if (!canManageRole(req.user.role, t.role)) {
       return res.status(403).json({ error: '無法刪除此使用者' });
     }
     await pool.query(`DELETE FROM users WHERE id=$1`, [targetId]);
+    // 稽核 detail 保留被刪帳號的識別資訊（不含 hash / salt）
+    req._audit_detail = `刪除 ${t.username}（${t.display_name || ''}）— role=${t.role} branch=${t.branch || ''}`;
     res.json({ ok: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { next(err); }
 });
 
 // ═══════════════════════════════════════════════

@@ -146,5 +146,11 @@ initDatabase()
   .then(() => {
     cleanupStaleRows();                                   // 啟動後跑一次
     setInterval(cleanupStaleRows, 24 * 60 * 60 * 1000);   // 之後每 24h
+    // 資安告警偵測器（每 5 分鐘掃 audit_logs）
+    const { startAuditAlertDetector } = require('./lib/auditAlerts');
+    startAuditAlertDetector();
+    // 稽核 hash-chain 月度 checkpoint
+    const { startAuditCheckpointScheduler } = require('./lib/auditCheckpoint');
+    startAuditCheckpointScheduler();
   })
   .catch(err => { console.error('DB初始化失敗:', err.message); process.exit(1); });

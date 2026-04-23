@@ -59,12 +59,18 @@ router.put('/performance-metrics/:id', requirePermission('feature:perf_metric_ed
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/performance-metrics/:id', requirePermission('feature:perf_metric_edit'), async (req, res) => {
+router.delete('/performance-metrics/:id', requirePermission('feature:perf_metric_edit'), async (req, res, next) => {
   try {
+    const pre = await pool.query(`SELECT metric_name, metric_type FROM performance_metrics WHERE id=$1`, [req.params.id]);
+    const preT = await pool.query(`SELECT COUNT(*) AS c FROM performance_targets WHERE metric_id=$1`, [req.params.id]);
     await pool.query(`DELETE FROM performance_targets WHERE metric_id=$1`, [req.params.id]);
     await pool.query(`DELETE FROM performance_metrics WHERE id=$1`, [req.params.id]);
+    if (pre.rows.length) {
+      const m = pre.rows[0];
+      req._audit_detail = `刪除業績指標 id=${req.params.id} name="${m.metric_name}" type=${m.metric_type} 連同 ${preT.rows[0].c} 筆目標`;
+    }
     res.json({ ok: true });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { next(err); }
 });
 
 // ── 業績目標 ──
