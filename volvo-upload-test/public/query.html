@@ -5,13 +5,15 @@
   路徑:  /query.html
   權限:  page:query
   功能:  四大資料表（repair_income / tech_performance / parts_sales /
-         business_query）全文搜尋 + 篩選 + 排序 + 欄位切換 + CSV 匯出。
+         business_query）全文搜尋 + 篩選 + 排序 + 欄位切換 + Excel 匯出。
   相依 API: /api/query/*、/api/periods
 -->
 <html lang="zh-TW">
 <head>
 <link rel="stylesheet" href="/theme.css">
 <script src="/auth.js"></script>
+<!-- @e965/xlsx: maintained fork with CVE-2023-30533 / CVE-2024-22363 fixes -->
+<script src="https://cdn.jsdelivr.net/npm/@e965/xlsx@0.20.3/dist/xlsx.full.min.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Volvo 資料查詢</title>
@@ -244,7 +246,7 @@
           <button class="btn btn-secondary" onclick="toggleColMenu()">⚙️ 欄位</button>
           <div class="col-toggle-dropdown" id="colToggleDropdown"></div>
         </div>
-        <button class="btn btn-green" onclick="doExport()">⬇️ 匯出 CSV</button>
+        <button class="btn btn-green" onclick="doExport()">⬇️ 匯出 Excel</button>
       </div>
     </div>
 
@@ -306,6 +308,8 @@
 </div>
 
 <script>
+// HTML escape：所有 innerHTML 內含 user input / API 錯誤訊息的內插一律經此處理
+window._h = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 // ═══ State ═══
 let _allPeriods = [];
 let _currentPeriod = '';
@@ -619,7 +623,7 @@ async function _executeQuery(tbl, branch, period){
     applySearch();
     renderSummary(tbl, _allRows);
   }catch(e){
-    wrap.innerHTML = `<div class="empty" style="color:#ef4444">❌ ${e.message}</div>`;
+    wrap.innerHTML = `<div class="empty" style="color:#ef4444">❌ ${_h(e.message)}</div>`;
   }
 }
 
@@ -854,7 +858,7 @@ function renderSummary(tbl, rows){
   bar.innerHTML=`<div style="display:flex;gap:8px;flex-wrap:wrap">${html}</div>`;
 }
 
-// ═══ Export CSV ═══
+// ═══ Export Excel ═══
 function doExport(){
   if (window.DmsAuth && !DmsAuth.hasPermission('feature:export_data')) {
     alert('您沒有「資料匯出」權限，請聯絡管理員'); return;
@@ -863,24 +867,14 @@ function doExport(){
   const def = TABLE_DEFS[tbl];
   const visibleCols = def.cols.filter(c => !_hiddenCols.has(c.key));
   if(!_filteredRows.length){ alert('無資料可匯出'); return; }
-  const header = visibleCols.map(c=>c.label).join(',');
-  const rows = _filteredRows.map(row =>
-    visibleCols.map(c=>{
-      const v = row[c.key];
-      const s = v===null||v===undefined?'':String(v);
-      return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g,'""')}"` : s;
-    }).join(',')
-  );
-  const csv = '\uFEFF' + [header, ...rows].join('\r\n');
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
+  const header = visibleCols.map(c => c.label);
+  const rows = _filteredRows.map(row => visibleCols.map(c => row[c.key] ?? ''));
+  const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, tbl);
   const period = _currentPeriod||'全部';
   const branch = _getBranch()||'全部';
-  a.download = `${tbl}_${period}_${branch}_${Date.now()}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+  XLSX.writeFile(wb, `${tbl}_${period}_${branch}_${Date.now()}.xlsx`);
 }
 
 // ═══ Search debounce ═══

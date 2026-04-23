@@ -19,6 +19,8 @@
 <head>
 <link rel="stylesheet" href="/theme.css">
 <script src="/auth.js"></script>
+<!-- @e965/xlsx: maintained fork with CVE-2023-30533 / CVE-2024-22363 fixes -->
+<script src="https://cdn.jsdelivr.net/npm/@e965/xlsx@0.20.3/dist/xlsx.full.min.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Volvo 設定</title>
@@ -808,7 +810,7 @@
         <div style="background:#0f172a;border:1px solid #2d3f56;border-radius:10px;padding:16px">
           <div style="font-size:13px;font-weight:700;color:var(--text-dim);margin-bottom:10px">方式 B：下載範本填寫後上傳</div>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-            <button class="btn btn-secondary" onclick="downloadRevTemplate()">⬇️ 下載 CSV 範本</button>
+            <button class="btn btn-secondary" onclick="downloadRevTemplate()">⬇️ 下載 Excel 範本</button>
             <input type="file" id="revFileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="uploadRevFile(this)">
             <button class="btn btn-secondary" onclick="document.getElementById('revFileInput').click()">📤 上傳範本格式</button>
             <span id="revUploadStatus" style="font-size:13px;color:var(--text-dim)"></span>
@@ -1015,7 +1017,10 @@
     <div class="section-page" id="section-auditlog">
       <div class="page-title">📋 操作紀錄</div>
       <p class="page-sub">查看所有使用者的操作、下載、登入紀錄（含 IP）</p>
-      <!-- 貼入 settings_auditlog_tab.html 的全部內容（去掉最外層 <div id="tab-auditlog">） -->
+
+      <!-- ══ 🚨 資安告警 Banner（背景偵測器自動產生）══ -->
+      <div id="auditAlertsBanner" style="display:none;margin-bottom:14px"></div>
+
       <div id="auditSummaryCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px"></div>
       <div class="card">
         <div class="card-head" style="flex-wrap:wrap;gap:8px">
@@ -1048,7 +1053,9 @@
             <input id="auditDateTo" type="date" style="background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:6px 10px;border-radius:6px;font-size:12px;outline:none">
             <button class="btn btn-primary" onclick="loadAuditLogs(1)" style="font-size:12px;padding:6px 12px">🔍 查詢</button>
             <button class="btn btn-secondary" onclick="resetAuditFilters()" style="font-size:12px;padding:6px 10px">重置</button>
-            <button class="btn btn-green" onclick="exportAuditCSV()" style="font-size:12px;padding:6px 10px">⬇️ 匯出</button>
+            <button class="btn btn-secondary" onclick="saveAuditPreset()"  style="font-size:12px;padding:6px 10px" title="儲存目前篩選條件到瀏覽器">💾 存</button>
+            <button class="btn btn-secondary" onclick="loadAuditPreset()"  style="font-size:12px;padding:6px 10px" title="載入上次儲存的條件">📂 載</button>
+            <button class="btn btn-green"     onclick="openExportPicker()" style="font-size:12px;padding:6px 10px">⬇️ 匯出</button>
           </div>
         </div>
         <div style="overflow-x:auto;max-height:calc(100vh - 380px);overflow-y:auto">
@@ -1073,12 +1080,45 @@
         <div id="auditPagination" style="display:none;padding:10px 14px;border-top:1px solid #2d3f56;display:flex;align-items:center;gap:6px;flex-wrap:wrap"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px" id="auditDetailPanels"></div>
+
+      <!-- ══ 稽核管理（super_admin）══ -->
+      <div id="auditAdminWrap" style="display:none;margin-top:18px">
+        <div class="card">
+          <div class="card-head"><div class="card-head-title">🔐 稽核管理（super_admin）</div></div>
+          <div style="padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <!-- 雙人審核清理 -->
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:8px">📂 稽核清理（雙人審核制）</div>
+              <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px">一位 super_admin 發起 → 另一位 super_admin 核准 → 執行。24 小時內未審核即過期。</div>
+              <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px">
+                <input id="cleanupDays" type="number" min="30" value="90" style="width:80px;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:5px 8px;border-radius:5px;font-size:12px;outline:none">
+                <span style="font-size:12px;color:var(--text-muted)">天前</span>
+                <input id="cleanupReason" type="text" placeholder="清理理由（必填）" style="flex:1;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:5px 10px;border-radius:5px;font-size:12px;outline:none">
+                <button class="btn btn-secondary" onclick="submitCleanupReq()" style="font-size:12px;padding:5px 12px">發起申請</button>
+              </div>
+              <div id="cleanupReqList" style="font-size:12px"></div>
+            </div>
+            <!-- hash-chain 驗證 -->
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:8px">🔗 Hash Chain 防竄改驗證</div>
+              <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px">每月自動產生上月 audit_logs 的 SHA-256 摘要 + 鏈式雜湊。驗證不符 = 歷史資料被竄改。</div>
+              <div style="display:flex;gap:6px;margin-bottom:10px">
+                <button class="btn btn-secondary" onclick="verifyCheckpoints()" style="font-size:12px;padding:5px 12px">🔍 驗證全部</button>
+                <button class="btn btn-secondary" onclick="loadCheckpoints()" style="font-size:12px;padding:5px 12px">🔄 重新載入</button>
+              </div>
+              <div id="checkpointList" style="font-size:12px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div><!-- /.main -->
 </div><!-- /.layout -->
 
 <script>
+// HTML escape：所有塞 innerHTML 的不可信字串（API 錯誤 / 使用者輸入）必過這層
+window._h = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 // ══ Modal helpers ══
 function openModal(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';}
 function closeModal(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';}
@@ -1120,7 +1160,7 @@ function showSection(id){
 }
 
 // ══ Upload Excel 已移至 performance.html（業績指標頁右上角「📊 營運 Excel 上傳」按鈕） ══
-async function loadCounts(){try{const data=await(await fetch('/api/counts')).json();if(data.error)throw new Error(data.error);document.getElementById('counts').innerHTML=data.map(r=>`<div class="count-card"><div class="count-val">${parseInt(r['筆數']).toLocaleString()}</div><div class="count-label">${r['表格']}</div></div>`).join('');}catch(e){document.getElementById('counts').innerHTML=`<span style="color:#ef4444;font-size:13px">❌ ${e.message}</span>`;}}
+async function loadCounts(){try{const data=await(await fetch('/api/counts')).json();if(data.error)throw new Error(data.error);document.getElementById('counts').innerHTML=data.map(r=>`<div class="count-card"><div class="count-val">${parseInt(r['筆數']).toLocaleString()}</div><div class="count-label">${r['表格']}</div></div>`).join('');}catch(e){document.getElementById('counts').innerHTML=`<span style="color:#ef4444;font-size:13px">❌ ${_h(e.message)}</span>`;}}
 
 // ══ SA 銷售設定 ══
 let configs=[],editingConfigId=null,editingFilters=[],lookupTimer=null;
@@ -1134,7 +1174,7 @@ function setStatMethod(val){selectStatMethod(val||'amount');}
 function togglePersonType(val){const cb=document.querySelector(`input[name="person_type"][value="${val}"]`);const label=document.getElementById(`ptLabel-${val}`);if(!cb||!label)return;const checkedCount=document.querySelectorAll('input[name="person_type"]:checked').length;if(cb.checked&&checkedCount<=1)return;cb.checked=!cb.checked;label.classList.toggle('selected',cb.checked);}
 function getPersonType(){const vals=[...document.querySelectorAll('input[name="person_type"]:checked')].map(el=>el.value);if(vals.includes('sales_person')&&vals.includes('pickup_person'))return'both';return vals[0]||'sales_person';}
 function setPersonType(val){const isSales=val==='sales_person'||val==='both';const isTech=val==='pickup_person'||val==='both';['sales_person','pickup_person'].forEach(v=>{const cb=document.querySelector(`input[name="person_type"][value="${v}"]`);const label=document.getElementById(`ptLabel-${v}`);if(!cb||!label)return;const on=v==='sales_person'?isSales:isTech;cb.checked=on;label.classList.toggle('selected',on);});}
-async function loadConfigs(){try{configs=await(await fetch('/api/sa-config')).json();renderConfigList();}catch(e){document.getElementById('configList').innerHTML=`<div style="color:#ef4444">${e.message}</div>`;}}
+async function loadConfigs(){try{configs=await(await fetch('/api/sa-config')).json();renderConfigList();}catch(e){document.getElementById('configList').innerHTML=`<div style="color:#ef4444">${_h(e.message)}</div>`;}}
 function renderConfigList(){const el=document.getElementById('configList');if(!configs.length){el.innerHTML=`<div class="empty-state"><div class="big">📋</div><div>尚無設定，點擊「新增設定」開始建立追蹤項目</div></div>`;return;}el.innerHTML=configs.map(c=>{const sm=STAT_METHOD_INFO[c.stat_method]||STAT_METHOD_INFO.amount;const pt=PERSON_TYPE_INFO[c.person_type||'sales_person']||PERSON_TYPE_INFO.sales_person;return`<div class="config-item"><div class="config-item-info"><div class="config-item-name">${c.config_name}</div>${c.description?`<div class="config-item-desc">${c.description}</div>`:''}<div class="config-item-tags"><span class="badge ${sm.badgeClass}" style="font-size:11px">統計：${sm.label}</span><span class="badge" style="font-size:11px;${pt.badgeStyle}">${pt.label}</span>${(c.filters||[]).map(f=>`<span class="badge" style="font-size:11px;${typeBadgeStyle(f.type)}">${typeLabel[f.type]||f.type}: ${f.value}</span>`).join('')}</div></div><div style="display:flex;gap:6px;flex-shrink:0"><button class="btn btn-secondary btn-sm" onclick="startEditConfig(${c.id})">編輯</button><button class="btn btn-danger btn-sm" onclick="deleteConfig(${c.id},'${c.config_name.replace(/'/g,"\\'")}')">刪除</button></div></div>`;}).join('');}
 function typeBadgeStyle(type){const map={category_code:'background:rgba(59,130,246,.15);color:#60a5fa',function_code:'background:rgba(139,92,246,.15);color:#a78bfa',part_number:'background:rgba(16,185,129,.15);color:#34d399',part_type:'background:rgba(249,115,22,.15);color:#fb923c',work_code:'background:rgba(20,184,166,.15);color:#2dd4bf'};return map[type]||'background:rgba(100,116,139,.15);color:var(--text-muted)';}
 function startNewConfig(){editingConfigId=null;editingFilters=[];document.getElementById('editorTitle').textContent='新增設定';document.getElementById('cfgName').value='';document.getElementById('cfgDesc').value='';setStatMethod('amount');setPersonType('sales_person');renderFilterList();resetAddRow();openModal('saModal');setTimeout(()=>document.getElementById('cfgName').focus(),100);}
@@ -1229,7 +1269,7 @@ async function loadBohList() {
     });
     tbl += `</tbody></table></div><div style="font-size:11px;color:var(--text-dimmer);margin-top:8px">共 ${rows.length} 筆</div>`;
     el.innerHTML = tbl;
-  } catch(e) { el.innerHTML = `<div style="color:#ef4444;font-size:13px">${e.message}</div>`; }
+  } catch(e) { el.innerHTML = `<div style="color:#ef4444;font-size:13px">${_h(e.message)}</div>`; }
 }
 
 function editBoh(op_code, description, hours) {
@@ -1416,7 +1456,7 @@ async function loadWdList() {
     }
     html += '</div>';
     el.innerHTML = html;
-  } catch(e) { el.innerHTML = `<div style="color:#ef4444;font-size:13px">${e.message}</div>`; }
+  } catch(e) { el.innerHTML = `<div style="color:#ef4444;font-size:13px">${_h(e.message)}</div>`; }
 }function quickEditWd(branch,period){document.getElementById('wdBranch').value=branch;document.getElementById('wdPeriod').value=period;loadWdCalendar();const mainEl=document.querySelector('.main');if(mainEl) mainEl.scrollTop=0;if(window.innerWidth<=768) window.scrollTo({top:0,behavior:'smooth'});}
 async function quickDeleteWd(branch,period){const targets=branch==='ALL'?['AMA','AMC','AMD']:[branch];const label=branch==='ALL'?'三站':branch;if(!confirm(`確定刪除 ${label} ${period.slice(0,4)}年${period.slice(4)}月 的工作天數設定嗎？\n刪除後將回到自動偵測。`))return;await Promise.all(targets.map(br=>fetch(`/api/working-days?branch=${br}&period=${period}`,{method:'DELETE'})));loadWdList();}
 function onWdBranchChange(){const isAll=document.getElementById('wdBranch').value==='ALL';document.getElementById('wdCalendarWrap').style.display='none';document.getElementById('btnWdDelete').style.display='none';document.getElementById('wdConfigStatus').textContent=isAll?'設定後將同步寫入 AMA、AMC、AMD':'';}
@@ -1487,7 +1527,7 @@ let twcConfigs=[],twcEditingId=null,twcCodes=[];
 function initTwcAccountChips(){const el=document.getElementById('twcAccountChips');if(!el||el.children.length)return;_buildChips('twcAccountChips',TWC_ALL_ACCOUNT,[]);}
 function selectTwcMethod(val){document.querySelectorAll('input[name="twc_method"]').forEach(el=>el.checked=el.value===val);['count','amount','hours'].forEach(v=>document.getElementById(`twcSmLabel-${v}`)?.classList.toggle('selected',v===val));}
 function getTwcMethod(){return document.querySelector('input[name="twc_method"]:checked')?.value||'count';}
-async function loadTwcConfigs(){try{twcConfigs=await(await fetch('/api/tech-wage-config')).json();renderTwcList();}catch(e){document.getElementById('twcConfigList').innerHTML=`<div style="color:#ef4444">${e.message}</div>`;}}
+async function loadTwcConfigs(){try{twcConfigs=await(await fetch('/api/tech-wage-config')).json();renderTwcList();}catch(e){document.getElementById('twcConfigList').innerHTML=`<div style="color:#ef4444">${_h(e.message)}</div>`;}}
 function renderTwcList(){const el=document.getElementById('twcConfigList');if(!twcConfigs.length){el.innerHTML=`<div class="empty-state"><div class="big">🔧</div><div>尚無設定，點擊「新增設定」建立工資代碼追蹤</div></div>`;return;}const methodLabel={count:'🚗 台數',amount:'💰 工資金額',hours:'⏱️ 工時'};el.innerHTML=twcConfigs.map(c=>{const codes=(c.work_codes||[]).map(wc=>wc.type==='range'?`<span class="badge badge-blue" style="font-size:11px">${wc.from}～${wc.to}</span>`:`<span class="badge badge-blue" style="font-size:11px">${wc.value}</span>`).join('');const acs=(c.account_types||[]).map(a=>`<span class="badge badge-gray" style="font-size:11px">${a}</span>`).join('');return`<div class="config-item"><div class="config-item-info"><div class="config-item-name">${c.config_name}</div>${c.description?`<div class="config-item-desc">${c.description}</div>`:''}<div class="config-item-tags"><span class="badge badge-green">${methodLabel[c.stat_method]||c.stat_method}</span>${codes}${acs}</div></div><div style="display:flex;gap:6px;flex-shrink:0"><button class="btn btn-secondary btn-sm" onclick="twcStartEdit(${c.id})">編輯</button><button class="btn btn-danger btn-sm" onclick="twcDelete(${c.id},'${c.config_name.replace(/'/g,"\\'")}')">刪除</button></div></div>`;}).join('');}
 function twcStartNew(){twcEditingId=null;twcCodes=[];document.getElementById('twcEditorTitle').textContent='新增設定';document.getElementById('twcName').value='';document.getElementById('twcDesc').value='';document.getElementById('twcCodeInput').value='';document.getElementById('twcCodeHint').textContent='';selectTwcMethod('count');_buildChips('twcAccountChips',TWC_ALL_ACCOUNT,[]);renderTwcCodeList();openModal('twcModal');setTimeout(()=>document.getElementById('twcName').focus(),100);}
 function twcStartEdit(id){const cfg=twcConfigs.find(c=>c.id===id);if(!cfg)return;twcEditingId=id;twcCodes=[...(cfg.work_codes||[])];document.getElementById('twcEditorTitle').textContent=`編輯 — ${cfg.config_name}`;document.getElementById('twcName').value=cfg.config_name;document.getElementById('twcDesc').value=cfg.description||'';selectTwcMethod(cfg.stat_method||'count');_buildChips('twcAccountChips',TWC_ALL_ACCOUNT,cfg.account_types||[]);renderTwcCodeList();openModal('twcModal');}
@@ -1501,8 +1541,8 @@ async function twcDelete(id,name){if(!confirm(`確定刪除「${name}」？`))re
 // ══ 零配精品銷售 — Excel 匯入 ══
 function selectPerfUpType(val){['target','last_year'].forEach(v=>{const lbl=document.getElementById(`perfUpTypeLabel-${v}`);const isSelected=v===val;if(lbl){lbl.style.background=isSelected?'rgba(59,130,246,.15)':'#1e293b';lbl.style.borderColor=isSelected?(v==='target'?'#3b82f6':'#10b981'):'#2d3f56';}const radio=lbl?.querySelector('input[type=radio]');if(radio)radio.checked=isSelected;});const hint=document.getElementById('perfUpYearHint');if(hint)hint.style.display=val==='last_year'?'':'none';}
 function initPerfUpYear(){const sel=document.getElementById('perfUpYear');const now=new Date();const ty=now.getFullYear();const ly=ty-1;const tySpan=document.getElementById('perfUpHintThisYear');if(tySpan)tySpan.textContent=ty;const lySpan=document.getElementById('perfUpHintLastYear');if(lySpan)lySpan.textContent=ly;if(!sel||sel.options.length>1)return;for(let y=ty+1;y>=ty-2;y--){const o=document.createElement('option');o.value=y;o.textContent=`${y}年`;if(y===ty)o.selected=true;sel.appendChild(o);}}
-async function downloadPerfTemplate(){try{const metrics=await(await fetch('/api/performance-metrics')).json();if(!metrics.length){alert('尚未建立任何指標，請先新增指標');return;}const now=new Date(),y=now.getFullYear();const header=['期間','據點',...metrics.map(m=>`${m.metric_name}_目標`),...metrics.map(m=>`${m.metric_name}_去年`)];const rows=[];for(let mo=1;mo<=12;mo++){const period=`${y}${String(mo).padStart(2,'0')}`;['AMA','AMC','AMD'].forEach(br=>{rows.push([period,br,...metrics.map(()=>''),...metrics.map(()=>'')]);})}const csv=[header,...rows].map(r=>r.join(',')).join('\r\n');const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`零配精品目標範本_${y}.csv`;a.click();URL.revokeObjectURL(url);}catch(e){alert('下載失敗：'+e.message);}}
-async function uploadPerfTargetsFile(input){const file=input.files[0];if(!file)return;const year=document.getElementById('perfUpYear').value,dataType=document.querySelector('input[name="perf_up_type"]:checked')?.value||'target';if(!year){alert('請先選擇年份');input.value='';return;}const statusEl=document.getElementById('perfUpStatus'),resultEl=document.getElementById('perfUpResult');statusEl.textContent='解析中...';resultEl.innerHTML='';const formData=new FormData();formData.append('file',file);formData.append('year',year);formData.append('dataType',dataType);try{const res=await(await fetch('/api/upload-performance-targets-native',{method:'POST',body:formData})).json();if(res.error){resultEl.innerHTML=`<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:12px 16px;font-size:13px;color:#ef4444">❌ ${res.error}</div>`;}else{const createdHtml=res.created?.length?`<br><span style="color:#f59e0b">✨ 自動新增指標：${res.created.join('、')}</span>`:'';const yearNoteHtml=res.yearNote?`<br><span style="color:#f59e0b;font-size:11px">⚠️ ${res.yearNote}</span>`:'';resultEl.innerHTML=`<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:12px 16px;font-size:13px;color:#10b981">✅ 成功匯入 ${year} 年共 <strong>${res.count}</strong> 筆${createdHtml}${yearNoteHtml}</div>`;if(typeof loadPerfMetrics==='function')loadPerfMetrics();}statusEl.textContent='';input.value='';}catch(e){statusEl.textContent='';resultEl.innerHTML=`<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:12px 16px;font-size:13px;color:#ef4444">❌ ${e.message}</div>`;}}
+async function downloadPerfTemplate(){try{const metrics=await(await fetch('/api/performance-metrics')).json();if(!metrics.length){alert('尚未建立任何指標，請先新增指標');return;}const now=new Date(),y=now.getFullYear();const header=['期間','據點',...metrics.map(m=>`${m.metric_name}_目標`),...metrics.map(m=>`${m.metric_name}_去年`)];const rows=[];for(let mo=1;mo<=12;mo++){const period=`${y}${String(mo).padStart(2,'0')}`;['AMA','AMC','AMD'].forEach(br=>{rows.push([period,br,...metrics.map(()=>''),...metrics.map(()=>'')]);})}const ws=XLSX.utils.aoa_to_sheet([header,...rows]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'指標範本');XLSX.writeFile(wb,`零配精品目標範本_${y}.xlsx`);}catch(e){alert('下載失敗：'+e.message);}}
+async function uploadPerfTargetsFile(input){const file=input.files[0];if(!file)return;const year=document.getElementById('perfUpYear').value,dataType=document.querySelector('input[name="perf_up_type"]:checked')?.value||'target';if(!year){alert('請先選擇年份');input.value='';return;}const statusEl=document.getElementById('perfUpStatus'),resultEl=document.getElementById('perfUpResult');statusEl.textContent='解析中...';resultEl.innerHTML='';const formData=new FormData();formData.append('file',file);formData.append('year',year);formData.append('dataType',dataType);try{const res=await(await fetch('/api/upload-performance-targets-native',{method:'POST',body:formData})).json();if(res.error){resultEl.innerHTML=`<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:12px 16px;font-size:13px;color:#ef4444">❌ ${res.error}</div>`;}else{const createdHtml=res.created?.length?`<br><span style="color:#f59e0b">✨ 自動新增指標：${res.created.join('、')}</span>`:'';const yearNoteHtml=res.yearNote?`<br><span style="color:#f59e0b;font-size:11px">⚠️ ${res.yearNote}</span>`:'';resultEl.innerHTML=`<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:12px 16px;font-size:13px;color:#10b981">✅ 成功匯入 ${year} 年共 <strong>${res.count}</strong> 筆${createdHtml}${yearNoteHtml}</div>`;if(typeof loadPerfMetrics==='function')loadPerfMetrics();}statusEl.textContent='';input.value='';}catch(e){statusEl.textContent='';resultEl.innerHTML=`<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:12px 16px;font-size:13px;color:#ef4444">❌ ${_h(e.message)}</div>`;}}
 
 // ══ 業績目標設定 ══
 let perfMetrics=[],perfEditingId=null,perfFilters=[],perfLookupTimer=null,perfTwcCodes=[];
@@ -1519,8 +1559,8 @@ function addPerfTwcCode(){const raw=document.getElementById('perfTwcCodeInput').
 function _buildSubfieldChips(selectedVals){document.getElementById('perfSubfieldChips').innerHTML=PERF_SUBFIELDS.map(sf=>{const on=selectedVals.includes(sf.value);return`<label class="part-type-chip ${on?'checked':''}" onclick="toggleGenericChip(this)"><input type="checkbox" value="${sf.value}" ${on?'checked':''}>${sf.label}</label>`;}).join('');}
 function selectWoMode(val){document.querySelectorAll('input[name="wo_mode"]').forEach(el=>el.checked=el.value===val);['wo_has','wo_exclude','sum'].forEach(v=>document.getElementById(`woModeLabel-${v}`)?.classList.toggle('selected',v===val));}
 function getWoMode(){return document.querySelector('input[name="wo_mode"]:checked')?.value||'wo_has';}
-async function loadPerfMetrics(){try{perfMetrics=await(await fetch('/api/performance-metrics')).json();renderPerfMetricList();updatePerfTgtSelect();}catch(e){document.getElementById('perfMetricList').innerHTML=`<div style="color:#ef4444">${e.message}</div>`;}}
-function renderPerfMetricList(){const el=document.getElementById('perfMetricList');if(!perfMetrics.length){el.innerHTML=`<div class="empty-state"><div class="big">🎯</div><div>尚未建立指標，點擊「新增指標」開始設定</div></div>`;return;}el.innerHTML=perfMetrics.map(m=>`<div class="config-item"><div class="config-item-info"><div class="config-item-name">${m.metric_name}</div>${m.description?`<div class="config-item-desc">${m.description}</div>`:''}<div class="config-item-tags"><span class="badge badge-blue">${PERF_TYPE_LABEL[m.metric_type]||m.metric_type}</span>${m.stat_field&&m.metric_type==='parts'?`<span class="badge badge-gray">統計：${PERF_FIELD_UNIT[m.stat_field]||m.stat_field}</span>`:''} ${m.unit?`<span class="badge badge-gray">單位：${m.unit}</span>`:''} ${(m.filters||[]).slice(0,4).map(f=>`<span class="badge" style="font-size:10px;background:rgba(100,116,139,.12);color:var(--text-muted)">${f.type}:${f.value}</span>`).join('')} ${(m.filters||[]).length>4?`<span style="font-size:11px;color:var(--text-dimmer)">+${m.filters.length-4}…</span>`:''}</div></div><div style="display:flex;gap:6px;flex-shrink:0"><button class="btn btn-secondary btn-sm" onclick="perfStartEdit(${m.id})">編輯</button><button class="btn btn-danger btn-sm" onclick="perfDelete(${m.id},'${m.metric_name.replace(/'/g,"\\'")}')">刪除</button></div></div>`).join('');}
+async function loadPerfMetrics(){try{perfMetrics=await(await fetch('/api/performance-metrics')).json();renderPerfMetricList();updatePerfTgtSelect();}catch(e){document.getElementById('perfMetricList').innerHTML=`<div style="color:#ef4444">${_h(e.message)}</div>`;}}
+function renderPerfMetricList(){const el=document.getElementById('perfMetricList');if(!perfMetrics.length){el.innerHTML=`<div class="empty-state"><div class="big">🎯</div><div>尚未建立指標，點擊「新增指標」開始設定</div></div>`;return;}el.innerHTML=perfMetrics.map(m=>`<div class="config-item"><div class="config-item-info"><div class="config-item-name">${_h(m.metric_name)}</div>${m.description?`<div class="config-item-desc">${_h(m.description)}</div>`:''}<div class="config-item-tags"><span class="badge badge-blue">${_h(PERF_TYPE_LABEL[m.metric_type]||m.metric_type)}</span>${m.stat_field&&m.metric_type==='parts'?`<span class="badge badge-gray">統計：${_h(PERF_FIELD_UNIT[m.stat_field]||m.stat_field)}</span>`:''} ${m.unit?`<span class="badge badge-gray">單位：${_h(m.unit)}</span>`:''} ${(m.filters||[]).slice(0,4).map(f=>`<span class="badge" style="font-size:10px;background:rgba(100,116,139,.12);color:var(--text-muted)">${_h(f.type)}:${_h(f.value)}</span>`).join('')} ${(m.filters||[]).length>4?`<span style="font-size:11px;color:var(--text-dimmer)">+${m.filters.length-4}…</span>`:''}</div></div><div style="display:flex;gap:6px;flex-shrink:0"><button class="btn btn-secondary btn-sm" onclick="perfStartEdit(${m.id})">編輯</button><button class="btn btn-danger btn-sm" onclick="perfDelete(${m.id},'${m.metric_name.replace(/'/g,"\\'")}')">刪除</button></div></div>`).join('');}
 function updatePerfTgtSelect(){const sel=document.getElementById('perfTgtMetric');const cur=sel.value;sel.innerHTML='<option value="">選擇指標...</option>';perfMetrics.forEach(m=>{const o=document.createElement('option');o.value=m.id;o.textContent=m.metric_name;sel.appendChild(o);});if(cur)sel.value=cur;}
 function onPerfTypeChange(){const t=document.getElementById('perfType').value;document.getElementById('perfRepairOptions').style.display=t==='repair_income'?'':'none';document.getElementById('perfPartsOptions').style.display=t==='parts'?'':'none';document.getElementById('perfBoutiqueOptions').style.display=t==='boutique'?'':'none';document.getElementById('perfSubfieldOptions').style.display=t==='repair_subfield'?'':'none';document.getElementById('perfTechWageOptions').style.display=t==='tech_wage'?'':'none';if(t==='repair_subfield'){_buildSubfieldChips([]);_buildChips('perfSubfieldAccountChips',PERF_ALL_ACCOUNT,[]);}if(t==='tech_wage'){perfTwcCodes=[];renderPerfTwcCodeList();_buildChips('perfTwcAccountChips',PERF_ALL_ACCOUNT,[]);selectPerfTwcMethod('count');}}
 function _buildChips(containerId,values,selectedVals){document.getElementById(containerId).innerHTML=values.map(v=>{const on=selectedVals.includes(v);return`<label class="part-type-chip ${on?'checked':''}" onclick="toggleGenericChip(this)"><input type="checkbox" value="${v}" ${on?'checked':''}>${v}</label>`;}).join('');}
@@ -1581,14 +1621,14 @@ async function savePerfTargets(){
 // ══ 營收目標 ══
 const REV_COLS=[{key:'paid',label:'有費營收'},{key:'bodywork',label:'鈑烤營收'},{key:'general',label:'一般營收'},{key:'extended',label:'延保營收'}];
 async function loadRevPeriods(){try{const periods=await(await fetch('/api/periods')).json();const sel=document.getElementById('revPeriodSel');sel.innerHTML='<option value="">選擇期間...</option>';periods.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=`${p.slice(0,4)}年${p.slice(4)}月`;sel.appendChild(o);});const _rcp=`${new Date().getFullYear()}${String(new Date().getMonth()+1).padStart(2,'0')}`;sel.value=periods.includes(_rcp)?_rcp:(periods.length?periods[0]:'');if(sel.value)loadRevManual();const yearSel=document.getElementById('revNativeYear');if(yearSel){const now=new Date();yearSel.innerHTML='<option value="">選擇年份...</option>';for(let y=now.getFullYear()+1;y>=now.getFullYear()-2;y--){const o=document.createElement('option');o.value=y;o.textContent=`${y}年`;if(y===now.getFullYear())o.selected=true;yearSel.appendChild(o);}}}catch(e){}}
-async function uploadRevNativeFile(input){const file=input.files[0];if(!file)return;const year=document.getElementById('revNativeYear').value,dataType=document.querySelector('input[name="rev_data_type"]:checked')?.value||'target';if(!year){alert('請先選擇年份');input.value='';return;}const statusEl=document.getElementById('revNativeStatus'),resultEl=document.getElementById('revNativeResult'),typeLabel=dataType==='last_year'?'去年實績':'月目標';statusEl.textContent='解析中...';resultEl.innerHTML='';const formData=new FormData();formData.append('file',file);formData.append('year',year);formData.append('dataType',dataType);try{const res=await(await fetch('/api/upload-revenue-targets-native',{method:'POST',body:formData})).json();if(res.error)throw new Error(res.error);statusEl.textContent='';const periodList=Object.entries(res.summary||{}).sort(([a],[b])=>a.localeCompare(b)).map(([p,brs])=>`${p.slice(0,4)}年${p.slice(4)}月（${brs.join('/')}）`).join('、');resultEl.innerHTML=`<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:12px 16px;font-size:13px;color:#10b981">✅ 成功匯入 ${res.year} 年 <strong>${typeLabel}</strong> 共 <strong>${res.count}</strong> 筆<br><span style="font-size:12px;color:var(--text-dim)">${periodList}</span></div>`;loadRevList();input.value='';}catch(e){statusEl.textContent='';resultEl.innerHTML=`<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:12px 16px;font-size:13px;color:#ef4444">❌ ${e.message}</div>`;}}
+async function uploadRevNativeFile(input){const file=input.files[0];if(!file)return;const year=document.getElementById('revNativeYear').value,dataType=document.querySelector('input[name="rev_data_type"]:checked')?.value||'target';if(!year){alert('請先選擇年份');input.value='';return;}const statusEl=document.getElementById('revNativeStatus'),resultEl=document.getElementById('revNativeResult'),typeLabel=dataType==='last_year'?'去年實績':'月目標';statusEl.textContent='解析中...';resultEl.innerHTML='';const formData=new FormData();formData.append('file',file);formData.append('year',year);formData.append('dataType',dataType);try{const res=await(await fetch('/api/upload-revenue-targets-native',{method:'POST',body:formData})).json();if(res.error)throw new Error(res.error);statusEl.textContent='';const periodList=Object.entries(res.summary||{}).sort(([a],[b])=>a.localeCompare(b)).map(([p,brs])=>`${p.slice(0,4)}年${p.slice(4)}月（${brs.join('/')}）`).join('、');resultEl.innerHTML=`<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:12px 16px;font-size:13px;color:#10b981">✅ 成功匯入 ${res.year} 年 <strong>${typeLabel}</strong> 共 <strong>${res.count}</strong> 筆<br><span style="font-size:12px;color:var(--text-dim)">${periodList}</span></div>`;loadRevList();input.value='';}catch(e){statusEl.textContent='';resultEl.innerHTML=`<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:12px 16px;font-size:13px;color:#ef4444">❌ ${_h(e.message)}</div>`;}}
 function selectRevType(val){['target','last_year'].forEach(v=>{const lbl=document.getElementById(`revTypeLabel-${v}`);const isSelected=v===val;if(lbl){lbl.style.background=isSelected?'rgba(59,130,246,.15)':'#1e293b';lbl.style.borderColor=isSelected?(v==='target'?'#3b82f6':'#10b981'):'#2d3f56';}const radio=lbl?.querySelector('input[type=radio]');if(radio)radio.checked=isSelected;});}
 async function loadRevManual(){const period=document.getElementById('revPeriodSel').value,grid=document.getElementById('revManualGrid');if(!period){grid.style.display='none';return;}try{const rows=await(await fetch(`/api/revenue-targets?period=${period}`)).json();const tMap={};rows.forEach(r=>{tMap[r.branch]=r;});document.getElementById('revManualBody').innerHTML=['AMA','AMC','AMD'].map(br=>{const t=tMap[br]||{};const bCol=br==='AMA'?'#3b82f6':br==='AMC'?'#10b981':'#f59e0b';const inp=(field)=>`<input type="number" id="rev-${br}-${field}" value="${t[field]||''}" placeholder="—" step="any" class="form-input" style="width:100%;min-width:110px;text-align:right">`;return`<tr><td><span style="display:inline-block;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:700;background:${bCol}22;color:${bCol}">${br}</span></td>${REV_COLS.map(c=>`<td style="padding:6px 8px">${inp(c.key+'_target')}</td><td style="padding:6px 8px">${inp(c.key+'_last_year')}</td>`).join('')}</tr>`;}).join('');grid.style.display='';document.getElementById('revManualMsg').textContent='';}catch(e){document.getElementById('revManualMsg').textContent='載入失敗: '+e.message;}}
 async function saveRevManual(){const period=document.getElementById('revPeriodSel').value;if(!period)return;const entries=['AMA','AMC','AMD'].map(br=>{const e={branch:br,period};REV_COLS.forEach(c=>{e[c.key+'_target']=parseFloat(document.getElementById(`rev-${br}-${c.key}_target`)?.value)||null;e[c.key+'_last_year']=parseFloat(document.getElementById(`rev-${br}-${c.key}_last_year`)?.value)||null;});return e;});const msgEl=document.getElementById('revManualMsg');msgEl.textContent='儲存中...';msgEl.style.color='#64748b';try{const res=await(await fetch('/api/revenue-targets/batch',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({entries})})).json();if(res.error)throw new Error(res.error);msgEl.textContent='✅ 已儲存';msgEl.style.color='#10b981';loadRevList();}catch(e){msgEl.textContent='❌ '+e.message;msgEl.style.color='#ef4444';}}
-async function loadRevList(){const el=document.getElementById('revList');try{const rows=await(await fetch('/api/revenue-targets')).json();if(!rows.length){el.innerHTML='<div style="color:var(--text-dim);font-size:13px;padding:8px 0">尚無設定</div>';return;}const byPeriod={};rows.forEach(r=>{if(!byPeriod[r.period])byPeriod[r.period]=[];byPeriod[r.period].push(r);});const periods=Object.keys(byPeriod).sort().reverse();el.innerHTML=`<div style="overflow-x:auto"><table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:8px 12px;background:#0f172a;color:var(--text-dim);font-size:11px;border-bottom:1px solid #2d3f56">期間</th><th style="text-align:left;padding:8px 12px;background:#0f172a;color:var(--text-dim);font-size:11px;border-bottom:1px solid #2d3f56">據點</th>${REV_COLS.map(c=>`<th style="text-align:right;padding:8px 12px;background:#0f172a;color:var(--text-dim);font-size:11px;border-bottom:1px solid #2d3f56">${c.label}<br>目標/去年</th>`).join('')}<th style="padding:8px 12px;background:#0f172a;border-bottom:1px solid #2d3f56"></th></tr></thead><tbody>${periods.map(p=>byPeriod[p].map(r=>{const bCol=r.branch==='AMA'?'#3b82f6':r.branch==='AMC'?'#10b981':'#f59e0b';const fk=v=>v?(parseInt(v)/1000).toLocaleString()+'K':'—';return`<tr><td style="padding:8px 12px;border-bottom:1px solid rgba(45,63,86,.3)">${p.slice(0,4)}年${p.slice(4)}月</td><td style="padding:8px 12px;border-bottom:1px solid rgba(45,63,86,.3)"><span style="background:${bCol}22;color:${bCol};padding:2px 8px;border-radius:5px;font-weight:700">${r.branch}</span></td>${REV_COLS.map(c=>`<td style="text-align:right;padding:8px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:var(--text-muted)">${fk(r[c.key+'_target'])} / ${fk(r[c.key+'_last_year'])}</td>`).join('')}<td style="padding:8px 12px;border-bottom:1px solid rgba(45,63,86,.3)"><button class="btn btn-danger btn-sm" onclick="deleteRevRow('${r.branch}','${p}')">刪除</button></td></tr>`;}).join('')).join('')}</tbody></table></div>`;}catch(e){el.innerHTML=`<div style="color:#ef4444">${e.message}</div>`;}}
+async function loadRevList(){const el=document.getElementById('revList');try{const rows=await(await fetch('/api/revenue-targets')).json();if(!rows.length){el.innerHTML='<div style="color:var(--text-dim);font-size:13px;padding:8px 0">尚無設定</div>';return;}const byPeriod={};rows.forEach(r=>{if(!byPeriod[r.period])byPeriod[r.period]=[];byPeriod[r.period].push(r);});const periods=Object.keys(byPeriod).sort().reverse();el.innerHTML=`<div style="overflow-x:auto"><table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:8px 12px;background:#0f172a;color:var(--text-dim);font-size:11px;border-bottom:1px solid #2d3f56">期間</th><th style="text-align:left;padding:8px 12px;background:#0f172a;color:var(--text-dim);font-size:11px;border-bottom:1px solid #2d3f56">據點</th>${REV_COLS.map(c=>`<th style="text-align:right;padding:8px 12px;background:#0f172a;color:var(--text-dim);font-size:11px;border-bottom:1px solid #2d3f56">${c.label}<br>目標/去年</th>`).join('')}<th style="padding:8px 12px;background:#0f172a;border-bottom:1px solid #2d3f56"></th></tr></thead><tbody>${periods.map(p=>byPeriod[p].map(r=>{const bCol=r.branch==='AMA'?'#3b82f6':r.branch==='AMC'?'#10b981':'#f59e0b';const fk=v=>v?(parseInt(v)/1000).toLocaleString()+'K':'—';return`<tr><td style="padding:8px 12px;border-bottom:1px solid rgba(45,63,86,.3)">${p.slice(0,4)}年${p.slice(4)}月</td><td style="padding:8px 12px;border-bottom:1px solid rgba(45,63,86,.3)"><span style="background:${bCol}22;color:${bCol};padding:2px 8px;border-radius:5px;font-weight:700">${r.branch}</span></td>${REV_COLS.map(c=>`<td style="text-align:right;padding:8px 12px;border-bottom:1px solid rgba(45,63,86,.3);color:var(--text-muted)">${fk(r[c.key+'_target'])} / ${fk(r[c.key+'_last_year'])}</td>`).join('')}<td style="padding:8px 12px;border-bottom:1px solid rgba(45,63,86,.3)"><button class="btn btn-danger btn-sm" onclick="deleteRevRow('${r.branch}','${p}')">刪除</button></td></tr>`;}).join('')).join('')}</tbody></table></div>`;}catch(e){el.innerHTML=`<div style="color:#ef4444">${_h(e.message)}</div>`;}}
 async function deleteRevRow(branch,period){if(!confirm(`確定刪除 ${branch} ${period.slice(0,4)}年${period.slice(4)}月 的目標設定？`))return;await fetch(`/api/revenue-targets?branch=${branch}&period=${period}`,{method:'DELETE'});loadRevList();}
-function downloadRevTemplate(){const header=['期間','據點','有費營收_目標','有費營收_去年','鈑烤營收_目標','鈑烤營收_去年','一般營收_目標','一般營收_去年','延保營收_目標','延保營收_去年'];const now=new Date(),y=now.getFullYear();const defaults={AMA:[36000000,37000000,8000000,7500000,21000000,22000000,800000,750000],AMC:[10000000,11000000,2000000,1800000,5700000,6000000,200000,180000],AMD:[16000000,17000000,2500000,2300000,8800000,9500000,300000,280000]};const rows=[];for(let mo=1;mo<=12;mo++){const period=`${y}${String(mo).padStart(2,'0')}`;['AMA','AMC','AMD'].forEach(br=>{rows.push([period,br,...defaults[br]]);});}const csv=[header,...rows].map(r=>r.join(',')).join('\r\n');const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`營收目標範本_${y}全年.csv`;a.click();URL.revokeObjectURL(url);}
-async function uploadRevFile(input){const file=input.files[0];if(!file)return;const statusEl=document.getElementById('revUploadStatus'),resultEl=document.getElementById('revUploadResult');statusEl.textContent='上傳中...';resultEl.innerHTML='';const formData=new FormData();formData.append('file',file);try{const res=await(await fetch('/api/upload-revenue-targets',{method:'POST',body:formData})).json();if(res.error)throw new Error(res.error);statusEl.textContent='';resultEl.innerHTML=`<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:12px 16px;font-size:13px;color:#10b981">✅ 成功匯入 <strong>${res.count}</strong> 筆資料</div>`;loadRevList();input.value='';}catch(e){statusEl.textContent='';resultEl.innerHTML=`<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:12px 16px;font-size:13px;color:#ef4444">❌ ${e.message}</div>`;}}
+function downloadRevTemplate(){const header=['期間','據點','有費營收_目標','有費營收_去年','鈑烤營收_目標','鈑烤營收_去年','一般營收_目標','一般營收_去年','延保營收_目標','延保營收_去年'];const now=new Date(),y=now.getFullYear();const defaults={AMA:[36000000,37000000,8000000,7500000,21000000,22000000,800000,750000],AMC:[10000000,11000000,2000000,1800000,5700000,6000000,200000,180000],AMD:[16000000,17000000,2500000,2300000,8800000,9500000,300000,280000]};const rows=[];for(let mo=1;mo<=12;mo++){const period=`${y}${String(mo).padStart(2,'0')}`;['AMA','AMC','AMD'].forEach(br=>{rows.push([period,br,...defaults[br]]);});}const ws=XLSX.utils.aoa_to_sheet([header,...rows]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'營收目標');XLSX.writeFile(wb,`營收目標範本_${y}全年.xlsx`);}
+async function uploadRevFile(input){const file=input.files[0];if(!file)return;const statusEl=document.getElementById('revUploadStatus'),resultEl=document.getElementById('revUploadResult');statusEl.textContent='上傳中...';resultEl.innerHTML='';const formData=new FormData();formData.append('file',file);try{const res=await(await fetch('/api/upload-revenue-targets',{method:'POST',body:formData})).json();if(res.error)throw new Error(res.error);statusEl.textContent='';resultEl.innerHTML=`<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:12px 16px;font-size:13px;color:#10b981">✅ 成功匯入 <strong>${res.count}</strong> 筆資料</div>`;loadRevList();input.value='';}catch(e){statusEl.textContent='';resultEl.innerHTML=`<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:12px 16px;font-size:13px;color:#ef4444">❌ ${_h(e.message)}</div>`;}}
 
 // ══ 個人業績目標 ══
 let _ptMetrics=[], _ptPersons=[], _ptBranchTarget=0;
@@ -1839,7 +1879,7 @@ async function loadAuditLogs(page = 1) {
     document.getElementById('auditTotalBadge').textContent = `${data.total.toLocaleString()} 筆`;
     if (page === 1) loadAuditSummary();
   } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="8" style="padding:24px;text-align:center;color:#ef4444">❌ ${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="padding:24px;text-align:center;color:#ef4444">❌ ${_h(e.message)}</td></tr>`;
   }
 }
  
@@ -1855,34 +1895,37 @@ function renderAuditTable(rows) {
             <div style="font-size:11px;color:var(--text-dimmer);font-variant-numeric:tabular-nums">${d.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})}</div>`;
   };
   const roleColor = { super_admin:'#f59e0b', branch_admin:'#10b981', user:'#3b82f6' };
-  tbody.innerHTML = rows.map(r => {
+  tbody.innerHTML = rows.map((r, i) => {
     const actionCls = `audit-action aa-${r.action}`;
     const statusC   = r.status_code ? STATUS_COLOR(r.status_code) : '#334155';
     const duration  = r.duration_ms ? (r.duration_ms < 1000 ? `${r.duration_ms}ms` : `${(r.duration_ms/1000).toFixed(1)}s`) : '—';
     const durationC = r.duration_ms > 5000 ? '#ef4444' : r.duration_ms > 2000 ? '#f59e0b' : '#475569';
     const rColor    = roleColor[r.user_role] || '#64748b';
-    return `<tr style="transition:background .1s" onmouseover="this.style.background='rgba(37,51,71,.5)'" onmouseout="this.style.background=''">
+    // 點擊列展開詳細面板；所有顯示欄位均經 _h() 避免 resource_detail 含 HTML 被執行
+    return `<tr data-idx="${i}" style="transition:background .1s;cursor:pointer"
+        onmouseover="this.style.background='rgba(37,51,71,.5)'" onmouseout="this.style.background=''"
+        onclick="openAuditDetail(${i})">
       <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.3);white-space:nowrap">${fmtTime(r.created_at)}</td>
       <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.3)">
-        <div style="font-weight:700;color:#e2e8f0;font-size:12px">${r.display_name || r.username}</div>
-        <div style="font-size:10px;color:${rColor}">${r.username} · ${r.user_branch||'全廠'}</div>
+        <div style="font-weight:700;color:#e2e8f0;font-size:12px">${_h(r.display_name || r.username)}</div>
+        <div style="font-size:10px;color:${rColor}">${_h(r.username)} · ${_h(r.user_branch||'全廠')}</div>
       </td>
       <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.3);white-space:nowrap">
-        <span class="${actionCls}">${ACTION_EMOJI[r.action]||''} ${r.action}</span>
+        <span class="${actionCls}">${ACTION_EMOJI[r.action]||''} ${_h(r.action)}</span>
       </td>
       <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.3);max-width:220px">
-        <div style="color:#cbd5e1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.resource}">${r.resource}</div>
-        ${r.resource_detail ? `<div style="color:var(--text-dimmer);font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.resource_detail}">${r.resource_detail}</div>` : ''}
+        <div style="color:#cbd5e1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${_h(r.resource)}">${_h(r.resource)}</div>
+        ${r.resource_detail ? `<div style="color:var(--text-dimmer);font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${_h(r.resource_detail)}">${_h(r.resource_detail)}</div>` : ''}
       </td>
       <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.3);white-space:nowrap">
-        ${r.data_branch ? `<span style="background:rgba(59,130,246,.1);color:#3b82f6;font-size:11px;padding:1px 6px;border-radius:4px">${r.data_branch}</span>` : ''}
-        ${r.data_period ? `<span style="color:var(--text-dim);font-size:11px;margin-left:4px">${r.data_period}</span>` : ''}
+        ${r.data_branch ? `<span style="background:rgba(59,130,246,.1);color:#3b82f6;font-size:11px;padding:1px 6px;border-radius:4px">${_h(r.data_branch)}</span>` : ''}
+        ${r.data_period ? `<span style="color:var(--text-dim);font-size:11px;margin-left:4px">${_h(r.data_period)}</span>` : ''}
         ${!r.data_branch && !r.data_period ? '<span style="color:#2d3f56">—</span>' : ''}
       </td>
       <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.3);white-space:nowrap">
         <div style="font-family:monospace;font-size:11px;color:var(--text-dim);cursor:pointer"
-             onclick="filterByIP('${r.ip_address}')" title="點擊篩選此 IP">${r.ip_address}</div>
-        <div style="font-size:10px;color:#334155">${r.browser||''}</div>
+             onclick="event.stopPropagation();filterByIP('${_h(r.ip_address)}')" title="點擊篩選此 IP">${_h(r.ip_address)}</div>
+        <div style="font-size:10px;color:#334155">${_h(r.browser||'')}</div>
       </td>
       <td style="padding:8px 10px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center;white-space:nowrap">
         ${r.status_code ? `<span style="font-size:11px;font-weight:700;color:${statusC}">${r.status_code}</span>` : '<span style="color:#334155">—</span>'}
@@ -1892,6 +1935,47 @@ function renderAuditTable(rows) {
       </td>
     </tr>`;
   }).join('');
+}
+
+// ═══ 點擊列展開詳細面板（Phase 3c）═══
+function openAuditDetail(idx) {
+  const r = _auditRows[idx];
+  if (!r) return;
+  const existing = document.getElementById('_auditDetailDrawer');
+  if (existing) existing.remove();
+  const wrap = document.createElement('div');
+  wrap.id = '_auditDetailDrawer';
+  wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px';
+  wrap.onclick = (e) => { if (e.target === wrap) wrap.remove(); };
+  const row = (k, v) => v == null || v === '' ? '' :
+    `<div style="display:grid;grid-template-columns:140px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid rgba(45,63,86,.3)">
+       <div style="color:var(--text-dim);font-size:12px">${k}</div>
+       <div style="color:#e2e8f0;font-size:12px;word-break:break-all;font-family:${typeof v==='string' && /^\d|^[a-f0-9\-]+$/.test(v) ? 'monospace' : 'inherit'}">${_h(v)}</div>
+     </div>`;
+  wrap.innerHTML = `
+    <div style="background:#1a2740;border:1px solid #2d4060;border-radius:12px;max-width:680px;width:100%;max-height:80vh;overflow-y:auto;padding:20px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <div style="font-size:15px;font-weight:800;color:#e2e8f0">📋 操作紀錄詳細</div>
+        <span class="audit-action aa-${_h(r.action)}" style="margin-left:auto">${ACTION_EMOJI[r.action]||''} ${_h(r.action)}</span>
+        <button onclick="document.getElementById('_auditDetailDrawer').remove()" style="background:transparent;color:var(--text-dim);border:none;font-size:20px;cursor:pointer">×</button>
+      </div>
+      ${row('時間',    new Date(r.created_at).toLocaleString('zh-TW'))}
+      ${row('帳號',    r.username)}
+      ${row('姓名',    r.display_name)}
+      ${row('角色',    r.user_role)}
+      ${row('使用者廠別', r.user_branch)}
+      ${row('IP',      r.ip_address)}
+      ${row('瀏覽器',  r.browser)}
+      ${row('資源',    r.resource)}
+      ${row('路徑',    r.resource_path)}
+      ${row('詳細',    r.resource_detail)}
+      ${row('資料廠別', r.data_branch)}
+      ${row('資料期間', r.data_period)}
+      ${row('HTTP 狀態', r.status_code)}
+      ${row('耗時(ms)', r.duration_ms)}
+      ${row('紀錄 ID', r.id)}
+    </div>`;
+  document.body.appendChild(wrap);
 }
  
 function renderAuditPagination(total, page, pageSize) {
@@ -1999,15 +2083,237 @@ function exportAuditCSV() {
     r.display_name, r.username, r.user_role, r.user_branch||'',
     r.action, r.resource, r.data_branch||'', r.data_period||'',
     r.ip_address, r.browser||'', r.status_code||'', r.duration_ms||'',
-  ].map(v => { const s=String(v||''); return s.includes(',')||s.includes('"')?`"${s.replace(/"/g,'""')}"`:s; }).join(','));
-  const csv  = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
-  const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url; a.download = `audit_log_${new Date().toISOString().slice(0,10)}.csv`; a.click();
-  URL.revokeObjectURL(url);
+  ]);
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '操作紀錄');
+  XLSX.writeFile(wb, `audit_log_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
-function onAuditTabActivate() { loadAuditLogs(1); }
+function onAuditTabActivate() {
+  loadAuditLogs(1);
+  loadAuditAlerts();
+  // super_admin 才看得到稽核管理區
+  if (window._currentUser?.role === 'super_admin') {
+    document.getElementById('auditAdminWrap').style.display = '';
+    loadCleanupRequests();
+    loadCheckpoints();
+  }
+}
+
+// ═══ 篩選條件儲存 / 載入（Phase 3a，localStorage per-user）═══
+const _AUDIT_FILTER_FIELDS = ['auditKeyword','auditUsername','auditAction','auditBranch','auditDateFrom','auditDateTo'];
+const _AUDIT_PRESET_KEY = () => 'audit_filter_preset_' + (window._currentUser?.id || 'anon');
+function saveAuditPreset() {
+  const obj = {};
+  _AUDIT_FILTER_FIELDS.forEach(id => { obj[id] = document.getElementById(id)?.value || ''; });
+  try { localStorage.setItem(_AUDIT_PRESET_KEY(), JSON.stringify(obj)); alert('✅ 已儲存目前篩選條件'); }
+  catch(e) { alert('儲存失敗：' + e.message); }
+}
+function loadAuditPreset() {
+  try {
+    const s = localStorage.getItem(_AUDIT_PRESET_KEY());
+    if (!s) { alert('尚未儲存任何篩選條件'); return; }
+    const obj = JSON.parse(s);
+    _AUDIT_FILTER_FIELDS.forEach(id => { const el = document.getElementById(id); if (el && obj[id] !== undefined) el.value = obj[id]; });
+    loadAuditLogs(1);
+  } catch(e) { alert('載入失敗：' + e.message); }
+}
+
+// ═══ Excel 欄位挑選（Phase 3a）═══
+const _AUDIT_EXPORT_COLS = [
+  { key:'created_at',   label:'時間',   default:true },
+  { key:'display_name', label:'姓名',   default:true },
+  { key:'username',     label:'帳號',   default:true },
+  { key:'user_role',    label:'角色',   default:true },
+  { key:'user_branch',  label:'使用者廠別', default:true },
+  { key:'action',       label:'動作',   default:true },
+  { key:'resource',     label:'資源',   default:true },
+  { key:'resource_detail', label:'詳細', default:true },
+  { key:'data_branch',  label:'資料廠別', default:true },
+  { key:'data_period',  label:'資料期間', default:true },
+  { key:'ip_address',   label:'IP',     default:true },
+  { key:'browser',      label:'瀏覽器', default:false },
+  { key:'status_code',  label:'狀態碼', default:true },
+  { key:'duration_ms',  label:'耗時(ms)', default:false },
+];
+function openExportPicker() {
+  if (!_auditRows.length) { alert('請先查詢後再匯出'); return; }
+  const existing = document.getElementById('_exportPickerBg');
+  if (existing) existing.remove();
+  const saved = (() => { try { return JSON.parse(localStorage.getItem('audit_export_cols_'+(window._currentUser?.id||'anon'))||'null'); } catch(e) { return null; } })();
+  const isOn = c => saved ? saved.includes(c.key) : c.default;
+  const bg = document.createElement('div');
+  bg.id = '_exportPickerBg';
+  bg.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  bg.onclick = e => { if (e.target===bg) bg.remove(); };
+  bg.innerHTML = `
+    <div style="background:#1a2740;border:1px solid #2d4060;border-radius:12px;max-width:520px;width:100%;padding:20px">
+      <div style="font-size:15px;font-weight:800;color:#e2e8f0;margin-bottom:12px">⬇️ 選擇匯出欄位（Excel）</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px">
+        ${_AUDIT_EXPORT_COLS.map(c=>`<label style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:#0f172a;border:1px solid #2d3f56;border-radius:5px;font-size:12px;color:#e2e8f0;cursor:pointer">
+          <input type="checkbox" value="${c.key}" ${isOn(c)?'checked':''}> ${_h(c.label)}
+        </label>`).join('')}
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-secondary" onclick="document.getElementById('_exportPickerBg').remove()" style="font-size:12px;padding:6px 14px">取消</button>
+        <button class="btn btn-green" onclick="doExportAuditCSV()" style="font-size:12px;padding:6px 14px">⬇️ 匯出</button>
+      </div>
+    </div>`;
+  document.body.appendChild(bg);
+}
+function doExportAuditCSV() {
+  const chosen = [...document.querySelectorAll('#_exportPickerBg input[type=checkbox]:checked')].map(i=>i.value);
+  if (!chosen.length) { alert('請至少選 1 個欄位'); return; }
+  try { localStorage.setItem('audit_export_cols_'+(window._currentUser?.id||'anon'), JSON.stringify(chosen)); } catch(e) {}
+  document.getElementById('_exportPickerBg').remove();
+  // 依選擇的欄位匯出
+  if (window.DmsAuth && !DmsAuth.hasPermission('feature:export_audit')) { alert('您沒有「操作紀錄匯出」權限'); return; }
+  const labelByKey = Object.fromEntries(_AUDIT_EXPORT_COLS.map(c=>[c.key,c.label]));
+  const headers = chosen.map(k => labelByKey[k]);
+  const rows = _auditRows.map(r => chosen.map(k => {
+    const v = k === 'created_at' ? new Date(r[k]).toLocaleString('zh-TW') : r[k];
+    return v == null ? '' : v;
+  }));
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '操作紀錄');
+  XLSX.writeFile(wb, `audit_log_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+// ═══ 🚨 資安告警 UI（Phase 2c）═══
+async function loadAuditAlerts() {
+  const banner = document.getElementById('auditAlertsBanner');
+  if (!banner) return;
+  try {
+    const r = await DmsAuth.fetchWithAuth('/api/audit-alerts').then(r=>r.json());
+    if (!Array.isArray(r) || !r.length) { banner.style.display = 'none'; return; }
+    const sev = { critical:{bg:'rgba(239,68,68,.12)',bd:'#ef4444',fg:'#fca5a5',icon:'🚨'},
+                  high:    {bg:'rgba(245,158,11,.12)',bd:'#f59e0b',fg:'#fbbf24',icon:'⚠️'},
+                  medium:  {bg:'rgba(59,130,246,.12)',bd:'#3b82f6',fg:'#93c5fd',icon:'ℹ️'} };
+    const rows = r.map(a => {
+      const s = sev[a.severity] || sev.medium;
+      const t = new Date(a.triggered_at).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+      return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:${s.bg};border:1px solid ${s.bd};border-radius:8px;margin-bottom:6px">
+        <div style="font-size:20px;line-height:1">${s.icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700;color:${s.fg};margin-bottom:2px">[${_h(a.severity.toUpperCase())}] ${_h(a.alert_type)}</div>
+          <div style="font-size:12px;color:#e2e8f0;margin-bottom:2px">${_h(a.summary)}</div>
+          <div style="font-size:11px;color:var(--text-dimmer)">${t}</div>
+        </div>
+        <button onclick="ackAlert(${a.id})" style="background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3);padding:4px 10px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">✓ 已處理</button>
+      </div>`;
+    }).join('');
+    banner.innerHTML = `<div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:8px">🚨 待處理告警 ${r.length} 筆</div>${rows}`;
+    banner.style.display = '';
+  } catch(e) { banner.style.display = 'none'; }
+}
+
+async function ackAlert(id) {
+  try {
+    const res = await DmsAuth.fetchWithAuth(`/api/audit-alerts/${id}/acknowledge`, { method:'POST' });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    loadAuditAlerts();
+  } catch(e) { alert('處理失敗：' + e.message); }
+}
+
+// ═══ 稽核清理雙人審核（Phase 3b）═══
+async function submitCleanupReq() {
+  const days = parseInt(document.getElementById('cleanupDays').value);
+  const reason = document.getElementById('cleanupReason').value.trim();
+  if (!days || days < 30) { alert('天數必須 ≥ 30'); return; }
+  if (!reason)            { alert('請填寫清理理由'); return; }
+  try {
+    const res = await DmsAuth.fetchWithAuth('/api/audit-logs/cleanup-requests', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ keep_days: days, reason })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    alert('✅ 已發起，另一位 super_admin 核准後即執行（24 小時過期）');
+    document.getElementById('cleanupReason').value = '';
+    loadCleanupRequests();
+  } catch(e) { alert('失敗：' + e.message); }
+}
+
+async function loadCleanupRequests() {
+  const el = document.getElementById('cleanupReqList');
+  if (!el) return;
+  try {
+    const rows = await DmsAuth.fetchWithAuth('/api/audit-logs/cleanup-requests').then(r=>r.json());
+    if (!Array.isArray(rows) || !rows.length) { el.innerHTML = '<div style="color:var(--text-dimmer);padding:6px 0">尚無申請</div>'; return; }
+    const me = window._currentUser?.user_id;
+    const statusColor = { pending:'#f59e0b', approved:'#10b981', rejected:'#64748b', expired:'#64748b' };
+    el.innerHTML = rows.map(r => {
+      const canApprove = r.status === 'pending' && r.requester_id !== me;
+      return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#0f172a;border:1px solid #2d3f56;border-radius:6px;margin-bottom:6px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;color:#e2e8f0"><b>${_h(r.requester_name)}</b> 申請清除 ${r.keep_days} 天前</div>
+          <div style="font-size:11px;color:var(--text-dimmer);word-break:break-all">${_h(r.reason || '')}</div>
+          ${r.approver_name ? `<div style="font-size:11px;color:#10b981;margin-top:2px">✓ ${_h(r.approver_name)} 已核准 (刪除 ${r.deleted_rows} 筆)</div>` : ''}
+        </div>
+        <span style="background:${statusColor[r.status]}22;color:${statusColor[r.status]};padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700">${_h(r.status)}</span>
+        ${canApprove ? `
+          <button onclick="approveCleanup(${r.id})" style="background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3);padding:4px 10px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer">✅ 核准</button>
+          <button onclick="rejectCleanup(${r.id})" style="background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2);padding:4px 10px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer">✗ 拒絕</button>
+        ` : ''}
+      </div>`;
+    }).join('');
+  } catch(e) { el.innerHTML = '<div style="color:#ef4444">載入失敗</div>'; }
+}
+async function approveCleanup(id) {
+  if (!confirm('核准後會立刻執行清理且無法復原，確定？')) return;
+  try {
+    const res = await DmsAuth.fetchWithAuth(`/api/audit-logs/cleanup-requests/${id}/approve`, { method:'POST' });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    alert(`✅ 已執行，刪除 ${data.deleted} 筆`);
+    loadCleanupRequests(); loadAuditLogs(1);
+  } catch(e) { alert('失敗：' + e.message); }
+}
+async function rejectCleanup(id) {
+  if (!confirm('確定拒絕此申請？')) return;
+  try {
+    const res = await DmsAuth.fetchWithAuth(`/api/audit-logs/cleanup-requests/${id}/reject`, { method:'POST' });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    loadCleanupRequests();
+  } catch(e) { alert('失敗：' + e.message); }
+}
+
+// ═══ Hash Chain Checkpoints（Phase 4）═══
+async function loadCheckpoints() {
+  const el = document.getElementById('checkpointList');
+  if (!el) return;
+  try {
+    const rows = await DmsAuth.fetchWithAuth('/api/audit-checkpoints').then(r=>r.json());
+    if (!Array.isArray(rows) || !rows.length) { el.innerHTML = '<div style="color:var(--text-dimmer);padding:6px 0">尚無 checkpoint（下個月 1 日自動建立上月的）</div>'; return; }
+    el.innerHTML = rows.map(c => `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#0f172a;border:1px solid #2d3f56;border-radius:6px;margin-bottom:4px;font-size:12px">
+      <span style="color:#e2e8f0;font-weight:700;font-family:monospace">${_h(c.period)}</span>
+      <span style="color:var(--text-dim)">${c.row_count} 筆</span>
+      <span style="color:var(--text-dimmer);font-family:monospace;font-size:10px" title="${_h(c.chain_hash)}">${_h(c.chain_hash.slice(0,12))}…</span>
+      <button onclick="verifyOne('${_h(c.period)}')" style="margin-left:auto;background:rgba(59,130,246,.12);color:#3b82f6;border:1px solid rgba(59,130,246,.2);padding:3px 10px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer">驗證</button>
+    </div>`).join('');
+  } catch(e) { el.innerHTML = '<div style="color:#ef4444">載入失敗</div>'; }
+}
+async function verifyOne(period) {
+  try {
+    const r = await DmsAuth.fetchWithAuth(`/api/audit-checkpoints/verify?period=${encodeURIComponent(period)}`).then(r=>r.json());
+    if (r.ok) alert(`✅ ${period} 驗證通過\n${r.row_count} 筆，hash 一致`);
+    else      alert(`❌ ${period} 驗證失敗\nstored: ${r.stored_hash?.slice(0,16)}…\ncomputed: ${r.recomputed_hash?.slice(0,16)}…`);
+  } catch(e) { alert('失敗：' + e.message); }
+}
+async function verifyCheckpoints() {
+  try {
+    const r = await DmsAuth.fetchWithAuth('/api/audit-checkpoints/verify').then(r=>r.json());
+    if (r.all_ok) alert(`✅ 全部 ${r.results.length} 個 checkpoint 驗證通過`);
+    else {
+      const fail = r.results.filter(x=>!x.ok).map(x=>x.period).join(', ');
+      alert(`❌ 有 ${r.results.length - r.results.filter(x=>x.ok).length} 個 checkpoint 失敗\n失敗月份：${fail}\n請聯絡資安團隊`);
+    }
+  } catch(e) { alert('失敗：' + e.message); }
+}
+
  // ═══ 使用者管理 JS ═══
 let _editingUserId = null;
 
@@ -2020,7 +2326,7 @@ async function loadUsers() {
     if (!res.ok) throw new Error(users.error);
     renderUsersTable(users);
   } catch(e) {
-    wrap.innerHTML = `<div style="padding:24px;color:#ef4444">❌ ${e.message}</div>`;
+    wrap.innerHTML = `<div style="padding:24px;color:#ef4444">❌ ${_h(e.message)}</div>`;
   }
 }
 
@@ -2049,31 +2355,47 @@ function renderUsersTable(users) {
   users.forEach(u => {
     const isMe = u.id === me?.id;
     const lastLogin = u.last_login ? new Date(u.last_login).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+    // 鎖定狀態徽章（優先於「啟用/停用」顯示）
+    let statusBadge;
+    if (u.lock_state === 'locked_permanent') {
+      statusBadge = `<span style="background:rgba(239,68,68,.15);color:#ef4444;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700">🔒 永久鎖定</span>`;
+    } else if (u.lock_state === 'locked_temp') {
+      const mins = Math.ceil((new Date(u.locked_until) - Date.now()) / 60000);
+      statusBadge = `<span style="background:rgba(245,158,11,.15);color:#f59e0b;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700">⏳ 暫時鎖定 (${mins}分)</span>`;
+    } else {
+      statusBadge = `<span style="background:${u.is_active?'rgba(16,185,129,.12)':'rgba(100,116,139,.12)'};color:${u.is_active?'#10b981':'#64748b'};padding:2px 8px;border-radius:5px;font-size:11px">
+          ${u.is_active ? '✅ 啟用' : '⛔ 停用'}
+        </span>`;
+    }
+    // 僅 super_admin 看得到「解鎖」按鈕；對 locked_permanent 特別顯眼
+    const canUnlock = me?.role === 'super_admin' && (u.lock_state === 'locked_permanent' || u.lock_state === 'locked_temp');
+    const unlockBtn = canUnlock ? `
+          <button onclick="unlockUser(${u.id},'${_h(u.username)}')"
+            style="background:rgba(16,185,129,.12);color:#10b981;border:1px solid rgba(16,185,129,.3);padding:4px 10px;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer;margin-right:4px">
+            🔓 解鎖
+          </button>` : '';
     html += `<tr style="${!u.is_active?'opacity:.4':''}">
       <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3)">
-        <span style="font-weight:700;color:#e2e8f0">${u.username}</span>
+        <span style="font-weight:700;color:#e2e8f0">${_h(u.username)}</span>
         ${isMe ? '<span style="background:rgba(59,130,246,.15);color:#60a5fa;font-size:10px;padding:1px 6px;border-radius:4px;margin-left:6px">我</span>' : ''}
       </td>
-      <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3);color:var(--text-muted)">${u.display_name}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3);color:var(--text-muted)">${_h(u.display_name)}</td>
       <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3)">
         <span style="background:${roleColor[u.role]}22;color:${roleColor[u.role]};padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700">
-          ${roleLabel[u.role] || u.role}
+          ${roleLabel[u.role] || _h(u.role)}
         </span>
       </td>
-      <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3);color:var(--text-dim)">${u.branch || '全廠'}</td>
-      <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3)">
-        <span style="background:${u.is_active?'rgba(16,185,129,.12)':'rgba(100,116,139,.12)'};color:${u.is_active?'#10b981':'#64748b'};padding:2px 8px;border-radius:5px;font-size:11px">
-          ${u.is_active ? '✅ 啟用' : '⛔ 停用'}
-        </span>
-      </td>
+      <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3);color:var(--text-dim)">${_h(u.branch || '全廠')}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3)">${statusBadge}</td>
       <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3);color:var(--text-dimmer);font-size:12px">${lastLogin}</td>
       <td style="padding:10px 14px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center">
+        ${unlockBtn}
         ${!isMe ? `
           <button onclick="openEditUserModal(${JSON.stringify(u).replace(/"/g,'&quot;')})"
             style="background:rgba(59,130,246,.1);color:#3b82f6;border:1px solid rgba(59,130,246,.2);padding:4px 10px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;margin-right:4px">
             編輯
           </button>
-          <button onclick="deleteUser(${u.id},'${u.username}')"
+          <button onclick="deleteUser(${u.id},'${_h(u.username)}')"
             style="background:rgba(239,68,68,.08);color:#ef4444;border:1px solid rgba(239,68,68,.2);padding:4px 10px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer">
             刪除
           </button>
@@ -2223,7 +2545,7 @@ const PERM_TABS = [
   },
   {
     id: 'query', icon: '🔍', label: '資料查詢',
-    intro: '資料查詢頁（/query.html）：四大原始資料表的全文搜尋、排序、CSV 匯出。',
+    intro: '資料查詢頁（/query.html）：四大原始資料表的全文搜尋、排序、Excel 匯出。',
     items: [
       { v: 'page:query',         l: '檢視「資料查詢」頁面' },
       { v: 'feature:export_data', l: '資料匯出（查詢 / 明細 / WIP / 月報圖）' },
@@ -2393,6 +2715,18 @@ async function deleteUser(id, username) {
     if (data.error) throw new Error(data.error);
     loadUsers();
   } catch(e) { alert('刪除失敗：' + e.message); }
+}
+
+// 僅 super_admin 可用：解鎖帳號（清 failed_login_count / locked_until / had_temp_lock / requires_manual_unlock）
+async function unlockUser(id, username) {
+  if (!confirm(`確定解鎖「${username}」？將會清除所有鎖定狀態。`)) return;
+  try {
+    const res  = await DmsAuth.fetchWithAuth(`/api/users/${id}/unlock`, { method:'POST' });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    alert('✅ 已解鎖');
+    loadUsers();
+  } catch(e) { alert('解鎖失敗：' + e.message); }
 }
 
 // ══ 初始化 ══
