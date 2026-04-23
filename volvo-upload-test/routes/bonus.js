@@ -32,8 +32,9 @@ const multer = require('multer');
 const XLSX   = require('xlsx');
 const pool   = require('../db/pool');
 const { requireAuth, requirePermission, internalAuthHeaders } = require('../lib/authMiddleware');
+const { isExcelBuffer, excelFileFilter } = require('../lib/utils');
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 }, fileFilter: excelFileFilter });
 
 router.use(requireAuth);
 
@@ -237,6 +238,7 @@ async function getRevenueTarget(period, branch, revType) {
 // 人員名冊 — 上傳解析
 // ══════════════════════════════════════════════
 function parseRosterExcel(buffer) {
+  if (!isExcelBuffer(buffer)) throw new Error('檔案內容不是有效的 Excel 格式（檔頭檢查失敗）');
   const wb = XLSX.read(buffer, { type: 'buffer', cellDates: false, raw: true });
   const ws = wb.Sheets[wb.SheetNames[0]];
   const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
@@ -460,12 +462,21 @@ router.put('/bonus/metrics/:id', requirePermission('feature:bonus_metric_edit'),
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/bonus/metrics/:id', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
+router.delete('/bonus/metrics/:id', requirePermission('feature:bonus_metric_edit'), async (req, res, next) => {
   try {
+    // 先撈出即將刪除的指標資訊供稽核
+    const pre = await pool.query(`SELECT metric_name, scope_type, scope_value FROM bonus_metrics WHERE id=$1`, [req.params.id]);
+    const preT = await pool.query(`SELECT COUNT(*) AS c FROM bonus_targets WHERE metric_id=$1`, [req.params.id]);
     await pool.query(`DELETE FROM bonus_targets WHERE metric_id=$1`, [req.params.id]);
     await pool.query(`DELETE FROM bonus_metrics WHERE id=$1`, [req.params.id]);
+    if (pre.rows.length) {
+      const m = pre.rows[0];
+      req._audit_detail = `刪除獎金指標 id=${req.params.id} name="${m.metric_name}" scope=${m.scope_type}:${m.scope_value || ''} 連同 ${preT.rows[0].c} 筆目標`;
+    } else {
+      req._audit_detail = `刪除獎金指標 id=${req.params.id}（原不存在）`;
+    }
     res.json({ ok: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { next(err); }
 });
 
 // ══════════════════════════════════════════════

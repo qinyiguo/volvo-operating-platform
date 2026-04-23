@@ -24,6 +24,7 @@ const METHOD_ACTION = {
 // 特定路由覆寫 action label
 const PATH_ACTION_MAP = [
   { pattern: /\/upload/i,                   action: 'UPLOAD'   },
+  { pattern: /\/unlock/i,                   action: 'ACCOUNT_UNLOCK' },
   { pattern: /\/login/i,                    action: 'LOGIN'    },
   { pattern: /\/logout/i,                   action: 'LOGOUT'   },
   { pattern: /\/export|\/csv/i,             action: 'DOWNLOAD' },
@@ -31,6 +32,24 @@ const PATH_ACTION_MAP = [
   { pattern: /\/password/i,                 action: 'PWD_CHANGE'},
   { pattern: /\/users/i,                    action: 'USER_MGMT'},
 ];
+
+// Action 中文對照（給 settings 稽核頁顯示用）
+const ACTION_LABELS = {
+  LOGIN:            '登入',
+  LOGOUT:           '登出',
+  PWD_CHANGE:       '改密碼',
+  USER_MGMT:        '使用者管理',
+  UPLOAD:           '上傳',
+  DOWNLOAD:         '下載',
+  SUBMIT:           '提交',
+  VIEW:             '檢視',
+  CREATE:           '建立',
+  UPDATE:           '更新',
+  DELETE:           '刪除',
+  LOGIN_LOCK_TEMP:  '帳號暫時鎖定',
+  LOGIN_LOCK_PERM:  '帳號永久鎖定',
+  ACCOUNT_UNLOCK:   '帳號解鎖',
+};
 
 // 對應路由的人可讀名稱
 const RESOURCE_LABELS = {
@@ -99,11 +118,12 @@ const SKIP_PATTERNS = [
 ];
 
 // ─── IP 解析 ────────────────────────────────────────────────────
+// 優先用 Express 的 req.ip — 它會根據 app.set('trust proxy', ...) 自動處理
+// X-Forwarded-For，避免攻擊者偽造 XFF 汙染稽核（M2）。
+// 沒有 req.ip（非 Express 環境）才退回手動解析。
 function getClientIP(req) {
-  const xff = req.headers['x-forwarded-for'];
-  if (xff) return xff.split(',')[0].trim();
-  return req.headers['x-real-ip']
-    || req.connection?.remoteAddress
+  if (req.ip) return req.ip;
+  return req.connection?.remoteAddress
     || req.socket?.remoteAddress
     || '0.0.0.0';
 }
@@ -139,18 +159,24 @@ function extractDataContext(req) {
 }
 
 // ─── 核心寫入函式 ─────────────────────────────────────────────────
+// req._audit_user / req._audit_username / req._audit_detail 可由 route 先設好，
+// middleware 於 res.end hook 觸發 writeLog 時會讀取這些欄位（用於 login handler：
+// req.user 尚未由 requireAuth 設定時，login route 自己 stash 使用者資訊）。
 async function writeLog(req, overrides = {}) {
   try {
-    const user    = req.user || null;
+    const user    = req.user || req._audit_user || null;
     const ip      = getClientIP(req);
     const ua      = (req.headers['user-agent'] || '').slice(0, 300);
     const path    = req.path || req.url || '';
     const method  = req.method || 'GET';
     const ctx     = extractDataContext(req);
 
+    // username 解析優先序：req.user → req._audit_username（失敗登入時用）→ 'anonymous'
+    const effectiveUsername = user?.username || req._audit_username || 'anonymous';
+
     const row = {
       user_id:      user?.user_id  || null,
-      username:     user?.username || 'anonymous',
+      username:     effectiveUsername,
       display_name: user?.display_name || '',
       user_role:    user?.role     || '',
       user_branch:  user?.branch   || null,
@@ -159,7 +185,9 @@ async function writeLog(req, overrides = {}) {
       action:       overrides.action       || resolveAction(method, path),
       resource:     overrides.resource     || resolveResource(path),
       resource_path: overrides.path        || path.split('?')[0],
-      resource_detail: overrides.detail   || null,
+      // resource_detail 優先用 overrides > req._audit_detail（route stash）> null
+      resource_detail: overrides.detail !== undefined ? overrides.detail
+                      : (req._audit_detail != null ? req._audit_detail : null),
       data_branch:  overrides.data_branch  || ctx.data_branch,
       data_period:  overrides.data_period  || ctx.data_period,
       status_code:  overrides.status_code  || null,
@@ -203,7 +231,7 @@ function auditMiddleware(req, res, next) {
       writeLog(req, {
         status_code: res.statusCode,
         duration_ms: duration,
-      }).catch(() => {});
+      }).catch(err => console.warn('[auditLog] middleware write failed:', err.message));
     }
     return origEnd(...args);
   };

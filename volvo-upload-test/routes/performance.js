@@ -18,8 +18,9 @@ const pool   = require('../db/pool');
 const { requireAuth, requirePermission } = require('../lib/authMiddleware');
 const { checkPeriodLock, checkBatchPeriodLock, checkBatchUploadPeriodLock } = require('../lib/bonusPeriodLock');
 const { computePerfActualForMetric, prevYearPeriod } = require('../lib/revenueActual');
+const { isExcelBuffer, excelFileFilter } = require('../lib/utils');
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 }, fileFilter: excelFileFilter });
 
 router.use(requireAuth);
 
@@ -58,12 +59,18 @@ router.put('/performance-metrics/:id', requirePermission('feature:perf_metric_ed
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/performance-metrics/:id', requirePermission('feature:perf_metric_edit'), async (req, res) => {
+router.delete('/performance-metrics/:id', requirePermission('feature:perf_metric_edit'), async (req, res, next) => {
   try {
+    const pre = await pool.query(`SELECT metric_name, metric_type FROM performance_metrics WHERE id=$1`, [req.params.id]);
+    const preT = await pool.query(`SELECT COUNT(*) AS c FROM performance_targets WHERE metric_id=$1`, [req.params.id]);
     await pool.query(`DELETE FROM performance_targets WHERE metric_id=$1`, [req.params.id]);
     await pool.query(`DELETE FROM performance_metrics WHERE id=$1`, [req.params.id]);
+    if (pre.rows.length) {
+      const m = pre.rows[0];
+      req._audit_detail = `刪除業績指標 id=${req.params.id} name="${m.metric_name}" type=${m.metric_type} 連同 ${preT.rows[0].c} 筆目標`;
+    }
     res.json({ ok: true });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { next(err); }
 });
 
 // ── 業績目標 ──
@@ -138,6 +145,9 @@ router.post('/upload-performance-targets-native', requirePermission('feature:upl
   if (!year.match(/^\d{4}$/)) return res.status(400).json({ error: '請指定正確的年份' });
 
   try {
+    if (!isExcelBuffer(req.file?.buffer)) {
+      return res.status(400).json({ error: '檔案內容不是有效的 Excel 格式（檔頭檢查失敗）' });
+    }
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer', cellDates: false, cellNF: true, cellText: false });
     const SHEET_KWS = ['目標','年度','銷售','實績'];
     let sheetName = workbook.SheetNames[0];

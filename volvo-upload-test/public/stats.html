@@ -875,6 +875,9 @@
 </div>
 
 <script>
+// HTML escape：所有塞 innerHTML 的不可信字串（API 錯誤 / 使用者輸入）必過這層
+// 用 window.* 確保跨 <script> 區塊都能存取
+window._h = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 // ══ 技師工時產能設定 ══
 const TR_DEPT_COLORS = { engine:'#8b5cf6', bodywork:'#f97316', paint:'#06b6d4', beauty:'#ec4899' };
 const TR_JOB_ORDER = ['領班','副領班','L4技師','L3技師','L2技師','L1技師','L0技師','實習生','default'];
@@ -1330,7 +1333,7 @@ async function loadRepair(period,branch){
     const saRows=data.bySA,maxRev=Math.max(...saRows.map(r=>n(r.total_untaxed)),1);
     document.getElementById('tbSA').innerHTML=saRows.length?saRows.map((r,i)=>`<tr><td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td><td><span class="badge badge-blue">${r.branch}</span></td><td style="font-weight:600">${r.service_advisor}</td><td class="num">${parseInt(r.car_count||0)}</td><td class="num" style="font-weight:700;color:#10b981">${fmt(r.total_untaxed)}</td><td class="num">${fmt(r.engine_wage)}</td><td class="num">${fmt(r.parts_income)}</td><td style="min-width:80px"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${(n(r.total_untaxed)/maxRev*100).toFixed(0)}%"></div></div><span style="font-size:11px;color:var(--text-dim)">${(n(r.total_untaxed)/maxRev*100).toFixed(0)}%</span></div></td></tr>`).join(''):'<tr><td colspan="8" class="empty">無資料</td></tr>';
     document.getElementById('tbAccount').innerHTML=data.summary.length?data.summary.map(r=>`<tr><td><span class="badge badge-blue">${r.branch}</span></td><td><span class="badge ${badgeType(r.account_type)}">${r.account_type||'-'}</span></td><td class="num">${parseInt(r.work_order_count||0).toLocaleString()}</td><td class="num" style="font-weight:700">${fmt(r.total_untaxed)}</td><td class="num">${fmt(r.parts_income)}</td><td class="num">${fmt(r.engine_wage)}</td><td class="num">${fmt(r.bodywork_income)}</td><td class="num" style="color:#f59e0b">${fmt(r.parts_cost)}</td></tr>`).join(''):'<tr><td colspan="8" class="empty">無資料</td></tr>';
-  }catch(e){document.getElementById('tbSA').innerHTML=`<tr><td colspan="8" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;}
+  }catch(e){document.getElementById('tbSA').innerHTML=`<tr><td colspan="8" style="color:#ef4444;padding:16px">${_h(e.message)}</td></tr>`;}
 }
 
 async function loadIncomeSummary(period,branch){
@@ -1364,7 +1367,7 @@ async function loadIncomeSummary(period,branch){
     byType.forEach(r=>{const gk=ACCOUNT_GROUP(r.account_type);if(!COST_GROUPS.has(gk))return;const meta=GROUP_META[gk]||GROUP_META.other,partsSales=n(r.parts_income_nt),accSales=n(r.accessories_income_nt),boutiqueSales=n(r.boutique_income_nt),partsCost=n(r.parts_cost_nt),engineWage=n(r.engine_wage_nt),bodywork=n(r.bodywork_income_nt),paint=n(r.paint_income_nt),carwash=n(r.carwash_income_nt),outsource=n(r.outsource_income_nt),addon=n(r.addon_income_nt),wageTotal=engineWage+bodywork+paint+carwash+outsource+addon,rowTotal=partsCost+wageTotal;costTotal.cars+=n(r.car_count);costTotal.parts_sales+=partsSales;costTotal.acc_sales+=accSales;costTotal.boutique_sales+=boutiqueSales;costTotal.partsCost+=partsCost;costTotal.engine+=engineWage;costTotal.bodywork+=bodywork;costTotal.paint+=paint;costTotal.carwash+=carwash;costTotal.outsource+=outsource;costTotal.addon+=addon;costTotal.wage+=wageTotal;costTotal.total+=rowTotal;costRows+=`<tr class="cost-row"><td><span class="badge badge-blue">${r.branch||'—'}</span></td><td><span class="badge ${meta.badge}">${r.account_type}</span></td><td class="num">${parseInt(r.car_count||0)}</td><td class="num" style="color:#3b82f6">${partsSales>0?fmt(partsSales):'—'}</td><td class="num" style="color:#10b981">${accSales>0?fmt(accSales):'—'}</td><td class="num" style="color:#f59e0b">${boutiqueSales>0?fmt(boutiqueSales):'—'}</td><td class="num">${engineWage>0?fmt(engineWage):'—'}</td><td class="num">${bodywork>0?fmt(bodywork):'—'}</td><td class="num">${paint>0?fmt(paint):'—'}</td><td class="num">${carwash>0?fmt(carwash):'—'}</td><td class="num">${outsource>0?fmt(outsource):'—'}</td><td class="num">${addon>0?fmt(addon):'—'}</td><td class="num" style="color:var(--text-muted);font-weight:600">${fmt(wageTotal)}</td><td class="num" style="color:#f59e0b">${fmt(partsCost)}</td><td class="num" style="color:#f59e0b;font-weight:700">${fmt(rowTotal)}</td><td style="font-size:11px;color:var(--text-dimmer);white-space:nowrap">成本+工資</td></tr>`;});
     if(costRows){costRows+=`<tr class="total-row"><td></td><td style="color:#3b82f6">無費合計</td><td class="num">${parseInt(costTotal.cars)}</td><td class="num" style="color:#3b82f6">${fmt(costTotal.parts_sales)}</td><td class="num" style="color:#10b981">${fmt(costTotal.acc_sales)}</td><td class="num" style="color:#f59e0b">${fmt(costTotal.boutique_sales)}</td><td class="num">${fmt(costTotal.engine)}</td><td class="num">${fmt(costTotal.bodywork)}</td><td class="num">${fmt(costTotal.paint)}</td><td class="num">${fmt(costTotal.carwash)}</td><td class="num">${fmt(costTotal.outsource)}</td><td class="num">${fmt(costTotal.addon)}</td><td class="num" style="color:var(--text-muted);font-weight:700">${fmt(costTotal.wage)}</td><td class="num" style="color:#f59e0b">${fmt(costTotal.partsCost)}</td><td class="num" style="color:#f59e0b;font-size:14px">${fmt(costTotal.total)}</td><td></td></tr>`;}
     costEl.innerHTML=costRows||'<tr><td colspan="16" class="empty">無無費工單資料</td></tr>';
-  }catch(e){cardsEl.innerHTML=`<div style="color:#ef4444;grid-column:1/-1">${e.message}</div>`;}
+  }catch(e){cardsEl.innerHTML=`<div style="color:#ef4444;grid-column:1/-1">${_h(e.message)}</div>`;}
 }
 
 // ══ 單車銷售額 ══
@@ -1515,7 +1518,7 @@ async function loadRevenuePerVehicle(period, branch) {
 
   } catch(e) {
     if (kpiEl) kpiEl.innerHTML = '';
-    if (tbEl)  tbEl.innerHTML  = `<tr><td colspan="7" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;
+    if (tbEl)  tbEl.innerHTML  = `<tr><td colspan="7" style="color:#ef4444;padding:16px">${_h(e.message)}</td></tr>`;
   }
 }
 </script>
@@ -1531,7 +1534,7 @@ async function loadParts(period,branch){
     const badgeType=(t)=>({零件:'badge-blue',配件:'badge-green',精品:'badge-yellow'}[t]||'badge-purple');
     document.getElementById('tbPartsType').innerHTML=byType.length?byType.map(r=>{const s=n(r.total_sales),c=n(r.total_cost),m=s>0?((s-c)/s*100):0;return`<tr><td><span class="badge badge-blue">${r.branch}</span></td><td><span class="badge ${badgeType(r.part_type)}">${r.part_type||'-'}</span></td><td class="num">${parseInt(r.count||0).toLocaleString()}</td><td class="num">${n(r.total_qty).toLocaleString()}</td><td class="num" style="font-weight:700">${fmt(s)}</td><td class="num">${fmt(c)}</td><td class="num" style="color:#10b981">${fmt(s-c)}</td><td class="num" style="color:${m>20?'#10b981':m>10?'#f59e0b':'#ef4444'}">${m.toFixed(1)}%</td></tr>`;}).join(''):'<tr><td colspan="8" class="empty">無資料</td></tr>';
     document.getElementById('tbTopParts').innerHTML=data.topParts.length?data.topParts.map((r,i)=>`<tr><td class="rank-no ${i<3?'rank-'+(i+1):''}">${i+1}</td><td style="font-family:monospace;font-size:11px">${r.part_number}</td><td>${r.part_name||'-'}</td><td><span class="badge ${badgeType(r.part_type)}">${r.part_type||'-'}</span></td><td class="num">${n(r.total_qty).toLocaleString()}</td><td class="num" style="font-weight:700;color:#10b981">${fmt(r.total_sales)}</td></tr>`).join(''):'<tr><td colspan="6" class="empty">無資料</td></tr>';
-  }catch(e){document.getElementById('tbPartsType').innerHTML=`<tr><td colspan="8" style="color:#ef4444;padding:16px">${e.message}</td></tr>`;}
+  }catch(e){document.getElementById('tbPartsType').innerHTML=`<tr><td colspan="8" style="color:#ef4444;padding:16px">${_h(e.message)}</td></tr>`;}
 }
 
 async function loadBoutiqueAccessories(period,branch){
@@ -1579,7 +1582,7 @@ async function loadBoutiqueAccessories(period,branch){
     PART_TYPES.forEach((pt,pi)=>{const col=typeColors[pt]||'#94a3b8';let ptGT=0;depts.forEach(d=>{const v=colGT[`${pt}|||${d}`]||0;ptGT+=v;html+=`<td style="${tdN}color:${col};font-weight:700;border-right:1px solid #2d3f56">${v>0?fmt(v):'—'}</td>`;});const bdr=pi<PART_TYPES.length-1?'2px solid #374151':'1px solid #2d3f56';html+=`<td style="${tdN}color:${col};font-weight:800;font-size:12px;border-right:${bdr}">${ptGT>0?fmt(ptGT):'—'}</td>`;});
     html+=`<td style="${tdN}color:#10b981;font-weight:800;font-size:12px;border-left:2px solid #374151">${grandTotal>0?fmt(grandTotal):'—'}</td></tr>`;
     html+=`</tbody></table>`;matrixEl.innerHTML=html;
-  }catch(e){kpiEl.innerHTML=`<div style="color:#ef4444;padding:12px;grid-column:1/-1">${e.message}</div>`;matrixEl.innerHTML='';}
+  }catch(e){kpiEl.innerHTML=`<div style="color:#ef4444;padding:12px;grid-column:1/-1">${_h(e.message)}</div>`;matrixEl.innerHTML='';}
 }
 
 let currentSaSubTab='sales';
@@ -1628,7 +1631,7 @@ async function loadSASalesView(view,matrixElId,tabKey){
     html+=`<tr style="background:#1e293b;border-top:2px solid #3b82f6"><td style="${tdBase}${stTd(0,'#1e293b','border-right:1px solid #2d3f56')}"></td><td style="${tdBase}${stTd(35,'#1e293b','border-right:1px solid #2d3f56')}"></td><td style="${tdBase}${stTd(90,'#1e293b','font-size:12px;font-weight:800;color:#fff;border-right:2px solid #374151')}">全廠合計</td>`;
     configs.forEach((cfg,ci)=>{const t=colTotals[cfg.id]||{qty:0,sales:0,cnt:0};const border=ci<configs.length-1?'2px solid #2d3f56':'';const has=t.qty>0||t.sales>0||t.cnt>0;let tv;if(cfg.stat_method==='quantity')tv=has?t.qty.toLocaleString(undefined,{maximumFractionDigits:1}):'—';else if(cfg.stat_method==='count')tv=has?t.cnt.toLocaleString():'—';else tv=has?fmt(t.sales):'—';html+=`<td style="${tdNum}color:#10b981;font-weight:800;font-size:12px;border-right:${border}">${tv}</td>`;});
     html+=`</tr></tbody></table>`;matrixEl.innerHTML=html;saLoaded[tabKey]=true;
-  }catch(e){matrixEl.innerHTML=`<div style="padding:24px;color:#ef4444">${e.message}</div>`;}
+  }catch(e){matrixEl.innerHTML=`<div style="padding:24px;color:#ef4444">${_h(e.message)}</div>`;}
 }
 
 async function loadDaily(period,branch){
@@ -2133,7 +2136,7 @@ loadWipLastMonthComparison();
         ${totalCol}${brCols}
       </div>`;
   } catch(e) {
-    lmEl.innerHTML = `<span style="color:#ef4444;font-size:11px">❌ 載入失敗: ${e.message}</span>`;
+    lmEl.innerHTML = `<span style="color:#ef4444;font-size:11px">❌ 載入失敗: ${_h(e.message)}</span>`;
   }
 }
    
@@ -2248,7 +2251,7 @@ loadWipLastMonthComparison();
       </details>`;
 
     summaryEl.innerHTML=html;
-  }catch(e){summaryEl.innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;}
+  }catch(e){summaryEl.innerHTML=`<div style="color:#ef4444;padding:16px">${_h(e.message)}</div>`;}
 }
 
 let _wipModal={filterType:'',filterVal:''};
@@ -2842,8 +2845,10 @@ function exportWipModalCSV(){
     else if(filterVal==='unknown')filtered=filtered.filter(r=>!r.wip_status||r.wip_status==='未填寫');
   }
   if(_wipModalStatusFilter!=='all')filtered=filtered.filter(r=>(r.wip_status||'未填寫')===_wipModalStatusFilter);
+  // CSV formula injection 防護：開頭為 = + - @ \t \r 補單引號中和
+  const csvSafe=v=>{const s=v==null?'':String(v);return /^[=+\-@\t\r]/.test(s)?`'${s}`:s;};
   const header=['據點','工單號','進廠月','車牌','維修類型','SA','工資(labor_fee)','材料(repair_material)','預估(repair_amount)','開單天數','WIP狀態','原因備註','預計完成','填寫人'];
-  const rows=filtered.map(r=>[r.branch,r.work_order,r.open_period,r.plate_no,r.repair_type,r.service_advisor,Math.round(r.wage||0),Math.round(r.cost_amt||0),Math.round(r.sales_amt||0),r.days_open!==null?Math.round(r.days_open):'',r.wip_status||'未填寫',r.wip_reason||'',r.eta_date?String(r.eta_date).slice(0,10):'',r.wip_updated_by||''].map(v=>JSON.stringify(v??'')).join(','));
+  const rows=filtered.map(r=>[r.branch,r.work_order,r.open_period,r.plate_no,r.repair_type,r.service_advisor,Math.round(r.wage||0),Math.round(r.cost_amt||0),Math.round(r.sales_amt||0),r.days_open!==null?Math.round(r.days_open):'',r.wip_status||'未填寫',r.wip_reason||'',r.eta_date?String(r.eta_date).slice(0,10):'',r.wip_updated_by||''].map(v=>JSON.stringify(csvSafe(v))).join(','));
   const csv='\uFEFF'+[header.join(','),...rows].join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=`wip_${filterVal||'all'}.csv`;a.click();
 }
@@ -3033,7 +3038,7 @@ const brKeys=Object.keys(branchData).filter(br=>!branch||br===branch);
       html+=`</div>`;
     });
     contentEl.innerHTML=html||'<div class="empty">無資料</div>';
-  }catch(e){contentEl.innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;}
+  }catch(e){contentEl.innerHTML=`<div style="color:#ef4444;padding:16px">${_h(e.message)}</div>`;}
 }
 
 // ══ 技師工時折扣明細 Modal ══
@@ -3151,7 +3156,7 @@ function closeTechHoursDetail() {
     html += '</tbody></table></div>';
     bodyEl.innerHTML = html;
   } catch(e) {
-    bodyEl.innerHTML = `<div style="color:#ef4444;padding:16px">${e.message}</div>`;
+    bodyEl.innerHTML = `<div style="color:#ef4444;padding:16px">${_h(e.message)}</div>`;
   }
 }
 
@@ -3468,7 +3473,7 @@ async function loadTechTurnover(period, branch) {
     }
 
   } catch(err) {
-    el.innerHTML = `<div style="color:#ef4444;padding:16px">❌ ${err.message}</div>`;
+    el.innerHTML = `<div style="color:#ef4444;padding:16px">❌ ${_h(err.message)}</div>`;
   }
 }
 
@@ -4424,7 +4429,7 @@ html += `<div style="margin-bottom:28px">
     el.innerHTML = html || '<div class="empty">無接待部人員資料</div>';
   } catch (err) {
     console.error('loadPersonPerfDashboard', err);
-    el.innerHTML = `<div style="color:#ef4444;padding:16px">❌ ${err.message}</div>`;
+    el.innerHTML = `<div style="color:#ef4444;padding:16px">❌ ${_h(err.message)}</div>`;
   }
 }
 
@@ -5225,7 +5230,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     </div>
   </div>
 </div>
- <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+ <!-- @e965/xlsx: maintained fork with CVE-2023-30533 / CVE-2024-22363 fixes -->
+ <script src="https://cdn.jsdelivr.net/npm/@e965/xlsx@0.20.3/dist/xlsx.full.min.js"></script>
 
    <!-- ══ 科別設定 Modal ══ -->
 <div id="ppDeptConfigModal"
@@ -5497,7 +5503,7 @@ async function loadPPTargetData(period) {
 
     renderPPTargetTable();
   } catch(e) {
-    bodyEl.innerHTML = '<div style="color:#ef4444;padding:16px">' + e.message + '</div>';
+    bodyEl.innerHTML = '<div style="color:#ef4444;padding:16px">' + _h(e.message) + '</div>';
   }
 }
 

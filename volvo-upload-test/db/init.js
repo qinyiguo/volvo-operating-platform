@@ -667,14 +667,24 @@ await client.query(`CREATE INDEX IF NOT EXISTS idx_business_query_period_branch 
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS user_sessions (
-        token      VARCHAR(70)  PRIMARY KEY,
-        user_id    INTEGER      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        expires_at TIMESTAMPTZ  NOT NULL,
-        created_at TIMESTAMPTZ  DEFAULT NOW()
+        token         VARCHAR(70)  PRIMARY KEY,
+        user_id       INTEGER      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        expires_at    TIMESTAMPTZ  NOT NULL,
+        last_activity TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+        created_at    TIMESTAMPTZ  DEFAULT NOW()
       )
     `);
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_sessions_user    ON user_sessions(user_id)`);
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_sessions_expires ON user_sessions(expires_at)`);
+    // 舊 DB 補欄位（閒置超時用）
+    await client.query(`ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS last_activity TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_sessions_user     ON user_sessions(user_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_sessions_expires  ON user_sessions(expires_at)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_sessions_activity ON user_sessions(last_activity)`);
+
+    // ── 帳號鎖定欄位（3 次錯 → 15 分暫時鎖；再錯 3 次 → 永久鎖需 super_admin 解）──
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_login_count     INTEGER     NOT NULL DEFAULT 0`);
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until           TIMESTAMPTZ`);
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS had_temp_lock          BOOLEAN     NOT NULL DEFAULT false`);
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS requires_manual_unlock BOOLEAN     NOT NULL DEFAULT false`);
 
    // ── 操作紀錄 ──
   await client.query(`
@@ -707,31 +717,116 @@ await client.query(`CREATE INDEX IF NOT EXISTS idx_business_query_period_branch 
   await client.query(`CREATE INDEX IF NOT EXISTS idx_al_ip       ON audit_logs(ip_address, created_at DESC)`);
   await client.query(`CREATE INDEX IF NOT EXISTS idx_al_branch   ON audit_logs(user_branch, created_at DESC)`);
   await client.query(`CREATE INDEX IF NOT EXISTS idx_al_data_br  ON audit_logs(data_branch)`);
+  // keyword ILIKE 搜尋 resource_detail 用 pg_trgm GIN 索引加速（有些 managed DB 需要 superuser 裝 extension；失敗就跳過）
+  try {
+    await client.query(`CREATE EXTENSION IF NOT EXISTS pg_trgm`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_al_detail_trgm ON audit_logs USING GIN (resource_detail gin_trgm_ops)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_al_resource_trgm ON audit_logs USING GIN (resource gin_trgm_ops)`);
+  } catch(e) { console.warn('[initDB] pg_trgm 不可用，keyword 搜尋將走 seq scan:', e.message); }
+
+  // ── 資安告警（背景偵測器寫入；super_admin 可於設定頁查看 / 認領）──
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS audit_alerts (
+      id               BIGSERIAL  PRIMARY KEY,
+      alert_type       VARCHAR(40) NOT NULL,   -- BRUTE_FORCE / MASS_DOWNLOAD / MULTI_LOCK / SUSPICIOUS_DELETE / MANY_AUTH_FAIL
+      severity         VARCHAR(10) NOT NULL,   -- critical | high | medium
+      triggered_at     TIMESTAMPTZ DEFAULT NOW(),
+      window_start     TIMESTAMPTZ,            -- 偵測視窗起點
+      window_end       TIMESTAMPTZ,            -- 偵測視窗結束
+      signature        VARCHAR(200),           -- 去重用：同 signature 1h 內不重複告警
+      summary          TEXT NOT NULL,
+      details          JSONB,                  -- { ip, username, count, sample_ids: [..], ... }
+      acknowledged_by  INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      acknowledged_at  TIMESTAMPTZ,
+      webhook_sent     BOOLEAN DEFAULT false
+    )
+  `);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_alerts_trig  ON audit_alerts(triggered_at DESC)`);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_alerts_ack   ON audit_alerts(acknowledged_at) WHERE acknowledged_at IS NULL`);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_alerts_sig   ON audit_alerts(signature, triggered_at DESC)`);
+
+  // ── 稽核清理雙人審核（審核者必須不同於發起者）──
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS audit_cleanup_requests (
+      id              SERIAL PRIMARY KEY,
+      requester_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      requester_name  VARCHAR(100),
+      keep_days       INTEGER NOT NULL,
+      reason          TEXT,
+      status          VARCHAR(20) NOT NULL DEFAULT 'pending',  -- pending | approved | rejected | expired
+      approver_id     INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      approver_name   VARCHAR(100),
+      approved_at     TIMESTAMPTZ,
+      deleted_rows    INTEGER,
+      created_at      TIMESTAMPTZ DEFAULT NOW(),
+      expires_at      TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '24 hours')
+    )
+  `);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_acr_status ON audit_cleanup_requests(status, created_at DESC)`);
+
+  // ── 稽核防竄改：月度 hash-chain checkpoints ──
+  // 每月第一天為上個月的 audit_logs 做 SHA-256 摘要 + prev_hash chain。
+  // 若有人改了歷史 row，後續 verify 會對不上。
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS audit_checkpoints (
+      id          SERIAL PRIMARY KEY,
+      period      VARCHAR(7)  NOT NULL UNIQUE,       -- YYYY-MM
+      row_count   INTEGER     NOT NULL DEFAULT 0,
+      min_id      BIGINT,
+      max_id      BIGINT,
+      chain_hash  VARCHAR(64) NOT NULL,              -- SHA-256 of (prev_hash || rows_digest)
+      prev_hash   VARCHAR(64),                       -- 鏈接前一月
+      created_at  TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  // DB 層保護：阻止對 audit_logs 做 UPDATE（DELETE 仍開放給 cleanup job / 2-admin approval 用）
+  // 某些 managed PG 可能會限制 CREATE RULE，以 try/catch 包起來。
+  try {
+    await client.query(`
+      CREATE OR REPLACE RULE audit_logs_no_update AS
+      ON UPDATE TO audit_logs DO INSTEAD NOTHING
+    `);
+  } catch(e) { console.warn('[initDB] audit_logs_no_update rule:', e.message); }
  
   // 自動分區清理（可選）：保留 180 天
   // 若資料量龐大，可考慮設定 pg_partman 或排程清理
+
+    // ── pbkdf2 漸進升級用：紀錄每個 hash 的 iteration 數 ──
+    // 預設 100000（相容既有 row）；新建 / 重設密碼會寫 600000
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_iterations INTEGER NOT NULL DEFAULT 100000`);
 
     // ── 建立預設超管帳號（若無任何使用者）──
     const _uc = await client.query(`SELECT COUNT(*) FROM users`);
     if (parseInt(_uc.rows[0].count) === 0) {
       const _cr   = require('crypto');
       const _env  = process.env.INITIAL_ADMIN_PASSWORD;
-      const _pwd  = _env || _cr.randomBytes(9).toString('base64url');
+      const _isProd = process.env.NODE_ENV === 'production';
+      // 安全：production 必填 INITIAL_ADMIN_PASSWORD，不再印隨機密碼到 stdout
+      // （避免 Zeabur 等雲端 log 保留導致密碼外洩）
+      if (_isProd && !_env) {
+        throw new Error('[initDB] production 環境必須設定 INITIAL_ADMIN_PASSWORD 環境變數，否則拒絕建立預設管理員');
+      }
+      const _pwd  = _env || _cr.randomBytes(12).toString('base64url'); // dev only
+      if (_pwd.length < 10) {
+        throw new Error('[initDB] INITIAL_ADMIN_PASSWORD 至少 10 個字元');
+      }
+      const _ITER = 600000;
       const _salt = _cr.randomBytes(16).toString('hex');
-      const _hash = _cr.pbkdf2Sync(_pwd, _salt, 100000, 32, 'sha256').toString('hex');
+      const _hash = _cr.pbkdf2Sync(_pwd, _salt, _ITER, 32, 'sha256').toString('hex');
       await client.query(
-        `INSERT INTO users (username, password_hash, password_salt, display_name, role)
-         VALUES ('admin', $1, $2, '系統管理員', 'super_admin')
+        `INSERT INTO users (username, password_hash, password_salt, password_iterations, display_name, role)
+         VALUES ('admin', $1, $2, $3, '系統管理員', 'super_admin')
          ON CONFLICT (username) DO NOTHING`,
-        [_hash, _salt]
+        [_hash, _salt, _ITER]
       );
       if (_env) {
         console.log('[initDB] ✅ 預設管理員已建立: admin（使用 INITIAL_ADMIN_PASSWORD 指定的密碼）');
       } else {
-        console.log(`[initDB] ✅ 預設管理員已建立: admin / ${_pwd}（請立即變更，此訊息僅顯示一次）`);
+        console.log(`[initDB] ✅ 預設管理員已建立: admin / ${_pwd}（dev 模式自動產生，請立即變更，此訊息僅顯示一次）`);
       }
     }
-    
+
     console.log('[initDB] ✅ 所有表格建立完成');
   } catch (err) {
     console.error('[initDB] ❌ 失敗:', err.message);

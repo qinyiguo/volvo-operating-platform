@@ -91,11 +91,15 @@ router.put('/promo-bonus/configs/:id', requirePermission('feature:promo_bonus_ed
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/promo-bonus/configs/:id', requirePermission('feature:promo_bonus_edit'), async (req, res) => {
+router.delete('/promo-bonus/configs/:id', requirePermission('feature:promo_bonus_edit'), async (req, res, next) => {
   try {
+    const pre = await pool.query(`SELECT rule_name, rule_type FROM promo_bonus_configs WHERE id=$1`, [req.params.id]);
     await pool.query('DELETE FROM promo_bonus_configs WHERE id=$1', [req.params.id]);
+    if (pre.rows.length) {
+      req._audit_detail = `刪除銷售獎金規則 id=${req.params.id} name="${pre.rows[0].rule_name}" type=${pre.rows[0].rule_type}`;
+    }
     res.json({ ok: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { next(err); }
 });
 
 // ── 計算結果 ──

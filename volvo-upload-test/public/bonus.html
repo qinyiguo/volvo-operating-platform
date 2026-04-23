@@ -21,8 +21,9 @@
 <link rel="stylesheet" href="/theme.css">
  <script src="/auth.js"></script>
  <!-- xlsx-js-style: drop-in fork of SheetJS with cell style support (fills, fonts, borders) -->
+ <!-- Fallback: @e965/xlsx (patched SheetJS fork, CVE-2023-30533 / CVE-2024-22363 fixed) -->
  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"
-         onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';document.head.appendChild(s);"></script>
+         onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@e965/xlsx@0.20.3/dist/xlsx.full.min.js';document.head.appendChild(s);"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Volvo 獎金表</title>
@@ -5366,6 +5367,12 @@ function _applyBonusStyles(ws, rows, roles) {
         if (!baseStyle) continue;
         if (!FULL_WIDTH[role] && !SINGLE_SIG_ROLES[role]) continue;
         cell = ws[addr] = { v: '', t: 's' };
+      }
+      // 安全：CSV/Excel formula injection 防護
+      // 開頭為 = + - @ \t \r 的字串會被 Excel 當公式執行（可能呼叫 WEBSERVICE / DDE）
+      // 一律補單引號 prefix 中和；emp_name / dept_name 來自 Excel 上傳，可能含這些字元
+      if (typeof cell.v === 'string' && /^[=+\-@\t\r]/.test(cell.v)) {
+        cell.v = "'" + cell.v;
       }
       if (typeof cell.v === 'number') cell.z = '#,##0';
       if (!baseStyle) continue;

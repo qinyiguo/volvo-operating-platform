@@ -726,6 +726,8 @@ body.pres-mode .cPBar{display:none !important;}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
+// HTML escape：所有 innerHTML 內含 user input / API 錯誤訊息的內插一律經此處理
+window._h = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 // ── AME = 集團鈑烤廠（事故保險 + 鈑噴合計）──
 const BRCOLS={AMA:'#3b82f6',AMC:'#10b981',AMD:'#f59e0b',AME:'#ec4899'};
 const BRS_ALL=['AMA','AMC','AMD'];

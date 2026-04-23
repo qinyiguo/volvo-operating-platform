@@ -19,7 +19,7 @@ const router  = require('express').Router();
 const multer  = require('multer');
 const XLSX    = require('xlsx');
 const pool    = require('../db/pool');
-const { detectFileType, detectBranch, detectPeriod } = require('../lib/utils');
+const { detectFileType, detectBranch, detectPeriod, isExcelBuffer, excelFileFilter } = require('../lib/utils');
 const { requireAuth, requirePermission } = require('../lib/authMiddleware');
 const { isUploadPeriodLocked, uploadPeriodLockAt } = require('../lib/bonusPeriodLock');
 
@@ -31,7 +31,7 @@ const {
 const { batchInsert, upsertPartsCatalog } = require('../lib/batchInsert');
 
 const storage = multer.memoryStorage();
-const uploader = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } });
+const uploader = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 }, fileFilter: excelFileFilter });
 
 // ── 找最適合的 sheet（優先關鍵字，其次列數最多）──
 function pickBestSheet(workbook, fileType) {
@@ -104,6 +104,10 @@ router.post('/upload', requirePermission('feature:upload_dms'), uploader.array('
     try { filename = Buffer.from(file.originalname, 'latin1').toString('utf8'); } catch (e) {}
 
     try {
+      // 檔頭驗證：擋掉副檔名偽造的非 Excel 檔（防 zip-bomb / 任意 buffer 餵給 XLSX）
+      if (!isExcelBuffer(file.buffer)) {
+        throw new Error('檔案內容不是有效的 Excel 格式（檔頭檢查失敗）');
+      }
       const workbook = XLSX.read(file.buffer, {
         type: 'buffer',
         cellDates: true,

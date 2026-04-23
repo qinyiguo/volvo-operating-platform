@@ -9,19 +9,33 @@
   const TOKEN_KEY = 'dms_token';
   const USER_KEY  = 'dms_user';
 
+  // HTML escape — 任何 innerHTML 內插入 user-controlled 字串都應通過這層
+  // 防止使用者管理者 / 別人的 display_name / username 含 <script> 形成 XSS
+  function _esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
   // ── 儲存 / 讀取 ──
+  // 2026-04-23 起 token 改存於 HttpOnly cookie（XSS 拿不到）。
+  // getToken() 只為相容舊呼叫端；新程式不需要用到 token string。
+  // localStorage 僅存 user 資料（display_name / role / permissions 等，非敏感）。
   window.DmsAuth = {
+    // 公開 HTML escape：所有頁面在把 e.message / API 回傳字串塞 innerHTML 前都該過這層
+    esc: _esc,
+    // 舊名保留；cookie 時代讀不到、回 null
     getToken() { return localStorage.getItem(TOKEN_KEY); },
     getUser()  {
       try { return JSON.parse(localStorage.getItem(USER_KEY) || 'null'); }
       catch(e) { return null; }
     },
     save(token, user) {
-      localStorage.setItem(TOKEN_KEY, token);
+      // 不再存 token 到 localStorage（cookie 已由 server 設好）
       localStorage.setItem(USER_KEY, JSON.stringify(user));
     },
     clear() {
-      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(TOKEN_KEY);   // 清掉遷移前的殘留值
       localStorage.removeItem(USER_KEY);
     },
 
@@ -32,23 +46,18 @@
         redirectOnFail = true,
       } = options;
 
-      const token = this.getToken();
-      if (!token) {
-        if (redirectOnFail) window.location.href = '/login.html';
-        return null;
-      }
-
       try {
-        const res = await fetch('/api/users/me', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        // 不再靠 localStorage token 判斷，直接問 /api/users/me：
+        // cookie 會由瀏覽器自動帶；未登入回 401 → 導去 /login.html
+        const res = await fetch('/api/users/me');
         if (!res.ok) {
           this.clear();
           if (redirectOnFail) window.location.href = '/login.html';
           return null;
         }
         const user = await res.json();
-        this.save(token, user); // 更新快取
+        // 只存 user 資料（UX 用），不再存 token
+        try { localStorage.setItem(USER_KEY, JSON.stringify(user)); } catch(e) {}
         window._currentUser = user;
 
         // 先依權限過濾導覽列，讓使用者即使卡在無權限頁也能跳到有權限的頁
@@ -229,20 +238,27 @@
         background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
         position:relative;flex-shrink:0;
       `;
+      // 安全：display_name / username / branch 來自 DB 但是使用者管理可寫；一律 escape
+      const _disp   = _esc(user.display_name || user.username);
+      const _uname  = _esc(user.username);
+      const _branch = user.branch ? ' · ' + _esc(user.branch) : '';
+      const _role   = _esc(roleLabel[user.role] || user.role);
+      const _color  = roleColor[user.role] || '#64748b';
+      const _initial = _esc((user.display_name || user.username).charAt(0).toUpperCase());
       badge.innerHTML = `
         <div style="width:28px;height:28px;border-radius:50%;
-                    background:${roleColor[user.role] || '#64748b'}22;
-                    border:2px solid ${roleColor[user.role] || '#64748b'};
+                    background:${_color}22;
+                    border:2px solid ${_color};
                     display:flex;align-items:center;justify-content:center;
-                    font-size:12px;font-weight:700;color:${roleColor[user.role] || '#64748b'}">
-          ${(user.display_name || user.username).charAt(0).toUpperCase()}
+                    font-size:12px;font-weight:700;color:${_color}">
+          ${_initial}
         </div>
         <div style="line-height:1.3;min-width:0">
           <div style="font-size:12px;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px">
-            ${user.display_name || user.username}
+            ${_disp}
           </div>
-          <div style="font-size:10px;color:${roleColor[user.role] || '#64748b'}">
-            ${roleLabel[user.role] || user.role}${user.branch ? ' · ' + user.branch : ''}
+          <div style="font-size:10px;color:${_color}">
+            ${_role}${_branch}
           </div>
         </div>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="flex-shrink:0;opacity:.5">
@@ -255,8 +271,8 @@
           padding:6px 0;
         ">
           <div style="padding:10px 14px 8px;border-bottom:1px solid #253347">
-            <div style="font-size:12px;font-weight:700;color:#e2e8f0">${user.display_name || user.username}</div>
-            <div style="font-size:11px;color:#64748b;margin-top:1px">${user.username}</div>
+            <div style="font-size:12px;font-weight:700;color:#e2e8f0">${_disp}</div>
+            <div style="font-size:11px;color:#64748b;margin-top:1px">${_uname}</div>
           </div>
           <div onclick="DmsAuth._openProfileModal()" style="
             padding:9px 14px;font-size:13px;color:#cbd5e1;cursor:pointer;display:flex;align-items:center;gap:8px;
@@ -297,7 +313,7 @@
           <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:20px">👤 個人設定</div>
           <div style="margin-bottom:14px">
             <label style="font-size:12px;color:#64748b;font-weight:600">顯示名稱</label>
-            <input id="_pDisplayName" value="${user.display_name || ''}" style="
+            <input id="_pDisplayName" value="${_esc(user.display_name || '')}" style="
               width:100%;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;
               padding:9px 12px;border-radius:7px;font-size:14px;margin-top:5px;box-sizing:border-box;outline:none
             ">
@@ -397,8 +413,16 @@
     };
   }
 
-  // ── 全域替換 fetch 讓所有 API 請求自動帶 token ──
-  // 對 /api/* 的請求，若尚未帶 Authorization header，就自動補上 Bearer。
+  // 讀取指定名稱的 cookie（非 HttpOnly 才讀得到）
+  function _readCookie(name) {
+    const m = document.cookie.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'));
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+
+  // ── 全域替換 fetch：讓 /api/* 請求一律帶 cookie，並於狀態變更時塞 X-CSRF-Token ──
+  // 原本靠 Authorization: Bearer <localStorage token>；改為 cookie-based auth
+  // （HttpOnly 的 dms_token 由瀏覽器自動帶），XSS 拿不到 token。
+  // 為相容 login / 其他未完全遷移的情境，若 localStorage 仍有 token 則一併附 Bearer。
   const _origFetch = window.fetch.bind(window);
   window.fetch = function(input, init) {
     try {
@@ -409,17 +433,56 @@
         url.startsWith(location.origin + '/api/')
       );
       if (isApi) {
+        init = init || {};
+        // 讓瀏覽器自動帶 dms_token cookie
+        if (!init.credentials) init.credentials = 'same-origin';
+        const headers = new Headers(init.headers || {});
+        // 相容保留 Bearer（若 localStorage 還有 token）
         const token = localStorage.getItem(TOKEN_KEY);
-        if (token) {
-          init = init || {};
-          const headers = new Headers(init.headers || {});
-          if (!headers.has('Authorization')) {
-            headers.set('Authorization', 'Bearer ' + token);
-            init.headers = headers;
+        if (token && !headers.has('Authorization')) {
+          headers.set('Authorization', 'Bearer ' + token);
+        }
+        // 狀態變更請求（非 GET/HEAD/OPTIONS）一律帶 X-CSRF-Token
+        const method = String(init.method || 'GET').toUpperCase();
+        if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+          if (!headers.has('X-CSRF-Token')) {
+            const csrf = _readCookie('dms_csrf');
+            if (csrf) headers.set('X-CSRF-Token', csrf);
           }
         }
+        init.headers = headers;
       }
     } catch (e) { /* fall through — 不阻斷原始請求 */ }
     return _origFetch(input, init);
   };
+
+  // ── 閒置自動登出（30 分鐘無操作 → 警告 → 登出）──
+  // 伺服端 session 也有 30 分閒置檢查（lib/authMiddleware resolveToken）；
+  // 這邊只是 UX 提示 + 主動登出，避免離座時畫面一直留著敏感資料。
+  const IDLE_LIMIT_MS  = 30 * 60 * 1000;       // 30 分鐘
+  const IDLE_WARN_MS   = IDLE_LIMIT_MS - 60000; // 最後 1 分鐘顯示警告
+  let _idleLast = Date.now();
+  let _idleWarnShown = false;
+  function _resetIdle() { _idleLast = Date.now(); _idleWarnShown = false; const b=document.getElementById('_idleWarnBar'); if (b) b.remove(); }
+  ['mousedown','keydown','scroll','touchstart','click'].forEach(ev => {
+    document.addEventListener(ev, _resetIdle, { passive: true, capture: true });
+  });
+  setInterval(() => {
+    // 無登入狀態（login 頁）就不啟用
+    if (!window._currentUser) return;
+    const idle = Date.now() - _idleLast;
+    if (idle >= IDLE_LIMIT_MS) {
+      try { alert('閒置超過 30 分鐘，已自動登出'); } catch(e) {}
+      window.DmsAuth.logout();
+      return;
+    }
+    if (idle >= IDLE_WARN_MS && !_idleWarnShown) {
+      _idleWarnShown = true;
+      const bar = document.createElement('div');
+      bar.id = '_idleWarnBar';
+      bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;padding:10px 16px;background:#fef3c7;color:#92400e;font-size:13px;font-weight:700;text-align:center;border-bottom:2px solid #f59e0b';
+      bar.textContent = '⏰ 閒置即將自動登出，請點擊畫面任一處以延長 session';
+      document.body.appendChild(bar);
+    }
+  }, 30000); // 30 秒檢查一次
 })();
