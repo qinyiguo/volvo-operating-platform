@@ -29,8 +29,9 @@ const { requireAuth, requirePermission } = require('../lib/authMiddleware');
 router.use(requireAuth);
 
 const { checkPeriodLock } = require('../lib/bonusPeriodLock');
+const { isExcelBuffer, excelFileFilter } = require('../lib/utils');
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 }, fileFilter: excelFileFilter });
 
 // ══ 正規化車牌 ══
 function normalizePlate(raw) {
@@ -145,6 +146,7 @@ router.put('/bodyshop-bonus/settings', requirePermission('feature:bodyshop_bonus
 
 // ══ 解析 Google Form Excel ══
 function parseFormExcel(buffer) {
+  if (!isExcelBuffer(buffer)) throw new Error('檔案內容不是有效的 Excel 格式（檔頭檢查失敗）');
   const wb  = XLSX.read(buffer, { type: 'buffer', cellDates: true, raw: false });
   const ws  = wb.Sheets[wb.SheetNames[0]];
   const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });

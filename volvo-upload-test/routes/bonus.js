@@ -32,8 +32,9 @@ const multer = require('multer');
 const XLSX   = require('xlsx');
 const pool   = require('../db/pool');
 const { requireAuth, requirePermission, internalAuthHeaders } = require('../lib/authMiddleware');
+const { isExcelBuffer, excelFileFilter } = require('../lib/utils');
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 }, fileFilter: excelFileFilter });
 
 router.use(requireAuth);
 
@@ -237,6 +238,7 @@ async function getRevenueTarget(period, branch, revType) {
 // 人員名冊 — 上傳解析
 // ══════════════════════════════════════════════
 function parseRosterExcel(buffer) {
+  if (!isExcelBuffer(buffer)) throw new Error('檔案內容不是有效的 Excel 格式（檔頭檢查失敗）');
   const wb = XLSX.read(buffer, { type: 'buffer', cellDates: false, raw: true });
   const ws = wb.Sheets[wb.SheetNames[0]];
   const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });

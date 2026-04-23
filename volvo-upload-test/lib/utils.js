@@ -64,4 +64,29 @@ const detectBranch = fn => {
 
 const detectPeriod = fn => { const m = fn.match(/(\d{6})/); return m ? m[1] : null; };
 
-module.exports = { pick, num, parseDate, parseDateTime, detectFileType, detectBranch, detectPeriod };
+// ── Excel 檔頭驗證（防偽造副檔名上傳惡意內容）──
+// xlsx / xlsm / xltx：ZIP 容器（PK\x03\x04）
+// xls：OLE2 複合文件（D0CF11E0A1B11AE1）
+const XLSX_MAGIC = Buffer.from([0x50, 0x4B, 0x03, 0x04]);
+const XLS_MAGIC  = Buffer.from([0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1]);
+
+function isExcelBuffer(buf) {
+  if (!buf || !Buffer.isBuffer(buf) || buf.length < 8) return false;
+  if (buf.subarray(0, 4).equals(XLSX_MAGIC)) return true;
+  if (buf.subarray(0, 8).equals(XLS_MAGIC))  return true;
+  return false;
+}
+
+// 給 multer.fileFilter 使用：擋掉副檔名不對的檔案；內容驗證（magic bytes）放在
+// 各 route 的 handler 開頭呼叫 isExcelBuffer，因為 multer.fileFilter 拿不到 buffer。
+function excelFileFilter(req, file, cb) {
+  const ok = /\.(xlsx?|xlsm|xltx)$/i.test(file.originalname || '');
+  if (!ok) return cb(new Error('只接受 .xlsx / .xls / .xlsm / .xltx 檔'));
+  cb(null, true);
+}
+
+module.exports = {
+  pick, num, parseDate, parseDateTime,
+  detectFileType, detectBranch, detectPeriod,
+  isExcelBuffer, excelFileFilter,
+};

@@ -99,11 +99,12 @@ const SKIP_PATTERNS = [
 ];
 
 // ─── IP 解析 ────────────────────────────────────────────────────
+// 優先用 Express 的 req.ip — 它會根據 app.set('trust proxy', ...) 自動處理
+// X-Forwarded-For，避免攻擊者偽造 XFF 汙染稽核（M2）。
+// 沒有 req.ip（非 Express 環境）才退回手動解析。
 function getClientIP(req) {
-  const xff = req.headers['x-forwarded-for'];
-  if (xff) return xff.split(',')[0].trim();
-  return req.headers['x-real-ip']
-    || req.connection?.remoteAddress
+  if (req.ip) return req.ip;
+  return req.connection?.remoteAddress
     || req.socket?.remoteAddress
     || '0.0.0.0';
 }
@@ -203,7 +204,7 @@ function auditMiddleware(req, res, next) {
       writeLog(req, {
         status_code: res.statusCode,
         duration_ms: duration,
-      }).catch(() => {});
+      }).catch(err => console.warn('[auditLog] middleware write failed:', err.message));
     }
     return origEnd(...args);
   };

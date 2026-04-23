@@ -1,0 +1,14 @@
+.git
+.gitignore
+.dockerignore
+node_modules
+npm-debug.log*
+.env
+.env.*
+*.md
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+*.log
+tmp/

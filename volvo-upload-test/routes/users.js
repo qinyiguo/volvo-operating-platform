@@ -18,7 +18,16 @@
  *
  * 角色三層:  super_admin > branch_admin > user
  *   canManageRole() 強制不可越權編輯。
- *   所有密碼以 pbkdf2 100k/sha256 hash，16-byte salt。
+ *
+ * 密碼：pbkdf2-sha256，16-byte salt。預設 600k iterations（OWASP 2023+）。
+ *   舊使用者仍存 100k → 登入驗證透過 users.password_iterations 取實際值；
+ *   驗證成功後若 iterations < 600k，會自動 rehash 升級至 600k（漸進 migration，
+ *   使用者完全無感）。
+ *
+ * Session 撤銷時機：
+ *   - 改密碼（自己 / 別人）：DELETE 該 user 所有 session
+ *   - 改 role / branch / is_active=false：DELETE 該 user 所有 session（防權限延後生效）
+ *   - 帳號刪除 / 停用：cascade
  *
  * 本檔含 /users/login（未驗證），必須在 index.js 內早於其他 router 掛載。
  */
@@ -37,21 +46,33 @@ const {
 // Helpers
 // ═══════════════════════════════════════════════
 
-function hashPassword(password, salt) {
-  // PBKDF2 with SHA-256, 100k iterations
-  return crypto.pbkdf2Sync(password, salt, 100000, 32, 'sha256').toString('hex');
+// OWASP 2023+ 建議：PBKDF2-SHA256 最少 600,000 iterations
+const PBKDF2_ITER_DEFAULT = 600000;
+const PASSWORD_MIN_LENGTH = 10;
+
+function hashPassword(password, salt, iterations = PBKDF2_ITER_DEFAULT) {
+  return crypto.pbkdf2Sync(password, salt, iterations, 32, 'sha256').toString('hex');
 }
 
 function generateSalt() {
   return crypto.randomBytes(16).toString('hex');
 }
 
-function verifyPassword(password, hash, salt) {
-  return hashPassword(password, salt) === hash;
+// 用 timing-safe 比較避免時序攻擊；iterations 從 DB row 取得（漸進 migration）
+function verifyPassword(password, hash, salt, iterations = 100000) {
+  const expected = hashPassword(password, salt, iterations);
+  if (expected.length !== hash.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(hash, 'hex'));
 }
 
 function generateToken() {
   return crypto.randomBytes(32).toString('hex');
+}
+
+// 撤銷一位使用者所有 session（角色/分行/停用變更時必呼叫）
+async function revokeAllSessions(userId, client) {
+  const c = client || pool;
+  await c.query(`DELETE FROM user_sessions WHERE user_id = $1`, [userId]);
 }
 
 // 角色可以管理哪些角色（防止越權）
@@ -66,7 +87,7 @@ function canManageRole(managerRole, targetRole) {
 // ═══════════════════════════════════════════════
 
 // POST /api/users/login
-router.post('/users/login', async (req, res) => {
+router.post('/users/login', async (req, res, next) => {
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ error: '請輸入帳號與密碼' });
   try {
@@ -76,8 +97,23 @@ router.post('/users/login', async (req, res) => {
     if (!r.rows.length) return res.status(401).json({ error: '帳號或密碼錯誤' });
     const user = r.rows[0];
     if (!user.is_active) return res.status(403).json({ error: '帳號已停用，請聯絡管理員' });
-    if (!verifyPassword(password, user.password_hash, user.password_salt)) {
+    const storedIter = user.password_iterations || 100000;
+    if (!verifyPassword(password, user.password_hash, user.password_salt, storedIter)) {
       return res.status(401).json({ error: '帳號或密碼錯誤' });
+    }
+
+    // 漸進升級：舊 100k → 600k 重算，使用者無感
+    if (storedIter < PBKDF2_ITER_DEFAULT) {
+      try {
+        const newSalt = generateSalt();
+        const newHash = hashPassword(password, newSalt, PBKDF2_ITER_DEFAULT);
+        await pool.query(
+          `UPDATE users SET password_hash=$1, password_salt=$2, password_iterations=$3 WHERE id=$4`,
+          [newHash, newSalt, PBKDF2_ITER_DEFAULT, user.id]
+        );
+      } catch (e) {
+        console.warn('[login] pbkdf2 upgrade failed for user', user.id, e.message);
+      }
     }
 
     // 建立 session token，8 小時有效
@@ -106,7 +142,7 @@ router.post('/users/login', async (req, res) => {
       },
       expires_at: expiresAt,
     });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { next(err); }
 });
 
 // POST /api/users/logout
@@ -188,24 +224,26 @@ router.get('/users', requireAuth, requirePermission('feature:user_manage'), asyn
 });
 
 // POST /api/users — 新增使用者
-router.post('/users', requireAuth, requirePermission('feature:user_manage'), async (req, res) => {
+router.post('/users', requireAuth, requirePermission('feature:user_manage'), async (req, res, next) => {
   const { username, password, display_name, role, branch, permissions } = req.body;
   if (!username || !password) return res.status(400).json({ error: '帳號與密碼為必填' });
   if (!['super_admin','branch_admin','user'].includes(role)) return res.status(400).json({ error: '無效的角色' });
   if (!canManageRole(req.user.role, role)) return res.status(403).json({ error: '無法建立此角色的使用者' });
   // branch_admin 只能建立自己據點的使用者
   const effectiveBranch = req.user.role === 'branch_admin' ? req.user.branch : (branch || null);
-  if (password.length < 6) return res.status(400).json({ error: '密碼至少 6 個字元' });
+  if (password.length < PASSWORD_MIN_LENGTH) {
+    return res.status(400).json({ error: `密碼至少 ${PASSWORD_MIN_LENGTH} 個字元` });
+  }
 
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     const salt = generateSalt();
-    const hash = hashPassword(password, salt);
+    const hash = hashPassword(password, salt, PBKDF2_ITER_DEFAULT);
     const r = await client.query(
-      `INSERT INTO users (username, password_hash, password_salt, display_name, role, branch)
-       VALUES ($1,$2,$3,$4,$5,$6) RETURNING id, username, display_name, role, branch, is_active`,
-      [username.trim(), hash, salt, display_name || username, role, effectiveBranch]
+      `INSERT INTO users (username, password_hash, password_salt, password_iterations, display_name, role, branch)
+       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id, username, display_name, role, branch, is_active`,
+      [username.trim(), hash, salt, PBKDF2_ITER_DEFAULT, display_name || username, role, effectiveBranch]
     );
     const newUser = r.rows[0];
 
@@ -225,13 +263,13 @@ router.post('/users', requireAuth, requirePermission('feature:user_manage'), asy
     res.json({ ok: true, user: { ...newUser, permissions: permissions || [] } });
   } catch(err) {
     await client.query('ROLLBACK');
-    if (err.code === '23505') return res.status(409).json({ error: `帳號 "${username}" 已存在` });
-    res.status(500).json({ error: err.message });
+    if (err.code === '23505') return res.status(409).json({ error: '帳號已存在' });
+    next(err);
   } finally { client.release(); }
 });
 
 // PUT /api/users/:id — 更新使用者資訊
-router.put('/users/:id', requireAuth, requirePermission('feature:user_manage'), async (req, res) => {
+router.put('/users/:id', requireAuth, requirePermission('feature:user_manage'), async (req, res, next) => {
   const { display_name, role, branch, is_active, permissions } = req.body;
   const targetId = parseInt(req.params.id);
 
@@ -254,10 +292,18 @@ router.put('/users/:id', requireAuth, requirePermission('feature:user_manage'), 
       await client.query('BEGIN');
       const effectiveBranch = req.user.role === 'branch_admin' ? req.user.branch : (branch || null);
       const effectiveRole   = req.user.role === 'super_admin' ? (role || targetUser.role) : targetUser.role;
+      const effectiveActive = is_active ?? targetUser.is_active;
+
+      // 偵測安全敏感欄位變更 → 需撤銷 session 防延後生效
+      const securityChanged =
+        effectiveRole   !== targetUser.role     ||
+        effectiveBranch !== targetUser.branch   ||
+        effectiveActive !== targetUser.is_active||
+        Array.isArray(permissions); // 權限有改 → 一律撤銷
 
       await client.query(
         `UPDATE users SET display_name=$1, role=$2, branch=$3, is_active=$4, updated_at=NOW() WHERE id=$5`,
-        [display_name || targetUser.display_name, effectiveRole, effectiveBranch, is_active ?? targetUser.is_active, targetId]
+        [display_name || targetUser.display_name, effectiveRole, effectiveBranch, effectiveActive, targetId]
       );
 
       // 更新權限
@@ -273,18 +319,23 @@ router.put('/users/:id', requireAuth, requirePermission('feature:user_manage'), 
         }
       }
 
+      // 角色 / 分行 / 停用 / 權限改變 → 撤銷該使用者所有 session
+      if (securityChanged) await revokeAllSessions(targetId, client);
+
       await client.query('COMMIT');
-      res.json({ ok: true });
+      res.json({ ok: true, sessions_revoked: securityChanged });
     } catch(err) { await client.query('ROLLBACK'); throw err; }
     finally { client.release(); }
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { next(err); }
 });
 
 // PUT /api/users/:id/password — 重設密碼
-router.put('/users/:id/password', requireAuth, async (req, res) => {
+router.put('/users/:id/password', requireAuth, async (req, res, next) => {
   const targetId    = parseInt(req.params.id);
   const { password, current_password } = req.body;
-  if (!password || password.length < 6) return res.status(400).json({ error: '密碼至少 6 個字元' });
+  if (!password || password.length < PASSWORD_MIN_LENGTH) {
+    return res.status(400).json({ error: `密碼至少 ${PASSWORD_MIN_LENGTH} 個字元` });
+  }
 
   try {
     const target = await pool.query(`SELECT * FROM users WHERE id=$1`, [targetId]);
@@ -294,7 +345,8 @@ router.put('/users/:id/password', requireAuth, async (req, res) => {
     // 修改自己 → 需要舊密碼
     if (targetId === req.user.user_id) {
       if (!current_password) return res.status(400).json({ error: '請提供目前密碼' });
-      if (!verifyPassword(current_password, targetUser.password_hash, targetUser.password_salt)) {
+      const storedIter = targetUser.password_iterations || 100000;
+      if (!verifyPassword(current_password, targetUser.password_hash, targetUser.password_salt, storedIter)) {
         return res.status(401).json({ error: '目前密碼不正確' });
       }
     } else {
@@ -311,15 +363,15 @@ router.put('/users/:id/password', requireAuth, async (req, res) => {
     }
 
     const salt = generateSalt();
-    const hash = hashPassword(password, salt);
+    const hash = hashPassword(password, salt, PBKDF2_ITER_DEFAULT);
     await pool.query(
-      `UPDATE users SET password_hash=$1, password_salt=$2, updated_at=NOW() WHERE id=$3`,
-      [hash, salt, targetId]
+      `UPDATE users SET password_hash=$1, password_salt=$2, password_iterations=$3, updated_at=NOW() WHERE id=$4`,
+      [hash, salt, PBKDF2_ITER_DEFAULT, targetId]
     );
     // 強制登出該使用者所有 session
-    await pool.query(`DELETE FROM user_sessions WHERE user_id=$1`, [targetId]);
+    await revokeAllSessions(targetId);
     res.json({ ok: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { next(err); }
 });
 
 // DELETE /api/users/:id — 刪除使用者

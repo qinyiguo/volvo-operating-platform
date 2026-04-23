@@ -18,8 +18,9 @@ const pool   = require('../db/pool');
 const { requireAuth, requirePermission } = require('../lib/authMiddleware');
 const { checkPeriodLock, checkBatchPeriodLock, checkBatchUploadPeriodLock } = require('../lib/bonusPeriodLock');
 const { computePerfActualForMetric, prevYearPeriod } = require('../lib/revenueActual');
+const { isExcelBuffer, excelFileFilter } = require('../lib/utils');
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 }, fileFilter: excelFileFilter });
 
 router.use(requireAuth);
 
@@ -138,6 +139,9 @@ router.post('/upload-performance-targets-native', requirePermission('feature:upl
   if (!year.match(/^\d{4}$/)) return res.status(400).json({ error: '請指定正確的年份' });
 
   try {
+    if (!isExcelBuffer(req.file?.buffer)) {
+      return res.status(400).json({ error: '檔案內容不是有效的 Excel 格式（檔頭檢查失敗）' });
+    }
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer', cellDates: false, cellNF: true, cellText: false });
     const SHEET_KWS = ['目標','年度','銷售','實績'];
     let sheetName = workbook.SheetNames[0];

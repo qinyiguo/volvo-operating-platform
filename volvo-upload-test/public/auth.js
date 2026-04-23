@@ -9,8 +9,18 @@
   const TOKEN_KEY = 'dms_token';
   const USER_KEY  = 'dms_user';
 
+  // HTML escape — 任何 innerHTML 內插入 user-controlled 字串都應通過這層
+  // 防止使用者管理者 / 別人的 display_name / username 含 <script> 形成 XSS
+  function _esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
   // ── 儲存 / 讀取 ──
   window.DmsAuth = {
+    // 公開 HTML escape：所有頁面在把 e.message / API 回傳字串塞 innerHTML 前都該過這層
+    esc: _esc,
     getToken() { return localStorage.getItem(TOKEN_KEY); },
     getUser()  {
       try { return JSON.parse(localStorage.getItem(USER_KEY) || 'null'); }
@@ -229,20 +239,27 @@
         background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
         position:relative;flex-shrink:0;
       `;
+      // 安全：display_name / username / branch 來自 DB 但是使用者管理可寫；一律 escape
+      const _disp   = _esc(user.display_name || user.username);
+      const _uname  = _esc(user.username);
+      const _branch = user.branch ? ' · ' + _esc(user.branch) : '';
+      const _role   = _esc(roleLabel[user.role] || user.role);
+      const _color  = roleColor[user.role] || '#64748b';
+      const _initial = _esc((user.display_name || user.username).charAt(0).toUpperCase());
       badge.innerHTML = `
         <div style="width:28px;height:28px;border-radius:50%;
-                    background:${roleColor[user.role] || '#64748b'}22;
-                    border:2px solid ${roleColor[user.role] || '#64748b'};
+                    background:${_color}22;
+                    border:2px solid ${_color};
                     display:flex;align-items:center;justify-content:center;
-                    font-size:12px;font-weight:700;color:${roleColor[user.role] || '#64748b'}">
-          ${(user.display_name || user.username).charAt(0).toUpperCase()}
+                    font-size:12px;font-weight:700;color:${_color}">
+          ${_initial}
         </div>
         <div style="line-height:1.3;min-width:0">
           <div style="font-size:12px;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px">
-            ${user.display_name || user.username}
+            ${_disp}
           </div>
-          <div style="font-size:10px;color:${roleColor[user.role] || '#64748b'}">
-            ${roleLabel[user.role] || user.role}${user.branch ? ' · ' + user.branch : ''}
+          <div style="font-size:10px;color:${_color}">
+            ${_role}${_branch}
           </div>
         </div>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="flex-shrink:0;opacity:.5">
@@ -255,8 +272,8 @@
           padding:6px 0;
         ">
           <div style="padding:10px 14px 8px;border-bottom:1px solid #253347">
-            <div style="font-size:12px;font-weight:700;color:#e2e8f0">${user.display_name || user.username}</div>
-            <div style="font-size:11px;color:#64748b;margin-top:1px">${user.username}</div>
+            <div style="font-size:12px;font-weight:700;color:#e2e8f0">${_disp}</div>
+            <div style="font-size:11px;color:#64748b;margin-top:1px">${_uname}</div>
           </div>
           <div onclick="DmsAuth._openProfileModal()" style="
             padding:9px 14px;font-size:13px;color:#cbd5e1;cursor:pointer;display:flex;align-items:center;gap:8px;
@@ -297,7 +314,7 @@
           <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:20px">👤 個人設定</div>
           <div style="margin-bottom:14px">
             <label style="font-size:12px;color:#64748b;font-weight:600">顯示名稱</label>
-            <input id="_pDisplayName" value="${user.display_name || ''}" style="
+            <input id="_pDisplayName" value="${_esc(user.display_name || '')}" style="
               width:100%;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;
               padding:9px 12px;border-radius:7px;font-size:14px;margin-top:5px;box-sizing:border-box;outline:none
             ">

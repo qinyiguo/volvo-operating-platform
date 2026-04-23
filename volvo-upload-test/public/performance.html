@@ -319,6 +319,10 @@
 const n    = (v) => parseFloat(v || 0);
 const fmt  = (v) => Math.round(n(v)).toLocaleString();
 const fmtK = (v) => Math.round(n(v) / 1000).toLocaleString() + 'K';
+// HTML escape：所有塞 innerHTML 的不可信字串（API 錯誤 / 使用者輸入）必過這層
+// 用 window.* 確保跨 <script> 區塊都能存取（const 是 script-scoped）
+window._h = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const _h = window._h;
 
 let _currentPeriod = '';
 let _allPeriods    = [];
@@ -923,7 +927,7 @@ async function loadRevenueKPI(period,branch){
       </div>`;
     })();
     section.style.display='';
-  }catch(e){document.getElementById('revKPI-paid').innerHTML=`<div style="color:#ef4444;padding:12px">${e.message}</div>`;section.style.display='';}
+  }catch(e){document.getElementById('revKPI-paid').innerHTML=`<div style="color:#ef4444;padding:12px">${_h(e.message)}</div>`;section.style.display='';}
 }
 
 // ══════════════════════════════════════════════
@@ -977,7 +981,7 @@ async function loadIncomeBreakdown(period,branch){
     });
     html+=`</tbody></table><div style="font-size:11px;color:var(--text-dimmer);margin-top:10px;line-height:2">💡 金額單位：千元（K）｜未稅</div>`;
     el.innerHTML=html;
-  }catch(e){el.innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;}
+  }catch(e){el.innerHTML=`<div style="color:#ef4444;padding:16px">${_h(e.message)}</div>`;}
 }
 
 // ══════════════════════════════════════════════
@@ -1061,7 +1065,7 @@ async function loadPerformance(period,branch){
     detailEl.innerHTML=html||'<div style="padding:48px;text-align:center;color:var(--text-dim)">此期間無業績資料</div>';
     const lbl=document.getElementById('perfPeriodLabel');
     if(lbl&&period)lbl.textContent=`${period.slice(0,4)}年${period.slice(4)}月`;
-  }catch(e){detailEl.innerHTML=`<div style="color:#ef4444;padding:16px">${e.message}</div>`;}
+  }catch(e){detailEl.innerHTML=`<div style="color:#ef4444;padding:16px">${_h(e.message)}</div>`;}
 }
 
 (async()=>{
@@ -1226,7 +1230,7 @@ async function opuLoadHistory() {
       </tr>`
     ).join('');
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="7" style="color:#ef4444;padding:16px;text-align:center">${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="color:#ef4444;padding:16px;text-align:center">${_h(e.message)}</td></tr>`;
   }
 }
 
@@ -1259,7 +1263,7 @@ async function loadEstimateModalData(period) {
     renderEstHistoryTab(history);
   } catch(e) {
     document.getElementById('estTabContent-input').innerHTML =
-      '<div style="color:#ef4444;padding:16px">❌ '+e.message+'</div>';
+      '<div style="color:#ef4444;padding:16px">❌ '+_h(e.message)+'</div>';
   }
 }
 
@@ -1784,7 +1788,7 @@ async function loadVCTL(period,branch){
     if(labelEl)labelEl.textContent=period.slice(0,4)+'年'+parseInt(period.slice(4))+'月';
     _renderVCTLMetricList();
     _renderVCTLResults(branch);
-  }catch(e){resultsEl.innerHTML='<div style="color:#ef4444;padding:16px">❌ '+e.message+'</div>';}
+  }catch(e){resultsEl.innerHTML='<div style="color:#ef4444;padding:16px">❌ '+_h(e.message)+'</div>';}
 }
 function _renderVCTLMetricList(){
   var el=document.getElementById('vctlMetricList');if(!el)return;

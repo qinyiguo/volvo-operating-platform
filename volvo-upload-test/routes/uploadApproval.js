@@ -26,8 +26,9 @@ const pool   = require('../db/pool');
 const {
   requireAuth, requirePermission, internalAuthHeaders, getUserPermissions,
 } = require('../lib/authMiddleware');
+const { isExcelBuffer, excelFileFilter } = require('../lib/utils');
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 }, fileFilter: excelFileFilter });
 
 router.use(requireAuth);
 
@@ -75,6 +76,9 @@ const UPLOAD_TYPE_CONFIG = {
 router.post('/upload-requests', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: '請選擇檔案' });
+    if (!isExcelBuffer(req.file.buffer)) {
+      return res.status(400).json({ error: '檔案內容不是有效的 Excel 格式（檔頭檢查失敗）' });
+    }
     const upload_type = String(req.body.upload_type || '').trim();
     const cfg = UPLOAD_TYPE_CONFIG[upload_type];
     if (!cfg) return res.status(400).json({ error: '未知的上傳類型：' + upload_type });
@@ -324,9 +328,9 @@ async function replayUpload(reqRow, callerReq) {
   const cfg = UPLOAD_TYPE_CONFIG[reqRow.upload_type];
   if (!cfg) return { ok: false, error: '未知 upload_type: ' + reqRow.upload_type };
 
-  const host = callerReq.headers['host'] || ('127.0.0.1:' + (process.env.PORT || 8080));
-  const proto = callerReq.secure ? 'https' : 'http';
-  const url = `${proto}://${host}${cfg.endpoint}`;
+  // 安全：寫死 loopback，不信任 callerReq.headers.host（防 Host header 注入導致
+  // internal auth header 被外送）。endpoint 本身來自 UPLOAD_TYPE_CONFIG，是程式內常數。
+  const url = `http://127.0.0.1:${process.env.PORT || 8080}${cfg.endpoint}`;
 
   const form = new FormData();
   form.append(cfg.fileField, new Blob([reqRow.file_content]), reqRow.file_name || 'upload.xlsx');

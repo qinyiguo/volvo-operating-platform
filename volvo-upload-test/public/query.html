@@ -863,11 +863,14 @@ function doExport(){
   const def = TABLE_DEFS[tbl];
   const visibleCols = def.cols.filter(c => !_hiddenCols.has(c.key));
   if(!_filteredRows.length){ alert('無資料可匯出'); return; }
+  // CSV formula injection 防護：開頭為 = + - @ \t \r 的儲存格在 Excel 會被當公式執行。
+  // 一律補單引號 prefix 中和；後面的 escape 規則照原樣處理。
+  const csvSafe = s => /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
   const header = visibleCols.map(c=>c.label).join(',');
   const rows = _filteredRows.map(row =>
     visibleCols.map(c=>{
       const v = row[c.key];
-      const s = v===null||v===undefined?'':String(v);
+      const s = csvSafe(v===null||v===undefined?'':String(v));
       return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g,'""')}"` : s;
     }).join(',')
   );

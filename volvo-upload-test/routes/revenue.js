@@ -25,8 +25,9 @@ const pool   = require('../db/pool');
 const { requireAuth, requirePermission } = require('../lib/authMiddleware');
 const { checkPeriodLock, checkBatchPeriodLock, checkBatchUploadPeriodLock } = require('../lib/bonusPeriodLock');
 const { computeAllRevenues, prevYearPeriod } = require('../lib/revenueActual');
+const { isExcelBuffer, excelFileFilter } = require('../lib/utils');
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 }, fileFilter: excelFileFilter });
 
 router.use(requireAuth);
 
@@ -125,6 +126,9 @@ router.delete('/revenue-targets', requirePermission('feature:revenue_target_edit
 router.post('/upload-revenue-targets', requirePermission('feature:upload_targets'), upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '請選擇檔案' });
   try {
+    if (!isExcelBuffer(req.file.buffer)) {
+      return res.status(400).json({ error: '檔案內容不是有效的 Excel 格式（檔頭檢查失敗）' });
+    }
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer', cellDates: true });
     const sheet    = workbook.Sheets[workbook.SheetNames[0]];
     const rows     = XLSX.utils.sheet_to_json(sheet, { defval: '' });
@@ -182,6 +186,9 @@ router.post('/upload-revenue-targets-native', requirePermission('feature:upload_
   if (!year.match(/^\d{4}$/)) return res.status(400).json({ error: '請指定正確的年份（4位數）' });
   const suffix = dataType === 'last_year' ? '_last_year' : '_target';
   try {
+    if (!isExcelBuffer(req.file?.buffer)) {
+      return res.status(400).json({ error: '檔案內容不是有效的 Excel 格式（檔頭檢查失敗）' });
+    }
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer', cellDates: false, cellNF: true, cellText: false });
     const SHEET_KWS = ['目標','年度','營收','實績'];
     let sheetName = workbook.SheetNames[0];

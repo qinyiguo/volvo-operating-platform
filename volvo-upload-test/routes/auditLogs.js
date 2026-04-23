@@ -86,14 +86,23 @@ router.get('/audit-logs', async (req, res) => {
         [...params, pageSize, pageOffset]
       ),
       pool.query(`SELECT COUNT(*) AS total FROM audit_logs ${where}`, params),
-      // 活動統計（最近 30 天）
-      pool.query(`
-        SELECT action, COUNT(*) AS cnt
-        FROM audit_logs
-        WHERE created_at >= NOW() - INTERVAL '30 days'
-        ${guard.role === 'branch_admin' ? `AND user_branch = '${guard.branch}'` : ''}
-        GROUP BY action ORDER BY cnt DESC
-      `),
+      // 活動統計（最近 30 天）— 用參數綁定避免 SQL injection（guard.branch 來自 users 表，super_admin 可寫）
+      (guard.role === 'branch_admin' && guard.branch
+        ? pool.query(
+            `SELECT action, COUNT(*) AS cnt
+             FROM audit_logs
+             WHERE created_at >= NOW() - INTERVAL '30 days'
+               AND user_branch = $1
+             GROUP BY action ORDER BY cnt DESC`,
+            [guard.branch]
+          )
+        : pool.query(
+            `SELECT action, COUNT(*) AS cnt
+             FROM audit_logs
+             WHERE created_at >= NOW() - INTERVAL '30 days'
+             GROUP BY action ORDER BY cnt DESC`
+          )
+      ),
     ]);
 
     res.json({
@@ -112,57 +121,65 @@ router.get('/audit-logs/summary', async (req, res) => {
   const guard = auditAccessGuard(req, res);
   if (!guard) return;
 
-  const branchCond = guard.role === 'branch_admin' && guard.branch
-    ? `AND user_branch = '${guard.branch}'` : '';
+  // SQL 注入防護：guard.branch 來自 users 表，super_admin 可寫；用參數綁定，
+  // 把「是否要過濾 user_branch」從字串拼接改為 query 結構切換 + $1 參數
+  const filterByBranch = guard.role === 'branch_admin' && !!guard.branch;
+  const branchParams   = filterByBranch ? [guard.branch] : [];
+  const branchCond     = filterByBranch ? 'AND user_branch = $1' : '';
 
   try {
     const [todayStats, topUsers, topActions, topIPs, recentErrors] = await Promise.all([
       // 今日 / 本週 / 本月 計數
-      pool.query(`
-        SELECT
+      pool.query(
+        `SELECT
           COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE)                           AS today,
           COUNT(*) FILTER (WHERE created_at >= DATE_TRUNC('week', NOW()))              AS this_week,
           COUNT(*) FILTER (WHERE created_at >= DATE_TRUNC('month', NOW()))             AS this_month,
           COUNT(DISTINCT username) FILTER (WHERE created_at >= CURRENT_DATE)           AS today_users,
           COUNT(DISTINCT ip_address) FILTER (WHERE created_at >= CURRENT_DATE)        AS today_ips
-        FROM audit_logs WHERE 1=1 ${branchCond}
-      `),
+        FROM audit_logs WHERE 1=1 ${branchCond}`,
+        branchParams
+      ),
       // 最活躍使用者（近 7 天）
-      pool.query(`
-        SELECT username, display_name, user_branch, COUNT(*) AS cnt,
+      pool.query(
+        `SELECT username, display_name, user_branch, COUNT(*) AS cnt,
                MAX(created_at) AS last_seen
         FROM audit_logs
         WHERE created_at >= NOW() - INTERVAL '7 days' ${branchCond}
         GROUP BY username, display_name, user_branch
-        ORDER BY cnt DESC LIMIT 10
-      `),
+        ORDER BY cnt DESC LIMIT 10`,
+        branchParams
+      ),
       // 最常用功能（近 7 天）
-      pool.query(`
-        SELECT action, resource, COUNT(*) AS cnt
+      pool.query(
+        `SELECT action, resource, COUNT(*) AS cnt
         FROM audit_logs
         WHERE created_at >= NOW() - INTERVAL '7 days' ${branchCond}
         GROUP BY action, resource
-        ORDER BY cnt DESC LIMIT 10
-      `),
+        ORDER BY cnt DESC LIMIT 10`,
+        branchParams
+      ),
       // 最常出現的 IP（近 7 天）
-      pool.query(`
-        SELECT ip_address,
+      pool.query(
+        `SELECT ip_address,
                array_agg(DISTINCT username) AS users,
                COUNT(*) AS cnt,
                MAX(created_at) AS last_seen
         FROM audit_logs
         WHERE created_at >= NOW() - INTERVAL '7 days' ${branchCond}
         GROUP BY ip_address
-        ORDER BY cnt DESC LIMIT 10
-      `),
+        ORDER BY cnt DESC LIMIT 10`,
+        branchParams
+      ),
       // 最近錯誤操作（status >= 400）
-      pool.query(`
-        SELECT username, display_name, ip_address, action, resource,
+      pool.query(
+        `SELECT username, display_name, ip_address, action, resource,
                status_code, created_at
         FROM audit_logs
         WHERE status_code >= 400 ${branchCond}
-        ORDER BY created_at DESC LIMIT 20
-      `),
+        ORDER BY created_at DESC LIMIT 20`,
+        branchParams
+      ),
     ]);
 
     res.json({

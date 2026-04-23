@@ -711,27 +711,41 @@ await client.query(`CREATE INDEX IF NOT EXISTS idx_business_query_period_branch 
   // 自動分區清理（可選）：保留 180 天
   // 若資料量龐大，可考慮設定 pg_partman 或排程清理
 
+    // ── pbkdf2 漸進升級用：紀錄每個 hash 的 iteration 數 ──
+    // 預設 100000（相容既有 row）；新建 / 重設密碼會寫 600000
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_iterations INTEGER NOT NULL DEFAULT 100000`);
+
     // ── 建立預設超管帳號（若無任何使用者）──
     const _uc = await client.query(`SELECT COUNT(*) FROM users`);
     if (parseInt(_uc.rows[0].count) === 0) {
       const _cr   = require('crypto');
       const _env  = process.env.INITIAL_ADMIN_PASSWORD;
-      const _pwd  = _env || _cr.randomBytes(9).toString('base64url');
+      const _isProd = process.env.NODE_ENV === 'production';
+      // 安全：production 必填 INITIAL_ADMIN_PASSWORD，不再印隨機密碼到 stdout
+      // （避免 Zeabur 等雲端 log 保留導致密碼外洩）
+      if (_isProd && !_env) {
+        throw new Error('[initDB] production 環境必須設定 INITIAL_ADMIN_PASSWORD 環境變數，否則拒絕建立預設管理員');
+      }
+      const _pwd  = _env || _cr.randomBytes(12).toString('base64url'); // dev only
+      if (_pwd.length < 10) {
+        throw new Error('[initDB] INITIAL_ADMIN_PASSWORD 至少 10 個字元');
+      }
+      const _ITER = 600000;
       const _salt = _cr.randomBytes(16).toString('hex');
-      const _hash = _cr.pbkdf2Sync(_pwd, _salt, 100000, 32, 'sha256').toString('hex');
+      const _hash = _cr.pbkdf2Sync(_pwd, _salt, _ITER, 32, 'sha256').toString('hex');
       await client.query(
-        `INSERT INTO users (username, password_hash, password_salt, display_name, role)
-         VALUES ('admin', $1, $2, '系統管理員', 'super_admin')
+        `INSERT INTO users (username, password_hash, password_salt, password_iterations, display_name, role)
+         VALUES ('admin', $1, $2, $3, '系統管理員', 'super_admin')
          ON CONFLICT (username) DO NOTHING`,
-        [_hash, _salt]
+        [_hash, _salt, _ITER]
       );
       if (_env) {
         console.log('[initDB] ✅ 預設管理員已建立: admin（使用 INITIAL_ADMIN_PASSWORD 指定的密碼）');
       } else {
-        console.log(`[initDB] ✅ 預設管理員已建立: admin / ${_pwd}（請立即變更，此訊息僅顯示一次）`);
+        console.log(`[initDB] ✅ 預設管理員已建立: admin / ${_pwd}（dev 模式自動產生，請立即變更，此訊息僅顯示一次）`);
       }
     }
-    
+
     console.log('[initDB] ✅ 所有表格建立完成');
   } catch (err) {
     console.error('[initDB] ❌ 失敗:', err.message);

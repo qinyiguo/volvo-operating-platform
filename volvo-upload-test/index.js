@@ -18,11 +18,37 @@
 require('dotenv').config();
 const express      = require('express');
 const cors         = require('cors');
+const helmet       = require('helmet');
+const rateLimit    = require('express-rate-limit');
 const path         = require('path');
 const initDatabase = require('./db/init');
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
+
+// 在反向代理（Zeabur）後方需信任 X-Forwarded-* 才能拿到真實 IP；
+// 用 'loopback, linklocal, uniquelocal' 比 'true' 安全（不直接信任任意 IP）
+app.set('trust proxy', process.env.TRUST_PROXY || 'loopback, linklocal, uniquelocal');
+
+// ── 安全標頭（CSP / HSTS / X-Frame-Options / X-Content-Type-Options …）──
+app.use(helmet({
+  contentSecurityPolicy: {
+    useDefaults: true,
+    directives: {
+      // 前端有大量 inline <script> 與 inline event handler；逐步移除前先保留 unsafe-inline
+      'script-src':       ["'self'", "'unsafe-inline'"],
+      'style-src':        ["'self'", "'unsafe-inline'"],
+      'img-src':          ["'self'", 'data:', 'blob:'],
+      'font-src':         ["'self'", 'data:'],
+      'connect-src':      ["'self'"],
+      'frame-ancestors':  ["'none'"],
+      'object-src':       ["'none'"],
+      'base-uri':         ["'self'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+  strictTransportSecurity: { maxAge: 15552000, includeSubDomains: true },
+}));
 
 const corsAllowed = (process.env.CORS_ALLOWED_ORIGINS || '')
   .split(',').map(s => s.trim()).filter(Boolean);
@@ -36,11 +62,23 @@ app.use(cors({
   },
   credentials: true,
 }));
-app.use(express.json({ limit: '20mb' }));
-app.use(express.urlencoded({ extended: true, limit: '20mb' }));
+// JSON body 一般用不到很大；上傳走 multer (50MB)，這裡降到 2mb 縮小攻擊面
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 const { auditMiddleware } = require('./lib/auditLogger');
 app.use(auditMiddleware);
+
+// ── 登入端點 rate limit（防暴力破解）──
+// 同 IP 15 分內最多 10 次登入請求；超過回 429
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: '登入嘗試次數過多，請 15 分鐘後再試' },
+});
+app.use('/api/users/login', loginLimiter);
 
 // ── 路由掛載 ──
 // 注意：含未驗證端點的 router（users 的 /login）必須最先掛上。
@@ -69,6 +107,16 @@ app.use('/api', require('./routes/uploadApproval'));
 
 // ── Health check（防 Zeabur 冷啟動）──
 app.get('/health', (req, res) => res.json({ ok: true }));
+
+// ── 全域錯誤處理（避免外漏 stack trace / DB schema 訊息）──
+// 各 route 應改為 next(err) 走到這裡；保留 generic message 給 client，
+// 完整錯誤寫到 server log。
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error('[unhandled]', req.method, req.originalUrl, err.message, err.stack);
+  if (res.headersSent) return;
+  res.status(err.status || 500).json({ error: '內部錯誤，請稍後再試' });
+});
 
 // ── 背景清理（每 24h）──
 // 避免 user_sessions / audit_logs / upload_history 無限成長。
