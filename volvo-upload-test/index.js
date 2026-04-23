@@ -51,7 +51,9 @@ app.use(helmet({
       'style-src-elem':   ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://fonts.googleapis.com'],
       'img-src':          ["'self'", 'data:', 'blob:'],
       'font-src':         ["'self'", 'data:', 'https://fonts.gstatic.com'],
-      'connect-src':      ["'self'"],
+      // connect-src 需放行 CDN：gridstack / chart.js / html2canvas 等 library
+      // 會動態 fetch sub-resource（source maps / worker chunks / web fonts）
+      'connect-src':      ["'self'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com'],
       'frame-ancestors':  ["'none'"],
       'object-src':       ["'none'"],
       'base-uri':         ["'self'"],
