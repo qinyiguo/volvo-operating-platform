@@ -306,6 +306,8 @@
 </div>
 
 <script>
+// HTML escape：所有 innerHTML 內含 user input / API 錯誤訊息的內插一律經此處理
+window._h = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 // ═══ State ═══
 let _allPeriods = [];
 let _currentPeriod = '';
@@ -619,7 +621,7 @@ async function _executeQuery(tbl, branch, period){
     applySearch();
     renderSummary(tbl, _allRows);
   }catch(e){
-    wrap.innerHTML = `<div class="empty" style="color:#ef4444">❌ ${e.message}</div>`;
+    wrap.innerHTML = `<div class="empty" style="color:#ef4444">❌ ${_h(e.message)}</div>`;
   }
 }
 

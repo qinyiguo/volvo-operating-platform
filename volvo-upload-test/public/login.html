@@ -467,12 +467,10 @@ function tickTime() {
 }
 setInterval(tickTime, 1000); tickTime();
 
-// ── 若已登入則跳轉 ──
+// ── 若已登入則跳轉（cookie 會自動帶，不靠 localStorage） ──
 (async function checkExistingSession() {
-  const token = localStorage.getItem('dms_token');
-  if (!token) return;
   try {
-    const r = await fetch('/api/users/me', { headers: { 'Authorization': `Bearer ${token}` } });
+    const r = await fetch('/api/users/me');
     if (r.ok) {
       const user = await r.json();
       redirectAfterLogin(user);
@@ -547,8 +545,9 @@ async function handleLogin(e) {
       return;
     }
 
-    // 儲存 token 與使用者資訊
-    localStorage.setItem('dms_token', data.token);
+    // token 已由 server 透過 HttpOnly cookie 設好；localStorage 只存 user 資料（UX 用，非敏感）
+    // 清掉遷移前殘留的 token
+    localStorage.removeItem('dms_token');
     localStorage.setItem('dms_user', JSON.stringify(data.user));
 
     btn.querySelector('.btn-text').textContent = '✓ 登入成功';

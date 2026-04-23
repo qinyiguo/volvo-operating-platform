@@ -130,8 +130,25 @@ router.post('/users/login', async (req, res, next) => {
     );
 
     const permissions = await getUserPermissions(user.id, user.role);
+
+    // 安全：token 改用 HttpOnly cookie（XSS 取不到），搭配 SameSite=Lax 防 CSRF 的主力
+    // 並發 CSRF token（非 HttpOnly）供前端 JS 讀取並回填 X-CSRF-Token header
+    const csrfToken = crypto.randomBytes(24).toString('hex');
+    const isHttps   = process.env.NODE_ENV === 'production';
+    const maxAge    = 8 * 60 * 60 * 1000;
+    res.cookie('dms_token', token, {
+      httpOnly: true, secure: isHttps, sameSite: 'lax',
+      maxAge, path: '/',
+    });
+    res.cookie('dms_csrf', csrfToken, {
+      httpOnly: false, secure: isHttps, sameSite: 'lax',
+      maxAge, path: '/',
+    });
+
     res.json({
+      // token 仍回傳讓 curl/Postman/舊 client 相容；cookie 已設好，前端不必存
       token,
+      csrf_token: csrfToken,
       user: {
         id:           user.id,
         username:     user.username,
@@ -146,13 +163,19 @@ router.post('/users/login', async (req, res, next) => {
 });
 
 // POST /api/users/logout
-router.post('/users/logout', requireAuth, async (req, res) => {
-  const auth  = req.headers['authorization'] || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+router.post('/users/logout', requireAuth, async (req, res, next) => {
+  // Cookie 優先，退回 Bearer
+  const cookieTok = req.cookies?.dms_token;
+  const auth      = req.headers['authorization'] || '';
+  const bearerTok = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  const token = cookieTok || bearerTok;
   try {
     if (token) await pool.query(`DELETE FROM user_sessions WHERE token = $1`, [token]);
+    // 清 cookie（即使沒 token 也保險清一次）
+    res.clearCookie('dms_token', { path: '/' });
+    res.clearCookie('dms_csrf',  { path: '/' });
     res.json({ ok: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { next(err); }
 });
 
 // GET /api/users/me — 取得目前使用者資訊

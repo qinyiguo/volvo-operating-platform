@@ -18,20 +18,24 @@
   }
 
   // ── 儲存 / 讀取 ──
+  // 2026-04-23 起 token 改存於 HttpOnly cookie（XSS 拿不到）。
+  // getToken() 只為相容舊呼叫端；新程式不需要用到 token string。
+  // localStorage 僅存 user 資料（display_name / role / permissions 等，非敏感）。
   window.DmsAuth = {
     // 公開 HTML escape：所有頁面在把 e.message / API 回傳字串塞 innerHTML 前都該過這層
     esc: _esc,
+    // 舊名保留；cookie 時代讀不到、回 null
     getToken() { return localStorage.getItem(TOKEN_KEY); },
     getUser()  {
       try { return JSON.parse(localStorage.getItem(USER_KEY) || 'null'); }
       catch(e) { return null; }
     },
     save(token, user) {
-      localStorage.setItem(TOKEN_KEY, token);
+      // 不再存 token 到 localStorage（cookie 已由 server 設好）
       localStorage.setItem(USER_KEY, JSON.stringify(user));
     },
     clear() {
-      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(TOKEN_KEY);   // 清掉遷移前的殘留值
       localStorage.removeItem(USER_KEY);
     },
 
@@ -42,23 +46,18 @@
         redirectOnFail = true,
       } = options;
 
-      const token = this.getToken();
-      if (!token) {
-        if (redirectOnFail) window.location.href = '/login.html';
-        return null;
-      }
-
       try {
-        const res = await fetch('/api/users/me', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        // 不再靠 localStorage token 判斷，直接問 /api/users/me：
+        // cookie 會由瀏覽器自動帶；未登入回 401 → 導去 /login.html
+        const res = await fetch('/api/users/me');
         if (!res.ok) {
           this.clear();
           if (redirectOnFail) window.location.href = '/login.html';
           return null;
         }
         const user = await res.json();
-        this.save(token, user); // 更新快取
+        // 只存 user 資料（UX 用），不再存 token
+        try { localStorage.setItem(USER_KEY, JSON.stringify(user)); } catch(e) {}
         window._currentUser = user;
 
         // 先依權限過濾導覽列，讓使用者即使卡在無權限頁也能跳到有權限的頁
@@ -414,8 +413,16 @@
     };
   }
 
-  // ── 全域替換 fetch 讓所有 API 請求自動帶 token ──
-  // 對 /api/* 的請求，若尚未帶 Authorization header，就自動補上 Bearer。
+  // 讀取指定名稱的 cookie（非 HttpOnly 才讀得到）
+  function _readCookie(name) {
+    const m = document.cookie.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'));
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+
+  // ── 全域替換 fetch：讓 /api/* 請求一律帶 cookie，並於狀態變更時塞 X-CSRF-Token ──
+  // 原本靠 Authorization: Bearer <localStorage token>；改為 cookie-based auth
+  // （HttpOnly 的 dms_token 由瀏覽器自動帶），XSS 拿不到 token。
+  // 為相容 login / 其他未完全遷移的情境，若 localStorage 仍有 token 則一併附 Bearer。
   const _origFetch = window.fetch.bind(window);
   window.fetch = function(input, init) {
     try {
@@ -426,15 +433,24 @@
         url.startsWith(location.origin + '/api/')
       );
       if (isApi) {
+        init = init || {};
+        // 讓瀏覽器自動帶 dms_token cookie
+        if (!init.credentials) init.credentials = 'same-origin';
+        const headers = new Headers(init.headers || {});
+        // 相容保留 Bearer（若 localStorage 還有 token）
         const token = localStorage.getItem(TOKEN_KEY);
-        if (token) {
-          init = init || {};
-          const headers = new Headers(init.headers || {});
-          if (!headers.has('Authorization')) {
-            headers.set('Authorization', 'Bearer ' + token);
-            init.headers = headers;
+        if (token && !headers.has('Authorization')) {
+          headers.set('Authorization', 'Bearer ' + token);
+        }
+        // 狀態變更請求（非 GET/HEAD/OPTIONS）一律帶 X-CSRF-Token
+        const method = String(init.method || 'GET').toUpperCase();
+        if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+          if (!headers.has('X-CSRF-Token')) {
+            const csrf = _readCookie('dms_csrf');
+            if (csrf) headers.set('X-CSRF-Token', csrf);
           }
         }
+        init.headers = headers;
       }
     } catch (e) { /* fall through — 不阻斷原始請求 */ }
     return _origFetch(input, init);

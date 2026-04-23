@@ -16,8 +16,15 @@
  *   branch:*     可見廠別（AMA / AMC / AMD）
  *   feature:*    功能動作（upload / targets / bonus_edit / user_manage）
  *
- * Token 來源: 只接受 Authorization: Bearer <token>
- *             （?_token= query 已停用，避免 log/referer 外洩）
+ * Token 來源（依優先序）:
+ *   1. Cookie: dms_token（HttpOnly, Secure, SameSite=Lax）← 2026-04-23 起主力
+ *   2. Authorization: Bearer <token> ← 保留讓 curl / Postman / 舊 client 相容
+ *   （?_token= query 已停用，避免 log/referer 外洩）
+ *
+ * CSRF 保護（double-submit cookie）:
+ *   登入時同時發 dms_csrf cookie（非 HttpOnly，讓前端 JS 能讀）。前端每個
+ *   狀態變更請求（POST/PUT/PATCH/DELETE）必須在 X-CSRF-Token header 帶上
+ *   同值，伺服器比對不符 → 403。GET 免檢查。
  */
 
 const crypto = require('crypto');
@@ -148,8 +155,11 @@ async function requireAuth(req, res, next) {
     return next();
   }
 
-  const auth  = req.headers['authorization'] || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  // Cookie 優先（受 SameSite=Lax 保護，瀏覽器自動帶），退回 Bearer（curl/Postman 相容）
+  const cookieTok = req.cookies?.dms_token;
+  const auth      = req.headers['authorization'] || '';
+  const bearerTok = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  const token = cookieTok || bearerTok;
   const user  = await resolveToken(token);
   if (!user) return res.status(401).json({ error: '未登入或登入已過期', code: 'UNAUTHORIZED' });
   req.user = user;
@@ -171,9 +181,34 @@ function requirePermission(permissionKey) {
 
 // ═══ Middleware: 軟性驗證（不阻擋，只附加 user info）═══
 async function softAuth(req, res, next) {
-  const auth  = req.headers['authorization'] || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
-  req.user = await resolveToken(token);
+  const cookieTok = req.cookies?.dms_token;
+  const auth      = req.headers['authorization'] || '';
+  const bearerTok = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  req.user = await resolveToken(cookieTok || bearerTok);
+  next();
+}
+
+// ═══ Middleware: CSRF（double-submit cookie）═══
+// GET/HEAD/OPTIONS 免檢查；狀態變更請求必須帶 X-CSRF-Token 且值等於 dms_csrf cookie。
+// Bearer-only client（無 cookie）豁免：CSRF 攻擊需受害者已登入的瀏覽器，
+// 不存在於純 API client 的威脅模型。
+// 內部 service 呼叫（x-internal-service 正確）亦豁免。
+function csrfProtect(req, res, next) {
+  const method = String(req.method || 'GET').toUpperCase();
+  if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return next();
+
+  // 內部呼叫豁免
+  const intHdr = req.headers['x-internal-service'];
+  if (intHdr && timingEq(String(intHdr), INTERNAL_TOKEN)) return next();
+
+  // 無 cookie 的 API client（Bearer-only）豁免
+  if (!req.cookies?.dms_token) return next();
+
+  const cookieCsrf = req.cookies?.dms_csrf;
+  const headerCsrf = req.headers['x-csrf-token'];
+  if (!cookieCsrf || !headerCsrf || !timingEq(String(cookieCsrf), String(headerCsrf))) {
+    return res.status(403).json({ error: 'CSRF token 驗證失敗', code: 'CSRF_FAIL' });
+  }
   next();
 }
 
@@ -181,6 +216,7 @@ module.exports = {
   requireAuth,
   requirePermission,
   softAuth,
+  csrfProtect,
   getUserPermissions,
   internalAuthHeaders,
   ALL_PERMISSIONS,
