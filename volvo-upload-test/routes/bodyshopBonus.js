@@ -113,10 +113,24 @@ async function initTable() {
       )
     `);
   } catch(e) {
-    console.error('[bodyshopBonus initTable]', e.message);
+    // 丟回外層讓 retry loop 能偵測失敗；log 由外層統一輸出避免重覆
+    throw e;
   }
 }
-initTable();
+// 背景執行 + 失敗時延遲重試：避免 DB 尚未可達時 require-time 炸 + 重複錯誤 log
+// （主 schema 由 db/init.js 的 initDatabase 管理；這裡只補 bodyshop 專屬表）
+(async function _bodyshopInitLoop() {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await initTable();
+      return;
+    } catch(e) {
+      const wait = Math.min(30_000, 2000 * Math.pow(2, Math.min(attempt - 1, 4)));
+      console.warn(`[bodyshopBonus initTable] 嘗試 ${attempt} 失敗：${e.message} — ${wait/1000}s 後重試`);
+      await new Promise(r => setTimeout(r, wait));
+    }
+  }
+})();
 
 // ══ 讀取/儲存設定 ══
 router.get('/bodyshop-bonus/settings', async (req, res) => {

@@ -152,16 +152,44 @@ async function cleanupStaleRows() {
 }
 
 // ── 啟動 ──
-initDatabase()
-  .then(() => app.listen(PORT, () => console.log(`Server running on port ${PORT}`)))
-  .then(() => {
-    cleanupStaleRows();                                   // 啟動後跑一次
-    setInterval(cleanupStaleRows, 24 * 60 * 60 * 1000);   // 之後每 24h
-    // 資安告警偵測器（每 5 分鐘掃 audit_logs）
-    const { startAuditAlertDetector } = require('./lib/auditAlerts');
-    startAuditAlertDetector();
-    // 稽核 hash-chain 月度 checkpoint
-    const { startAuditCheckpointScheduler } = require('./lib/auditCheckpoint');
-    startAuditCheckpointScheduler();
-  })
-  .catch(err => { console.error('DB初始化失敗:', err.message); process.exit(1); });
+// ── 啟動 ──
+// 策略：先起 HTTP server 讓 /health 立即可用，DB 初始化在背景重試到成功為止。
+// 避免「DB 短暫不可達就 process.exit(1) → container 重啟 → 無限 crash loop」。
+// Zeabur 看到 /health 200 就不會殺 container。API 路由在 DB 掛時會回 500，
+// 但這是可接受的「局部故障」狀態，比整個服務死掉好。
+const server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// Graceful shutdown（避免 Zeabur 重啟時連線亂掉）
+['SIGTERM', 'SIGINT'].forEach(sig => {
+  process.on(sig, () => {
+    console.log(`[${sig}] shutting down...`);
+    server.close(() => pool.end().finally(() => process.exit(0)));
+    // 強制 10s 後結束
+    setTimeout(() => process.exit(1), 10000).unref();
+  });
+});
+
+// 背景 DB 初始化：指數回退重試，不再直接 process.exit
+(async function bootstrapDatabase() {
+  const MAX_BACKOFF_MS = 30_000;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await initDatabase();
+      console.log(`[initDB] ✅ 完成（嘗試 ${attempt} 次）`);
+      break;
+    } catch (err) {
+      const wait = Math.min(MAX_BACKOFF_MS, 2000 * Math.pow(2, Math.min(attempt - 1, 4)));
+      console.error(`[initDB] 嘗試 ${attempt} 失敗：${err.message} — ${wait / 1000}s 後重試`);
+      await new Promise(r => setTimeout(r, wait));
+    }
+  }
+  // DB 就緒後啟動所有背景工作
+  cleanupStaleRows();                                   // 啟動後跑一次
+  setInterval(cleanupStaleRows, 24 * 60 * 60 * 1000);   // 之後每 24h
+  // 資安告警偵測器（每 5 分鐘掃 audit_logs）
+  const { startAuditAlertDetector } = require('./lib/auditAlerts');
+  startAuditAlertDetector();
+  // 稽核 hash-chain 月度 checkpoint
+  const { startAuditCheckpointScheduler } = require('./lib/auditCheckpoint');
+  startAuditCheckpointScheduler();
+})();
