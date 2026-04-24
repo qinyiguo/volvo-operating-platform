@@ -89,15 +89,31 @@ const { csrfProtect } = require('./lib/authMiddleware');
 app.use('/api', csrfProtect);
 
 // ── 登入端點 rate limit（防暴力破解）──
-// 同 IP 15 分內最多 10 次登入請求；超過回 429
-const loginLimiter = rateLimit({
+// MEDIUM 4: 雙層限流，避免 IPv6 /64 / 反向代理等繞過手法
+// (a) 同 IP 15 分內最多 10 次登入請求；超過回 429
+const loginIpLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: '登入嘗試次數過多，請 15 分鐘後再試' },
 });
-app.use('/api/users/login', loginLimiter);
+// (b) 同 username 15 分內最多 5 次（不分 IP），補強單一帳號被分散 IP 爆破的場景
+//     keyGenerator 取 body.username（小寫 trim），取不到（如格式錯）就退回 IP
+const loginUsernameLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const u = req.body && typeof req.body.username === 'string'
+      ? req.body.username.trim().toLowerCase()
+      : '';
+    return u ? `user:${u}` : `ip:${req.ip}`;
+  },
+  message: { error: '此帳號登入嘗試次數過多，請 15 分鐘後再試' },
+});
+app.use('/api/users/login', loginIpLimiter, loginUsernameLimiter);
 
 // ── DB readiness gate ──
 // 背景 initDatabase() 還沒成功之前，/api/* 回 503 而非模糊 500；

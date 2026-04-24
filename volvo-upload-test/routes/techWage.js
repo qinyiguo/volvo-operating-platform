@@ -11,9 +11,11 @@
  */
 const router = require('express').Router();
 const pool   = require('../db/pool');
-const { requireAuth, requirePermission } = require('../lib/authMiddleware');
+const { requireAuth, requirePermission, loadBranchScope, branchScopeMiddleware } = require('../lib/authMiddleware');
 
 router.use(requireAuth);
+router.use(loadBranchScope);
+router.use(branchScopeMiddleware());
 
 router.get('/tech-wage-config', async (req, res) => {
   try { res.json((await pool.query(`SELECT * FROM tech_wage_configs ORDER BY id`)).rows); }

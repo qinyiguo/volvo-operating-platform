@@ -22,6 +22,17 @@ const pick = (row, ...keys) => {
 
 const num = (val) => { const n = parseFloat(val); return isNaN(n) ? 0 : n; };
 
+// Excel CSV/Formula injection 防護：儲存格若以 = + - @ Tab CR 開頭，
+// 在被別人用 Excel 開啟時會被當公式執行（=cmd|'/c calc'!A1, =HYPERLINK(...)）。
+// 寫入 DB 前先 prefix 一個單引號，Excel 顯示時會吃掉前綴但不執行公式。
+// 對純數字欄位（num()）不必呼叫；只用在會原樣顯示在 XLSX 匯出/前端的字串。
+const FORMULA_PREFIX = /^[=+\-@\t\r]/;
+const safeStr = (val) => {
+  if (val === null || val === undefined) return '';
+  const s = String(val);
+  return FORMULA_PREFIX.test(s) ? "'" + s : s;
+};
+
 const parseDate = (val) => {
   if (!val) return null;
   if (val instanceof Date) return val.toISOString().split('T')[0];
@@ -86,7 +97,7 @@ function excelFileFilter(req, file, cb) {
 }
 
 module.exports = {
-  pick, num, parseDate, parseDateTime,
+  pick, num, safeStr, parseDate, parseDateTime,
   detectFileType, detectBranch, detectPeriod,
   isExcelBuffer, excelFileFilter,
 };

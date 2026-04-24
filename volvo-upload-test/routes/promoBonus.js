@@ -21,9 +21,11 @@
 const { computeSaMatrix } = require('./stats');
 const router = require('express').Router();
 const pool   = require('../db/pool');
-const { requireAuth, requirePermission } = require('../lib/authMiddleware');
+const { requireAuth, requirePermission, loadBranchScope, branchScopeMiddleware } = require('../lib/authMiddleware');
 
 router.use(requireAuth);
+router.use(loadBranchScope);
+router.use(branchScopeMiddleware());
 
 // ── CRUD ──
 router.get('/promo-bonus/configs', async (req, res) => {

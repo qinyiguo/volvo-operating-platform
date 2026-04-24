@@ -24,9 +24,11 @@ const router = require('express').Router();
 const multer = require('multer');
 const XLSX   = require('xlsx');
 const pool   = require('../db/pool');
-const { requireAuth, requirePermission } = require('../lib/authMiddleware');
+const { requireAuth, requirePermission, loadBranchScope, branchScopeMiddleware } = require('../lib/authMiddleware');
 
 router.use(requireAuth);
+router.use(loadBranchScope);
+router.use(branchScopeMiddleware());
 
 const { checkPeriodLock } = require('../lib/bonusPeriodLock');
 const { isExcelBuffer, excelFileFilter } = require('../lib/utils');
@@ -614,13 +616,17 @@ router.patch('/bodyshop-bonus/applications/:id/rate', requirePermission('feature
 
     let bonusAmt = app.bonus_amount;
     if (app.status === 'settled' && app.income_total) {
-      bonusAmt = Math.min(parseFloat(app.income_total) * rate, 20000);
+      // income_total 也夾擠到合理範圍，避免被竄改的負值或極端值產生詭異 bonus
+      const income = Math.max(0, parseFloat(app.income_total) || 0);
+      bonusAmt = Math.min(income * rate, 20000);
     }
 
     await pool.query(
       `UPDATE bodyshop_bonus_applications SET bonus_rate=$1, bonus_amount=$2, updated_at=NOW() WHERE id=$3`,
       [rate, bonusAmt, req.params.id]
     );
+    // HIGH 4: 鈑烤獎金 rate 變更需稽核（防止結算後偷改 rate 後再改回的洗錢手法）
+    req._audit_detail = `鈑烤獎金 rate id=${req.params.id} ${app.bonus_rate} → ${rate}（bonus_amount=${bonusAmt}）`;
     res.json({ ok: true, bonus_amount: bonusAmt });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });

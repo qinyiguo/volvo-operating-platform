@@ -289,10 +289,19 @@ router.post('/audit-logs/cleanup-requests/:id/approve', async (req, res, next) =
     if (reqRow.requester_id === req.user.user_id) {
       return res.status(403).json({ error: '不能核准自己發起的申請（雙人審核）' });
     }
-    // 執行清理
+    // MEDIUM 5: 縱使 POST 端已驗 keep_days >= 30，approve 端仍做防禦性檢查
+    // 防止 DB row 被直接竄改後利用 approve 一鍵刪除全部稽核（keep_days=0 / -1）
+    const kd = parseInt(reqRow.keep_days, 10);
+    if (!Number.isFinite(kd) || kd < 30) {
+      return res.status(400).json({
+        error: `申請 keep_days=${reqRow.keep_days} 不合法（必須 ≥ 30），請拒絕後重新發起`,
+        code:  'KEEP_DAYS_INVALID',
+      });
+    }
+    // 執行清理（仍用 reqRow.keep_days 但已通過上面的範圍驗證）
     const del = await pool.query(
       `DELETE FROM audit_logs WHERE created_at < NOW() - ($1::text || ' days')::interval RETURNING id`,
-      [reqRow.keep_days]
+      [kd]
     );
     await pool.query(
       `UPDATE audit_cleanup_requests

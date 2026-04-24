@@ -23,9 +23,11 @@
  */
 const router = require('express').Router();
 const pool   = require('../db/pool');
-const { requireAuth, requirePermission } = require('../lib/authMiddleware');
+const { requireAuth, requirePermission, loadBranchScope, branchScopeMiddleware } = require('../lib/authMiddleware');
 
 router.use(requireAuth);
+router.use(loadBranchScope);
+router.use(branchScopeMiddleware());
 
 // ── 預設產能利用率 ──
 const DEFAULT_RATES = {
