@@ -42,18 +42,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 const { auditMiddleware } = require('./lib/auditLogger');
 app.use(auditMiddleware);
 
-// ── DB readiness gate ──
-// 背景 initDatabase() 還沒成功之前，/api/* 回 503 而非模糊 500；
-// 讓使用者看到「系統啟動中」而不是「內部錯誤」，也方便 log diff。
-let dbReady = false;
-app.use('/api', (req, res, next) => {
-  if (dbReady) return next();
-  res.status(503).json({
-    error: '系統啟動中，請 10 秒後重試',
-    code:  'DB_NOT_READY',
-  });
-});
-
 // ── 路由掛載 ──
 // 注意：含未驗證端點的 router（users 的 /login）必須最先掛上。
 // 因為其他 router 的 router.use(requireAuth) 會對任何進入該 router 的請求都先跑驗證，
@@ -80,8 +68,7 @@ app.use('/api', require('./routes/notes'));
 app.use('/api', require('./routes/uploadApproval'));
 
 // ── Health check（防 Zeabur 冷啟動）──
-// 帶 db_ready 讓運維一眼看出是否是「server 起來但 DB 還沒接好」
-app.get('/health', (req, res) => res.json({ ok: true, db_ready: dbReady }));
+app.get('/health', (req, res) => res.json({ ok: true }));
 
 // ── 全域錯誤處理 ──
 // 各 route 應改為 next(err) 走到這裡；回 generic message，完整錯誤寫 server log（含 pg code/detail）。
@@ -128,7 +115,6 @@ const server = app.listen(PORT, () => console.log(`Server running on port ${PORT
   for (let attempt = 1; ; attempt++) {
     try {
       await initDatabase();
-      dbReady = true;
       console.log(`[initDB] ✅ 完成（嘗試 ${attempt} 次）`);
       break;
     } catch (err) {
