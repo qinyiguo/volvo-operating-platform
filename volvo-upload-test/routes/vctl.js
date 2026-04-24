@@ -21,8 +21,7 @@ router.use(branchScopeMiddleware());
 
 // ── CRUD ──
 router.get('/vctl/metrics', async (req, res) => {
-  try { res.json((await pool.query('SELECT * FROM vctl_metrics ORDER BY sort_order, id')).rows); }
-  catch(err) { res.status(500).json({ error: err.message }); }
+  try { res.json((await pool.query('SELECT * FROM vctl_metrics ORDER BY sort_order, id')).rows); } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.post('/vctl/metrics', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
@@ -36,7 +35,7 @@ router.post('/vctl/metrics', requirePermission('feature:bonus_metric_edit'), asy
        JSON.stringify(account_types||[]), JSON.stringify(filters||[]), unit||'', sort_order||0]
     );
     res.json(r.rows[0]);
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.put('/vctl/metrics/:id', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
@@ -51,12 +50,11 @@ router.put('/vctl/metrics/:id', requirePermission('feature:bonus_metric_edit'), 
     );
     if (!r.rows.length) return res.status(404).json({ error: '找不到指標' });
     res.json(r.rows[0]);
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.delete('/vctl/metrics/:id', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
-  try { await pool.query('DELETE FROM vctl_metrics WHERE id=$1', [req.params.id]); res.json({ ok:true }); }
-  catch(err) { res.status(500).json({ error: err.message }); }
+  try { await pool.query('DELETE FROM vctl_metrics WHERE id=$1', [req.params.id]); res.json({ ok:true }); } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── Stats ──
@@ -172,7 +170,7 @@ router.get('/stats/vctl', async (req, res) => {
       results.push(mr);
     }
     res.json({ metrics, results });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 module.exports = router;

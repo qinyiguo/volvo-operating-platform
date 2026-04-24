@@ -313,7 +313,7 @@ router.get('/users/me', requireAuth, async (req, res) => {
       branch:       req.user.branch,
       permissions,
     });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // GET /api/users/permissions-schema — 前端用，取得所有可設定的權限定義
@@ -625,7 +625,7 @@ router.put('/users/me/profile', requireAuth, async (req, res) => {
       [display_name.trim(), req.user.user_id]
     );
     res.json({ ok: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 module.exports = router;

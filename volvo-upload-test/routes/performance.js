@@ -26,8 +26,7 @@ router.use(requireAuth);
 
 // ── 業績指標 CRUD ──
 router.get('/performance-metrics', async (req, res) => {
-  try { res.json((await pool.query(`SELECT * FROM performance_metrics ORDER BY sort_order, id`)).rows); }
-  catch (err) { res.status(500).json({ error: err.message }); }
+  try { res.json((await pool.query(`SELECT * FROM performance_metrics ORDER BY sort_order, id`)).rows); } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.post('/performance-metrics', requirePermission('feature:perf_metric_edit'), async (req, res) => {
@@ -41,7 +40,7 @@ router.post('/performance-metrics', requirePermission('feature:perf_metric_edit'
        JSON.stringify(filters||[]), stat_field||'amount', unit||'', sort_order||0]
     );
     res.json(r.rows[0]);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.put('/performance-metrics/:id', requirePermission('feature:perf_metric_edit'), async (req, res) => {
@@ -56,7 +55,7 @@ router.put('/performance-metrics/:id', requirePermission('feature:perf_metric_ed
     );
     if (!r.rows.length) return res.status(404).json({ error: '找不到指標' });
     res.json(r.rows[0]);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.delete('/performance-metrics/:id', requirePermission('feature:perf_metric_edit'), async (req, res, next) => {
@@ -110,7 +109,7 @@ router.get('/performance-targets', async (req, res) => {
     }
 
     res.json(rows);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.put('/performance-targets/batch', requirePermission('feature:perf_target_edit'), async (req, res) => {
@@ -131,10 +130,8 @@ router.put('/performance-targets/batch', requirePermission('feature:perf_target_
     }
     await client.query('COMMIT');
     res.json({ ok: true });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    res.status(500).json({ error: err.message });
-  } finally { client.release(); }
+  } catch(err) { await client.query('ROLLBACK');
+    console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); } finally { client.release(); }
 });
 
 // ── 業績目標 Excel 匯入 ──
@@ -373,7 +370,7 @@ router.post('/upload-performance-targets-native', requirePermission('feature:upl
       });
     } catch(err) { await client.query('ROLLBACK'); throw err; }
     finally { client.release(); }
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 module.exports = router;

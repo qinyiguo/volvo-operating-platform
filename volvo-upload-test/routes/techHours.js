@@ -513,7 +513,7 @@ actualRes = await pool.query(
       // 回傳員工工作天數供前端顯示
       emp_working_days:      globalEmpWorkingDays,
     });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ══════════════════════════════════════════════
@@ -625,7 +625,7 @@ router.get('/stats/tech-hours-raw', async (req, res) => {
         difference:         Math.round((sumRest - sumOrig) * 100) / 100,
       },
     });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── Config CRUD ──
@@ -634,8 +634,7 @@ router.get('/tech-capacity-config/default', (req, res) => {
 });
 
 router.get('/tech-capacity-config', async (req, res) => {
-  try { res.json(await getConfig()); }
-  catch(err) { res.status(500).json({ error: err.message }); }
+  try { res.json(await getConfig()); } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.put('/tech-capacity-config', requirePermission('feature:tech_config_edit'), async (req, res) => {
@@ -646,7 +645,7 @@ router.put('/tech-capacity-config', requirePermission('feature:tech_config_edit'
       [JSON.stringify(req.body)]
     );
     res.json({ ok: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ══════════════════════════════════════════════
@@ -856,7 +855,7 @@ router.get('/stats/tech-turnover', async (req, res) => {
     };
 
     res.json({ branches: result, bodywork, rosterPeriod, period });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 工位設定 ──
@@ -864,7 +863,7 @@ router.get('/tech-bay-config', async (req, res) => {
   try {
     const r = await pool.query(`SELECT value FROM app_settings WHERE key='service_bays'`);
     res.json(r.rows[0] ? JSON.parse(r.rows[0].value) : {});
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.put('/tech-bay-config', requirePermission('feature:tech_config_edit'), async (req, res) => {
@@ -874,7 +873,7 @@ router.put('/tech-bay-config', requirePermission('feature:tech_config_edit'), as
       ON CONFLICT (key) DO UPDATE SET value=$1
     `, [JSON.stringify(req.body)]);
     res.json({ ok: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 組別設定（存資料庫，跨電腦同步）──
@@ -894,7 +893,7 @@ router.get('/tech-group-config-v2', async (req, res) => {
       });
       res.json(all);
     }
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.put('/tech-group-config-v2', requirePermission('feature:tech_config_edit'), async (req, res) => {
@@ -907,7 +906,7 @@ router.put('/tech-group-config-v2', requirePermission('feature:tech_config_edit'
       ON CONFLICT (key) DO UPDATE SET value = $2
     `, [key, JSON.stringify(groups || {})]);
     res.json({ ok: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 技師「不計目標」清單（存資料庫，跨使用者共用，影響獎金工時計算）──
@@ -935,7 +934,7 @@ router.get('/tech-hours-excludes', async (req, res) => {
       });
       res.json(byBranch);
     }
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // PUT /api/tech-hours-excludes { period, branch, emp_name, excluded:true/false }
@@ -959,7 +958,7 @@ router.put('/tech-hours-excludes', requirePermission('feature:tech_config_edit')
       );
     }
     res.json({ ok: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 module.exports = router;

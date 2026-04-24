@@ -910,7 +910,7 @@ async function loadPerfMetricsList() {
   try {
     _perfMetricsList=await fetch('/api/performance-metrics').then(r=>r.json());
     const sel=document.getElementById('mPerfMetricId');
-    sel.innerHTML='<option value="">選擇指標...</option>'+_perfMetricsList.map(m=>'<option value="'+m.id+'">'+m.metric_name+'</option>').join('');
+    sel.innerHTML='<option value="">選擇指標...</option>'+_perfMetricsList.map(m=>'<option value="'+esc(m.id)+'">'+esc(m.metric_name)+'</option>').join('');
   } catch(e){}
 }
 
@@ -1038,13 +1038,13 @@ function renderAlerts(s) {
   if (nHL.length) {
     html+='<div style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);border-radius:10px;padding:14px 18px;margin-bottom:10px">';
     html+='<div style="font-size:13px;font-weight:700;color:#3b82f6;margin-bottom:8px">🆕 '+pL+'新進（'+nHL.length+' 人）</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
-    nHL.forEach(r=>{ html+='<div style="background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.2);border-radius:7px;padding:6px 12px;font-size:12px"><span style="font-weight:700;color:#e2e8f0">'+r.emp_name+'</span><span style="color:var(--text-dim);margin-left:6px">'+(r.dept_name||'')+'</span>'+(r.hire_date?'<span style="color:#3b82f6;margin-left:6px">'+r.hire_date.slice(0,10)+'</span>':'')+'</div>'; });
+    nHL.forEach(r=>{ html+='<div style="background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.2);border-radius:7px;padding:6px 12px;font-size:12px"><span style="font-weight:700;color:#e2e8f0">'+esc(r.emp_name)+'</span><span style="color:var(--text-dim);margin-left:6px">'+esc(r.dept_name||'')+'</span>'+(r.hire_date?'<span style="color:#3b82f6;margin-left:6px">'+esc(r.hire_date.slice(0,10))+'</span>':'')+'</div>'; });
     html+='</div></div>';
   }
   if (rL.length) {
     html+='<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:10px;padding:14px 18px;margin-bottom:10px">';
     html+='<div style="font-size:13px;font-weight:700;color:#ef4444;margin-bottom:8px">🚨 '+pL+'離職（'+rL.length+' 人）</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
-    rL.forEach(r=>{ html+='<div style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2);border-radius:7px;padding:6px 12px;font-size:12px"><span style="font-weight:700;color:#e2e8f0">'+r.emp_name+'</span><span style="color:var(--text-dim);margin-left:6px">'+(r.dept_name||'')+'</span><span style="color:#ef4444;margin-left:6px">'+(r.resign_date?.slice(0,10)||'')+'</span></div>'; });
+    rL.forEach(r=>{ html+='<div style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2);border-radius:7px;padding:6px 12px;font-size:12px"><span style="font-weight:700;color:#e2e8f0">'+esc(r.emp_name)+'</span><span style="color:var(--text-dim);margin-left:6px">'+esc(r.dept_name||'')+'</span><span style="color:#ef4444;margin-left:6px">'+esc(r.resign_date?.slice(0,10)||'')+'</span></div>'; });
     html+='</div></div>';
   }
   if (uL.length) {
@@ -1052,9 +1052,9 @@ function renderAlerts(s) {
     html+='<div style="font-size:13px;font-weight:700;color:#f59e0b;margin-bottom:8px">⏸️ 留職停薪（'+uL.length+' 人）</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
     uL.forEach(r=>{
       var dateStr='';
-      if (r.unpaid_leave_date) dateStr+='<span style="color:#f59e0b;margin-left:6px">停薪 '+r.unpaid_leave_date.slice(0,10)+'</span>';
-      if (r.reinstated_date)   dateStr+='<span style="color:#10b981;margin-left:6px">復職 '+r.reinstated_date.slice(0,10)+'</span>';
-      html+='<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:7px;padding:6px 12px;font-size:12px"><span style="font-weight:700;color:#e2e8f0">'+r.emp_name+'</span><span style="color:var(--text-dim);margin-left:6px">'+(r.dept_name||'')+'</span>'+dateStr+'</div>';
+      if (r.unpaid_leave_date) dateStr+='<span style="color:#f59e0b;margin-left:6px">停薪 '+esc(r.unpaid_leave_date.slice(0,10))+'</span>';
+      if (r.reinstated_date)   dateStr+='<span style="color:#10b981;margin-left:6px">復職 '+esc(r.reinstated_date.slice(0,10))+'</span>';
+      html+='<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:7px;padding:6px 12px;font-size:12px"><span style="font-weight:700;color:#e2e8f0">'+esc(r.emp_name)+'</span><span style="color:var(--text-dim);margin-left:6px">'+esc(r.dept_name||'')+'</span>'+dateStr+'</div>';
     });
     html+='</div></div>';
   }
@@ -1102,7 +1102,7 @@ function renderRosterTree(rows) {
       const displayName=(deptNameCount[rawName]>1&&FC_SHORT[f])?(FC_SHORT[f]+' '+rawName):rawName;
       html+='<div class="dept-section"><div class="dept-header" onclick="toggleSection(\''+dId+'\')">';
       html+='<span id="'+dId+'-arrow" style="margin-right:4px;color:var(--text-dimmer);transition:transform .2s;display:inline-block">▶</span>';
-      html+='<span style="font-weight:700;color:#cbd5e1">'+displayName+'</span><span style="font-size:11px;color:var(--text-dimmer);margin-left:6px">'+dk+'</span>';
+      html+='<span style="font-weight:700;color:#cbd5e1">'+esc(displayName)+'</span><span style="font-size:11px;color:var(--text-dimmer);margin-left:6px">'+esc(dk)+'</span>';
       html+='<div style="margin-left:auto;display:flex;gap:5px"><span style="font-size:11px;color:#10b981;font-weight:700">'+aE+'在</span>';
       if(uE) html+='<span style="font-size:11px;color:#f59e0b;font-weight:700">'+uE+'停</span>';
       if(rE) html+='<span style="font-size:11px;color:#ef4444">'+rE+'離</span>';
@@ -1110,10 +1110,11 @@ function renderRosterTree(rows) {
       html+='<table class="emp-table"><thead><tr><th>員工編號</th><th>姓名</th><th>職務</th><th>狀態</th><th>一階主管</th><th>到職日期</th><th>離職日期</th><th>調整</th></tr></thead><tbody>';
       emps.forEach(e=>{
         const rc=e.status==='離職'?'emp-row-resign':e.status==='留職停薪'?'emp-row-unpaid':'';
-        const eName=e.emp_name.replace(/'/g,"\\'"), eFact=(e.factory||'').replace(/'/g,"\\'");
-        const _dA=e.dept_name?"'"+e.dept_name.replace(/'/g,"\\'")+"'":"''";
-        html+='<tr class="'+rc+'"><td style="font-family:monospace;font-size:11px;color:var(--text-muted)">'+e.emp_id+'</td><td style="font-weight:700">'+e.emp_name+'</td><td style="font-size:12px;color:var(--text-muted)">'+(e.job_title||'—')+'</td><td>'+(STATUS_BADGE[e.status]||e.status)+'</td><td style="font-size:12px;color:var(--text-dim)">'+(e.mgr1||'—')+'</td><td style="font-size:11px">'+(e.hire_date?.slice(0,10)||'—')+'</td><td style="font-size:11px;color:'+(e.resign_date?'#ef4444':'#475569')+'">'+(e.resign_date?.slice(0,10)||'—')+'</td>';
-        html+='<td><button class="btn btn-secondary btn-sm" onclick="openEmpEditModal(\''+_rosterLoadedPeriod+'\',\''+e.emp_id+'\',\''+eFact+'\',\''+eName+'\','+_dA+')">✏️</button></td></tr>';
+        // HIGH 1 修補：onclick 參數改用 JSON.stringify + esc()，承擔 JS literal + HTML attr 雙層
+        // 編碼，徹底防止 emp_name / dept_name 含 ' " < > 等惡意字元造成 XSS。
+        const onclickArgs = esc(JSON.stringify([_rosterLoadedPeriod, e.emp_id, e.factory||'', e.emp_name, e.dept_name||null]).slice(1, -1));
+        html+='<tr class="'+rc+'"><td style="font-family:monospace;font-size:11px;color:var(--text-muted)">'+esc(e.emp_id)+'</td><td style="font-weight:700">'+esc(e.emp_name)+'</td><td style="font-size:12px;color:var(--text-muted)">'+esc(e.job_title||'—')+'</td><td>'+(STATUS_BADGE[e.status]||esc(e.status))+'</td><td style="font-size:12px;color:var(--text-dim)">'+esc(e.mgr1||'—')+'</td><td style="font-size:11px">'+esc(e.hire_date?.slice(0,10)||'—')+'</td><td style="font-size:11px;color:'+(e.resign_date?'#ef4444':'#475569')+'">'+esc(e.resign_date?.slice(0,10)||'—')+'</td>';
+        html+='<td><button class="btn btn-secondary btn-sm" onclick="openEmpEditModal('+onclickArgs+')">✏️</button></td></tr>';
       });
       html+='</tbody></table></div></div>';
     });
@@ -1148,7 +1149,7 @@ async function loadEmpEditDepts(period, factory) {
     if (!_allDepts.length) _allDepts=await fetch('/api/bonus/departments?period='+period).then(r=>r.json());
     const filtered=_allDepts.filter(d=>(d.factory||'售後服務處')===factory);
     const sel=document.getElementById('empEditDeptCode');
-    sel.innerHTML='<option value="">— 不變更部門 —</option>'+filtered.map(d=>'<option value="'+d.dept_code+'" data-name="'+d.dept_name+'">'+d.dept_name+' ('+d.dept_code+')</option>').join('');
+    sel.innerHTML='<option value="">— 不變更部門 —</option>'+filtered.map(d=>'<option value="'+esc(d.dept_code)+'" data-name="'+esc(d.dept_name)+'">'+esc(d.dept_name)+' ('+esc(d.dept_code)+')</option>').join('');
     document.getElementById('empEditDeptGroup').style.display=filtered.length?'':'none';
   } catch(e){}
 }
@@ -1357,8 +1358,9 @@ async function loadDeptJobTitles() {
     if (!titles.length){ sugDiv.style.display='none'; return; }
     chipsDiv.innerHTML=titles.map(t=>{
       const already=_tierRoles.includes(t);
-      const safeT=t.replace(/'/g,"\\'");
-      return '<span onclick="'+(already?'':'addRoleVal(\''+safeT+'\')')+'" style="display:inline-flex;align-items:center;gap:3px;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:'+(already?'default':'pointer')+';border:1px solid;'+(already?'background:rgba(59,130,246,.15);border-color:#3b82f6;color:#60a5fa':'background:#1e293b;border-color:#2d3f56;color:var(--text-muted)')+'">'+(already?'✓ ':'＋ ')+t+'</span>';
+      // HIGH 1: onclick 用 JSON.stringify + esc() 雙層編碼；顯示文字也走 esc()
+      const onclickAttr = already ? '' : 'addRoleVal('+esc(JSON.stringify(t))+')';
+      return '<span onclick="'+onclickAttr+'" style="display:inline-flex;align-items:center;gap:3px;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:'+(already?'default':'pointer')+';border:1px solid;'+(already?'background:rgba(59,130,246,.15);border-color:#3b82f6;color:#60a5fa':'background:#1e293b;border-color:#2d3f56;color:var(--text-muted)')+'">'+(already?'✓ ':'＋ ')+esc(t)+'</span>';
     }).join('');
     sugDiv.style.display='';
   } catch(e){ if(sugDiv) sugDiv.style.display='none'; }
@@ -1389,7 +1391,7 @@ function getSelectedDeptBranchOverride() {
 function renderRoleTags() {
   const wrap=document.getElementById('mRoleTagsWrap');
   if (!_tierRoles.length){ wrap.innerHTML='<span style="color:var(--text-dimmer);font-size:11px">（未設定職稱 → 所有人同一金額）</span>'; return; }
-  wrap.innerHTML=_tierRoles.map((r,i)=>'<span class="role-tag">'+r+'<button onclick="removeRole('+i+')" title="移除">×</button></span>').join('');
+  wrap.innerHTML=_tierRoles.map((r,i)=>'<span class="role-tag">'+esc(r)+'<button onclick="removeRole('+i+')" title="移除">×</button></span>').join('');
   renderTierTable(); loadDeptJobTitles();
 }
 function addRole() {
@@ -1412,7 +1414,7 @@ function renderTierTable() {
   thHtml+='<th style="background:#0f172a;color:var(--text-dim);padding:7px 10px;border-bottom:1px solid #2d3f56;text-align:center;white-space:nowrap;min-width:80px">未達 (%, 空=無上限)</th>';
   if (hasRoles) thHtml+='<th style="background:#0f172a;color:var(--text-dim);padding:7px 6px;border-bottom:1px solid #2d3f56;text-align:center;white-space:nowrap;min-width:110px">金額模式</th>';
   thHtml+='<th style="background:#0f172a;color:#10b981;padding:7px 10px;border-bottom:1px solid #2d3f56;text-align:center;min-width:90px">共用金額（元）</th>';
-  if (hasRoles) roles.forEach(r=>{ thHtml+='<th style="background:#0f172a;color:#10b981;padding:7px 10px;border-bottom:1px solid #2d3f56;text-align:center;white-space:nowrap;min-width:80px">'+r+'</th>'; });
+  if (hasRoles) roles.forEach(r=>{ thHtml+='<th style="background:#0f172a;color:#10b981;padding:7px 10px;border-bottom:1px solid #2d3f56;text-align:center;white-space:nowrap;min-width:80px">'+esc(r)+'</th>'; });
   thHtml+='<th style="background:#0f172a;padding:7px 6px;border-bottom:1px solid #2d3f56;width:30px"></th></tr>';
   head.innerHTML=thHtml;
   let bodyHtml='';
@@ -1433,7 +1435,7 @@ function renderTierTable() {
       roles.forEach(r=>{
         const amt=(t.amounts&&t.amounts[r]!==undefined)?t.amounts[r]:'';
         const disabled=isPerRole?'':'disabled';
-        bodyHtml+='<td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3)"><input class="tier-input" type="number" value="'+amt+'" min="0" step="1" data-ti="'+i+'" data-role="'+r.replace(/"/g,'&quot;')+'" '+disabled+' oninput="syncTierAmount(this)" style="color:#10b981;font-weight:700;opacity:'+(isPerRole?'1':'.4')+'"></td>';
+        bodyHtml+='<td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3)"><input class="tier-input" type="number" value="'+esc(amt)+'" min="0" step="1" data-ti="'+i+'" data-role="'+esc(r)+'" '+disabled+' oninput="syncTierAmount(this)" style="color:#10b981;font-weight:700;opacity:'+(isPerRole?'1':'.4')+'"></td>';
       });
     }
     bodyHtml+='<td style="padding:5px 6px;border-bottom:1px solid rgba(45,63,86,.3);text-align:center"><button class="btn btn-danger btn-sm" onclick="removeTier('+i+')" style="padding:3px 8px">×</button></td></tr>';
@@ -1650,7 +1652,7 @@ function onMSourceChange() {
         fHtml+=`<label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 12px;border-radius:6px;background:${on?'rgba(139,92,246,.15)':'#1e293b'};border:1.5px solid ${on?'#8b5cf6':'#2d3f56'};font-size:13px;font-weight:700;color:${on?'#a78bfa':'#94a3b8'}" onclick="toggleTechHoursDeptChip(this)"><input type="checkbox" name="techHoursDept" value="${d.v}" ${on?'checked':''} style="display:none">${d.l}</label>`;
       });
       fHtml+='</div></div>';
-      fHtml+='<div class="form-group"><label>帳類篩選（留空=全部）</label><input type="text" id="mFilterAccountType" class="form-input" placeholder="例：一般,保險" value="'+ef.filter(f=>f.type==='account_type').map(f=>f.value).join(',')+'"></div>';
+      fHtml+='<div class="form-group"><label>帳類篩選（留空=全部）</label><input type="text" id="mFilterAccountType" class="form-input" placeholder="例：一般,保險" value="'+esc(ef.filter(f=>f.type==='account_type').map(f=>f.value).join(','))+'"></div>';
       document.getElementById('mFiltersContent').innerHTML=fHtml;
       // 技師工時只支援 hours / count
       document.getElementById('mStatField').innerHTML=`
@@ -1686,7 +1688,7 @@ function toggleTechHoursDeptChip(el) {
 function _buildPromoConfigSelect() {
   var html = '<option value="">選擇業績指標...</option>'
     + _perfMetricsList.map(function(m) {
-        return '<option value="' + m.id + '">' + m.metric_name + '</option>';
+        return '<option value="' + esc(m.id) + '">' + esc(m.metric_name) + '</option>';
       }).join('');
   ['mPromoCfgSel', 'mPromoPctSel'].forEach(function(id) {
     var sel = document.getElementById(id);
@@ -2940,12 +2942,12 @@ function renderPromoConfigList() {
     return '<div style="background:#0f172a;border:1px solid #2d3f56;border-radius:9px;padding:11px 14px;display:flex;align-items:center;gap:10px;margin-bottom:7px">'
       + '<span style="font-size:10px;background:' + col + '22;color:' + col + ';padding:2px 8px;border-radius:4px;font-weight:700;flex-shrink:0">' + typeLabel + '</span>'
       + '<div style="flex:1;min-width:0">'
-        + '<div style="font-weight:700;font-size:13px;color:#e2e8f0">' + c.rule_name + '</div>'
-        + '<div style="font-size:11px;color:var(--text-dim);margin-top:2px">' + desc + '</div>'
+        + '<div style="font-weight:700;font-size:13px;color:#e2e8f0">' + esc(c.rule_name) + '</div>'
+        + '<div style="font-size:11px;color:var(--text-dim);margin-top:2px">' + esc(desc) + '</div>'
       + '</div>'
       + '<span style="font-size:11px;padding:2px 8px;border-radius:5px;background:' + (c.active ? 'rgba(16,185,129,.15)' : 'rgba(100,116,139,.15)') + ';color:' + (c.active ? '#10b981' : '#94a3b8') + ';flex-shrink:0">' + (c.active ? '✅ 啟用' : '⏸ 停用') + '</span>'
-      + '<button class="btn btn-secondary btn-sm" onclick="openPromoModal(' + c.id + ')">✏️</button>'
-      + '<button class="btn btn-danger btn-sm" onclick="deletePromoCfg(' + c.id + ',\'' + c.rule_name.replace(/'/g,"\\'") + '\')">刪除</button>'
+      + '<button class="btn btn-secondary btn-sm" onclick="openPromoModal(' + parseInt(c.id) + ')">✏️</button>'
+      + '<button class="btn btn-danger btn-sm" onclick="deletePromoCfg(' + parseInt(c.id) + ',' + esc(JSON.stringify(c.rule_name)) + ')">刪除</button>'
       + '</div>';
   }).join('');
 }
@@ -3037,11 +3039,11 @@ async function _openPromoEditor(id) {
   var saList = await fetch('/api/sa-config').then(r=>r.json()).catch(()=>[]);
   var saSel = document.getElementById('pmSaConfigId');
   saSel.innerHTML = '<option value="">選擇指標銷售品項...</option>' + saList.map(function(s){
-    return '<option value="' + s.id + '" ' + (s.id == cfg.sa_config_id ? 'selected' : '') + '>' + s.config_name + '</option>';
+    return '<option value="' + esc(s.id) + '" ' + (s.id == cfg.sa_config_id ? 'selected' : '') + '>' + esc(s.config_name) + '</option>';
   }).join('');
   var saPctSel = document.getElementById('pmSaPctConfigId');
   if (saPctSel) saPctSel.innerHTML = '<option value="">選擇...</option>' + saList.map(function(s){
-    return '<option value="'+s.id+'" '+(s.id==cfg.sa_config_id?'selected':'')+'>'+s.config_name+'</option>';
+    return '<option value="'+esc(s.id)+'" '+(s.id==cfg.sa_config_id?'selected':'')+'>'+esc(s.config_name)+'</option>';
   }).join('');
   var saPctPT = document.getElementById('pmSaPctPersonType');
   if (saPctPT) saPctPT.value = cfg.person_type || 'sales_person';
@@ -3072,7 +3074,7 @@ async function _openPromoEditor(id) {
   _pmTiers = (cfg.tiers || []).map(function(t){ return Object.assign({},t); });
   var tierSel = document.getElementById('pmTierConfigId');
   if (tierSel) tierSel.innerHTML = '<option value="">選擇...</option>' + saList.map(function(s){
-    return '<option value="'+s.id+'" '+(s.id==cfg.sa_config_id?'selected':'')+'>'+s.config_name+'</option>';
+    return '<option value="'+esc(s.id)+'" '+(s.id==cfg.sa_config_id?'selected':'')+'>'+esc(s.config_name)+'</option>';
   }).join('');
   var tierPT = document.getElementById('pmTierPersonType');
   if (tierPT) tierPT.value = cfg.person_type || 'sales_person';
@@ -3327,9 +3329,8 @@ function _openMRModal(deptKey) {
   if (empSel) {
     empSel.innerHTML = '<option value="">選擇人員...</option>'
       + list.map(function(emp){
-        var safeId = (emp.empId||'').replace(/"/g,'&quot;');
-        return '<option value="'+safeId+'" data-name="'+(emp.name||'').replace(/"/g,'&quot;')+'">'
-          + (emp.name||'') + (emp.title?' ('+emp.title+')':'') + '</option>';
+        return '<option value="'+esc(emp.empId||'')+'" data-name="'+esc(emp.name||'')+'">'
+          + esc(emp.name||'') + (emp.title?' ('+esc(emp.title)+')':'') + '</option>';
       }).join('');
   }
   document.getElementById('mrAmount').value = '';
@@ -4443,10 +4444,10 @@ function renderEbList(filterFc, filterDkey) {
   if (!list.length) { el.innerHTML='<div style="color:var(--text-dimmer);font-size:12px;padding:8px 0">此部門尚無額外獎金記錄</div>'; return; }
   el.innerHTML = list.map(function(r){
     return '<div style="background:#0f172a;border:1px solid #2d3f56;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:6px">'
-      +'<div style="flex:1"><div style="font-weight:700;font-size:13px;color:#e2e8f0">'+r.emp_name+'</div>'
-      +'<div style="font-size:11px;color:var(--text-dim);margin-top:2px">'+(r.branch||'')+(r.reason?' ｜ '+r.reason:'')+'</div></div>'
+      +'<div style="flex:1"><div style="font-weight:700;font-size:13px;color:#e2e8f0">'+esc(r.emp_name)+'</div>'
+      +'<div style="font-size:11px;color:var(--text-dim);margin-top:2px">'+esc(r.branch||'')+(r.reason?' ｜ '+esc(r.reason):'')+'</div></div>'
       +'<span style="font-size:15px;font-weight:900;color:#60a5fa">'+parseInt(r.amount).toLocaleString()+' 元</span>'
-      +'<button class="btn btn-danger btn-sm" onclick="deleteExtraBonus('+r.id+')">刪除</button>'
+      +'<button class="btn btn-danger btn-sm" onclick="deleteExtraBonus('+parseInt(r.id)+')">刪除</button>'
     +'</div>';
   }).join('');
 }

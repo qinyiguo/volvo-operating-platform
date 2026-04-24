@@ -323,7 +323,7 @@ router.post('/bonus/upload-roster', requirePermission('feature:upload_roster'), 
       res.json({ ok: true, count, period });
     } catch(err) { await client.query('ROLLBACK'); throw err; }
     finally { client.release(); }
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 取得人員名冊（已過濾）──
@@ -341,7 +341,7 @@ router.get('/bonus/roster', async (req, res) => {
       `SELECT * FROM staff_roster WHERE period=$1 ${f.cond} ${extra} ORDER BY dept_code, emp_id`, p
     );
     res.json(r.rows);
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 手動調整員工廠別＋部門 ──
@@ -358,7 +358,7 @@ router.patch('/bonus/roster/:period/:emp_id', requirePermission('feature:bonus_m
     p.push(period, emp_id);
     await pool.query(`UPDATE staff_roster SET ${sets.join(',')} WHERE period=$${n++} AND emp_id=$${n}`, p);
     res.json({ ok: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 取得人員名冊期間清單 ──
@@ -366,7 +366,7 @@ router.get('/bonus/roster-periods', async (req, res) => {
   try {
     const r = await pool.query(`SELECT DISTINCT period FROM staff_roster ORDER BY period DESC`);
     res.json(r.rows.map(r => r.period));
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 取得人員名冊摘要 ──
@@ -407,7 +407,7 @@ router.get('/bonus/roster-summary', async (req, res) => {
       ORDER BY dept_code, unpaid_leave_date
     `, [period, `${period.slice(0,4)}-${period.slice(4,6)}-01`]);
     res.json({ summary: summary.rows, resignLastMonth: resignLastMonth.rows, newHiresLastMonth: newHiresLastMonth.rows, unpaidLeave: unpaid.rows, prevPeriod });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ══════════════════════════════════════════════
@@ -416,7 +416,7 @@ router.get('/bonus/roster-summary', async (req, res) => {
 router.get('/bonus/metrics', async (req, res) => {
   try {
     res.json((await pool.query(`SELECT * FROM bonus_metrics ORDER BY sort_order, id`)).rows);
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.post('/bonus/metrics', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
@@ -437,7 +437,7 @@ router.post('/bonus/metrics', requirePermission('feature:bonus_metric_edit'), as
     }
     const updated = await pool.query(`SELECT * FROM bonus_metrics WHERE id=$1`, [r.rows[0].id]);
     res.json(updated.rows[0]);
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.put('/bonus/metrics/:id', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
@@ -461,7 +461,7 @@ router.put('/bonus/metrics/:id', requirePermission('feature:bonus_metric_edit'),
     const updated = await pool.query(`SELECT * FROM bonus_metrics WHERE id=$1`, [req.params.id]);
     if (!updated.rows.length) return res.status(404).json({ error: '找不到指標' });
     res.json(updated.rows[0]);
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.delete('/bonus/metrics/:id', requirePermission('feature:bonus_metric_edit'), async (req, res, next) => {
@@ -498,7 +498,7 @@ router.get('/bonus/targets', async (req, res) => {
        FROM bonus_targets bt JOIN bonus_metrics bm ON bm.id=bt.metric_id
        ${where} ORDER BY bt.metric_id, bt.emp_id, bt.dept_code`, params
     )).rows);
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.put('/bonus/targets/batch', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
@@ -526,7 +526,7 @@ router.put('/bonus/targets/batch', requirePermission('feature:bonus_metric_edit'
     }
     await client.query('COMMIT');
     res.json({ ok: true });
-  } catch(err) { await client.query('ROLLBACK'); res.status(500).json({ error: err.message }); }
+  } catch(err) { await client.query('ROLLBACK'); console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
   finally { client.release(); }
 });
 
@@ -538,7 +538,7 @@ router.delete('/bonus/targets/:id', requirePermission('feature:bonus_metric_edit
     if (p && checkPeriodLock(p, res)) return;
     await pool.query(`DELETE FROM bonus_targets WHERE id=$1`, [req.params.id]);
     res.json({ ok: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ══════════════════════════════════════════════
@@ -754,7 +754,7 @@ router.get('/bonus/progress', async (req, res) => {
       results.push({ metric: m, targets: myTargets, actual, perfTarget, effectiveBranch });
     }
     res.json({ results, period, actualPeriod });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 可設定目標的人員/部門清單 ──
@@ -775,7 +775,7 @@ router.get('/bonus/scope-members', async (req, res) => {
       const r = await pool.query(`SELECT emp_id, emp_name, dept_code, dept_name, factory, job_title, mgr1 FROM staff_roster WHERE period=$1 ${f.cond} ${extra} ORDER BY dept_code, emp_id`, p);
       res.json(r.rows);
     }
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 取得部門清單 ──
@@ -786,7 +786,7 @@ router.get('/bonus/departments', async (req, res) => {
   try {
     const r = await pool.query(`SELECT DISTINCT dept_code, dept_name, factory FROM staff_roster WHERE period=$1 ${f.cond} ORDER BY factory NULLS LAST, dept_code`, [period, ...f.params]);
     res.json(r.rows);
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 手動實績覆蓋 CRUD ──
@@ -799,7 +799,7 @@ router.get('/bonus/actual-override', async (req, res) => {
       [metric_id, period, branch || '']
     );
     res.json(r.rows[0] || null);
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.put('/bonus/actual-override', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
@@ -814,7 +814,7 @@ router.put('/bonus/actual-override', requirePermission('feature:bonus_metric_edi
       DO UPDATE SET actual_value=$4, note=$5, updated_at=NOW()
     `, [metric_id, period, branch||'', actual_value!=null?parseFloat(actual_value):null, note||'']);
     res.json({ ok: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.delete('/bonus/actual-override', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
@@ -827,7 +827,7 @@ router.delete('/bonus/actual-override', requirePermission('feature:bonus_metric_
       [metric_id, period, branch||'']
     );
     res.json({ ok: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.get('/bonus/dept-mode', async (req, res) => {
@@ -836,7 +836,7 @@ router.get('/bonus/dept-mode', async (req, res) => {
   try {
     const r = await pool.query(`SELECT value FROM app_settings WHERE key=$1`, [key]);
     res.json({ team_mode: r.rows[0]?.value === '1' });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.put('/bonus/dept-mode', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
@@ -848,7 +848,7 @@ router.put('/bonus/dept-mode', requirePermission('feature:bonus_metric_edit'), a
       ON CONFLICT (key) DO UPDATE SET value=$2
     `, [key, team_mode ? '1' : '0']);
     res.json({ ok: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // LOW L5: 對 DB 取出的 JSON.parse 用 try/catch 兜底，避免髒資料觸發 500
@@ -862,7 +862,7 @@ router.get('/bonus/dept-weights', async (req, res) => {
   try {
     const r = await pool.query(`SELECT value FROM app_settings WHERE key=$1`, [key]);
     res.json(r.rows[0] ? safeJsonParse(r.rows[0].value) : {});
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.put('/bonus/dept-weights', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
@@ -875,7 +875,7 @@ router.put('/bonus/dept-weights', requirePermission('feature:bonus_metric_edit')
       ON CONFLICT (key) DO UPDATE SET value=$2
     `, [key, JSON.stringify(weights || {})]);
     res.json({ ok: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // GET 額外獎金
@@ -887,7 +887,7 @@ router.get('/bonus/extra-bonuses', async (req, res) => {
       [period]
     );
     res.json(rows);
-  } catch(e) { res.status(500).json({error: e.message}); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // HIGH 4: 額外獎金金額上下限（防止 99999999 / 負值灌爆薪資結算）
@@ -915,7 +915,7 @@ router.post('/bonus/extra-bonuses', requirePermission('feature:bonus_extra_edit'
     // 寫入稽核 detail，方便事後審核大額調整
     req._audit_detail = `額外獎金 emp=${emp_id} amount=${n} reason="${reason||''}"`;
     res.json(rows[0]);
-  } catch(e) { res.status(500).json({error: e.message}); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // DELETE 刪除額外獎金
@@ -927,7 +927,7 @@ router.delete('/bonus/extra-bonuses/:id', requirePermission('feature:bonus_extra
     if (p && checkPeriodLock(p, res)) return;
     await pool.query('DELETE FROM bonus_extra WHERE id=$1', [req.params.id]);
     res.json({ok: true});
-  } catch(e) { res.status(500).json({error: e.message}); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // 美容技師據點分配
@@ -937,7 +937,7 @@ router.get('/bonus/beauty-branches', async (req, res) => {
   try {
     const r = await pool.query(`SELECT value FROM app_settings WHERE key=$1`, [key]);
     res.json(r.rows[0] ? safeJsonParse(r.rows[0].value) : {});
-  } catch(e) { res.status(500).json({error: e.message}); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.put('/bonus/beauty-branches', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
@@ -951,7 +951,7 @@ router.put('/bonus/beauty-branches', requirePermission('feature:bonus_metric_edi
       [key, JSON.stringify(assignments||{})]
     );
     res.json({ok:true});
-  } catch(e) { res.status(500).json({error: e.message}); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // 銷售獎金部門模式（獨立於績效獎金）
@@ -961,7 +961,7 @@ router.get('/bonus/promo-dept-mode', async (req, res) => {
   try {
     const r = await pool.query(`SELECT value FROM app_settings WHERE key=$1`, [key]);
     res.json({ team_mode: r.rows[0]?.value === '1' });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.put('/bonus/promo-dept-mode', requirePermission('feature:promo_bonus_edit'), async (req, res) => {
@@ -973,7 +973,7 @@ router.put('/bonus/promo-dept-mode', requirePermission('feature:promo_bonus_edit
       ON CONFLICT (key) DO UPDATE SET value=$2
     `, [key, team_mode ? '1' : '0']);
     res.json({ ok: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ═════════════════════════════════════════════════════════════════
@@ -993,7 +993,7 @@ router.get('/bonus/signatures', async (req, res) => {
       `SELECT id, period, branch, role, signer_name, signer_emp_id, signature_data, signed_at
        FROM bonus_signatures ${where} ORDER BY signed_at DESC`, params);
     res.json(r.rows);
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // POST /api/bonus/signatures   body: { period, branch, role, signer_name, signer_emp_id, signature_data }
@@ -1014,7 +1014,7 @@ router.post('/bonus/signatures', requirePermission('feature:bonus_sign'), async 
       RETURNING id, period, branch, role, signer_name, signer_emp_id, signed_at
     `, [period, branch, role || 'checker', signer_name, signer_emp_id || null, signature_data]);
     res.json(rows[0]);
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // DELETE /api/bonus/signatures/:id
@@ -1025,7 +1025,7 @@ router.delete('/bonus/signatures/:id', requirePermission('feature:bonus_sign'), 
     if (p && checkPeriodLock(p, res)) return;
     await pool.query('DELETE FROM bonus_signatures WHERE id=$1', [req.params.id]);
     res.json({ ok: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 module.exports = router;

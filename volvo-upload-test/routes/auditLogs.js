@@ -112,7 +112,7 @@ router.get('/audit-logs', async (req, res) => {
       page_size: pageSize,
       stats:     stats.rows,
     });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ─── GET /api/audit-logs/summary ────────────────────────────────
@@ -189,7 +189,7 @@ router.get('/audit-logs/summary', async (req, res) => {
       top_ips:       topIPs.rows,
       recent_errors: recentErrors.rows,
     });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ─── GET /api/audit-logs/user/:username ─────────────────────────
@@ -232,7 +232,7 @@ router.get('/audit-logs/user/:username', async (req, res) => {
     );
 
     res.json({ user: tUser, rows: rows.rows, count: rows.rows.length });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ─── DELETE /api/audit-logs/cleanup ─────────────────────────────

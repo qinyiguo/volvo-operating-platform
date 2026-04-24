@@ -118,9 +118,7 @@ router.post('/upload-requests', upload.single('file'), async (req, res) => {
       JSON.stringify(extra), reason,
     ]);
     res.json({ ok: true, request: r.rows[0] });
-  } catch(e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ─────────────────────────────────────────────────────────
@@ -173,7 +171,7 @@ router.get('/upload-requests', async (req, res) => {
       LIMIT 200
     `, params);
     res.json(r.rows);
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // GET /api/upload-requests/counts — nav badge 用
@@ -201,7 +199,7 @@ router.get('/upload-requests/counts', async (req, res) => {
       [req.user.user_id]
     )).rows[0].count;
     res.json({ todo, mine: parseInt(mine, 10) });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // GET /api/upload-requests/:id/file — 審核者下載原檔
@@ -222,7 +220,7 @@ router.get('/upload-requests/:id/file', async (req, res) => {
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(row.file_name || 'upload.xlsx')}"`);
     res.send(row.file_content);
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // POST /api/upload-requests/:id/branch-approve
@@ -240,7 +238,7 @@ router.post('/upload-requests/:id/branch-approve', requirePermission('feature:ap
     );
     if (!r.rows.length) return res.status(409).json({ error: '申請狀態已變動，無法核可' });
     res.json({ ok: true, request: r.rows[0] });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // POST /api/upload-requests/:id/super-approve  —  二階核可 + 代為執行
@@ -286,7 +284,7 @@ router.post('/upload-requests/:id/super-approve', async (req, res) => {
     }
   } catch(e) {
     try { await client.query('ROLLBACK'); } catch(_) {}
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: '內部錯誤，請稍後再試' });
   } finally { client.release(); }
 });
 
@@ -311,7 +309,7 @@ router.post('/upload-requests/:id/reject', async (req, res) => {
     );
     if (!r.rows.length) return res.status(409).json({ error: '申請狀態已變動，無法退件' });
     res.json({ ok: true, request: r.rows[0] });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // DELETE /api/upload-requests/:id — 申請人撤回（僅 pending 可撤）
@@ -326,7 +324,7 @@ router.delete('/upload-requests/:id', async (req, res) => {
     );
     if (!r.rows.length) return res.status(409).json({ error: '僅可撤回自己、未被簽核的申請' });
     res.json({ ok: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ─────────────────────────────────────────────────────────
@@ -361,7 +359,11 @@ async function replayUpload(reqRow, callerReq) {
     let data; try { data = JSON.parse(text); } catch(_) { data = { raw: text }; }
     if (!r.ok) return { ok: false, error: data.error || ('HTTP ' + r.status) };
     return { ok: true, data };
-  } catch(e) { return { ok: false, error: e.message }; }
+  } catch(e) {
+    // 內部 loopback fetch 失敗（網路 / DNS / timeout）— 不洩 stack 給 client
+    console.error('[replayUpload]', e);
+    return { ok: false, error: '內部執行失敗，請查 server log' };
+  }
 }
 
 module.exports = router;

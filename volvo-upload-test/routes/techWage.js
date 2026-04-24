@@ -18,8 +18,7 @@ router.use(loadBranchScope);
 router.use(branchScopeMiddleware());
 
 router.get('/tech-wage-config', async (req, res) => {
-  try { res.json((await pool.query(`SELECT * FROM tech_wage_configs ORDER BY id`)).rows); }
-  catch(err) { res.status(500).json({ error: err.message }); }
+  try { res.json((await pool.query(`SELECT * FROM tech_wage_configs ORDER BY id`)).rows); } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.post('/tech-wage-config', requirePermission('feature:tech_config_edit'), async (req, res) => {
@@ -34,7 +33,7 @@ router.post('/tech-wage-config', requirePermission('feature:tech_config_edit'), 
       [config_name.trim(), description||'', JSON.stringify(work_codes), JSON.stringify(account_types||[]), method]
     );
     res.json(r.rows[0]);
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.put('/tech-wage-config/:id', requirePermission('feature:tech_config_edit'), async (req, res) => {
@@ -49,12 +48,11 @@ router.put('/tech-wage-config/:id', requirePermission('feature:tech_config_edit'
     );
     if (!r.rows.length) return res.status(404).json({ error: '找不到設定' });
     res.json(r.rows[0]);
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.delete('/tech-wage-config/:id', requirePermission('feature:tech_config_edit'), async (req, res) => {
-  try { await pool.query(`DELETE FROM tech_wage_configs WHERE id=$1`, [req.params.id]); res.json({ ok:true }); }
-  catch(err) { res.status(500).json({ error: err.message }); }
+  try { await pool.query(`DELETE FROM tech_wage_configs WHERE id=$1`, [req.params.id]); res.json({ ok:true }); } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 工資代碼矩陣統計 ──
@@ -121,7 +119,7 @@ router.get('/stats/tech-wage-matrix', async (req, res) => {
       colTotals[cfg.id] = rows.reduce((s,row) => s + (row.configs[cfg.id]||0), 0);
     }
     res.json({ configs, rows, colTotals });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 module.exports = router;

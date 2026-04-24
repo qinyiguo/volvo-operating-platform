@@ -50,7 +50,7 @@ router.get('/stats/repair', async (req, res) => {
       pool.query(`SELECT branch,COUNT(DISTINCT work_order) AS car_count,SUM(total_untaxed) AS total_untaxed,SUM(engine_wage) AS engine_wage,SUM(parts_income) AS parts_income,SUM(accessories_income) AS accessories_income,SUM(boutique_income) AS boutique_income,SUM(bodywork_income+paint_income) AS bodywork_income,SUM(parts_cost) AS parts_cost FROM repair_income ${where} GROUP BY branch ORDER BY branch`,params),
     ]);
     res.json({ summary:summary.rows, bySA:bySA.rows, totals:totals.rows });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 收入分類明細 ──
@@ -115,7 +115,7 @@ router.get('/stats/income-summary', async (req, res) => {
     `, techParams);
 
     res.json({ byType:byType.rows, externalSales:externalSales.rows, techByType:techByType.rows, externalCategory });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 零件銷售 ──
@@ -131,7 +131,7 @@ router.get('/stats/parts', async (req, res) => {
       pool.query(`SELECT part_number,part_name,part_type,SUM(sale_qty) AS total_qty,SUM(sale_price_untaxed) AS total_sales FROM parts_sales ${where} GROUP BY part_number,part_name,part_type ORDER BY total_sales DESC LIMIT 20`,params),
     ]);
     res.json({ byType:byType.rows, topParts:topParts.rows });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 每日進廠台數 ──
@@ -221,7 +221,7 @@ router.get('/stats/daily', async (req, res) => {
     });
     
     res.json({ daily: daily.rows, summary });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── SA 銷售矩陣 ──
@@ -364,7 +364,7 @@ if (viewParam === 'pickup_person') {
       }, {qty:0,sales:0,cnt:0});
     }
     res.json({ configs, rows, colTotals });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 精品配件銷售 ──
@@ -395,7 +395,7 @@ router.get('/stats/boutique-accessories', async (req, res) => {
       GROUP BY ps.branch, pc.part_type ORDER BY ps.branch, pc.part_type
     `, params);
     res.json({ rows: r.rows, kpi: kpi.rows });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 收入明細分解 ──
@@ -458,7 +458,7 @@ router.get('/stats/income-breakdown', async (req, res) => {
       };
     });
     res.json({ branches: result, externalCategory });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 業績統計 ──
@@ -572,7 +572,7 @@ router.get('/stats/performance', async (req, res) => {
       results.push(mr);
     }
     res.json({ metrics, results });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── WIP 未結工單（累計制）──
@@ -683,7 +683,7 @@ router.get('/stats/wip', async (req, res) => {
         byBranch:      Object.values(byBranch).sort((a,b) => a.label < b.label ? -1 : 1),
       },
     });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 單車銷售額 ──
@@ -803,7 +803,7 @@ router.get('/stats/revenue-per-vehicle', async (req, res) => {
     });
 
     res.json({ rows, grand });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── SA 進廠台數 ──
@@ -824,7 +824,7 @@ router.get('/stats/sa-car-count', async (req, res) => {
     const map = {};
     r.rows.forEach(row => { map[row.service_advisor] = parseInt(row.car_count || 0); });
     res.json(map);
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── SA 各類型營收 ──
@@ -855,7 +855,7 @@ router.get('/stats/sa-paid-revenue', async (req, res) => {
     const map = {};
     r.rows.forEach(row => { map[row.service_advisor] = parseFloat(row.revenue || 0); });
     res.json(map);
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // WIP 上月結清率比較
@@ -924,8 +924,8 @@ router.get('/stats/wip/last-month-comparison', async (req, res) => {
 
     res.json({ ok: true, lmPrefix, total, settled, settledAmt, stillWip, stillAmt, rate });
   } catch (e) {
-    console.error('wip last-month-comparison error:', e);
-    res.status(500).json({ ok: false, error: e.message });
+    console.error('[' + req.method + ' ' + req.originalUrl + ']', e);
+    res.status(500).json({ ok: false, error: '內部錯誤，請稍後再試' });
   }
 });
 
