@@ -875,7 +875,7 @@
 </div>
 
 <script>
-// HTML escape：所有塞 innerHTML 的不可信字串（API 錯誤 / 使用者輸入）必過這層
+// HTML escape helper
 // 用 window.* 確保跨 <script> 區塊都能存取
 window._h = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 // ══ 技師工時產能設定 ══

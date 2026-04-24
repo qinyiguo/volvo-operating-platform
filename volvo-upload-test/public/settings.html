@@ -1018,9 +1018,6 @@
       <div class="page-title">📋 操作紀錄</div>
       <p class="page-sub">查看所有使用者的操作、下載、登入紀錄（含 IP）</p>
 
-      <!-- ══ 🚨 資安告警 Banner（背景偵測器自動產生）══ -->
-      <div id="auditAlertsBanner" style="display:none;margin-bottom:14px"></div>
-
       <div id="auditSummaryCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px"></div>
       <div class="card">
         <div class="card-head" style="flex-wrap:wrap;gap:8px">
@@ -1081,43 +1078,13 @@
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px" id="auditDetailPanels"></div>
 
-      <!-- ══ 稽核管理（super_admin）══ -->
-      <div id="auditAdminWrap" style="display:none;margin-top:18px">
-        <div class="card">
-          <div class="card-head"><div class="card-head-title">🔐 稽核管理（super_admin）</div></div>
-          <div style="padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
-            <!-- 雙人審核清理 -->
-            <div>
-              <div style="font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:8px">📂 稽核清理（雙人審核制）</div>
-              <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px">一位 super_admin 發起 → 另一位 super_admin 核准 → 執行。24 小時內未審核即過期。</div>
-              <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px">
-                <input id="cleanupDays" type="number" min="30" value="90" style="width:80px;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:5px 8px;border-radius:5px;font-size:12px;outline:none">
-                <span style="font-size:12px;color:var(--text-muted)">天前</span>
-                <input id="cleanupReason" type="text" placeholder="清理理由（必填）" style="flex:1;background:#0f172a;border:1px solid #2d3f56;color:#e2e8f0;padding:5px 10px;border-radius:5px;font-size:12px;outline:none">
-                <button class="btn btn-secondary" onclick="submitCleanupReq()" style="font-size:12px;padding:5px 12px">發起申請</button>
-              </div>
-              <div id="cleanupReqList" style="font-size:12px"></div>
-            </div>
-            <!-- hash-chain 驗證 -->
-            <div>
-              <div style="font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:8px">🔗 Hash Chain 防竄改驗證</div>
-              <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px">每月自動產生上月 audit_logs 的 SHA-256 摘要 + 鏈式雜湊。驗證不符 = 歷史資料被竄改。</div>
-              <div style="display:flex;gap:6px;margin-bottom:10px">
-                <button class="btn btn-secondary" onclick="verifyCheckpoints()" style="font-size:12px;padding:5px 12px">🔍 驗證全部</button>
-                <button class="btn btn-secondary" onclick="loadCheckpoints()" style="font-size:12px;padding:5px 12px">🔄 重新載入</button>
-              </div>
-              <div id="checkpointList" style="font-size:12px"></div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
 
   </div><!-- /.main -->
 </div><!-- /.layout -->
 
 <script>
-// HTML escape：所有塞 innerHTML 的不可信字串（API 錯誤 / 使用者輸入）必過這層
+// HTML escape helper
 window._h = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 // ══ Modal helpers ══
 function openModal(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';}
@@ -1901,7 +1868,7 @@ function renderAuditTable(rows) {
     const duration  = r.duration_ms ? (r.duration_ms < 1000 ? `${r.duration_ms}ms` : `${(r.duration_ms/1000).toFixed(1)}s`) : '—';
     const durationC = r.duration_ms > 5000 ? '#ef4444' : r.duration_ms > 2000 ? '#f59e0b' : '#475569';
     const rColor    = roleColor[r.user_role] || '#64748b';
-    // 點擊列展開詳細面板；所有顯示欄位均經 _h() 避免 resource_detail 含 HTML 被執行
+    // 點擊列展開詳細面板
     return `<tr data-idx="${i}" style="transition:background .1s;cursor:pointer"
         onmouseover="this.style.background='rgba(37,51,71,.5)'" onmouseout="this.style.background=''"
         onclick="openAuditDetail(${i})">
@@ -2089,16 +2056,6 @@ function exportAuditCSV() {
   XLSX.utils.book_append_sheet(wb, ws, '操作紀錄');
   XLSX.writeFile(wb, `audit_log_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
-function onAuditTabActivate() {
-  loadAuditLogs(1);
-  loadAuditAlerts();
-  // super_admin 才看得到稽核管理區
-  if (window._currentUser?.role === 'super_admin') {
-    document.getElementById('auditAdminWrap').style.display = '';
-    loadCleanupRequests();
-    loadCheckpoints();
-  }
-}
 
 // ═══ 篩選條件儲存 / 載入（Phase 3a，localStorage per-user）═══
 const _AUDIT_FILTER_FIELDS = ['auditKeyword','auditUsername','auditAction','auditBranch','auditDateFrom','auditDateTo'];
@@ -2178,140 +2135,6 @@ function doExportAuditCSV() {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '操作紀錄');
   XLSX.writeFile(wb, `audit_log_${new Date().toISOString().slice(0,10)}.xlsx`);
-}
-
-// ═══ 🚨 資安告警 UI（Phase 2c）═══
-async function loadAuditAlerts() {
-  const banner = document.getElementById('auditAlertsBanner');
-  if (!banner) return;
-  try {
-    const r = await DmsAuth.fetchWithAuth('/api/audit-alerts').then(r=>r.json());
-    if (!Array.isArray(r) || !r.length) { banner.style.display = 'none'; return; }
-    const sev = { critical:{bg:'rgba(239,68,68,.12)',bd:'#ef4444',fg:'#fca5a5',icon:'🚨'},
-                  high:    {bg:'rgba(245,158,11,.12)',bd:'#f59e0b',fg:'#fbbf24',icon:'⚠️'},
-                  medium:  {bg:'rgba(59,130,246,.12)',bd:'#3b82f6',fg:'#93c5fd',icon:'ℹ️'} };
-    const rows = r.map(a => {
-      const s = sev[a.severity] || sev.medium;
-      const t = new Date(a.triggered_at).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-      return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:${s.bg};border:1px solid ${s.bd};border-radius:8px;margin-bottom:6px">
-        <div style="font-size:20px;line-height:1">${s.icon}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:700;color:${s.fg};margin-bottom:2px">[${_h(a.severity.toUpperCase())}] ${_h(a.alert_type)}</div>
-          <div style="font-size:12px;color:#e2e8f0;margin-bottom:2px">${_h(a.summary)}</div>
-          <div style="font-size:11px;color:var(--text-dimmer)">${t}</div>
-        </div>
-        <button onclick="ackAlert(${a.id})" style="background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3);padding:4px 10px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">✓ 已處理</button>
-      </div>`;
-    }).join('');
-    banner.innerHTML = `<div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:8px">🚨 待處理告警 ${r.length} 筆</div>${rows}`;
-    banner.style.display = '';
-  } catch(e) { banner.style.display = 'none'; }
-}
-
-async function ackAlert(id) {
-  try {
-    const res = await DmsAuth.fetchWithAuth(`/api/audit-alerts/${id}/acknowledge`, { method:'POST' });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    loadAuditAlerts();
-  } catch(e) { alert('處理失敗：' + e.message); }
-}
-
-// ═══ 稽核清理雙人審核（Phase 3b）═══
-async function submitCleanupReq() {
-  const days = parseInt(document.getElementById('cleanupDays').value);
-  const reason = document.getElementById('cleanupReason').value.trim();
-  if (!days || days < 30) { alert('天數必須 ≥ 30'); return; }
-  if (!reason)            { alert('請填寫清理理由'); return; }
-  try {
-    const res = await DmsAuth.fetchWithAuth('/api/audit-logs/cleanup-requests', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ keep_days: days, reason })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    alert('✅ 已發起，另一位 super_admin 核准後即執行（24 小時過期）');
-    document.getElementById('cleanupReason').value = '';
-    loadCleanupRequests();
-  } catch(e) { alert('失敗：' + e.message); }
-}
-
-async function loadCleanupRequests() {
-  const el = document.getElementById('cleanupReqList');
-  if (!el) return;
-  try {
-    const rows = await DmsAuth.fetchWithAuth('/api/audit-logs/cleanup-requests').then(r=>r.json());
-    if (!Array.isArray(rows) || !rows.length) { el.innerHTML = '<div style="color:var(--text-dimmer);padding:6px 0">尚無申請</div>'; return; }
-    const me = window._currentUser?.user_id;
-    const statusColor = { pending:'#f59e0b', approved:'#10b981', rejected:'#64748b', expired:'#64748b' };
-    el.innerHTML = rows.map(r => {
-      const canApprove = r.status === 'pending' && r.requester_id !== me;
-      return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#0f172a;border:1px solid #2d3f56;border-radius:6px;margin-bottom:6px">
-        <div style="flex:1;min-width:0">
-          <div style="font-size:12px;color:#e2e8f0"><b>${_h(r.requester_name)}</b> 申請清除 ${r.keep_days} 天前</div>
-          <div style="font-size:11px;color:var(--text-dimmer);word-break:break-all">${_h(r.reason || '')}</div>
-          ${r.approver_name ? `<div style="font-size:11px;color:#10b981;margin-top:2px">✓ ${_h(r.approver_name)} 已核准 (刪除 ${r.deleted_rows} 筆)</div>` : ''}
-        </div>
-        <span style="background:${statusColor[r.status]}22;color:${statusColor[r.status]};padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700">${_h(r.status)}</span>
-        ${canApprove ? `
-          <button onclick="approveCleanup(${r.id})" style="background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3);padding:4px 10px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer">✅ 核准</button>
-          <button onclick="rejectCleanup(${r.id})" style="background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2);padding:4px 10px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer">✗ 拒絕</button>
-        ` : ''}
-      </div>`;
-    }).join('');
-  } catch(e) { el.innerHTML = '<div style="color:#ef4444">載入失敗</div>'; }
-}
-async function approveCleanup(id) {
-  if (!confirm('核准後會立刻執行清理且無法復原，確定？')) return;
-  try {
-    const res = await DmsAuth.fetchWithAuth(`/api/audit-logs/cleanup-requests/${id}/approve`, { method:'POST' });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    alert(`✅ 已執行，刪除 ${data.deleted} 筆`);
-    loadCleanupRequests(); loadAuditLogs(1);
-  } catch(e) { alert('失敗：' + e.message); }
-}
-async function rejectCleanup(id) {
-  if (!confirm('確定拒絕此申請？')) return;
-  try {
-    const res = await DmsAuth.fetchWithAuth(`/api/audit-logs/cleanup-requests/${id}/reject`, { method:'POST' });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    loadCleanupRequests();
-  } catch(e) { alert('失敗：' + e.message); }
-}
-
-// ═══ Hash Chain Checkpoints（Phase 4）═══
-async function loadCheckpoints() {
-  const el = document.getElementById('checkpointList');
-  if (!el) return;
-  try {
-    const rows = await DmsAuth.fetchWithAuth('/api/audit-checkpoints').then(r=>r.json());
-    if (!Array.isArray(rows) || !rows.length) { el.innerHTML = '<div style="color:var(--text-dimmer);padding:6px 0">尚無 checkpoint（下個月 1 日自動建立上月的）</div>'; return; }
-    el.innerHTML = rows.map(c => `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#0f172a;border:1px solid #2d3f56;border-radius:6px;margin-bottom:4px;font-size:12px">
-      <span style="color:#e2e8f0;font-weight:700;font-family:monospace">${_h(c.period)}</span>
-      <span style="color:var(--text-dim)">${c.row_count} 筆</span>
-      <span style="color:var(--text-dimmer);font-family:monospace;font-size:10px" title="${_h(c.chain_hash)}">${_h(c.chain_hash.slice(0,12))}…</span>
-      <button onclick="verifyOne('${_h(c.period)}')" style="margin-left:auto;background:rgba(59,130,246,.12);color:#3b82f6;border:1px solid rgba(59,130,246,.2);padding:3px 10px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer">驗證</button>
-    </div>`).join('');
-  } catch(e) { el.innerHTML = '<div style="color:#ef4444">載入失敗</div>'; }
-}
-async function verifyOne(period) {
-  try {
-    const r = await DmsAuth.fetchWithAuth(`/api/audit-checkpoints/verify?period=${encodeURIComponent(period)}`).then(r=>r.json());
-    if (r.ok) alert(`✅ ${period} 驗證通過\n${r.row_count} 筆，hash 一致`);
-    else      alert(`❌ ${period} 驗證失敗\nstored: ${r.stored_hash?.slice(0,16)}…\ncomputed: ${r.recomputed_hash?.slice(0,16)}…`);
-  } catch(e) { alert('失敗：' + e.message); }
-}
-async function verifyCheckpoints() {
-  try {
-    const r = await DmsAuth.fetchWithAuth('/api/audit-checkpoints/verify').then(r=>r.json());
-    if (r.all_ok) alert(`✅ 全部 ${r.results.length} 個 checkpoint 驗證通過`);
-    else {
-      const fail = r.results.filter(x=>!x.ok).map(x=>x.period).join(', ');
-      alert(`❌ 有 ${r.results.length - r.results.filter(x=>x.ok).length} 個 checkpoint 失敗\n失敗月份：${fail}\n請聯絡資安團隊`);
-    }
-  } catch(e) { alert('失敗：' + e.message); }
 }
 
  // ═══ 使用者管理 JS ═══

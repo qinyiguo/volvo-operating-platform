@@ -14,9 +14,6 @@
  *   GET  /api/bonus/pp-alloc
  *   PUT  /api/bonus/pp-alloc            (feature:bonus_edit) 個人占比配置
  *
- * SQL 注意:
- *   personTargets.js:168 的動態欄位 selectExpr/groupField 來源是寫死的
- *   白名單 ternary，不是 user input，不會 SQL injection（已驗證）。
  */
 const router = require('express').Router();
 const pool   = require('../db/pool');
