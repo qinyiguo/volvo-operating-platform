@@ -35,7 +35,7 @@ router.get('/sa-config/parts-lookup', async (req, res) => {
       params = [search];
     }
     res.json((await pool.query(sql, params)).rows);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.get('/sa-config', async (req, res) => {
@@ -44,7 +44,7 @@ router.get('/sa-config', async (req, res) => {
       `SELECT id,config_name,description,filters,stat_method,person_type,created_at,updated_at
        FROM sa_sales_config ORDER BY id`
     )).rows);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.post('/sa-config', requirePermission('feature:sa_config_edit'), async (req, res) => {
@@ -59,7 +59,7 @@ router.post('/sa-config', requirePermission('feature:sa_config_edit'), async (re
        VALUES ($1,$2,$3,$4,$5) RETURNING *`,
       [config_name.trim(), description||'', JSON.stringify(filters), method, ptype]
     )).rows[0]);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.put('/sa-config/:id', requirePermission('feature:sa_config_edit'), async (req, res) => {
@@ -77,12 +77,11 @@ router.put('/sa-config/:id', requirePermission('feature:sa_config_edit'), async 
     );
     if (!r.rows.length) return res.status(404).json({ error:'找不到設定' });
     res.json(r.rows[0]);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.delete('/sa-config/:id', requirePermission('feature:sa_config_edit'), async (req, res) => {
-  try { await pool.query(`DELETE FROM sa_sales_config WHERE id=$1`,[req.params.id]); res.json({ ok:true }); }
-  catch (err) { res.status(500).json({ error: err.message }); }
+  try { await pool.query(`DELETE FROM sa_sales_config WHERE id=$1`,[req.params.id]); res.json({ ok:true }); } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 module.exports = router;

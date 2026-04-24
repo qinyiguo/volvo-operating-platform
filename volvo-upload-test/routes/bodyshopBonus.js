@@ -140,7 +140,7 @@ router.get('/bodyshop-bonus/settings', async (req, res) => {
     const r = await pool.query(`SELECT value FROM app_settings WHERE key='bodyshop_bonus_settings'`);
     const defaults = { lookback_days: 30, rate_a: 2, rate_b: 4 };
     res.json(r.rows[0] ? { ...defaults, ...JSON.parse(r.rows[0].value) } : defaults);
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.put('/bodyshop-bonus/settings', requirePermission('feature:bodyshop_bonus_edit'), async (req, res) => {
@@ -157,7 +157,7 @@ router.put('/bodyshop-bonus/settings', requirePermission('feature:bodyshop_bonus
       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
     `, [val]);
     res.json({ ok: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ══ 解析 Google Form Excel ══
@@ -268,7 +268,7 @@ router.post('/bodyshop-bonus/upload', requirePermission('feature:upload_bodyshop
       res.json({ ok: true, inserted, skipped, total: rows.length, batchId });
     } catch(e) { await client.query('ROLLBACK'); throw e; }
     finally { client.release(); }
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ══ 執行匹配（一張申請 → 多張工單，每張工單獨立一列）══
@@ -464,7 +464,7 @@ router.post('/bodyshop-bonus/match', requirePermission('feature:bodyshop_bonus_e
     finally { client.release(); }
 
     res.json({ ok: true, total: totalApps, matched: matchedApps, settled: settledWOs, notFound: notFoundApps, work_orders: totalWOs, period });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ══ 重置比對結果（清子列，原始列回 pending）══
@@ -498,7 +498,7 @@ router.post('/bodyshop-bonus/reset-match', requirePermission('feature:bodyshop_b
     `, params);
 
     res.json({ ok: true, reset: r.rowCount });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ══ 查詢申請清單（含子列，每張工單一列）══
@@ -527,7 +527,7 @@ router.get('/bodyshop-bonus/applications', async (req, res) => {
       `SELECT COUNT(*) AS total FROM bodyshop_bonus_applications ${where}`, params
     );
     res.json({ rows: r.rows, total: parseInt(cnt.rows[0].total) });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ══ 獎金彙總：依結清日期月份（settle_date），含所有子列 ══
@@ -580,7 +580,7 @@ router.get('/bodyshop-bonus/summary', async (req, res) => {
     });
 
     res.json({ rows: r.rows, pendingMap, settled_period });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ══ 待結清清單（只看原始列）══
@@ -597,7 +597,7 @@ router.get('/bodyshop-bonus/pending', async (req, res) => {
       ORDER BY apply_date ASC
     `, params);
     res.json(r.rows);
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ══ 修改獎金比率（支援子列）══
@@ -628,7 +628,7 @@ router.patch('/bodyshop-bonus/applications/:id/rate', requirePermission('feature
     // HIGH 4: 鈑烤獎金 rate 變更需稽核（防止結算後偷改 rate 後再改回的洗錢手法）
     req._audit_detail = `鈑烤獎金 rate id=${req.params.id} ${app.bonus_rate} → ${rate}（bonus_amount=${bonusAmt}）`;
     res.json({ ok: true, bonus_amount: bonusAmt });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ══ 修改備註 ══
@@ -640,7 +640,7 @@ router.patch('/bodyshop-bonus/applications/:id/note', requirePermission('feature
       [note || '', req.params.id]
     );
     res.json({ ok: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ══ 刪除記錄（若為原始列，子列 CASCADE 自動刪除）══
@@ -652,7 +652,7 @@ router.delete('/bodyshop-bonus/applications/:id', requirePermission('feature:bod
     if (p && checkPeriodLock(p, res, req)) return;
     await pool.query(`DELETE FROM bodyshop_bonus_applications WHERE id=$1`, [req.params.id]);
     res.json({ ok: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ══ 已有資料的期間清單 ══
@@ -664,7 +664,7 @@ router.get('/bodyshop-bonus/periods', async (req, res) => {
       ORDER BY app_period DESC
     `);
     res.json(r.rows.map(r => r.app_period));
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 module.exports = router;

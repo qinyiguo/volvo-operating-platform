@@ -37,7 +37,7 @@ router.get('/promo-bonus/configs', async (req, res) => {
       ORDER BY pbc.sort_order, pbc.id
     `);
     res.json(r.rows);
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.post('/promo-bonus/configs', requirePermission('feature:promo_bonus_edit'), async (req, res) => {
@@ -63,7 +63,7 @@ router.post('/promo-bonus/configs', requirePermission('feature:promo_bonus_edit'
       JSON.stringify(target_factories||[]), active!==false, sort_order||0,
       person_type||'sales_person', JSON.stringify(tiers||[]), stat_method||'amount']);
       res.json(r.rows[0]);
-    } catch(err) { res.status(500).json({ error: err.message }); }
+    } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
   });
 
 router.put('/promo-bonus/configs/:id', requirePermission('feature:promo_bonus_edit'), async (req, res) => {
@@ -90,7 +90,7 @@ router.put('/promo-bonus/configs/:id', requirePermission('feature:promo_bonus_ed
         req.params.id]);
     if (!r.rows.length) return res.status(404).json({ error: '找不到設定' });
     res.json(r.rows[0]);
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.delete('/promo-bonus/configs/:id', requirePermission('feature:promo_bonus_edit'), async (req, res, next) => {
@@ -278,7 +278,7 @@ try {
     }));
 
     res.json({ configs, resultsByConfig, period });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 module.exports = router;

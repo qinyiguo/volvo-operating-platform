@@ -85,7 +85,7 @@ router.get('/revenue-targets', async (req, res) => {
     }));
 
     res.json(rows);
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.put('/revenue-targets/batch', requirePermission('feature:revenue_target_edit'), async (req, res) => {
@@ -111,7 +111,7 @@ router.put('/revenue-targets/batch', requirePermission('feature:revenue_target_e
     }
     await client.query('COMMIT');
     res.json({ ok: true, count: entries.length });
-  } catch(err) { await client.query('ROLLBACK'); res.status(500).json({ error: err.message }); }
+  } catch(err) { await client.query('ROLLBACK'); console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
   finally { client.release(); }
 });
 
@@ -179,7 +179,7 @@ router.post('/upload-revenue-targets', requirePermission('feature:upload_targets
       res.json({ ok: true, count: entries.length, entries });
     } catch(err) { await client.query('ROLLBACK'); throw err; }
     finally { client.release(); }
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 營收目標 Excel 匯入（原生格式）──
@@ -298,7 +298,7 @@ router.post('/upload-revenue-targets-native', requirePermission('feature:upload_
       res.json({ ok:true, count:entries.length, year, dataType, summary, fields:Object.keys(data).map(f=>FIELD_LABEL[f]||f) });
     } catch(err) { await client.query('ROLLBACK'); throw err; }
     finally { client.release(); }
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 業績預估（即時讀取，供主頁顯示）──
@@ -310,7 +310,7 @@ router.get('/revenue-estimates', async (req, res) => {
     if (branch) { conds.push(`branch=$${idx++}`); params.push(branch); }
     const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
     res.json((await pool.query(`SELECT * FROM revenue_estimates ${where} ORDER BY branch`, params)).rows);
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.put('/revenue-estimates/batch', requirePermission('feature:revenue_target_edit'), async (req, res) => {
@@ -335,7 +335,7 @@ router.put('/revenue-estimates/batch', requirePermission('feature:revenue_target
     }
     await client.query('COMMIT');
     res.json({ ok: true });
-  } catch(err) { await client.query('ROLLBACK'); res.status(500).json({ error: err.message }); }
+  } catch(err) { await client.query('ROLLBACK'); console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
   finally { client.release(); }
 });
 
@@ -358,7 +358,7 @@ router.get('/revenue-estimates/week-status', async (req, res) => {
     const submissions = {};
     r.rows.forEach(row => { submissions[row.branch] = row; });
     res.json({ week_key, week_label, submissions });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // GET /api/revenue-estimates/history?period=YYYYMM&branch=AMA
@@ -375,7 +375,7 @@ router.get('/revenue-estimates/history', async (req, res) => {
       params
     );
     res.json(r.rows);
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // POST /api/revenue-estimates/weekly-submit
@@ -430,10 +430,8 @@ router.post('/revenue-estimates/weekly-submit', requirePermission('feature:reven
 
     await client.query('COMMIT');
     res.json({ ok: true, week_key, week_label, inserted, skipped });
-  } catch(err) {
-    await client.query('ROLLBACK');
-    res.status(500).json({ error: err.message });
-  } finally { client.release(); }
+  } catch(err) { await client.query('ROLLBACK');
+    console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); } finally { client.release(); }
 });
 
 module.exports = router;

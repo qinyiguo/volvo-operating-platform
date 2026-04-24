@@ -58,7 +58,7 @@ router.get('/person-targets/persons', async (req, res) => {
       persons = r.rows.map(r => r.person_name);
     }
     res.json(persons);
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 取得已設定的個人目標 ──
@@ -88,7 +88,7 @@ router.get('/person-targets', async (req, res) => {
     }
 
     res.json(rows);
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 批次儲存個人目標 ──
@@ -116,7 +116,7 @@ router.put('/person-targets/batch', requirePermission('feature:perf_target_edit'
     }
     await client.query('COMMIT');
     res.json({ ok: true, count: entries.length });
-  } catch(err) { await client.query('ROLLBACK'); res.status(500).json({ error: err.message }); }
+  } catch(err) { await client.query('ROLLBACK'); console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
   finally { client.release(); }
 });
 
@@ -131,7 +131,7 @@ router.delete('/person-targets', requirePermission('feature:perf_target_edit'), 
       [metric_id, period, branch]
     );
     res.json({ ok: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 個人業績達成率統計 ──
@@ -310,7 +310,7 @@ router.get('/stats/person-performance', async (req, res) => {
     }).sort((a,b) => (b.actual||0) - (a.actual||0));
 
     res.json({ metric, branchTarget, persons: result, period, branch });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 跨廠彙整（全部據點一次回傳）──
@@ -323,7 +323,7 @@ router.get('/stats/person-performance-all', async (req, res) => {
         .then(r=>r.json()).catch(()=>({ branch, error:'fetch error', persons:[] }))
     ));
     res.json(results);
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 複製上月權重設定到當月 ──
@@ -378,10 +378,8 @@ router.post('/person-targets/copy-from-last-month', requirePermission('feature:p
 
     await client.query('COMMIT');
     res.json({ ok: true, count: lastMonthRows.rows.length, from: lastPeriod, to: period });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    res.status(500).json({ error: err.message });
-  } finally {
+  } catch(err) { await client.query('ROLLBACK');
+    console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); } finally {
     client.release();
   }
 });
@@ -393,7 +391,7 @@ router.get('/bonus/pp-alloc', async (req, res) => {
   try {
     const r = await pool.query(`SELECT value FROM app_settings WHERE key=$1`, [key]);
     res.json(r.rows[0] ? JSON.parse(r.rows[0].value) : {});
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.put('/bonus/pp-alloc', requirePermission('feature:bonus_metric_edit'), async (req, res) => {
@@ -406,7 +404,7 @@ router.put('/bonus/pp-alloc', requirePermission('feature:bonus_metric_edit'), as
       ON CONFLICT (key) DO UPDATE SET value=$2
     `, [key, JSON.stringify(allocations || {})]);
     res.json({ ok: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 module.exports = router;

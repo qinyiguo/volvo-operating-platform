@@ -47,10 +47,8 @@ router.put('/notes/batch', requirePermission('feature:monthly_edit'), async (req
     }
     await client.query('COMMIT');
     res.json({ ok: true, count: entries.length });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    res.status(500).json({ error: err.message });
-  } finally {
+  } catch(err) { await client.query('ROLLBACK');
+    console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); } finally {
     client.release();
   }
 });
@@ -66,9 +64,7 @@ router.get('/notes/:key', async (req, res) => {
       [key]
     );
     res.json({ key: req.params.key, value: r.rows[0]?.value ?? null });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // PUT /api/notes/:key  — body: { value: string }
@@ -83,9 +79,7 @@ router.put('/notes/:key', requirePermission('feature:monthly_edit'), async (req,
       [key, value]
     );
     res.json({ ok: true, key: req.params.key });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // GET /api/notes?prefix=revenue_AMA_
@@ -101,9 +95,7 @@ router.get('/notes', async (req, res) => {
       result[row.key.slice(KEY_PREFIX.length)] = row.value;
     });
     res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 module.exports = router;

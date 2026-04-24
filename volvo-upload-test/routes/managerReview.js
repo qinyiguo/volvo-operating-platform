@@ -26,7 +26,7 @@ router.get('/', async (req, res) => {
       [period]
     );
     res.json(r.rows);
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // HIGH 4: 主管考核金額上下限（與 extra-bonus 同尺度）
@@ -61,7 +61,7 @@ router.post('/', requirePermission('feature:bonus_extra_edit'), async (req, res)
     `, [period, emp_id, n, note||null]);
     req._audit_detail = `主管考核 emp=${emp_id} period=${period} amount=${n}`;
     res.json({ ok: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 module.exports = router;

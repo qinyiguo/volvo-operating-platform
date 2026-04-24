@@ -70,7 +70,7 @@ router.get('/wip/status', async (req, res) => {
       statusMap[`${row.work_order}|||${row.branch}`] = row;
     });
     res.json({ rows: r.rows, statusMap });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // 寫入歷史紀錄 helper（給單筆 / 批次共用）
@@ -114,10 +114,8 @@ router.put('/wip/status/:work_order/:branch', requirePermission('feature:wip_edi
     }, req.user);
     await client.query('COMMIT');
     res.json({ ok: true, work_order, branch, wip_status });
-  } catch(err) {
-    await client.query('ROLLBACK');
-    res.status(500).json({ error: err.message });
-  } finally { client.release(); }
+  } catch(err) { await client.query('ROLLBACK');
+    console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); } finally { client.release(); }
 });
 
 // GET /api/wip/status/:work_order/:branch/history — 取得單一工單的歷史紀錄
@@ -132,7 +130,7 @@ router.get('/wip/status/:work_order/:branch/history', async (req, res) => {
       LIMIT 200
     `, [work_order, branch]);
     res.json({ history: r.rows });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // PUT /api/wip/status/batch — 批次更新
@@ -169,7 +167,7 @@ router.put('/wip/status/batch', requirePermission('feature:wip_edit'), async (re
     }
     await client.query('COMMIT');
     res.json({ ok: true, count: entries.length });
-  } catch(err) { await client.query('ROLLBACK'); res.status(500).json({ error: err.message }); }
+  } catch(err) { await client.query('ROLLBACK'); console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
   finally { client.release(); }
 });
 
@@ -179,7 +177,7 @@ router.delete('/wip/status/:work_order/:branch', requirePermission('feature:wip_
   try {
     await pool.query(`DELETE FROM wip_status_notes WHERE work_order=$1 AND branch=$2`, [work_order, branch]);
     res.json({ ok: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // GET /api/wip/status-options — 前端用，取得所有狀態選項

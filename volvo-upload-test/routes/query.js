@@ -31,7 +31,7 @@ router.get('/income-config', async (req, res) => {
     const r = await pool.query(`SELECT config_key, config_value, description FROM income_config ORDER BY id`);
     const map = {}; r.rows.forEach(row => { map[row.config_key] = row.config_value; });
     res.json({ rows: r.rows, map });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.put('/income-config/:key', requirePermission('feature:sys_config_edit'), async (req, res) => {
@@ -40,7 +40,7 @@ router.put('/income-config/:key', requirePermission('feature:sys_config_edit'), 
   try {
     await pool.query(`UPDATE income_config SET config_value=$1,updated_at=NOW() WHERE config_key=$2`,[value.trim(),req.params.key]);
     res.json({ ok:true });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 工作天數設定 ──
@@ -59,7 +59,7 @@ router.get('/working-days', async (req, res) => {
       );
       res.json(r.rows);
     }
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.put('/working-days', requirePermission('feature:sys_config_edit'), async (req, res) => {
@@ -74,7 +74,7 @@ router.put('/working-days', requirePermission('feature:sys_config_edit'), async 
       [branch, period, JSON.stringify(work_dates), note || '']
     );
     res.json({ ok: true, count: work_dates.length });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.delete('/working-days', requirePermission('feature:sys_config_edit'), async (req, res) => {
@@ -83,7 +83,7 @@ router.delete('/working-days', requirePermission('feature:sys_config_edit'), asy
   try {
     await pool.query(`DELETE FROM working_days_config WHERE branch=$1 AND period=$2`, [branch, period]);
     res.json({ ok: true });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 基礎查詢 ──
@@ -97,22 +97,23 @@ router.get('/counts', async (req, res) => {
       SELECT 'parts_catalog',COUNT(*) FROM parts_catalog UNION ALL
       SELECT 'upload_history',COUNT(*) FROM upload_history`);
     res.json(r.rows);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.get('/history', async (req, res) => {
-  try { res.json((await pool.query('SELECT * FROM upload_history ORDER BY created_at DESC LIMIT 20')).rows); }
-  catch (err) { res.status(500).json({ error: err.message }); }
+  try { res.json((await pool.query('SELECT * FROM upload_history ORDER BY created_at DESC LIMIT 20')).rows); } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.get('/health', async (req, res) => {
   try { await pool.query('SELECT 1'); res.json({ status:'ok', db:'connected' }); }
-  catch (err) { res.status(500).json({ status:'error', error:err.message }); }
+  catch (err) {
+    console.error('[' + req.method + ' ' + req.originalUrl + ']', err);
+    res.status(500).json({ status:'error', error:'db_unavailable' });
+  }
 });
 
 router.get('/debug/columns', async (req, res) => {
-  try { res.json((await pool.query(`SELECT column_name,data_type FROM information_schema.columns WHERE table_name='business_query' ORDER BY ordinal_position`)).rows); }
-  catch (err) { res.status(500).json({ error: err.message }); }
+  try { res.json((await pool.query(`SELECT column_name,data_type FROM information_schema.columns WHERE table_name='business_query' ORDER BY ordinal_position`)).rows); } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 明細查詢 ──
@@ -138,7 +139,7 @@ router.get('/query/repair_income', async (req, res) => {
        FROM repair_income ${where}
        ORDER BY branch, settle_date DESC, work_order`, params);
     res.json({ rows: r.rows, count: r.rows.length });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 技師績效：JOIN repair_income 取得服務顧問 ──
@@ -161,7 +162,7 @@ router.get('/query/tech_performance', async (req, res) => {
        ${where}
        ORDER BY tp.branch, tp.dispatch_date DESC, tp.tech_name_clean`, params);
     res.json({ rows: r.rows, count: r.rows.length });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 零件銷售：JOIN repair_income 取得服務顧問、JOIN parts_catalog 取得型錄類別 ──
@@ -189,7 +190,7 @@ router.get('/query/parts_sales', async (req, res) => {
        ${where}
        ORDER BY ps.branch, ps.order_no DESC`, params);
     res.json({ rows: r.rows, count: r.rows.length });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.get('/query/business_query', async (req, res) => {
@@ -205,7 +206,7 @@ router.get('/query/business_query', async (req, res) => {
        FROM business_query ${where}
        ORDER BY branch, open_time DESC`, params);
     res.json({ rows: r.rows, count: r.rows.length });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.get('/periods', async (req, res) => {
@@ -228,7 +229,7 @@ router.get('/periods', async (req, res) => {
     }
     const allPeriods = [...new Set([...dbPeriods, ...extraPeriods])].sort().reverse();
     res.json(allPeriods);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 // ── 美容工時代碼 ──
@@ -236,7 +237,7 @@ router.get('/beauty-op-hours', async (req, res) => {
   try {
     const r = await pool.query(`SELECT op_code, description, standard_hours FROM beauty_op_hours ORDER BY op_code`);
     res.json(r.rows);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.put('/beauty-op-hours/:op_code', requirePermission('feature:sys_config_edit'), async (req, res) => {
@@ -253,14 +254,14 @@ router.put('/beauty-op-hours/:op_code', requirePermission('feature:sys_config_ed
       [op_code, description || '', hours]
     );
     res.json({ ok: true });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 router.delete('/beauty-op-hours/:op_code', requirePermission('feature:sys_config_edit'), async (req, res) => {
   try {
     await pool.query(`DELETE FROM beauty_op_hours WHERE op_code=$1`, [req.params.op_code]);
     res.json({ ok: true });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch(err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });
 
 module.exports = router;
