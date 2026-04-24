@@ -14,7 +14,11 @@ const { pick, num, safeStr, parseDate, parseDateTime } = require('./utils');
 // HIGH 3: Excel 公式注入防護 — 對所有「會被原樣寫回 XLSX 匯出 / 顯示在前端」
 // 的字串欄位都改用 safeStr() 取代 String(...).trim()。
 // 防止上傳的儲存格（=HYPERLINK(...)、=cmd|...）日後被 Excel 渲染成公式。
-const sstr = (v) => safeStr(v).trim();
+//
+// 注意順序：必須先 trim() 後才丟進 safeStr()，否則 ' =cmd' 之類的
+// leading-whitespace 攻擊會繞過 prefix 檢查（safeStr 內部雖也擋了，但
+// 早一步 trim 可避免重複 string 操作 + 確保 caller 直觀）。
+const sstr = (v) => safeStr(String(v ?? '').trim());
 
 // 只排除「完全空白」或「純中文且無數字/英文」的值（真正的標題/合計列）
 // 原本 isNoteRow 用 /[\u4e00-\u9fff]/ 太激進，把正常資料也過濾掉了
