@@ -30,11 +30,16 @@ router.get('/', async (req, res) => {
 });
 
 // HIGH 4: 主管考核金額上下限（與 extra-bonus 同尺度）
+// 與 db/init.js 的 manager_review_amount_chk CHECK 約束數值對齊。
 const MAX_MANAGER_REVIEW = 500_000;
+// LOW: note 字串硬上限
+const MAX_MR_NOTE_LEN = 500;
 
 // POST /api/manager-review  { period, emp_id, amount, note }
 router.post('/', requirePermission('feature:bonus_extra_edit'), async (req, res) => {
-  const { period, emp_id, amount, note } = req.body;
+  const { period, emp_id, amount } = req.body;
+  // LOW: note 截斷
+  const note = req.body.note != null ? String(req.body.note).slice(0, MAX_MR_NOTE_LEN) : null;
   if (!period || !emp_id) return res.status(400).json({ error: '缺少必要欄位' });
   // HIGH 4: 金額邊界驗證
   const n = Number.parseInt(amount, 10);
@@ -58,7 +63,7 @@ router.post('/', requirePermission('feature:bonus_extra_edit'), async (req, res)
       VALUES ($1, $2, $3, $4)
       ON CONFLICT (period, emp_id)
       DO UPDATE SET amount=$3, note=$4, updated_at=NOW()
-    `, [period, emp_id, n, note||null]);
+    `, [period, emp_id, n, note]);
     req._audit_detail = `主管考核 emp=${emp_id} period=${period} amount=${n}`;
     res.json({ ok: true });
   } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }

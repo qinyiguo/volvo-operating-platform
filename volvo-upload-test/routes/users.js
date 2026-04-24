@@ -113,6 +113,9 @@ router.post('/users/login', async (req, res, next) => {
   // Stash attempted username 讓 auditMiddleware 寫入正確 username（失敗時 req.user 不會被設）
   req._audit_username = (username ? String(username).trim() : '').slice(0, 50) || 'anonymous';
   if (!username || !password) {
+    // MEDIUM 1: 即使早退也跑一次 dummyVerify，避免「缺欄位」vs「真嘗試」
+    // 響應時間出現顯著差距，造成 timing-based 推斷攻擊面
+    dummyVerify();
     req._audit_detail = '缺少帳號或密碼';
     return res.status(400).json({ error: '請輸入帳號與密碼' });
   }
@@ -525,12 +528,20 @@ router.put('/users/:id/password', requireAuth, async (req, res, next) => {
 
   try {
     const target = await pool.query(`SELECT * FROM users WHERE id=$1`, [targetId]);
-    if (!target.rows.length) return res.status(404).json({ error: '找不到使用者' });
+    if (!target.rows.length) {
+      // MEDIUM 2: 不存在的 user_id 也跑 dummyVerify 並回 401（與密碼錯誤同訊息）
+      // 防止 admin 透過 timing 差異枚舉合法 user_id
+      dummyVerify();
+      return res.status(401).json({ error: '無法執行此操作', code: 'UNAUTHORIZED_OR_NOT_FOUND' });
+    }
     const targetUser = target.rows[0];
 
     // 修改自己 → 需要舊密碼
     if (targetId === req.user.user_id) {
-      if (!current_password) return res.status(400).json({ error: '請提供目前密碼' });
+      if (!current_password) {
+        dummyVerify();
+        return res.status(400).json({ error: '請提供目前密碼' });
+      }
       const storedIter = targetUser.password_iterations || 100000;
       if (!verifyPassword(current_password, targetUser.password_hash, targetUser.password_salt, storedIter)) {
         return res.status(401).json({ error: '目前密碼不正確' });
@@ -540,10 +551,12 @@ router.put('/users/:id/password', requireAuth, async (req, res, next) => {
       if (req.user.role !== 'super_admin') {
         const perms = await getUserPermissions(req.user.user_id, req.user.role);
         if (!perms.includes('feature:password_reset')) {
+          dummyVerify();
           return res.status(403).json({ error: '無「重設他人密碼」權限' });
         }
       }
       if (!canManageRole(req.user.role, targetUser.role)) {
+        dummyVerify();
         return res.status(403).json({ error: '無法修改此使用者密碼' });
       }
     }

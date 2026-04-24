@@ -31,6 +31,17 @@ const crypto = require('crypto');
 const pool = require('../db/pool');
 
 // 同行程內部呼叫用的 shared secret。可由 INTERNAL_API_TOKEN 覆寫（供多 process 部署）。
+//
+// ⚠️ 安全注意（LOW 項）：此 token 可繞過 requireAuth、CSRF，並透過
+// x-internal-user-id 以任意使用者身分執行寫入操作。若 INTERNAL_API_TOKEN 外洩，
+// 等同 super_admin 完全接管。請：
+//   - 部署時 INTERNAL_API_TOKEN 必須設為 ≥32 byte 高熵亂數
+//   - 永遠不要 console.log(process.env)、不要寫進 access log / metrics 標籤
+//   - 不要放在前端 client、CI artifact、Slack
+//   - 建議定期輪換（季度）；輪換時 rolling restart 所有 process
+//   - 多 instance 部署一定要設明確值，不能讓各 process 各自隨機（loopback fetch 會 401）
+// 未設環境變數時 fallback 到 process-local random — 這是「單 instance 最安全」的
+// 預設值（攻擊者完全無法猜），但多 instance 會壞 loopback。
 const INTERNAL_TOKEN = process.env.INTERNAL_API_TOKEN || crypto.randomBytes(24).toString('hex');
 
 function internalAuthHeaders() {

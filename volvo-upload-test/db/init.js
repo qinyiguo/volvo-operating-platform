@@ -496,6 +496,30 @@ await client.query(`
   )
 `);
 
+// MEDIUM 5: DB-level CHECK 約束（防止 app 層驗證被繞過時直接 INSERT 巨額）
+// 與 routes/bonus.js 的 MAX_EXTRA_BONUS / managerReview.js 的 MAX_MANAGER_REVIEW
+// 數值對齊。改動上限時兩處都要改。
+async function ensureAmountChecks() {
+  const tasks = [
+    { table: 'bonus_extra',     col: 'amount', name: 'bonus_extra_amount_chk',     min: -500000, max: 500000 },
+    { table: 'manager_review',  col: 'amount', name: 'manager_review_amount_chk',  min: -500000, max: 500000 },
+  ];
+  for (const t of tasks) {
+    try {
+      await client.query(`
+        DO $$ BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='${t.name}') THEN
+            ALTER TABLE ${t.table}
+              ADD CONSTRAINT ${t.name}
+              CHECK (${t.col} BETWEEN ${t.min} AND ${t.max}) NOT VALID;
+          END IF;
+        END$$
+      `);
+    } catch(e) { console.warn(`[initDB] CHECK ${t.name}:`, e.message); }
+  }
+}
+await ensureAmountChecks();
+
 // 獎金電子簽核（主管確認核發金額後於 檢查人 欄位簽名）
 await client.query(`
   CREATE TABLE IF NOT EXISTS bonus_signatures (
@@ -781,13 +805,32 @@ await client.query(`CREATE INDEX IF NOT EXISTS idx_business_query_period_branch 
   `);
 
   // DB 層保護：阻止對 audit_logs 做 UPDATE（DELETE 仍開放給 cleanup job / 2-admin approval 用）
-  // 某些 managed PG 可能會限制 CREATE RULE，以 try/catch 包起來。
+  // LOW L1: 從 RULE 改 TRIGGER。差異：
+  //   - RULE 是 query rewrite，整個 UPDATE 被改成 NOTHING（沒錯誤、靜默失敗）
+  //   - TRIGGER 是 row-level，可主動 RAISE EXCEPTION → 攻擊者立即看到失敗，無法
+  //     誤以為竄改成功
+  // 同時保留舊 RULE 名稱以便升級時清理。
+  try {
+    // 舊 RULE 若存在則移除（與 TRIGGER 同時存在會雙重攔截）
+    await client.query(`DROP RULE IF EXISTS audit_logs_no_update ON audit_logs`);
+  } catch(e) { console.warn('[initDB] drop legacy rule:', e.message); }
   try {
     await client.query(`
-      CREATE OR REPLACE RULE audit_logs_no_update AS
-      ON UPDATE TO audit_logs DO INSTEAD NOTHING
+      CREATE OR REPLACE FUNCTION audit_logs_block_update_fn() RETURNS TRIGGER AS $$
+      BEGIN
+        RAISE EXCEPTION 'audit_logs is append-only; UPDATE is denied (defense-in-depth)';
+      END;
+      $$ LANGUAGE plpgsql;
     `);
-  } catch(e) { console.warn('[initDB] audit_logs_no_update rule:', e.message); }
+    // CREATE TRIGGER 沒有 IF NOT EXISTS（PG < 14），用 DROP IF EXISTS + CREATE 替代
+    await client.query(`DROP TRIGGER IF EXISTS audit_logs_no_update_trg ON audit_logs`);
+    await client.query(`
+      CREATE TRIGGER audit_logs_no_update_trg
+        BEFORE UPDATE ON audit_logs
+        FOR EACH ROW
+        EXECUTE FUNCTION audit_logs_block_update_fn()
+    `);
+  } catch(e) { console.warn('[initDB] audit_logs_no_update trigger:', e.message); }
  
   // 自動分區清理（可選）：保留 180 天
   // 若資料量龐大，可考慮設定 pg_partman 或排程清理

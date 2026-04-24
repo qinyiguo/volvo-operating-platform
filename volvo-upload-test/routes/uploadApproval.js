@@ -353,17 +353,50 @@ async function replayUpload(reqRow, callerReq) {
     'x-internal-user-id': String(reqRow.super_approver_id || callerReq.user.user_id),
   };
 
+  // MEDIUM 4: 加 hard timeout（5 min），避免 fetch 永久 hang 讓 status 卡在 super_approved
+  const REPLAY_TIMEOUT_MS = 5 * 60 * 1000;
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), REPLAY_TIMEOUT_MS);
   try {
-    const r = await fetch(url, { method: 'POST', headers, body: form });
+    const r = await fetch(url, { method: 'POST', headers, body: form, signal: ac.signal });
     const text = await r.text();
     let data; try { data = JSON.parse(text); } catch(_) { data = { raw: text }; }
     if (!r.ok) return { ok: false, error: data.error || ('HTTP ' + r.status) };
     return { ok: true, data };
   } catch(e) {
-    // 內部 loopback fetch 失敗（網路 / DNS / timeout）— 不洩 stack 給 client
+    // 內部 loopback fetch 失敗（網路 / DNS / timeout / abort）— 不洩 stack 給 client
     console.error('[replayUpload]', e);
-    return { ok: false, error: '內部執行失敗，請查 server log' };
+    const reason = e?.name === 'AbortError' ? `逾時（${REPLAY_TIMEOUT_MS/1000}s）` : '內部執行失敗，請查 server log';
+    return { ok: false, error: reason };
+  } finally {
+    clearTimeout(timer);
   }
 }
+
+// MEDIUM 4: 卡住 super_approved 的看門狗
+// 場景：super-approve 成功 commit 後 server crash / replay 超時，status 永久卡在
+// 'super_approved'，無 executed_at 也無 execute_error。watchdog 把這類 row
+// 標 execute_error 讓管理員看見並手動處理。**不自動重執行**避免雙重寫入。
+const STUCK_THRESHOLD_MS = 10 * 60 * 1000; // 10 min（含 replay 5min + 緩衝 5min）
+async function sweepStuckSuperApproved() {
+  try {
+    const r = await pool.query(`
+      UPDATE upload_approval_requests
+         SET execute_error = COALESCE(execute_error, '') ||
+                             '[watchdog] 卡在 super_approved 超過 10 分鐘且未執行 — 可能 server 重啟或 replay 中斷'
+       WHERE status = 'super_approved'
+         AND executed_at IS NULL
+         AND execute_error IS NULL
+         AND super_approved_at < NOW() - INTERVAL '10 minutes'
+       RETURNING id, super_approved_at`);
+    if (r.rowCount > 0) {
+      console.warn(`[uploadApproval watchdog] marked ${r.rowCount} stuck super_approved row(s):`,
+        r.rows.map(x => `id=${x.id}@${x.super_approved_at}`).join(', '));
+    }
+  } catch(e) { console.warn('[uploadApproval watchdog] failed:', e.message); }
+}
+// 啟動後 60s 跑一次 + 每 5min 跑一次（避免太頻繁 + 抓得到任何卡住的）
+setTimeout(sweepStuckSuperApproved, 60 * 1000);
+setInterval(sweepStuckSuperApproved, 5 * 60 * 1000);
 
 module.exports = router;
