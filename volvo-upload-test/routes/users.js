@@ -37,17 +37,21 @@ const {
 // Helpers
 // ═══════════════════════════════════════════════
 
-function hashPassword(password, salt) {
-  // PBKDF2 with SHA-256, 100k iterations
-  return crypto.pbkdf2Sync(password, salt, 100000, 32, 'sha256').toString('hex');
+function hashPassword(password, salt, iterations = 100000) {
+  return crypto.pbkdf2Sync(password, salt, iterations, 32, 'sha256').toString('hex');
 }
 
 function generateSalt() {
   return crypto.randomBytes(16).toString('hex');
 }
 
-function verifyPassword(password, hash, salt) {
-  return hashPassword(password, salt) === hash;
+function verifyPassword(password, hash, salt, iterations) {
+  // 若 DB 有 password_iterations 欄位就用那個值；否則依序嘗試已知的迭代次數以向下相容
+  if (iterations) return hashPassword(password, salt, iterations) === hash;
+  for (const iter of [100000, 600000]) {
+    if (hashPassword(password, salt, iter) === hash) return true;
+  }
+  return false;
 }
 
 function generateToken() {
@@ -76,7 +80,7 @@ router.post('/users/login', async (req, res) => {
     if (!r.rows.length) return res.status(401).json({ error: '帳號或密碼錯誤' });
     const user = r.rows[0];
     if (!user.is_active) return res.status(403).json({ error: '帳號已停用，請聯絡管理員' });
-    if (!verifyPassword(password, user.password_hash, user.password_salt)) {
+    if (!verifyPassword(password, user.password_hash, user.password_salt, user.password_iterations)) {
       return res.status(401).json({ error: '帳號或密碼錯誤' });
     }
 
@@ -294,7 +298,7 @@ router.put('/users/:id/password', requireAuth, async (req, res) => {
     // 修改自己 → 需要舊密碼
     if (targetId === req.user.user_id) {
       if (!current_password) return res.status(400).json({ error: '請提供目前密碼' });
-      if (!verifyPassword(current_password, targetUser.password_hash, targetUser.password_salt)) {
+      if (!verifyPassword(current_password, targetUser.password_hash, targetUser.password_salt, targetUser.password_iterations)) {
         return res.status(401).json({ error: '目前密碼不正確' });
       }
     } else {
