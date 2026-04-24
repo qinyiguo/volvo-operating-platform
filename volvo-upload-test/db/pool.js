@@ -8,8 +8,15 @@
  */
 const { Pool } = require('pg');
 
+const sslMode = (process.env.POSTGRES_SSL || 'false').toLowerCase();
+const ssl =
+  sslMode === 'strict' || sslMode === 'verify' ? true :
+  sslMode === 'require' || sslMode === 'true'  ? { rejectUnauthorized: false } :
+  false;
+
 const pool = new Pool({
   connectionString: process.env.POSTGRES_CONNECTION_STRING,
+  ssl,
   max: 10,
   // 連線逾時 10s：DB 不可達時讓請求快速失敗，不讓 client 痴等 TCP handshake 30s+
   connectionTimeoutMillis: 10_000,
