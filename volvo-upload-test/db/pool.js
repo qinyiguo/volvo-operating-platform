@@ -28,6 +28,13 @@ const pool = new Pool({
   connectionTimeoutMillis: 10_000,
   // idle 連線 30s 後歸還；避免 Zeabur 內部 NAT 悶掉殭屍連線
   idleTimeoutMillis: 30_000,
+  // MEDIUM 6: 單一 statement 最長 30s（防慢查詢拖死整個 pool）
+  // 大多數合法查詢應 <5s；超過 30s 一定是有問題的 SQL，讓它快速失敗。
+  statement_timeout: 30_000,
+  // BEGIN 後若 idle 超過 60s，自動 ABORT（防忘了 COMMIT/ROLLBACK 卡住連線）
+  idle_in_transaction_session_timeout: 60_000,
+  // client 端也加保險（PG server 沒回應時保護 Node）
+  query_timeout: 30_000,
 });
 
 // pg Pool 的 'error' 事件必須接，不然連線斷線會變 uncaught exception → 整個程序掛掉

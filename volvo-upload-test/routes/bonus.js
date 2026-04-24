@@ -665,12 +665,14 @@ router.get('/bonus/progress', async (req, res) => {
             } catch(e) {}
 
             // 2. 直接呼叫 /api/stats/tech-hours（與 stats.html 完全相同的來源，不重複計算）
+            // LOW: 走 127.0.0.1 而非 localhost，避免 DNS 被改後 fetch 跑到外部主機
             if (actual === null) {
               try {
                 const deptTypes = filters.filter(f => f.type === 'dept_type').map(f => f.value);
-                const port      = process.env.PORT || 3001;
+                const portRaw   = process.env.PORT;
+                const port      = (/^\d{1,5}$/.test(String(portRaw)) ? portRaw : '3001');
                 const brParam   = effectiveBranch ? `&branch=${encodeURIComponent(effectiveBranch)}` : '';
-                const url = `http://localhost:${port}/api/stats/tech-hours?period=${actualPeriod}${brParam}`;
+                const url = `http://127.0.0.1:${port}/api/stats/tech-hours?period=${actualPeriod}${brParam}`;
                 const thData = await fetch(url, {
                   headers: internalAuthHeaders()
                 }).then(r => r.json()).catch(() => null);
@@ -892,11 +894,14 @@ router.get('/bonus/extra-bonuses', async (req, res) => {
 
 // HIGH 4: 額外獎金金額上下限（防止 99999999 / 負值灌爆薪資結算）
 // 500_000 上限 / -500_000 下限符合「主管調整」的合理範圍；超出視為異常輸入。
+// 與 db/init.js 的 bonus_extra_amount_chk CHECK 約束數值對齊。
 const MAX_EXTRA_BONUS = 500_000;
+// LOW: reason 字串硬上限（防膨脹稽核 log / DB 列大小）
+const MAX_REASON_LEN = 500;
 
 // POST 新增額外獎金
 router.post('/bonus/extra-bonuses', requirePermission('feature:bonus_extra_edit'), async (req, res) => {
-  const { period, emp_id, emp_name, branch, dept_code, amount, reason } = req.body;
+  const { period, emp_id, emp_name, branch, dept_code, amount } = req.body;
   if (checkPeriodLock(period, res, req)) return;
   // HIGH 4: 金額邊界驗證
   const n = Number.parseInt(amount, 10);
@@ -906,14 +911,16 @@ router.post('/bonus/extra-bonuses', requirePermission('feature:bonus_extra_edit'
       code:  'AMOUNT_OUT_OF_RANGE',
     });
   }
+  // LOW: reason 截斷（最多 500 字）
+  const reason = String(req.body.reason || '').slice(0, MAX_REASON_LEN);
   try {
     const { rows } = await pool.query(
       `INSERT INTO bonus_extra (period,emp_id,emp_name,branch,dept_code,amount,reason)
        VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [period, emp_id, emp_name, branch||'', dept_code||'', n, reason||'']
+      [period, emp_id, emp_name, branch||'', dept_code||'', n, reason]
     );
     // 寫入稽核 detail，方便事後審核大額調整
-    req._audit_detail = `額外獎金 emp=${emp_id} amount=${n} reason="${reason||''}"`;
+    req._audit_detail = `額外獎金 emp=${emp_id} amount=${n} reason="${reason}"`;
     res.json(rows[0]);
   } catch(e) { console.error('[' + req.method + ' ' + req.originalUrl + ']', e); res.status(500).json({ error: '內部錯誤，請稍後再試' }); }
 });

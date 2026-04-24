@@ -317,9 +317,15 @@ router.get('/stats/person-performance', async (req, res) => {
 router.get('/stats/person-performance-all', async (req, res) => {
   const { metric_id, period } = req.query;
   if (!metric_id || !period) return res.status(400).json({ error: '參數不完整' });
+  // LOW: 嚴格驗證 metric_id / period 格式 + 走 127.0.0.1（防 DNS 投毒 + URL 注入）
+  if (!/^\d+$/.test(String(metric_id)) || !/^\d{6}$/.test(String(period))) {
+    return res.status(400).json({ error: '參數格式錯誤' });
+  }
+  const portRaw = process.env.PORT;
+  const port    = (/^\d{1,5}$/.test(String(portRaw)) ? portRaw : '3001');
   try {
     const results = await Promise.all(['AMA','AMC','AMD'].map(branch =>
-      fetch(`http://localhost:${process.env.PORT||3001}/api/stats/person-performance?metric_id=${metric_id}&period=${period}&branch=${branch}`)
+      fetch(`http://127.0.0.1:${port}/api/stats/person-performance?metric_id=${encodeURIComponent(metric_id)}&period=${encodeURIComponent(period)}&branch=${encodeURIComponent(branch)}`)
         .then(r=>r.json()).catch(()=>({ branch, error:'fetch error', persons:[] }))
     ));
     res.json(results);

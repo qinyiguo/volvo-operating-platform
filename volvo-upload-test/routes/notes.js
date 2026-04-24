@@ -54,8 +54,12 @@ router.put('/notes/batch', requirePermission('feature:monthly_edit'), async (req
 });
 
 
+// MEDIUM 3: 讀取也需 page:monthly 權限（避免任何登入者讀全部月報筆記）
+// 寫入端點本來就有 feature:monthly_edit；讀取應對齊到相應的頁面權限
+const requireNotesRead = requirePermission('page:monthly');
+
 // GET /api/notes/:key
-router.get('/notes/:key', async (req, res) => {
+router.get('/notes/:key', requireNotesRead, async (req, res) => {
   const key = safeKey(req.params.key);
   if (!key) return res.status(400).json({ error: 'invalid key' });
   try {
@@ -83,12 +87,19 @@ router.put('/notes/:key', requirePermission('feature:monthly_edit'), async (req,
 });
 
 // GET /api/notes?prefix=revenue_AMA_
-router.get('/notes', async (req, res) => {
-  const prefix = KEY_PREFIX + (req.query.prefix || '');
+// MEDIUM 3: 加 page:monthly 權限 + 強制 prefix 至少 1 字以防止「整庫拉走」
+router.get('/notes', requireNotesRead, async (req, res) => {
+  const userPrefix = String(req.query.prefix || '').trim();
+  if (!userPrefix) {
+    return res.status(400).json({ error: '需指定 prefix（避免整庫枚舉）' });
+  }
+  // 防 LIKE 萬用字元濫用：把 % 和 _ escape，使用者只能精確 prefix
+  const safePrefix = userPrefix.replace(/[\\%_]/g, c => '\\' + c);
+  const fullPrefix = KEY_PREFIX + safePrefix;
   try {
     const r = await pool.query(
-      `SELECT key, value FROM app_settings WHERE key LIKE $1 ORDER BY key`,
-      [prefix + '%']
+      `SELECT key, value FROM app_settings WHERE key LIKE $1 ESCAPE '\\' ORDER BY key`,
+      [fullPrefix + '%']
     );
     const result = {};
     r.rows.forEach(row => {
