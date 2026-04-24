@@ -338,6 +338,98 @@
 
 ---
 
+## Session `claude/penetration-testing-avn9j`（2026-04-24，兩輪滲透測試 + 自我審查 + 全部修補）
+
+新開分支，目標：對全站做白箱滲透測試 → 修補 → 再驗證 → 修補 → 自我 audit。完整循環一日完成，5 個 fix commit、2 份 pentest 報告。
+
+### 1. 第一輪靜態白箱（PENTEST_REPORT_2026-04-24.md）
+3 個 Explore agent 平行掃 auth + upload + API/前端三維度，回報後**手動驗證**濾掉 false positive，最終列出：
+- HIGH × 4 / MEDIUM × 5 / LOW × 6
+- 正面表列既有安全做法 11 項
+- 標註所有 finding 為「未對線上發送攻擊流量」的白箱結論
+
+### 2. 第一輪修補（`e554826`，19 檔案 +332 −92）
+| 級別 | 修補 |
+|---|---|
+| HIGH 1 | 廠別資料隔離缺失 → 新增 `scopeBranch` + `branchScopeMiddleware` + `loadBranchScope`，套用於 stats / revenue / query / bonus / bodyshopBonus / personTargets / promoBonus / techHours / techWage / vctl / wip 共 **11 個 router** |
+| HIGH 2 | 權限授予缺矩陣 → 新增 `canGrantPermission(granterRole, targetRole, perm)`，禁止 branch_admin 授予 user_manage / password_reset / approve_upload_branch / sys_config_edit；POST + PUT 兩處覆蓋 |
+| HIGH 3 | Excel 公式注入 → 新增 `safeStr()` + parsers.js `sstr()` 包裝，`= + - @ \t \r` 開頭自動 prefix 單引號；5 個 parse 函式全套用 |
+| HIGH 4 | 財務金額無上下限 → bonus extra-bonus / manager-review ±500_000 限制；bodyshop income 夾擠 ≥ 0；rate 變更寫稽核 |
+| MEDIUM 1 | 帳號枚舉 timing → dummyVerify 在帳號不存在 / 停用 / 鎖定分支跑一次匹配 PBKDF2 600k 成本 |
+| MEDIUM 2 | locked_until 絕對時戳洩露 → 改 minutes_remaining 整數 |
+| MEDIUM 3 | CSRF token 雙暴露 → response body 不再含 csrf_token，只透過 cookie 派送 |
+| MEDIUM 4 | login rate-limit 僅 IP（IPv6 /64 繞過）→ 雙層 limiter（IP 10/15min + username 5/15min） |
+| MEDIUM 5 | audit cleanup keep_days 缺下界 → approve 端再驗 ≥ 30（防 DB row 被竄改） |
+
+### 3. 第二輪 adversarial 復測（PENTEST_REPORT_2026-04-24_v2.md）
+3 個 agent 從不同角度攻：
+- A: 驗證新 middleware 沒被繞過
+- B: frontend XSS / race condition / 內部 API / 資訊外洩
+- C: 剩餘 routes / lib / DB schema / pool 配置
+
+20 項 claim → 手動驗證後 **13 真 / 7 false positive**。重要的 false positive 全部記錄在報告末尾避免後人重查（`branchScopeMiddleware` async race / `bonusPeriodLockAt` 月份 bug / `super-approve` race / `approvals.html` XSS / `revenueActual.js` SQL inj 等）。
+
+`npm audit` = **0 vulnerabilities**（108 prod deps）。
+
+### 4. v2 HIGH 修補（`09607cb`，19 檔案 +198 −217）
+- **HIGH 1 bonus.html stored XSS**：roster Excel 的 emp_name / dept_name / metric_name 等若含 `<script>`，搭配 CSP `unsafe-inline` 形成完整鏈 → 17 處 `innerHTML` sink 套 `esc()` / `esc(JSON.stringify(...))`（onclick 參數 JS literal + HTML attr 雙層編碼）
+- **HIGH 2 e.message PG schema 洩露**：寫批量 node 腳本掃 18 個 route 檔，149 處 `res.status(500).json({error: err.message})` 全部改通用訊息 + `console.error('[' + req.method + ' ' + req.originalUrl + ']', e)`；額外修 `query.js:109` `/health`、`stats.js:928`、`uploadApproval.js:362` 三個 regex 漏網
+- 例外保留：`upload.js:226-236` 批次上傳 per-file error 是設計給使用者看的中文訊息（含「期間鎖定」）
+
+### 5. v2 MEDIUM + LOW 修補（`3c5fe13`，9 檔案 +158 −22）
+| 項 | 修補 |
+|---|---|
+| MEDIUM 1 | login 缺欄位早退也跑 dummyVerify |
+| MEDIUM 2 | `PUT /users/:id/password` 不存在 ID 改 401 + dummyVerify（防 user_id 枚舉） |
+| MEDIUM 3 | `GET /api/notes` 加 page:monthly + 強制 prefix ≥ 1 字 + LIKE wildcard escape |
+| MEDIUM 4 | `super-approve` replay 加 5min `AbortController` timeout + watchdog（啟動 60s + 每 5min 跑）標記卡住 super_approved 的 row（**不自動重執行避免雙重寫入**） |
+| MEDIUM 5 | DB 加 CHECK 約束：`bonus_extra` / `manager_review` `amount BETWEEN -500000 AND 500000 NOT VALID` |
+| MEDIUM 6 | pg pool 加 `statement_timeout: 30s` + `idle_in_transaction_session_timeout: 60s` + `query_timeout: 30s` |
+| LOW L1 | audit_logs `RULE DO INSTEAD NOTHING` → `BEFORE UPDATE TRIGGER + RAISE EXCEPTION`（攻擊者立即看到失敗，不再靜默通過） |
+| LOW L2 | INTERNAL_TOKEN 加完整安全文件（等同 super_admin、勿入 log、季度輪換、多 instance 必設明值） |
+| LOW L4 | loopback fetch `localhost` → `127.0.0.1`、PORT env regex 驗證、personTargets 加 metric_id/period 格式檢查 + encodeURIComponent |
+| LOW L5 | bonus.js extra-bonus reason + managerReview.js note 加 500 字硬上限 |
+
+### 6. Round A 自我 audit + CRITICAL 修補（`85cdf40`，2 檔案 +16 −4）
+派 1 個 Explore agent 只審「**fix 自身正確性**」（不找新攻擊面）。一次掃 13 個檢查點。
+
+**抓到 1 個 CRITICAL 真 bug**：`lib/parsers.js:17` 的 `sstr = (v) => safeStr(v).trim()` 順序錯誤 → HIGH 3 修補完全失效。
+
+```js
+// 攻擊：cell 值前面加一個空格
+sstr(' =cmd|calc')
+//  1. safeStr(' =cmd|calc') — regex ^[=+...] 對 ' =cmd' 不 match（leading space）→ 回原字串無 prefix
+//  2. .trim() → '=cmd|calc'
+// 結果寫入 DB 的是裸 '=cmd|calc'，匯出 XLSX 時 Excel 仍當公式執行
+```
+
+修補（雙層）：
+1. `parsers.js` `sstr` 改順序：`safeStr(String(v ?? '').trim())`
+2. `utils.js` `safeStr` 加 `LEADING_INVISIBLE` 內部剝除（`\s` + BOM `﻿` + ZWSP `​/200C/200D` + WJ `⁠`），就算 caller 忘了 trim 也擋；`FORMULA_PREFIX` 補 `\n \v \f`
+
+驗證後 6 個攻擊向量全擋住（` =cmd`、`  +1+1`、`\t=HYPERLINK`、`​=cmd`、`﻿=cmd`、合法字串不影響）。
+
+### 7. CSP `unsafe-inline` 移除 — 評估後**暫不動**
+v2 報告把它列為架構級議題。盤點：
+- 目前 6 個 directive 都開 unsafe-inline（部署到 Zeabur 後因 helmet 預設 `script-src-attr: 'none'` 把全站 onclick 擋掉而一路放寬，見 04-23 commit `6e4068d`）
+- HTML 內 inline `onclick=` 共 491 處（settings 139 / bonus 119 / stats 93 / monthly 73 / performance 34 / query 13 / approvals 9 / login 1）
+- 完整移除需把全部改 `addEventListener` + 抽出 inline `<script>` → 估 1 週 + 全頁回歸測試
+- 結論：留待下個 sprint。先做 `Content-Security-Policy-Report-Only` 收 violation 報告（也未做，避免今日 commit 暴增）
+
+### 8. 累計
+- 5 個 fix commit + 2 份 pentest 報告 + 1 份 changelog 段（在 README）
+- 修補覆蓋：4 HIGH + 5 MEDIUM + 6 LOW（v1） + 2 HIGH + 6 MEDIUM + 5 LOW（v2） + 1 CRITICAL（self-audit）
+- 沒有 import / signature 變更 → 無 breaking change
+- `npm audit` = 0 vulnerabilities
+- 全部 router require chain OK，bonus.html 4693 行內嵌 JS `node --check` 通過
+
+### 9. 推薦下一步
+- **Black-box 動態 pentest**：把 v1 / v2 POC 真的對 staging 跑一次（curl 攻擊路徑、瀏覽器跑 metric_name XSS、TRIGGER 阻擋驗證、watchdog 等待 10 分鐘）
+- **CSP unsafe-inline 重構**：先加 Report-Only 蒐集 violation 1-2 週，有資料再分頁逐個改 `addEventListener`
+- 移除 `script-src 'unsafe-inline'` 但保留 `script-src-attr` 是中等收緊（半天工程，可阻擋大部分 stored XSS via 注入 `<script>` 標籤）
+
+---
+
 ## 統計
 - 3 天合計 53 個可見 non-merge commit（04-18 資安強化之 PR #1–#7 已 squash，本數未列入）
 - 04-21 再補 26 個 non-merge commit：
@@ -350,5 +442,8 @@
   - session `claude/fix-upload-error-dYN1c`（04-22 續戰）= **11 個**：資安全面修補 4 + 部署後連環 bug 7
   - session `claude/new-session-q2UKk`（login 強化 + CSV→XLSX）= **2 個**
   - 04-22 ~ 04-23 本 session（`fix-upload-error-dYN1c`）累積 **21 commit、~4.5k 行新增**
-- **本週期（04-18 起）累計 102 個 non-merge commit**
+- 04-24 再補 **5 個 fix commit + 2 份 pentest 報告**（`claude/penetration-testing-avn9j`）：
+  - 兩輪靜態白箱（共 33 項真 finding 修補）+ 1 輪自我 audit（抓到 1 CRITICAL bypass）
+  - **覆蓋 4+2 HIGH / 5+6 MEDIUM / 6+5 LOW + 1 CRITICAL**，全部關閉
+- **本週期（04-18 起）累計 107 個 non-merge commit**
 - 主軸：**全站資安強化**（04-18 當日公告 → 04-23 OWASP 全面收尾：session 鎖定 / 稽核 hash chain / HttpOnly + CSRF / pbkdf2 升級）、**獎金表電子簽核 + 匯出版型**、**月報 Executive 模式**、**手機響應式**、**Light Mode 補洞**、**權限模型細緻化**（04-21 大改）、**期間鎖定分層 + 兩階段簽核**（04-21）、**獎金表 UX / 計算邏輯收尾**（04-21）、**104 薪資匯入格式 + 促銷 → 銷售 改名**（04-22）、**部署後 CSP / CSRF / DB crash-loop 連環收尾**（04-23）、**CSV 匯出全面改 XLSX**（04-23）
