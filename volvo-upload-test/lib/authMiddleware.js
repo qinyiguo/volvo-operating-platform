@@ -104,6 +104,88 @@ const ALL_PERMISSIONS = { ...PAGE_PERMISSIONS, ...BRANCH_PERMISSIONS, ...FEATURE
 // ═══ 超級管理員擁有所有權限 ═══
 const SUPER_ADMIN_PERMISSIONS = Object.keys(ALL_PERMISSIONS);
 
+// ═══ 權限授予矩陣（防越權建立影子管理員）═══
+// 規則：每個「授予者角色」可以給「目標角色」哪些 feature/page/branch 權限。
+// branch_admin 不能授予 user_manage / password_reset / approve_upload_branch 等管理類，
+// 否則就能在自己廠內建立影子管理員。
+const NON_GRANTABLE_BY_BRANCH_ADMIN = new Set([
+  'feature:user_manage',
+  'feature:password_reset',
+  'feature:approve_upload_branch',
+  'feature:sys_config_edit',
+]);
+function canGrantPermission(granterRole, targetRole, perm) {
+  if (granterRole === 'super_admin') return true;
+  if (granterRole !== 'branch_admin') return false;
+  // branch_admin 只能授予給 user
+  if (targetRole !== 'user') return false;
+  // 非白名單 key → 拒絕（含未知鍵）
+  if (!ALL_PERMISSIONS[perm] && !perm.startsWith('branch:')) return false;
+  // 管理類權限禁止 branch_admin 授予
+  if (NON_GRANTABLE_BY_BRANCH_ADMIN.has(perm)) return false;
+  return true;
+}
+
+// ═══ 廠別查詢約束（防 horizontal IDOR）═══
+// 任何讀取型 API 取 ?branch=XXX 之前都應呼叫此 helper：
+//   const branch = scopeBranch(req, req.query.branch);
+//   if (branch === null) return res.status(403).json({ error: '無權查看其他廠別' });
+//
+// 規則：
+//   super_admin            → 任意廠別 / 不指定（看全部）
+//   一般 user / branch_admin
+//     1. 若帶有 branch:XXX 權限集合（多廠存取）→ 必須在集合內
+//     2. 否則 → 必須等於 req.user.branch
+//     3. 未指定 branch → 強制綁定為使用者主要廠別（不再回傳全廠資料）
+function scopeBranch(req, requested) {
+  const role = req.user?.role;
+  if (role === 'super_admin') return requested || null;  // 不指定 = 全部
+  const reqBranch = requested ? String(requested).trim().toUpperCase() : '';
+  // 取使用者可見廠別（從 cached permissions 或 req.user.branch fallback）
+  // 注意：req.user.permissions 可能未載入，視 route 而定；保守只用 req.user.branch
+  const allowed = req.user?.branch ? String(req.user.branch).toUpperCase() : null;
+  // 多廠權限：呼叫端可在路由中先載入 permissions 後傳入 req._branchAllowSet
+  const set = req._branchAllowSet;
+  if (set && set.size) {
+    if (!reqBranch) return null;                  // 多廠存取者必須明指
+    return set.has(reqBranch) ? reqBranch : null; // 越權 → null
+  }
+  if (!allowed) return null;                      // 沒有任何廠 → 一律拒絕
+  if (!reqBranch) return allowed;                 // 未指定 → 綁主要廠
+  return reqBranch === allowed ? reqBranch : null;
+}
+
+// 載入使用者的 branch:XXX 集合（給 scopeBranch 用）。讀取型路由可在 router.use 預先掛載。
+async function loadBranchScope(req, res, next) {
+  try {
+    if (req.user && req.user.role !== 'super_admin') {
+      const perms = await getUserPermissions(req.user.user_id, req.user.role);
+      const set = new Set();
+      for (const p of perms) if (p.startsWith('branch:')) set.add(p.slice(7).toUpperCase());
+      // 主要廠別也視為合法
+      if (req.user.branch) set.add(String(req.user.branch).toUpperCase());
+      req._branchAllowSet = set;
+    }
+  } catch(e) {}
+  next();
+}
+
+// 路由級工廠：自動 scope `?branch=XXX`，越權回 403、未指定則綁主要廠。
+//   { writes: false } → 只 scope GET（預設，避免破壞寫入端點 body 的 branch 語意）
+//   { writes: true }  → 連 POST/PUT 也 scope（純讀型路由可用）
+function branchScopeMiddleware({ writes = false } = {}) {
+  return (req, res, next) => {
+    if (!writes && req.method !== 'GET') return next();
+    const requested = req.query.branch;
+    const scoped = scopeBranch(req, requested);
+    if (requested && scoped === null) {
+      return res.status(403).json({ error: '無權查看其他廠別資料', code: 'BRANCH_FORBIDDEN' });
+    }
+    if (scoped !== null) req.query.branch = scoped;
+    next();
+  };
+}
+
 // ═══ Session TTL（與 routes/users.js 保持一致）═══
 // 絕對 4 小時；閒置 30 分即自動失效（符合 OWASP ASVS L2 對含個資系統的建議）
 const SESSION_IDLE_MS = 30 * 60 * 1000;
@@ -243,6 +325,10 @@ module.exports = {
   csrfProtect,
   getUserPermissions,
   internalAuthHeaders,
+  scopeBranch,
+  loadBranchScope,
+  branchScopeMiddleware,
+  canGrantPermission,
   ALL_PERMISSIONS,
   PAGE_PERMISSIONS,
   BRANCH_PERMISSIONS,

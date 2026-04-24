@@ -18,9 +18,12 @@
  */
 const router = require('express').Router();
 const pool   = require('../db/pool');
-const { requireAuth, requirePermission } = require('../lib/authMiddleware');
+const { requireAuth, requirePermission, loadBranchScope, branchScopeMiddleware } = require('../lib/authMiddleware');
 
 router.use(requireAuth);
+router.use(loadBranchScope);
+// 只 scope GET：PUT/DELETE 由 feature:sys_config_edit 把關
+router.use(branchScopeMiddleware());
 
 // ── 收入設定 ──
 router.get('/income-config', async (req, res) => {

@@ -31,12 +31,14 @@ const router = require('express').Router();
 const multer = require('multer');
 const XLSX   = require('xlsx');
 const pool   = require('../db/pool');
-const { requireAuth, requirePermission, internalAuthHeaders } = require('../lib/authMiddleware');
+const { requireAuth, requirePermission, internalAuthHeaders, loadBranchScope, branchScopeMiddleware } = require('../lib/authMiddleware');
 const { isExcelBuffer, excelFileFilter } = require('../lib/utils');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 }, fileFilter: excelFileFilter });
 
 router.use(requireAuth);
+router.use(loadBranchScope);
+router.use(branchScopeMiddleware());
 
 // ─────────────────────────────────────────────────────────────────
 // 獎金期間鎖定（純計算；無 DB 寫入。共用 lib/bonusPeriodLock.js）
@@ -849,12 +851,17 @@ router.put('/bonus/dept-mode', requirePermission('feature:bonus_metric_edit'), a
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// LOW L5: 對 DB 取出的 JSON.parse 用 try/catch 兜底，避免髒資料觸發 500
+function safeJsonParse(s, fallback = {}) {
+  try { return JSON.parse(s); } catch(_) { return fallback; }
+}
+
 router.get('/bonus/dept-weights', async (req, res) => {
   const { branch, dept_code } = req.query;
   const key = `dept_weights_${branch}_${dept_code}`;
   try {
     const r = await pool.query(`SELECT value FROM app_settings WHERE key=$1`, [key]);
-    res.json(r.rows[0] ? JSON.parse(r.rows[0].value) : {});
+    res.json(r.rows[0] ? safeJsonParse(r.rows[0].value) : {});
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -883,16 +890,30 @@ router.get('/bonus/extra-bonuses', async (req, res) => {
   } catch(e) { res.status(500).json({error: e.message}); }
 });
 
+// HIGH 4: 額外獎金金額上下限（防止 99999999 / 負值灌爆薪資結算）
+// 500_000 上限 / -500_000 下限符合「主管調整」的合理範圍；超出視為異常輸入。
+const MAX_EXTRA_BONUS = 500_000;
+
 // POST 新增額外獎金
 router.post('/bonus/extra-bonuses', requirePermission('feature:bonus_extra_edit'), async (req, res) => {
   const { period, emp_id, emp_name, branch, dept_code, amount, reason } = req.body;
   if (checkPeriodLock(period, res, req)) return;
+  // HIGH 4: 金額邊界驗證
+  const n = Number.parseInt(amount, 10);
+  if (!Number.isFinite(n) || n < -MAX_EXTRA_BONUS || n > MAX_EXTRA_BONUS) {
+    return res.status(400).json({
+      error: `額外獎金金額需介於 ±${MAX_EXTRA_BONUS}（收到 ${amount}）`,
+      code:  'AMOUNT_OUT_OF_RANGE',
+    });
+  }
   try {
     const { rows } = await pool.query(
       `INSERT INTO bonus_extra (period,emp_id,emp_name,branch,dept_code,amount,reason)
        VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [period, emp_id, emp_name, branch||'', dept_code||'', parseInt(amount)||0, reason||'']
+      [period, emp_id, emp_name, branch||'', dept_code||'', n, reason||'']
     );
+    // 寫入稽核 detail，方便事後審核大額調整
+    req._audit_detail = `額外獎金 emp=${emp_id} amount=${n} reason="${reason||''}"`;
     res.json(rows[0]);
   } catch(e) { res.status(500).json({error: e.message}); }
 });
@@ -915,7 +936,7 @@ router.get('/bonus/beauty-branches', async (req, res) => {
   const key = `beauty_branch_${period}`;
   try {
     const r = await pool.query(`SELECT value FROM app_settings WHERE key=$1`, [key]);
-    res.json(r.rows[0] ? JSON.parse(r.rows[0].value) : {});
+    res.json(r.rows[0] ? safeJsonParse(r.rows[0].value) : {});
   } catch(e) { res.status(500).json({error: e.message}); }
 });
 

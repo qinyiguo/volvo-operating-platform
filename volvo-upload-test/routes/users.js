@@ -40,6 +40,7 @@ const {
   PAGE_PERMISSIONS, BRANCH_PERMISSIONS, FEATURE_PERMISSIONS,
   LEGACY_PERMISSIONS,
   SUPER_ADMIN_PERMISSIONS,
+  canGrantPermission,
 } = require('../lib/authMiddleware');
 
 // ═══════════════════════════════════════════════
@@ -72,6 +73,17 @@ function verifyPassword(password, hash, salt, iterations = 100000) {
   const expected = hashPassword(password, salt, iterations);
   if (expected.length !== hash.length) return false;
   return crypto.timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(hash, 'hex'));
+}
+
+// Dummy hash 用於「帳號不存在 / 已停用 / 鎖定中」分支，
+// 讓回應總時間 ≈ 真正驗證一次密碼，消除 timing-based user enumeration。
+// 使用固定 dummy salt + 同樣 600k 迭代以匹配真實成本。
+const _DUMMY_SALT = 'a'.repeat(32);
+const _DUMMY_HASH = hashPassword('dummy_password_for_constant_time', _DUMMY_SALT, PBKDF2_ITER_DEFAULT);
+function dummyVerify() {
+  // 回傳 boolean 用不到，但呼叫 verifyPassword 確保耗時相同
+  try { verifyPassword('whatever-input', _DUMMY_HASH, _DUMMY_SALT, PBKDF2_ITER_DEFAULT); }
+  catch(_) {}
 }
 
 function generateToken() {
@@ -109,7 +121,9 @@ router.post('/users/login', async (req, res, next) => {
       `SELECT * FROM users WHERE username = $1`, [username.trim()]
     );
     // 使用者不存在 → 回統一訊息避免帳號列舉
+    // 同時跑一次 dummy PBKDF2 消除 timing oracle（不存在 vs 存在的延遲應該幾乎一致）
     if (!r.rows.length) {
+      dummyVerify();
       req._audit_detail = '帳號不存在';
       return res.status(401).json({ error: '帳號或密碼錯誤' });
     }
@@ -120,6 +134,7 @@ router.post('/users/login', async (req, res, next) => {
       role: user.role, branch: user.branch,
     };
     if (!user.is_active) {
+      dummyVerify();
       req._audit_detail = '帳號已停用';
       return res.status(403).json({ error: '帳號已停用，請聯絡管理員' });
     }
@@ -127,6 +142,7 @@ router.post('/users/login', async (req, res, next) => {
     // ── 帳號鎖定檢查 ──
     // 永久鎖：需 super_admin 解鎖
     if (user.requires_manual_unlock) {
+      dummyVerify();
       req._audit_detail = '嘗試登入已永久鎖定帳號';
       return res.status(403).json({
         error: '帳號已鎖定，請聯絡系統管理員解鎖',
@@ -135,12 +151,15 @@ router.post('/users/login', async (req, res, next) => {
     }
     // 暫時鎖：還沒到期
     if (user.locked_until && new Date(user.locked_until) > new Date()) {
+      dummyVerify();
       const mins = Math.ceil((new Date(user.locked_until) - Date.now()) / 60000);
       req._audit_detail = `嘗試登入暫時鎖定中的帳號（剩 ${mins} 分）`;
+      // MEDIUM 2: 不再回傳精確 locked_until ISO 時戳；只給整數分鐘數，
+      // 避免攻擊者在解鎖瞬間恢復爆破節奏。
       return res.status(403).json({
         error: `帳號暫時鎖定，請 ${mins} 分鐘後再試`,
         code:  'ACCOUNT_LOCKED_TEMP',
-        locked_until: user.locked_until,
+        minutes_remaining: mins,
       });
     }
 
@@ -176,7 +195,7 @@ router.post('/users/login', async (req, res, next) => {
           return res.status(403).json({
             error: '連續錯誤 3 次，帳號已暫時鎖定 15 分鐘',
             code:  'ACCOUNT_LOCKED_TEMP',
-            locked_until: until,
+            minutes_remaining: Math.ceil(LOCK_DURATION_MS / 60000),
           });
         }
       } else {
@@ -218,21 +237,26 @@ router.post('/users/login', async (req, res, next) => {
     const permissions = await getUserPermissions(user.id, user.role);
 
     // Cookie（HttpOnly 防 XSS）+ CSRF token
-    const csrfToken = crypto.randomBytes(24).toString('hex');
+    // LOW L1: CSRF token 改 32 bytes（256-bit entropy, OWASP 建議）
+    const csrfToken = crypto.randomBytes(32).toString('hex');
     const isHttps   = process.env.NODE_ENV === 'production';
     res.cookie('dms_token', token, {
       httpOnly: true, secure: isHttps, sameSite: 'lax',
       maxAge: SESSION_ABSOLUTE_MS, path: '/',
     });
+    // dms_csrf 需 non-HttpOnly 供前端 JS 讀取並填入 X-CSRF-Token header
     res.cookie('dms_csrf', csrfToken, {
       httpOnly: false, secure: isHttps, sameSite: 'lax',
       maxAge: SESSION_ABSOLUTE_MS, path: '/',
     });
 
+    // MEDIUM 3: CSRF token 不再放 response body
+    // 防止反向代理 / log / browser extension 透過 response log 取得 token，
+    // 削弱 double-submit cookie 的假設（攻擊者無法讀 cookie）。
+    // 前端改透過 document.cookie 讀 dms_csrf（auth.js 的 _readCookie 已如此實作）。
     res.json({
-      // token 仍回傳讓 curl/Postman/舊 client 相容
+      // token 仍回傳讓 curl/Postman/舊 client 相容（純 API client 不受 CSRF 影響）
       token,
-      csrf_token: csrfToken,
       user: {
         id:           user.id,
         username:     user.username,
@@ -378,15 +402,24 @@ router.post('/users', requireAuth, requirePermission('feature:user_manage'), asy
     );
     const newUser = r.rows[0];
 
-    // 設定權限
+    // HIGH 2: 設定權限時強制走授予矩陣，避免 branch_admin 給出
+    // user_manage / password_reset / approve_upload_branch 等管理類權限造影子管理員。
     if (role !== 'super_admin' && Array.isArray(permissions) && permissions.length) {
+      const denied = [];
       for (const perm of permissions) {
-        if (ALL_PERMISSIONS[perm] || perm.startsWith('branch:')) {
-          await client.query(
-            `INSERT INTO user_permissions (user_id, permission_key) VALUES ($1,$2) ON CONFLICT DO NOTHING`,
-            [newUser.id, perm]
-          );
-        }
+        if (!canGrantPermission(req.user.role, role, perm)) { denied.push(perm); continue; }
+        await client.query(
+          `INSERT INTO user_permissions (user_id, permission_key) VALUES ($1,$2) ON CONFLICT DO NOTHING`,
+          [newUser.id, perm]
+        );
+      }
+      if (denied.length) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({
+          error: '無權授予下列權限：' + denied.join(', '),
+          code:  'PERMISSION_GRANT_DENIED',
+          denied,
+        });
       }
     }
 
@@ -437,16 +470,28 @@ router.put('/users/:id', requireAuth, requirePermission('feature:user_manage'), 
         [display_name || targetUser.display_name, effectiveRole, effectiveBranch, effectiveActive, targetId]
       );
 
-      // 更新權限
+      // HIGH 2: 更新權限亦走授予矩陣（避免 branch_admin 後門加管理類權限）
       if (effectiveRole !== 'super_admin' && Array.isArray(permissions)) {
-        await client.query(`DELETE FROM user_permissions WHERE user_id=$1`, [targetId]);
+        const denied = [];
+        const valid  = [];
         for (const perm of permissions) {
-          if (ALL_PERMISSIONS[perm]) {
-            await client.query(
-              `INSERT INTO user_permissions (user_id, permission_key) VALUES ($1,$2) ON CONFLICT DO NOTHING`,
-              [targetId, perm]
-            );
-          }
+          if (!canGrantPermission(req.user.role, effectiveRole, perm)) denied.push(perm);
+          else valid.push(perm);
+        }
+        if (denied.length) {
+          await client.query('ROLLBACK');
+          return res.status(403).json({
+            error: '無權授予下列權限：' + denied.join(', '),
+            code:  'PERMISSION_GRANT_DENIED',
+            denied,
+          });
+        }
+        await client.query(`DELETE FROM user_permissions WHERE user_id=$1`, [targetId]);
+        for (const perm of valid) {
+          await client.query(
+            `INSERT INTO user_permissions (user_id, permission_key) VALUES ($1,$2) ON CONFLICT DO NOTHING`,
+            [targetId, perm]
+          );
         }
       }
 

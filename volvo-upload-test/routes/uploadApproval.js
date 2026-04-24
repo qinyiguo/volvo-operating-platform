@@ -91,9 +91,17 @@ router.post('/upload-requests', upload.single('file'), async (req, res) => {
     if (!reason) return res.status(400).json({ error: '請填寫申請理由' });
 
     // 把 extra_body_* 欄位收集起來（如 year / dataType）
+    // LOW L6: 改為白名單 — 縮小攻擊面、避免將來不小心收到 __proto__/constructor
+    // 等敏感 key 被當成業務欄位寫入 DB。若新增欄位請於白名單註冊。
+    const ALLOWED_EXTRA_KEYS = new Set(['year', 'dataType']);
     const extra = {};
     for (const [k, v] of Object.entries(req.body || {})) {
-      if (k.startsWith('extra_')) extra[k.slice(6)] = v;
+      if (!k.startsWith('extra_')) continue;
+      const key = k.slice(6);
+      if (!ALLOWED_EXTRA_KEYS.has(key)) continue;          // 非白名單 → 忽略
+      // 只接受 string/number；object/array 不允許（避免 nested pollution）
+      if (typeof v !== 'string' && typeof v !== 'number') continue;
+      extra[key] = v;
     }
 
     const r = await pool.query(`

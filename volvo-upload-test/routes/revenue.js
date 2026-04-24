@@ -22,7 +22,7 @@ const router = require('express').Router();
 const multer = require('multer');
 const XLSX   = require('xlsx');
 const pool   = require('../db/pool');
-const { requireAuth, requirePermission } = require('../lib/authMiddleware');
+const { requireAuth, requirePermission, loadBranchScope, branchScopeMiddleware } = require('../lib/authMiddleware');
 const { checkPeriodLock, checkBatchPeriodLock, checkBatchUploadPeriodLock } = require('../lib/bonusPeriodLock');
 const { computeAllRevenues, prevYearPeriod } = require('../lib/revenueActual');
 const { isExcelBuffer, excelFileFilter } = require('../lib/utils');
@@ -30,6 +30,9 @@ const { isExcelBuffer, excelFileFilter } = require('../lib/utils');
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 }, fileFilter: excelFileFilter });
 
 router.use(requireAuth);
+router.use(loadBranchScope);
+// 只 scope GET：寫入端點各自有 feature:* 權限，且 body 的 branch 是業務邏輯欄位
+router.use(branchScopeMiddleware());
 
 // ── Week helpers ──
 function getCurrentWeekMonday() {

@@ -28,10 +28,13 @@
  */
 const router = require('express').Router();
 const pool   = require('../db/pool');
-const { requireAuth } = require('../lib/authMiddleware');
+const { requireAuth, loadBranchScope, branchScopeMiddleware } = require('../lib/authMiddleware');
 const { computePerfActualForMetric, prevYearPeriod } = require('../lib/revenueActual');
 
+// 任何 /stats/* 都是讀取型 → 全部 scope（含 GET）
 router.use(requireAuth);
+router.use(loadBranchScope);
+router.use(branchScopeMiddleware());
 
 // ── 維修收入 ──
 router.get('/stats/repair', async (req, res) => {
