@@ -22,14 +22,22 @@ const pick = (row, ...keys) => {
 
 const num = (val) => { const n = parseFloat(val); return isNaN(n) ? 0 : n; };
 
-// Excel CSV/Formula injection 防護：儲存格若以 = + - @ Tab CR 開頭，
+// Excel CSV/Formula injection 防護：儲存格若以 = + - @ Tab CR LF 開頭，
 // 在被別人用 Excel 開啟時會被當公式執行（=cmd|'/c calc'!A1, =HYPERLINK(...)）。
 // 寫入 DB 前先 prefix 一個單引號，Excel 顯示時會吃掉前綴但不執行公式。
 // 對純數字欄位（num()）不必呼叫；只用在會原樣顯示在 XLSX 匯出/前端的字串。
-const FORMULA_PREFIX = /^[=+\-@\t\r]/;
+//
+// 防繞過：
+//  1. 「真前綴 char」涵蓋 = + - @ Tab CR LF VT FF（覆蓋全部 ASCII 控制字元裡會被 Excel 誤判為公式的 prefix）
+//  2. 「假空白前綴」攻擊：' =cmd' / '​=cmd' / BOM=cmd 會在 Excel 開啟前被
+//     Excel 自動 trim → 變成 '=cmd' 仍被當公式。所以判斷前先剝除 leading
+//     space / BOM / zero-width chars，再對剩下的 string 做 prefix 檢查。
+const FORMULA_PREFIX = /^[=+\-@\t\r\n\v\f]/;
+const LEADING_INVISIBLE = /^[\s﻿​‌‍⁠]+/;
 const safeStr = (val) => {
   if (val === null || val === undefined) return '';
-  const s = String(val);
+  // 剝除 leading invisible chars 後再判斷；保留尾端空白以利上層自行 trim
+  const s = String(val).replace(LEADING_INVISIBLE, '');
   return FORMULA_PREFIX.test(s) ? "'" + s : s;
 };
 
