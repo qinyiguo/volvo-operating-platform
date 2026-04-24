@@ -276,3 +276,215 @@
 - 實體安全 / 辦公室網路
 - 使用者端裝置安全（員工筆電中毒等）
 - 社交工程 / 釣魚
+
+---
+
+# 第二輪補測 — OWASP Top 10 全面覆蓋
+
+**補測日期**：2026-04-24（當日）
+**動機**：第一輪報告以注入 / XSS / 傳輸為主軸，本輪針對 OWASP 2021 每個類別逐一補強，特別是**業務邏輯缺陷**、**橫向越權**、**原型污染**、**帳號枚舉**等前一輪未深入的面向。
+
+## 補測摘要
+
+| 嚴重度 | 新增 | 原有 | 合計 |
+|-------|-----|-----|------|
+| CRITICAL | 0 | 5 | 5 |
+| HIGH | 2 | 7 | **9** |
+| MEDIUM | 5 | 8 | **13** |
+| LOW | 1 | 6 | 7 |
+| INFO | 1 | 3 | 4 |
+| 已驗證為安全 ✅ | 4 | — | 4 |
+
+**新增 HIGH 風險** — 特別是 H8 橫向越權能刪別廠的資料，H9 bootstrap 密碼印 stdout 會進雲端 log 保存。
+
+---
+
+## 本輪新增發現（按 OWASP 類別）
+
+### A01 Broken Access Control（權限控制失效）
+
+#### H8. 橫向越權：刪鈑烤獎金申請無 branch 歸屬檢查
+- **檔案**：`routes/bodyshopBonus.js:639-647`
+- **POC**：
+  ```http
+  DELETE /api/bodyshop-bonus/applications/999
+  Authorization: Bearer <AMA branch_admin 的 token>
+  ```
+  即使該筆申請屬於 AMC 廠，依然會被刪除
+- **原因**：SQL 只用 `WHERE id=$1`，無 `AND branch = $2`
+- **衝擊**：branch_admin 可任意刪除其他廠別的獎金申請 → 資料破壞、稽核紀錄隨之不見（CASCADE）
+- **修補**：
+  ```js
+  const q = guard.role === 'branch_admin'
+    ? 'DELETE FROM bodyshop_bonus_applications WHERE id=$1 AND branch=$2'
+    : 'DELETE FROM bodyshop_bonus_applications WHERE id=$1';
+  const params = guard.role === 'branch_admin' ? [req.params.id, guard.branch] : [req.params.id];
+  ```
+- **同類檢查**：建議全面 audit 所有 `DELETE FROM ... WHERE id=$1` 路由，找出類似缺 branch 檢查的端點
+
+#### M9. `/api/bonus/actual-override` 無 branch 驗證
+- **檔案**：`routes/bonus.js:792-805`
+- **問題**：只靠 `feature:bonus_metric_edit` 權限 gate，無檢查 `req.user.branch` 是否符合被改的 metric 所屬 branch
+- **衝擊**：AMA branch_admin 可竄改 AMC 的績效實績數字
+- **修補**：新增 branch 比對邏輯，或改由 super_admin 專屬
+
+### A03 Injection / Deserialization
+
+#### M10. Prototype Pollution（低實際可攻擊性）
+- **檔案**：`routes/bodyshopBonus.js:139`
+  ```js
+  res.json(r.rows[0] ? { ...defaults, ...JSON.parse(r.rows[0].value) } : defaults);
+  ```
+- **條件**：能寫入 `app_settings` 的 `value`（需 `feature:bodyshop_bonus_edit` 權限）的內部攻擊者可注入 `__proto__` 鍵
+- **衝擊**：污染全域 Object.prototype，後續任何物件屬性查詢可能返回攻擊者設定值
+- **修補**：用 Node 18+ 內建 `structuredClone()`，或 `Object.create(null)` 作 merge target
+
+#### ✅ 無 command injection（已驗證）
+全 codebase 無 `child_process` / `exec` / `spawn` / `eval` / `new Function()` 呼叫。安全。
+
+### A04 Insecure Design / Business Logic
+
+#### M11. 獎金金額未擋負數
+- **檔案**：`routes/bonus.js:880`
+  ```js
+  [period, emp_id, emp_name, branch||'', dept_code||'', parseInt(amount)||0, reason||'']
+  ```
+- **POC**：
+  ```http
+  POST /api/bonus/extra-bonuses
+  { "period": "202604", "emp_id": "E001", "amount": -99999999, "reason": "惡意" }
+  ```
+- **衝擊**：
+  - 特定員工薪資可被壓到極負值（月薪變 -9000 萬）
+  - 全廠加總在報表被嚴重扭曲
+  - 若後續有核發流程未檢查負值，可能觸發轉帳錯誤
+- **修補**：`Math.max(0, parseInt(amount) || 0)` 或業務決定合理上下限（如 0 ~ 1,000,000）
+
+#### L7. `parseInt()` 對小數無感（資料損失而非漏洞）
+- **檔案**：`routes/bonus.js:880`
+- **行為**：`parseInt("1.5")` 回 `1`，不會報錯
+- **衝擊**：實際輸入含小數時靜默截斷，使用者不知資料被改。建議改 `Number(amount)` 或 `parseFloat` 配合 `Number.isFinite` 檢查
+
+### A05 Misconfiguration
+
+#### H9. Bootstrap admin 密碼直接 `console.log` 到 stdout
+- **檔案**：`db/init.js:732`
+  ```js
+  console.log(`[initDB] ✅ 預設管理員已建立: admin / ${_pwd}（請立即變更，此訊息僅顯示一次）`);
+  ```
+- **條件**：`INITIAL_ADMIN_PASSWORD` env var 未設時生效
+- **衝擊**：
+  - Zeabur / AWS / GCP 雲端 log 會保留此行**可能長達數週~數年**
+  - 任何有 log 讀取權限的人（含 Zeabur 員工、共享 log 的同事）可看到初始密碼
+  - 「請立即變更」是人治保障，若使用者沒改就成為永久後門
+- **修補**：
+  - production 強制要求 `INITIAL_ADMIN_PASSWORD` 必設，否則拒絕啟動
+  - 或首次登入強制改密碼（加 `users.must_change_password` 旗標）
+  - 或改寫入一次性的檔案 `/tmp/initial_admin.txt`（container 重啟即消失）
+
+#### ✅ CORS 設定正確（已驗證）
+- **檔案**：`index.js:29-38`
+- 用 function-based origin 決策 + `credentials:true`，未知 origin 回 `cb(null, false)` 不下 CORS header，瀏覽器端正確阻擋。無 bypass。
+
+#### ✅ Mass Assignment 已擋（已驗證）
+- **檔案**：`routes/users.js:238-285`
+- PUT `/api/users/:id` 用 destructuring 白名單取欄位，未把 `req.body` 整包塞進 UPDATE。`role` 變更另過 `canManageRole()` 檢查。安全。
+
+### A06 TOCTOU / Concurrency
+
+#### M12. 雙階段上傳核准有 race 空窗
+- **檔案**：`routes/uploadApproval.js:235-279`
+- **問題**：
+  ```
+  1. UPDATE status='super_approved' (COMMIT)
+  2. 離開 transaction
+  3. replayUpload() 呼叫內部 API
+  4. UPDATE execute_result
+  ```
+  步驟 1 → 3 之間，另一 super_admin 若 reject，2 人各自 commit 導致狀態不一致
+- **衝擊**：可能出現「已 super_approved + 已 rejected」同時存在、或 double execute
+- **修補**：包整段進同一 transaction、加 row version check、用 advisory lock on `(period, branch)`
+
+### A07 AuthN
+
+#### I4. 登入 timing attack → username 枚舉
+- **檔案**：`routes/users.js:76-81`
+- **問題**：錯誤訊息相同，但執行時間不同
+  - 使用者不存在：DB miss 瞬間回 401（~10ms）
+  - 使用者存在但密碼錯：跑 pbkdf2 100k/600k 後回 401（~50-300ms）
+- **POC**：攻擊者以常見英文名試 `andy` / `mary` / `john`...，依 response time 統計分布判斷哪些是真實帳號
+- **衝擊**：枚舉成功的帳號清單 + 已知公司命名規則（如 `firstname.lastname`）→ 後續鎖定暴力破解目標
+- **修補**：帳號不存在時也跑一次假的 pbkdf2（用固定 dummy salt），讓兩路徑時間趨近
+
+#### ✅ Session fixation 已防（已驗證）
+- **檔案**：`routes/users.js:88`
+- 每次登入都 `generateToken()` 產新 token，不接受 client 供應的 token。安全。
+
+### A08 Data Integrity
+
+#### M13. 上傳檔案無完整性驗證
+- **檔案**：`routes/upload.js`, `routes/bodyshopBonus.js` 等 multer 路由
+- **問題**：未存檔案 SHA-256 / CRC，重放攻擊 / 傳輸篡改無法偵測
+- **衝擊**：若 Zeabur 內部傳輸被 MITM（低機率但可能）或意外損壞，無從事後稽核
+- **修補**：upload_history 表新增 `file_sha256 VARCHAR(64)`，存檔時 `crypto.createHash('sha256').update(buffer).digest('hex')`
+
+### A10 SSRF
+
+#### ✅ `/api/bonus/progress` loopback fetch 已防（已驗證）
+- **檔案**：`routes/bonus.js:660-663`
+- URL 寫死 `localhost`，`effectiveBranch` 參數有 `encodeURIComponent` 包裝。安全。
+
+### 其他（非 OWASP 分類）
+
+#### I5. JSON body 最大 20mb（偏大）
+- 已在前輪 L6 提及
+
+---
+
+## 補測結論
+
+**新增 2 個 HIGH + 5 個 MEDIUM 後，整體風險等級維持 🔴 HIGH RISK 不變，但修補清單更完整。**
+
+**補測帶來的好消息：**
+- 無 command injection / eval 類高危漏洞
+- CORS / Mass Assignment / Session fixation / loopback SSRF 皆已妥善防護
+- 整體架構安全意識有基本水準
+
+**補測帶來的壞消息：**
+- 橫向越權（H8）屬於典型「開發時沒想到 multi-tenant 隔離」遺漏，建議**全面 audit 所有 `:id` 路由**找類似模式
+- bootstrap 密碼 log 外流（H9）是低成本修補卻影響大的項目，應優先處理
+- 業務邏輯（M11 負數金額）反映**輸入驗證不足是系統性問題**，建議導入 `zod` / `joi` schema 驗證框架
+
+## 合併後最終修補優先順序
+
+### P0（48 小時內）— 4 項
+1. C1 SQL injection — 改參數綁定（`auditLogs.js`）
+2. C4 xlsx CVE — 升級套件
+3. **PG root 密碼輪替** — 已曝光於對話
+4. app → PG 走內部 hostname
+
+### P1（7 天內）— 8 項
+5. C2 Stored XSS — 全站 `_h()` 覆蓋
+6. C3 CSRF — double-submit cookie
+7. C5 Token → HttpOnly cookie
+8. **H8 鈑烤 DELETE 加 branch check**（新）
+9. **H9 bootstrap 密碼不要 log**（新）
+10. H1 Helmet 安全標頭
+11. H2 登入 rate limit
+12. H3 帳號鎖定
+
+### P2（30 天內）— 11 項
+13. H4-H7 剩餘 HIGH
+14. **M9 bonus override 加 branch check**（新）
+15. **M11 獎金金額負數檢查**（新）
+16. **M12 雙階段核准 transaction 修補**（新）
+17. **M13 檔案上傳 SHA-256**（新）
+18. M1-M8 原 MEDIUM
+
+### P3（規劃）
+19. **M10 prototype pollution** — structuredClone / null prototype
+20. **I4 timing attack 消抑**（login 假 pbkdf2）
+21. 導入 `zod` schema 驗證框架
+22. CI security scan (npm audit / semgrep / trivy)
+23. L1-L7 剩餘 LOW
+
